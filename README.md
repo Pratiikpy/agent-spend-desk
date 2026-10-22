@@ -23,7 +23,7 @@ Everything runs on screens too: `npm run desk -- ui` opens eleven screens (brief
 
 ## Run it
 
-Needs Node 22.19 or later (the ledger is Node's built-in SQLite). Tested on Node 24.20; Node 22 is NOT VERIFIED. Nothing else for the sample.
+Needs Node 22.19 or later (the ledger is Node's built-in SQLite). Tested: Windows 11 on Node 22.19 and 24.20, and Ubuntu 22.04 (WSL) on Node 22.23, each with the card, the demo and the test suite, from a fresh clone. macOS is NOT VERIFIED. Nothing else for the sample.
 
 ```
 git clone <this repository> && cd <folder>
