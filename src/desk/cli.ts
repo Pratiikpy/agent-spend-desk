@@ -23,6 +23,7 @@ import { runCard } from "./card/run.ts";
 import { loadDotenv } from "./env.ts";
 import { proposeCommand } from "./propose/command.ts";
 import { silosCommand, silosSeed } from "./silo/command.ts";
+import { askCommand, rememberCommand, verifyAnswerCommand } from "./ask/command.ts";
 
 const DEFAULT_SNAPSHOT = "data/prices/anthropic-litellm-2026-10-22.json";
 
@@ -49,6 +50,10 @@ const { values, positionals } = parseArgs({
     record: { type: "boolean", default: false },
     "person-from-branch": { type: "boolean", default: false },
     "no-zetaris": { type: "boolean", default: false },
+    ablate: { type: "string" },
+    "no-model": { type: "boolean", default: false },
+    "memory-dir": { type: "string", default: "data/desk/memory" },
+    outcome: { type: "boolean", default: false },
   },
 });
 
@@ -109,6 +114,15 @@ written: ${r.files.join(", ")}`);
       await silosCommand({ dbPath: ledgerPath, cassetteDir: values.cassettes, sampleMode, record: values.record, disabled: values["no-zetaris"], env: process.env }),
     );
   }
+} else if (command === "ask") {
+  loadDotenv(".env");
+  console.log(
+    await askCommand({ dbPath: ledgerPath, question: positionals.slice(1).join(" "), ablate: values.ablate, noModel: values["no-model"], record: values.record, sampleMode, cassetteDir: values.cassettes, memoryDir: values["memory-dir"], env: process.env }),
+  );
+} else if (command === "remember") {
+  console.log(await rememberCommand({ memoryDir: values["memory-dir"], text: positionals.slice(1).join(" "), outcome: values.outcome }));
+} else if (command === "verify-answer") {
+  console.log(await verifyAnswerCommand(ledgerPath, positionals[1] ?? "", values["memory-dir"]));
 } else if (command === "bill") {
   const since = values.since ?? "0000-00-00";
   const until = values.until ?? "9999-99-99";
@@ -196,7 +210,7 @@ written: ${r.files.join(", ")}`);
   console.log(`logs: ${sampleLogsDir(values.out)}`);
   console.log(`repos: ${sampleReposDir(values.out)}`);
 } else {
-  console.error(`unknown command "${command}". Use: card | propose | silos | ingest | bill | autopsy | landing | replay | tunnel | sample build`);
+  console.error(`unknown command "${command}". Use: card | propose | silos | ask | remember | verify-answer | ingest | bill | autopsy | landing | replay | tunnel | sample build`);
   process.exitCode = 2;
 }
 db.close();

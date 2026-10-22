@@ -1,0 +1,29 @@
+{
+  "source": "https://github.com/Meterless/Meterless commit 0aa7417",
+  "results": [
+    {
+      "engine": "world_model",
+      "passed": 8,
+      "total": 8,
+      "expected": 8,
+      "exitCode": 0,
+      "ranAt": "2026-10-22T17:15:55.222Z"
+    },
+    {
+      "engine": "markovian",
+      "passed": 8,
+      "total": 8,
+      "expected": 8,
+      "exitCode": 0,
+      "ranAt": "2026-10-22T17:15:55.441Z"
+    },
+    {
+      "engine": "hmem",
+      "passed": 13,
+      "total": 13,
+      "expected": 13,
+      "exitCode": 0,
+      "ranAt": "2026-10-22T17:15:55.668Z"
+    }
+  ]
+}

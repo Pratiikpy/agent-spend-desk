@@ -1,0 +1,16 @@
+{
+  "key": "77a7233a68e3a6eaa9da32db2e11cea4",
+  "recordedAt": "2026-10-22T17:18:27.176Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"6 changes were recorded between 2026-09-15 and 2026-10-15.\", \"cites\": [\"changes.1\"]}, {\"text\": \"Tool version `vsample-2` first appeared on 2026-10-14.\", \"cites\": [\"changes.12\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 985,
+      "outputTokens": 88,
+      "reasoningTokens": 0
+    }
+  }
+}

@@ -46,12 +46,24 @@ export interface Truth {
   start: string;
   months: number;
   sessions: TruthSession[];
+  /** When the tool version and the served model mix change in the scenario. */
+  plantedChange: { atIso: string; toolVersion: string; modelMixAfter: Record<string, number> };
   note: string;
 }
 
 const REPOS = ["payments-api", "web-app", "data-pipeline", "mobile-client", "infra"];
 const MODULES = ["auth", "billing", "search", "ui", "jobs", "cache", "report"];
 const MODEL_MIX: [string, number][] = [["claude-opus-5", 0.6], ["claude-sonnet-5-5", 0.35], ["claude-haiku-5-5", 0.05]];
+
+/**
+ * A planted change, so that "what changed before this date?" has a true answer in the sample: from this instant
+ * the tool reports a new version and the served model mix moves from mostly opus to mostly sonnet, as if the
+ * model behind the endpoint had been switched. Wednesday 14 October 2026, 09:12 UTC, as in the demo script.
+ */
+export const PLANTED_CHANGE_AT = Date.UTC(2026, 9, 14, 9, 12);
+const MODEL_MIX_AFTER: [string, number][] = [["claude-opus-5", 0.2], ["claude-sonnet-5-5", 0.75], ["claude-haiku-5-5", 0.05]];
+const TOOL_VERSION_BEFORE = "sample-1";
+const TOOL_VERSION_AFTER = "sample-2";
 
 type Rng = () => number;
 const between = (r: Rng, lo: number, hi: number) => lo + r() * (hi - lo);
@@ -160,7 +172,7 @@ function genThread(r: Rng, p: Planned, spec: ThreadSpec, repoPath: string, start
     const output = int(r, 120, 2600);
     lines.push(JSON.stringify({
       parentUuid: null, isSidechain: spec.sidechain, type: "assistant", uuid: `${id}-0`, timestamp: iso(t), sessionId: p.id, requestId: `req_${id}`, apiBlockIndex: 0,
-      cwd: repoPath, gitBranch: `${p.engineer}/${p.repo}-work`, version: "sample-1",
+      cwd: repoPath, gitBranch: `${p.engineer}/${p.repo}-work`, version: p.startMs >= PLANTED_CHANGE_AT ? TOOL_VERSION_AFTER : TOOL_VERSION_BEFORE,
       message: {
         id, type: "message", role: "assistant", model, stop_reason: "tool_use",
         content: [{ type: "tool_use", id: `tu_${id}`, name: tool.name, input: tool.input }],
@@ -250,7 +262,7 @@ export function buildSample(partial: Partial<SampleOptions> & { outDir: string }
   }
   const planned = plan(opts, r);
   const counter = { n: 0 };
-  const truth: Truth = { seed: opts.seed, start: opts.start, months: opts.months, sessions: [], note: "Constructed scenario. Every session, cost and commit here was generated from the seed; none is a real team's history." };
+  const truth: Truth = { seed: opts.seed, start: opts.start, months: opts.months, sessions: [], plantedChange: { atIso: new Date(PLANTED_CHANGE_AT).toISOString(), toolVersion: TOOL_VERSION_AFTER, modelMixAfter: Object.fromEntries(MODEL_MIX_AFTER) }, note: "Constructed scenario. Every session, cost and commit here was generated from the seed; none is a real team's history." };
   const commits: Commit[] = [];
   let mark = 0;
 
@@ -259,7 +271,7 @@ export function buildSample(partial: Partial<SampleOptions> & { outDir: string }
     const slug = repoPath.replace(/[^A-Za-z0-9]/g, "-");
     const dir = join(claudeRoot, slug);
     mkdirSync(dir, { recursive: true });
-    const model = weighted(r, MODEL_MIX);
+    const model = weighted(r, p.startMs >= PLANTED_CHANGE_AT ? MODEL_MIX_AFTER : MODEL_MIX);
     const baseCalls = p.archetype === "docs" ? int(r, 5, 15) : p.archetype === "bugfix" ? int(r, 10, 30) : int(r, 18, 55);
     const loopRepeats = p.archetype === "loop_stuck" ? int(r, 14, 40) : p.archetype === "loop_brief" ? int(r, 3, 5) : 0;
     const main = genThread(r, p, { calls: baseCalls + loopRepeats, loopAt: loopRepeats > 0 ? int(r, 4, Math.max(5, baseCalls - 2)) : null, loopRepeats, sidechain: false, model, switchModelAt: r() < 0.03 ? int(r, 3, 8) : null }, repoPath, p.startMs, counter, int(r, 9, 22));
