@@ -12,8 +12,8 @@ export interface RouteResult {
   flags: string[];
 }
 
-const ACTION_VERBS = "set|raise|lower|increase|decrease|reduce|cap|limit|pause|stop|block|disable|enable|switch|route|approve|deny|cancel|kill|change|update|apply|turn off|turn on|revoke|grant";
-const ACTION_NOUNS = "cap|caps|budget|budgets|limit|limits|policy|policies|spend|model|models|route|routes|seat|seats|plan|quota|key|keys|rule|rules|agent|agents";
+const ACTION_VERBS = "set|raise|lower|increase|decrease|reduce|cap|limit|pause|stop|block|disable|enable|switch|route|approve|deny|cancel|kill|change|update|apply|turn off|turn on|revoke|grant|delete|remove|suspend|freeze|throttle|restrict|terminate|shut down|reset|rotate|purge|wipe|ban";
+const ACTION_NOUNS = "cap|caps|budget|budgets|limit|limits|policy|policies|spend|model|models|route|routes|seat|seats|plan|quota|key|keys|rule|rules|agent|agents|team|teams|engineer|engineers|session|sessions|user|users|account|accounts|access|ledger|data|history";
 
 const IMPERATIVE = new RegExp(`^\\s*(?:please\\s+|now\\s+|then\\s+)?(?:${ACTION_VERBS})\\b[^?]*\\b(?:${ACTION_NOUNS})\\b`, "i");
 const REQUEST = new RegExp(`\\b(?:can|could|would|will|should)\\s+you\\s+(?:please\\s+)?(?:${ACTION_VERBS})\\b[^?]*\\b(?:${ACTION_NOUNS})\\b`, "i");

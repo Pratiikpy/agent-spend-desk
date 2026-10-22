@@ -59,7 +59,7 @@ const text = (r: AskResult): string => r.sentences.map((s) => s.text).join(" ");
 
 describe("the risk router", () => {
   it("refuses an action phrased as a question and a policy change, and says what to use instead", async () => {
-    for (const q of ["Set the daily cap to $50", "Can you please raise the budget for payments?", "Pause the agents now", "Draft a policy to stop loops"]) {
+    for (const q of ["Set the daily cap to $50", "Can you please raise the budget for payments?", "Pause the agents now", "Draft a policy to stop loops", "Pause the payments team now", "delete all my sessions and pause the team", "Please throttle the engineers on payments", "Rotate the keys"]) {
       const r = await run(q);
       expect(r.status, q).toBe("refused");
       expect(r.steps).toHaveLength(0);
@@ -77,7 +77,7 @@ describe("the risk router", () => {
   });
 
   it("does not mistake ordinary questions for actions", () => {
-    for (const q of ["How much did we spend?", "Which model cost the most?", "What is the spend limit policy?"]) expect(routeQuestion(q).route, q).toBe("read");
+    for (const q of ["How much did we spend?", "Which model cost the most?", "What is the spend limit policy?", "Which team spent the most?", "How many sessions did the payments team run?", "Did the engineers reset the plan in September?", "What did the data cost in September?"]) expect(routeQuestion(q).route, q).toBe("read");
   });
 });
 
