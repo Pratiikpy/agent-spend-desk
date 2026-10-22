@@ -58,6 +58,10 @@ function parseCondition(raw: unknown, scopes: ReadonlyMap<string, readonly strin
       cond.finite[key as FiniteDim] = intersect(cond.finite[key as FiniteDim], set as string[]);
     } else if (key === "recoverable_usd") {
       cond.numeric.recoverable_micros = parseInterval(value, "recoverable_micros");
+    } else if (key === "day_spend_after_usd") {
+      cond.numeric.day_spend_after_micros = parseInterval(value, "day_spend_after_micros");
+    } else if (key === "month_spend_after_usd") {
+      cond.numeric.month_spend_after_micros = parseInterval(value, "month_spend_after_micros");
     } else if ((NUMERIC_DIMS as readonly string[]).includes(key)) {
       cond.numeric[key as NumericDim] = parseInterval(value, key as NumericDim);
     } else {
