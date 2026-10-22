@@ -1,0 +1,16 @@
+{
+  "key": "953de07672a41473b66bd2ff88b3e1f3",
+  "recordedAt": "2026-10-22T18:32:55.144Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Tool version `vsample-2` first appeared on 2026-10-14.\", \"cites\": [\"chg.12\"]}, {\"text\": \"Model `claude-haiku-5-5` was in use throughout the window and stayed as it was.\", \"cites\": [\"chg.13\"]}, {\"text\": \"Tool version `vsample-1` was in use throughout the window and stayed as it was.\", \"cites\": [\"chg.14\"]}, {\"text\": \"Plan setting `tier standard_ speed standard` was in use throughout the window and stayed as it was.\", \"cites\": [\"chg.15\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 1000,
+      "outputTokens": 159,
+      "reasoningTokens": 0
+    }
+  }
+}

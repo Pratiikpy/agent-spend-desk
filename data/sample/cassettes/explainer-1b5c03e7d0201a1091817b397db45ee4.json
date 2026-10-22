@@ -1,15 +1,15 @@
 {
   "key": "1b5c03e7d0201a1091817b397db45ee4",
-  "recordedAt": "2026-10-22T18:20:54.517Z",
+  "recordedAt": "2026-10-22T18:36:23.765Z",
   "role": "explainer",
   "response": {
-    "content": "{\"sentences\": [{\"text\": \"Model `claude-opus-5` cost $1,613.68.\", \"cites\": [\"id=spend_last30.3\"]}, {\"text\": \"Model `claude-sonnet-5-5` cost $988.15.\", \"cites\": [\"id=spend_last30.4\"]}, {\"text\": \"Model `claude-haiku-5-5` cost $3.41.\", \"cites\": [\"id=spend_last30.5\"]}, {\"text\": \"Model `claude-opus-5` cost the most.\", \"cites\": [\"id=spend_last30.3\", \"id=spend_last30.4\", \"id=spend_last30.5\"]}]}",
+    "content": "{\"sentences\": [{\"text\": \"Model `claude-opus-5` cost $1,613.68.\", \"cites\": [\"spend_last30.3\"]}]}",
     "toolCalls": [],
     "servedBy": "nvidia",
     "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
     "usage": {
       "inputTokens": 477,
-      "outputTokens": 181,
+      "outputTokens": 45,
       "reasoningTokens": 0
     }
   }
