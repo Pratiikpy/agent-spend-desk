@@ -75,7 +75,7 @@ export function deriveHistory(db: Ledger): LedgerHistory | null {
     .all() as unknown as { t: string; s: string; a: string; b: string; n: number }[];
   for (const p of plans) {
     const key = `${p.t}/${p.s}`;
-    entities.push({ kind: "plan", key, label: `tier ${sanitizeLabel(p.t)}, speed ${sanitizeLabel(p.s)}`, firstDay: p.a, lastDay: p.b, calls: p.n });
+    entities.push({ kind: "plan", key, label: `tier ${sanitizeLabel(p.t)} speed ${sanitizeLabel(p.s)}`, firstDay: p.a, lastDay: p.b, calls: p.n });
     if (p.a > start) changes.push({ kind: "plan_first_seen", entityKind: "plan", entityKey: key, day: p.a, detail: { calls: p.n } });
     if (daysBetween(p.b, end) >= STOPPED_AFTER_DAYS) changes.push({ kind: "plan_last_seen", entityKind: "plan", entityKey: key, day: addDays(p.b, 1), detail: { lastDay: p.b } });
   }

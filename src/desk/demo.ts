@@ -52,10 +52,12 @@ export async function demo(o: DemoOptions): Promise<void> {
 
   beat("4/8", "Propose, check, attack, then replay on a month the draft never saw", "The policy is drafted from September and replayed on October. If it blocks landed work, that is the headline.");
   const root = mkdtempSync(join(tmpdir(), "desk-demo-"));
+  // The demo works in a temporary folder whose path holds the user's home; the screen shows a name instead.
+  const scrub = (text: string): string => text.split(root).join("<demo-dir>").split(root.replaceAll("\\", "/")).join("<demo-dir>");
   try {
     const dossier = { dbPath: join(root, "d.db"), pendingDir: join(root, "pending"), outDir: join(root, "out"), keyPath: join(root, "keys", "signer.pem") };
     const proposal = await proposeCommand({ dbPath: join(o.sampleDir, "ledger.db"), pricesPath: o.prices, policyPath: "policies/daily-cap.yaml", minUsd: "2.00", cassetteDir: o.cassetteDir, record: false, sampleMode: true, personFromBranch: true, outDir: join(root, "proposals"), dossier, env: {} });
-    say(proposal);
+    say(scrub(proposal));
 
     beat("5/8", "Ask, with the engines on and off", "The same question, answered from the History engine, then with it switched off.");
     const ask = (ablate?: string) => askCommand({ dbPath: join(o.sampleDir, "ledger.db"), question: "What changed before 2026-10-15?", ablate, noModel: false, record: false, sampleMode: true, cassetteDir: o.cassetteDir, memoryDir: join(root, "memory"), env: {} });
@@ -67,7 +69,7 @@ export async function demo(o: DemoOptions): Promise<void> {
     const m = /desk approve (\S+) (\S+)/.exec(proposal);
     if (m) {
       const done = approve(m[1]!, m[2]!, dossier);
-      say(done.text);
+      say(scrub(done.text));
       if (done.dir) {
         const files = readBundleDir(done.dir);
         const tampered = new Map(files);

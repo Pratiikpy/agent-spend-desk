@@ -1,6 +1,6 @@
 {
   "key": "35e0b41d83fc00632d397fbf5304f6a7",
-  "recordedAt": "2026-10-22T18:35:32.971Z",
+  "recordedAt": "2026-10-22T20:51:33.926Z",
   "role": "explainer",
   "response": {
     "content": "{\"sentences\": [{\"text\": \"Session `sess-00195` cost $73.51.\", \"cites\": [\"sep_top.1\"]}, {\"text\": \"Session `sess-00031` cost $61.68.\", \"cites\": [\"sep_top.2\"]}, {\"text\": \"Session `sess-00067` cost $60.92.\", \"cites\": [\"sep_top.3\"]}, {\"text\": \"Session `sess-00284` cost $48.15.\", \"cites\": [\"sep_top.4\"]}, {\"text\": \"Session `sess-00334` cost $44.45.\", \"cites\": [\"sep_top.5\"]}]}",
