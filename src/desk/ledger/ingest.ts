@@ -18,6 +18,9 @@ export interface IngestReport {
   /** A later line of a call reported a smaller output count than an earlier one (read order, not data loss). */
   outputRegressions: number;
   resetFiles: number;
+  toolCalls: number;
+  toolResults: number;
+  humanPrompts: number;
   unpricedCalls: number;
   unpricedModels: Record<string, string>;
 }
@@ -67,6 +70,9 @@ export async function ingestClaudeCode(
     usageConflicts: 0,
     outputRegressions: 0,
     resetFiles: 0,
+    toolCalls: 0,
+    toolResults: 0,
+    humanPrompts: 0,
     unpricedCalls: 0,
     unpricedModels: {},
   };
@@ -95,6 +101,13 @@ export async function ingestClaudeCode(
        cache_write_1h_tokens = ?, tool_names = ?, block_lines = ?, usage_conflicts = ? WHERE call_id = ?`,
   );
 
+  const insertToolCall = db.prepare(
+    "INSERT OR IGNORE INTO tool_call (tool_use_id, call_id, session_id, name, input_hash, ts) VALUES (?, ?, ?, ?, ?, ?)",
+  );
+  const upsertToolResult = db.prepare(
+    "INSERT OR REPLACE INTO tool_result (tool_use_id, session_id, ts, is_error, result_chars) VALUES (?, ?, ?, ?, ?)",
+  );
+  const insertPrompt = db.prepare("INSERT OR IGNORE INTO human_prompt (prompt_id, session_id, ts) VALUES (?, ?, ?)");
   const touched = new Set<string>();
   const touchedSessions = new Set<string>();
 
@@ -127,6 +140,14 @@ export async function ingestClaudeCode(
           report.malformedReasons[outcome.reason] = (report.malformedReasons[outcome.reason] ?? 0) + 1;
         } else if (outcome.kind === "call") {
           mergeOrInsert(outcome.call, sourceId);
+        } else if (outcome.kind === "tool_results") {
+          for (const r of outcome.results) {
+            upsertToolResult.run(r.toolUseId, r.sessionId, r.ts, r.isError ? 1 : 0, r.resultChars);
+            report.toolResults += 1;
+          }
+        } else if (outcome.kind === "human_prompt") {
+          insertPrompt.run(outcome.prompt.promptId, outcome.prompt.sessionId, outcome.prompt.ts);
+          report.humanPrompts += 1;
         }
         committedOffset = line.endOffset;
       }
@@ -160,6 +181,7 @@ export async function ingestClaudeCode(
         JSON.stringify([...new Set(call.toolNames)]), sourceId,
       );
       report.callsNew += 1;
+      recordToolUses(call);
       return;
     }
     // Another content block of a call already seen. Real logs (checked on subagent logs) show that the
@@ -185,6 +207,14 @@ export async function ingestClaudeCode(
     if (inputOrCacheChanged) report.usageConflicts += 1;
     mergeCall.run(next.input, next.output, next.reasoning, next.read, next.w5, next.w1, JSON.stringify(tools), existing.block_lines + 1, conflicts, call.callId);
     report.callsMerged += 1;
+    recordToolUses(call);
+  }
+
+  function recordToolUses(call: ParsedCall): void {
+    for (const t of call.toolUses) {
+      const r = insertToolCall.run(t.toolUseId, call.callId, call.sessionId, t.name, t.inputHash, call.ts);
+      report.toolCalls += Number(r.changes);
+    }
   }
 }
 

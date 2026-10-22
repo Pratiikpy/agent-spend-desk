@@ -111,7 +111,38 @@ FROM model_call m JOIN cost_event c ON c.call_id = m.call_id
 GROUP BY day, model;
 `;
 
-const MIGRATIONS: readonly string[] = [SCHEMA_V1];
+
+const SCHEMA_V2 = `
+CREATE TABLE tool_call (
+  tool_use_id TEXT PRIMARY KEY,
+  call_id TEXT NOT NULL REFERENCES model_call (call_id),
+  session_id TEXT NOT NULL,
+  name TEXT NOT NULL,
+  input_hash TEXT NOT NULL,
+  ts TEXT NOT NULL
+);
+CREATE INDEX tool_call_call ON tool_call (call_id);
+CREATE INDEX tool_call_session_ts ON tool_call (session_id, ts);
+
+-- A result can be read before or after its call is known, so it has its own table.
+CREATE TABLE tool_result (
+  tool_use_id TEXT PRIMARY KEY,
+  session_id TEXT NOT NULL,
+  ts TEXT NOT NULL,
+  is_error INTEGER NOT NULL CHECK (is_error IN (0, 1)),
+  result_chars INTEGER NOT NULL CHECK (result_chars >= 0)
+);
+
+-- Only that a person sent a prompt, and when. The text is never stored.
+CREATE TABLE human_prompt (
+  prompt_id TEXT PRIMARY KEY,
+  session_id TEXT NOT NULL,
+  ts TEXT NOT NULL
+);
+CREATE INDEX human_prompt_session_ts ON human_prompt (session_id, ts);
+`;
+
+const MIGRATIONS: readonly string[] = [SCHEMA_V1, SCHEMA_V2];
 
 export function openLedger(path: string): Ledger {
   if (path !== ":memory:") mkdirSync(dirname(path), { recursive: true });

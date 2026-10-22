@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { parseClaudeCodeLine } from "../../src/desk/ingest/claude-code.ts";
 import { openLedger, type Ledger } from "../../src/desk/ledger/db.ts";
 import { ingestClaudeCode } from "../../src/desk/ledger/ingest.ts";
-import { assistantLine, TempDir, testSnapshot } from "./helpers.ts";
+import { assistantLine, humanPromptLine, TempDir, testSnapshot, toolResultLine } from "./helpers.ts";
 
 let dir: TempDir;
 let db: Ledger;
@@ -188,5 +188,48 @@ describe("ingest into the ledger", () => {
     await ingestClaudeCode(db, [f], snap);
     await expect(ingestClaudeCode(db, [dir.path + "/does-not-exist.jsonl"], snap)).rejects.toThrow();
     expect(one<{ n: number }>("SELECT COUNT(*) n FROM model_call").n).toBe(1);
+  });
+});
+
+describe("tool calls, results and human prompts", () => {
+  it("records tool uses with a stable input hash and no input text", () => {
+    const a = parseClaudeCodeLine(assistantLine({ id: "m1", tools: ["Bash"], toolInputs: [{ command: "npm test", description: "run" }] }));
+    const b = parseClaudeCodeLine(assistantLine({ id: "m2", tools: ["Bash"], toolInputs: [{ description: "run", command: "npm test" }] }));
+    const c = parseClaudeCodeLine(assistantLine({ id: "m3", tools: ["Bash"], toolInputs: [{ command: "npm run build" }] }));
+    if (a.kind !== "call" || b.kind !== "call" || c.kind !== "call") throw new Error("expected calls");
+    expect(a.call.toolUses[0]?.inputHash).toBe(b.call.toolUses[0]?.inputHash); // key order does not matter
+    expect(a.call.toolUses[0]?.inputHash).not.toBe(c.call.toolUses[0]?.inputHash);
+    expect(JSON.stringify(a.call)).not.toContain("npm test");
+  });
+
+  it("reads tool results (string and block content) and flags errors", () => {
+    const r = parseClaudeCodeLine(toolResultLine({ toolUseId: "tu_a", chars: 120, isError: true }));
+    expect(r).toMatchObject({ kind: "tool_results", results: [{ toolUseId: "tu_a", isError: true, resultChars: 120 }] });
+    const blocks = parseClaudeCodeLine(toolResultLine({ toolUseId: "tu_b", chars: 33, blocks: true }));
+    expect(blocks).toMatchObject({ kind: "tool_results", results: [{ resultChars: 33 }] });
+  });
+
+  it("counts a human prompt but not subagent prompts, meta text or blank text", () => {
+    expect(parseClaudeCodeLine(humanPromptLine({ uuid: "u1" })).kind).toBe("human_prompt");
+    expect(parseClaudeCodeLine(humanPromptLine({ uuid: "u2", blocks: true })).kind).toBe("human_prompt");
+    expect(parseClaudeCodeLine(humanPromptLine({ uuid: "u3", sidechain: true })).kind).toBe("ignored");
+    expect(parseClaudeCodeLine(humanPromptLine({ uuid: "u4", meta: true })).kind).toBe("ignored");
+    expect(parseClaudeCodeLine(humanPromptLine({ uuid: "u5", empty: true })).kind).toBe("ignored");
+  });
+
+  it("stores them idempotently and links results to calls even when the result is read first", async () => {
+    const f = dir.file("a.jsonl", [
+      humanPromptLine({ uuid: "u1" }),
+      toolResultLine({ toolUseId: "tu_m1_0", chars: 500 }), // result before its call is known
+      assistantLine({ id: "m1", tools: ["Read"], output: 10 }),
+    ]);
+    await ingestClaudeCode(db, [f], snap);
+    await ingestClaudeCode(db, [f], snap);
+    expect(one<{ n: number }>("SELECT COUNT(*) n FROM human_prompt").n).toBe(1);
+    expect(one<{ n: number }>("SELECT COUNT(*) n FROM tool_call").n).toBe(1);
+    const joined = one<{ name: string; result_chars: number; is_error: number }>(
+      "SELECT t.name, r.result_chars, r.is_error FROM tool_call t JOIN tool_result r USING (tool_use_id)",
+    );
+    expect(joined).toEqual({ name: "Read", result_chars: 500, is_error: 0 });
   });
 });

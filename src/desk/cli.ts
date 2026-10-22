@@ -3,6 +3,9 @@ import { join } from "node:path";
 import { parseArgs } from "node:util";
 
 import { findJsonlLogs } from "./ingest/discover.ts";
+import { renderAutopsyText } from "./autopsy/card.ts";
+import { buildAutopsy, heaviestWindow } from "./autopsy/engine.ts";
+import { loadAutopsyCalls } from "./autopsy/load.ts";
 import { openLedger } from "./ledger/db.ts";
 import { ingestClaudeCode } from "./ledger/ingest.ts";
 import { formatUsd } from "./money.ts";
@@ -18,6 +21,8 @@ const { values, positionals } = parseArgs({
     prices: { type: "string", default: DEFAULT_SNAPSHOT },
     since: { type: "string" },
     until: { type: "string" },
+    hours: { type: "string", default: "5" },
+    days: { type: "string", default: "14" },
   },
 });
 
@@ -50,8 +55,19 @@ if (command === "ingest") {
     console.log(`${r.model.padEnd(22)} ${String(r.calls).padStart(7)} calls  in ${r.i}  out ${r.o}  cache-read ${r.cr}  cache-write ${r.cw}  ${cost}${r.unpriced > 0 && r.micros !== null ? `  (+${r.unpriced} unpriced)` : ""}`);
   }
   console.log(`estimated list-price total: ${formatUsd(total)}  (an estimate from logged tokens, not a bill)`);
+} else if (command === "autopsy") {
+  const snapshot = loadSnapshot(values.prices);
+  const until = values.until ?? new Date().toISOString();
+  const since = values.since ?? new Date(Date.parse(until) - Number(values.days) * 86_400_000).toISOString();
+  const calls = loadAutopsyCalls(db, snapshot, since, until);
+  const window = heaviestWindow(calls, Number(values.hours));
+  if (!window) {
+    console.log("No priced calls in that period, so there is nothing to explain yet.");
+  } else {
+    console.log(renderAutopsyText(buildAutopsy(calls, window.startMs, window.endMs)));
+  }
 } else {
-  console.error(`unknown command "${command}". Use: ingest | bill`);
+  console.error(`unknown command "${command}". Use: ingest | bill | autopsy`);
   process.exitCode = 2;
 }
 db.close();

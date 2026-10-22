@@ -6,6 +6,18 @@
  * and merged, never summed. Message content is never read into the ledger; only counts,
  * model, timing and tool names are kept.
  */
+import { createHash } from "node:crypto";
+
+import { canonicalJson } from "../../runtime/canonical.ts";
+import type { Json } from "../../runtime/json.ts";
+
+export interface ParsedToolUse {
+  toolUseId: string;
+  name: string;
+  /** First 16 hex characters of the SHA-256 of the canonical JSON of the tool input. The input itself is never stored. */
+  inputHash: string;
+}
+
 export interface ParsedCall {
   callId: string;
   requestId: string | null;
@@ -28,13 +40,31 @@ export interface ParsedCall {
   stopReason: string | null;
   isApiError: boolean;
   toolNames: string[];
+  toolUses: ParsedToolUse[];
   cwd: string | null;
   gitBranch: string | null;
   toolVersion: string | null;
 }
 
+export interface ParsedToolResult {
+  toolUseId: string;
+  sessionId: string;
+  ts: string;
+  isError: boolean;
+  /** Length in characters of the text of the result; images and other blocks count as zero. */
+  resultChars: number;
+}
+
+export interface ParsedHumanPrompt {
+  promptId: string;
+  sessionId: string;
+  ts: string;
+}
+
 export type LineOutcome =
   | { kind: "call"; call: ParsedCall }
+  | { kind: "tool_results"; results: ParsedToolResult[] }
+  | { kind: "human_prompt"; prompt: ParsedHumanPrompt }
   | { kind: "ignored" }
   | { kind: "malformed"; reason: string };
 
@@ -60,6 +90,7 @@ export function parseClaudeCodeLine(line: string): LineOutcome {
     return { kind: "malformed", reason: "invalid-json" };
   }
   if (!isObject(d)) return { kind: "malformed", reason: "not-an-object" };
+  if (d["type"] === "user") return parseUserLine(d);
   if (d["type"] !== "assistant") return { kind: "ignored" };
   const message = d["message"];
   if (!isObject(message)) return { kind: "malformed", reason: "assistant-without-message" };
@@ -96,12 +127,16 @@ export function parseClaudeCodeLine(line: string): LineOutcome {
   const reasoning = isObject(details) ? count(details["thinking_tokens"]) : 0;
 
   const toolNames: string[] = [];
+  const toolUses: ParsedToolUse[] = [];
   const content = message["content"];
   if (Array.isArray(content)) {
     for (const block of content) {
       if (isObject(block) && block["type"] === "tool_use") {
         const name = text(block["name"]);
-        if (name) toolNames.push(name);
+        if (!name) continue;
+        toolNames.push(name);
+        const id = text(block["id"]);
+        if (id) toolUses.push({ toolUseId: id, name, inputHash: hashInput(block["input"]) });
       }
     }
   }
@@ -128,9 +163,56 @@ export function parseClaudeCodeLine(line: string): LineOutcome {
       stopReason: text(message["stop_reason"]),
       isApiError: d["isApiErrorMessage"] === true,
       toolNames,
+      toolUses,
       cwd: text(d["cwd"]),
       gitBranch: text(d["gitBranch"]),
       toolVersion: text(d["version"]),
     },
   };
+}
+
+function hashInput(input: unknown): string {
+  let canonical: string;
+  try {
+    canonical = canonicalJson(input as Json);
+  } catch {
+    canonical = JSON.stringify(input) ?? "";
+  }
+  return createHash("sha256").update(canonical).digest("hex").slice(0, 16);
+}
+
+function textLength(content: unknown): number {
+  if (typeof content === "string") return content.length;
+  if (Array.isArray(content)) {
+    let n = 0;
+    for (const b of content) if (isObject(b) && typeof b["text"] === "string") n += b["text"].length;
+    return n;
+  }
+  return 0;
+}
+
+function parseUserLine(d: Record<string, unknown>): LineOutcome {
+  const message = d["message"];
+  if (!isObject(message)) return { kind: "ignored" };
+  const sessionId = text(d["sessionId"]) ?? text(d["session_id"]);
+  const ts = text(d["timestamp"]);
+  if (!sessionId || !ts || Number.isNaN(Date.parse(ts))) return { kind: "ignored" };
+  const content = message["content"];
+  if (Array.isArray(content)) {
+    const results: ParsedToolResult[] = [];
+    for (const block of content) {
+      if (isObject(block) && block["type"] === "tool_result") {
+        const toolUseId = text(block["tool_use_id"]);
+        if (toolUseId) results.push({ toolUseId, sessionId, ts, isError: block["is_error"] === true, resultChars: textLength(block["content"]) });
+      }
+    }
+    if (results.length > 0) return { kind: "tool_results", results };
+  }
+  // A human prompt is a user-role message in the main conversation that is not a tool result and
+  // not synthetic meta text. Prompts inside a subagent log are written by the main agent, not a person.
+  if (d["isSidechain"] === true || d["isMeta"] === true) return { kind: "ignored" };
+  const hasText = typeof content === "string" ? content.trim().length > 0 : Array.isArray(content) && content.some((b) => isObject(b) && b["type"] === "text");
+  const promptId = text(d["uuid"]);
+  if (!hasText || !promptId) return { kind: "ignored" };
+  return { kind: "human_prompt", prompt: { promptId, sessionId, ts } };
 }

@@ -48,6 +48,8 @@ export interface LineOptions {
   write1h?: number;
   thinking?: number;
   tools?: string[];
+  /** Input for each tool in `tools`, in the same order (default `{}`). */
+  toolInputs?: unknown[];
   sidechain?: boolean;
   omitCacheSplit?: boolean;
 }
@@ -68,7 +70,7 @@ export function assistantLine(o: LineOptions): string {
   if (!o.omitCacheSplit) {
     usage["cache_creation"] = { ephemeral_5m_input_tokens: write5m, ephemeral_1h_input_tokens: write1h };
   }
-  const content = (o.tools ?? []).map((name) => ({ type: "tool_use", id: `tu_${name}`, name, input: {} }));
+  const content = (o.tools ?? []).map((name, i) => ({ type: "tool_use", id: `tu_${o.id}_${i}`, name, input: o.toolInputs?.[i] ?? {} }));
   if (content.length === 0) content.push({ type: "text" as "tool_use", id: "", name: "", input: {} });
   return JSON.stringify({
     parentUuid: null,
@@ -107,4 +109,29 @@ export class TempDir {
   dispose(): void {
     rmSync(this.path, { recursive: true, force: true });
   }
+}
+
+export function toolResultLine(o: { toolUseId: string; session?: string; ts?: string; isError?: boolean; chars?: number; blocks?: boolean }): string {
+  const body = "x".repeat(o.chars ?? 10);
+  return JSON.stringify({
+    type: "user",
+    isSidechain: false,
+    uuid: `res-${o.toolUseId}`,
+    timestamp: o.ts ?? "2026-10-20T10:00:01.000Z",
+    sessionId: o.session ?? "sess-1",
+    message: { role: "user", content: [{ type: "tool_result", tool_use_id: o.toolUseId, content: o.blocks ? [{ type: "text", text: body }] : body, is_error: o.isError ?? false }] },
+  });
+}
+
+export function humanPromptLine(o: { uuid: string; session?: string; ts?: string; sidechain?: boolean; meta?: boolean; blocks?: boolean; empty?: boolean }): string {
+  const t = o.empty ? "   " : "please do the thing";
+  return JSON.stringify({
+    type: "user",
+    isSidechain: o.sidechain ?? false,
+    isMeta: o.meta ?? false,
+    uuid: o.uuid,
+    timestamp: o.ts ?? "2026-10-20T10:00:00.000Z",
+    sessionId: o.session ?? "sess-1",
+    message: { role: "user", content: o.blocks ? [{ type: "text", text: t }] : t },
+  });
 }

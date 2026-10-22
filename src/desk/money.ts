@@ -51,3 +51,30 @@ export function formatUsd(micros: Micros): string {
   const cents = Math.floor((abs % MICROS_PER_USD) / 10_000);
   return `${sign}$${dollars.toLocaleString("en-US")}.${String(cents).padStart(2, "0")}`;
 }
+
+/**
+ * Split `total` across `weights` in proportion, with largest-remainder rounding so the parts sum
+ * to `total` exactly. BigInt is used for the products, which can exceed a safe integer.
+ */
+export function splitProportional(total: number, weights: readonly number[]): number[] {
+  assertSafeInt(total, "total");
+  const sum = weights.reduce((a, b) => a + b, 0);
+  if (weights.some((w) => !Number.isSafeInteger(w) || w < 0)) throw new RangeError("weights must be non-negative safe integers");
+  if (sum === 0) {
+    if (total === 0) return weights.map(() => 0);
+    throw new RangeError("cannot split a non-zero total across zero weights");
+  }
+  const t = BigInt(total);
+  const s = BigInt(sum);
+  const floors = weights.map((w) => Number((t * BigInt(w)) / s));
+  const remainders = weights.map((w, i) => ({ i, r: (t * BigInt(w)) % s }));
+  let missing = total - floors.reduce((a, b) => a + b, 0);
+  remainders.sort((a, b) => (a.r === b.r ? a.i - b.i : a.r > b.r ? -1 : 1));
+  const out = [...floors];
+  for (const { i } of remainders) {
+    if (missing <= 0) break;
+    out[i] = (out[i] ?? 0) + 1;
+    missing -= 1;
+  }
+  return out;
+}

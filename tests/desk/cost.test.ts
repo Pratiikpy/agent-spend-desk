@@ -90,3 +90,25 @@ describe("price book", () => {
     expect(() => parseSnapshot({ snapshotId: "x", source: "x", sourceUrl: "x", fetchedAt: "x", license: "x", upstreamSha256: "x", note: "x", contentHash: "x", models })).toThrow(/integer/);
   });
 });
+
+import { splitProportional } from "../../src/desk/money.ts";
+
+describe("proportional split", () => {
+  it("sums exactly to the total and follows the weights", () => {
+    expect(splitProportional(100, [1, 1, 1])).toEqual([34, 33, 33]);
+    expect(splitProportional(10, [0, 5, 5])).toEqual([0, 5, 5]);
+    expect(splitProportional(0, [3, 4])).toEqual([0, 0]);
+    expect(splitProportional(7, [0, 0, 7])).toEqual([0, 0, 7]);
+  });
+
+  it("handles products larger than a safe integer", () => {
+    const parts = splitProportional(9_000_000_000_000, [4_000_000_000, 3_000_000_000, 2_000_000_000]);
+    expect(parts.reduce((a, b) => a + b, 0)).toBe(9_000_000_000_000);
+    expect(parts).toEqual([4_000_000_000_000, 3_000_000_000_000, 2_000_000_000_000]);
+  });
+
+  it("refuses a non-zero total with no weight and bad weights", () => {
+    expect(() => splitProportional(5, [0, 0])).toThrow(RangeError);
+    expect(() => splitProportional(5, [-1, 2])).toThrow(RangeError);
+  });
+});
