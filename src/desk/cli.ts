@@ -24,8 +24,14 @@ import { loadDotenv } from "./env.ts";
 import { proposeCommand } from "./propose/command.ts";
 import { silosCommand, silosSeed } from "./silo/command.ts";
 import { askCommand, rememberCommand, verifyAnswerCommand } from "./ask/command.ts";
+import { runGateCli } from "./gate/cli.ts";
 
 const DEFAULT_SNAPSHOT = "data/prices/anthropic-litellm-2026-10-22.json";
+
+// The gate has its own flags, so it takes the arguments before the general parser sees them.
+if (process.argv[2] === "gate") {
+  process.exit(await runGateCli(process.argv.slice(3)));
+}
 
 const { values, positionals } = parseArgs({
   allowPositionals: true,
@@ -210,7 +216,7 @@ written: ${r.files.join(", ")}`);
   console.log(`logs: ${sampleLogsDir(values.out)}`);
   console.log(`repos: ${sampleReposDir(values.out)}`);
 } else {
-  console.error(`unknown command "${command}". Use: card | propose | silos | ask | remember | verify-answer | ingest | bill | autopsy | landing | replay | tunnel | sample build`);
+  console.error(`unknown command "${command}". Use: card | propose | silos | ask | remember | verify-answer | gate | ingest | bill | autopsy | landing | replay | tunnel | sample build`);
   process.exitCode = 2;
 }
 db.close();
