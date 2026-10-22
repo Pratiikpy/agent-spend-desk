@@ -26,6 +26,7 @@ import { silosCommand, silosSeed } from "./silo/command.ts";
 import { askCommand, rememberCommand, verifyAnswerCommand } from "./ask/command.ts";
 import { runGateCli } from "./gate/cli.ts";
 import { approve } from "./dossier/command.ts";
+import { startUiServer } from "./ui/server.ts";
 
 const DOSSIER_PATHS = { dbPath: "data/desk/dossier.db", pendingDir: "data/desk/pending", outDir: "data/desk/dossiers" };
 const DEFAULT_SNAPSHOT = "data/prices/anthropic-litellm-2026-10-22.json";
@@ -59,6 +60,7 @@ const { values, positionals } = parseArgs({
     "person-from-branch": { type: "boolean", default: false },
     "no-zetaris": { type: "boolean", default: false },
     dossier: { type: "boolean", default: false },
+    port: { type: "string", default: "0" },
     ablate: { type: "string" },
     "no-model": { type: "boolean", default: false },
     "memory-dir": { type: "string", default: "data/desk/memory" },
@@ -137,6 +139,16 @@ written: ${r.files.join(", ")}`);
   const r = approve(positionals[1] ?? "", positionals[2] ?? "", DOSSIER_PATHS);
   console.log(r.text);
   if (!r.ok) process.exitCode = 1;
+} else if (command === "ui") {
+  const ui = await startUiServer({ ledgerPath: ledgerPath, pricesPath: values.prices, policiesDir: "policies", port: Number(values.port), mode: sampleMode ? "sample" : "own_logs" });
+  console.log(`desk ui is running. Open this address (it carries a one-time token):
+  ${ui.url}
+Ctrl+C stops it.`);
+  await new Promise<void>((resolve) => {
+    process.once("SIGINT", resolve);
+    process.once("SIGTERM", resolve);
+  });
+  await ui.close();
 } else if (command === "bill") {
   const since = values.since ?? "0000-00-00";
   const until = values.until ?? "9999-99-99";
@@ -224,7 +236,7 @@ written: ${r.files.join(", ")}`);
   console.log(`logs: ${sampleLogsDir(values.out)}`);
   console.log(`repos: ${sampleReposDir(values.out)}`);
 } else {
-  console.error(`unknown command "${command}". Use: card | propose | silos | ask | remember | verify-answer | gate | approve | ingest | bill | autopsy | landing | replay | tunnel | sample build`);
+  console.error(`unknown command "${command}". Use: card | propose | silos | ask | remember | verify-answer | gate | approve | ui | ingest | bill | autopsy | landing | replay | tunnel | sample build`);
   process.exitCode = 2;
 }
 db.close();

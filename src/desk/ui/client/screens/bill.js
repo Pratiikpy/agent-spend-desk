@@ -1,0 +1,80 @@
+// Month bill: the dollars, honest about what kind of dollars they are, and what they bought.
+import { h } from "../lib/dom.js";
+import { head, section, stat, emptyState, table, hbars, footnote, money, share, pill, PROV } from "../lib/ui.js";
+import { num } from "../lib/prov.js";
+import { usd, pct, int, STATE_LABEL, STATE_NOTE, CAUSE_LABEL } from "../lib/fmt.js";
+import { stackedBar, dailyBars, swatch } from "../lib/charts.js";
+
+export const usesRange = true;
+
+export async function render(ctx) {
+  const d = await ctx.api("/api/bill", { range: ctx.range });
+  if (d.state === "empty") return h("div", null, head("Month bill", "Nothing billed yet"), emptyState(d));
+  const rows = d.landing.rows;
+  const landed = rows.filter((r) => r.state === "kept" || r.state === "merged").reduce((s, r) => s + r.micros, 0);
+  const reverted = rows.find((r) => r.state === "reverted");
+  const unlinked = rows.find((r) => r.state === "unlinked");
+  const total = d.landing.totalMicros;
+
+  return h(
+    "div",
+    null,
+    head("Month bill", usd(d.totals.estimatedMicros), `${d.span.days === "all" ? "Everything in the ledger" : `The last ${d.span.days} days`}, as an estimate from logged tokens at list price. Not an invoice.`),
+    section(
+      "Headline",
+      "estimated",
+      h(
+        "div",
+        { class: "stats" },
+        stat("Estimated spend", money(d.totals.estimatedMicros, d.snapshotId), `${int(d.totals.pricedCalls)} priced calls`),
+        stat("Landed", d.landing.linked ? share(total > 0 ? landed / total : 0, "spend in the period", { Definition: "merged or kept" }) : "unknown", d.landing.linked ? usd(landed) : "no repository linked"),
+        stat("Per landed session", d.costPerLandedSession === null ? "n/a" : money(d.costPerLandedSession, d.snapshotId), `${int(d.landedSessions)} sessions landed`),
+        stat("Reverted", reverted ? money(reverted.micros, d.snapshotId) : usd(0), "work that was undone", Boolean(reverted && total > 0 && reverted.micros / total >= 0.05)),
+      ),
+    ),
+    section(
+      "Kinds of dollars",
+      "the class of each figure",
+      h("ul", { class: "list" }, ...d.classes.map((c) => h("li", null, pill(c.cls, c.cls === "estimated" ? "ink" : ""), " ", c.calls > 0 ? `${int(c.calls)} calls${c.micros ? `, ${usd(c.micros)}` : ""}. ` : "none. ", c.note))),
+    ),
+    section(
+      "What it bought",
+      "by landing state",
+      d.landing.linked
+        ? h(
+            "div",
+            { class: "pair wide" },
+            h("div", null, stackedBar(rows, total), h("p", { class: "note" }, `${usd(d.landing.lowConfidenceMicros)} of linked spend rests on weak evidence and is not counted as landed.`)),
+            table(
+              "Landing states",
+              [
+                { label: "State", render: (r) => h("span", null, swatch(r.state), STATE_LABEL[r.state]) },
+                { label: "Sessions", num: true, render: (r) => int(r.sessions) },
+                { label: "Spend", num: true, render: (r) => num(usd(r.micros), PROV.estimated(d.snapshotId, { Note: STATE_NOTE[r.state] })) },
+                { label: "Share", num: true, render: (r) => pct(r.share) },
+              ],
+              rows,
+            ),
+          )
+        : h("p", { class: "note" }, "No repository is linked, so every session is unlinked and nothing can be called landed. Run `desk landing` with your repositories."),
+      unlinked && unlinked.micros > 0 ? h("p", { class: "note" }, `Unlinked is ${pct(unlinked.share)} of spend. It means the sources cannot tie the session to a commit: unknowable, not waste.`) : null,
+    ),
+    section("By day", "spend", h("div", { class: "pair" }, dailyBars(d.daily), table("Last days", [{ label: "Day", render: (r) => r.day }, { label: "Calls", num: true, render: (r) => int(r.calls) }, { label: "Spend", num: true, render: (r) => usd(r.micros) }], d.daily.slice(-14).reverse(), { maxh: true }))),
+    section(
+      "Where it went",
+      "by cause",
+      h("div", { class: "pair wide" }, hbars(d.causes.map((c) => ({ name: CAUSE_LABEL[c.cause] || c.cause, share: c.share, value: `${pct(c.share)}  ${usd(c.micros)}` }))), h("p", { class: "note" }, `Cache misses alone cost about ${usd(d.missSavingMicros)} more than a cache hit would have.`)),
+    ),
+    section(
+      "By model and project",
+      "estimated",
+      h(
+        "div",
+        { class: "cards" },
+        table("Models", [{ label: "Model", id: true, render: (r) => r.model }, { label: "Calls", num: true, render: (r) => int(r.calls) }, { label: "Spend", num: true, render: (r) => (r.micros === null ? "unpriced" : usd(r.micros)) }], d.byModel),
+        table("Projects", [{ label: "Project", id: true, render: (r) => r.project }, { label: "Sessions", num: true, render: (r) => int(r.sessions) }, { label: "Spend", num: true, render: (r) => usd(r.micros) }], d.byProject),
+      ),
+    ),
+    footnote(`List price times logged tokens, with the price snapshot ${d.snapshotId}.`, "A flat plan does not charge per token; this is what the same tokens would cost at list price."),
+  );
+}
