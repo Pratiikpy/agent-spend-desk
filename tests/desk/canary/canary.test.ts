@@ -19,6 +19,16 @@ const temp = (): string => {
 };
 afterAll(() => dirs.forEach((d) => rmSync(d, { recursive: true, force: true })));
 
+const RIGHT: Record<string, string> = {
+  "money-change": "27.05", "money-compound": "2315.25", "money-percent": "96", "money-discount": "66", "logic-order": "Cy", "logic-weekday": "Saturday", "logic-sheep": "9", "logic-sequence": "48",
+  "records-errors": "4", "records-users": "Cato, Mara, Wren, Zed", "records-date": "2026-03-12", "records-leap": "76", "code-sum": "165", "code-chain": "54", "code-alias": "4", "code-count": "6",
+  "units-speed": "90 km/h", "units-recipe": "1,050 g", "units-tank": "134", "units-fuel": "45.90", "cal-timezone": "08:30", "cal-duration": "445", "cal-weekday": "Friday", "cal-months": "2027-02-28",
+  "text-vowels": "12", "text-initials": "nesw", "text-distinct": "5", "text-sort": "apple, banana, cherry, fig, pear", "table-top": "south", "table-average": "116.67", "table-filter": "4", "table-join": "100",
+  "prob-dice": "11.1", "prob-coin": "37.5", "prob-choose": "56", "prob-ace": "7.7", "sql-count": "2", "sql-group": "15", "sql-limit": "a, b", "sql-having": "2",
+  "fmt-regex": "4", "fmt-csv": "Faro", "fmt-hex": "183", "fmt-binary": "45", "algo-fib": "144", "algo-gcd": "84", "algo-bubble": "1, 4, 2, 5, 8", "algo-digits": "35",
+  "read-minutes": "75", "read-owner": "Priya", "read-count": "3", "read-first": "10:05",
+};
+
 const byId = (id: string) => TASKS.find((t) => t.id === id)!;
 
 describe("the task pack", () => {
@@ -28,9 +38,11 @@ describe("the task pack", () => {
     expect(new Set(TASKS.map((t) => t.cluster)).size).toBeGreaterThanOrEqual(4);
   });
 
-  const RIGHT: Record<string, string> = {
-    "money-change": "27.05", "money-compound": "2315.25", "money-percent": "96", "money-invoice": "79", "logic-order": "Cy", "logic-weekday": "Saturday", "logic-sheep": "9", "logic-sequence": "48",
-    "records-errors": "4", "records-users": "Cato, Mara, Wren, Zed", "records-date": "2026-03-12", "records-leap": "76", "code-sum": "165", "code-chain": "54", "code-alias": "4", "code-count": "6",
+
+
+  /** A plausible wrong answer for each new task: the slip a weaker model makes, which must not score. */
+  const WRONG: Record<string, string> = {
+    "cal-timezone": "20:30", "cal-weekday": "Saturday", "table-top": "north", "algo-bubble": "1, 2, 4, 5, 8", "sql-limit": "b, a", "read-first": "10:40", "text-sort": "Apple, banana, fig, cherry, pear", "units-tank": "133",
   };
 
   it("accepts the right answer for every task, alone and after a line of working, and rejects a wrong one", () => {
@@ -41,6 +53,17 @@ describe("the task pack", () => {
       expect(t.check("I do not know"), `${t.id} nonsense`).toBe(0);
       expect(t.check(""), `${t.id} empty`).toBe(0);
     }
+  });
+
+  it("rejects the slip a weaker model makes on a task", () => {
+    for (const [id, wrong] of Object.entries(WRONG)) expect(byId(id).check(wrong), id).toBe(0);
+  });
+
+  it("has several tasks in each of thirteen clusters, so the statistic has enough independent clusters to speak", () => {
+    const per = new Map<string, number>();
+    for (const t of TASKS) per.set(t.cluster, (per.get(t.cluster) ?? 0) + 1);
+    expect(per.size).toBeGreaterThanOrEqual(12);
+    for (const n of per.values()) expect(n).toBeGreaterThanOrEqual(4);
   });
 
   it("does not take a number inside the working as the answer, and reads thousands separators", () => {
@@ -78,7 +101,7 @@ class Scripted implements ModelPort {
 const answerFor = (r: ModelRequest): string => {
   const prompt = r.messages.at(-1)!.content;
   const t = TASKS.find((x) => prompt.startsWith(x.prompt))!;
-  return { "money-change": "27.05", "money-compound": "2315.25", "money-percent": "96", "money-invoice": "79", "logic-order": "Cy", "logic-weekday": "Saturday", "logic-sheep": "9", "logic-sequence": "48", "records-errors": "4", "records-users": "Cato, Mara, Wren, Zed", "records-date": "2026-03-12", "records-leap": "76", "code-sum": "165", "code-chain": "54", "code-alias": "4", "code-count": "6" }[t.id]!;
+  return RIGHT[t.id]!;
 };
 
 describe("running the pack", () => {

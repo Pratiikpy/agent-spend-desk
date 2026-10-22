@@ -14,7 +14,7 @@ for (const model of models) {
   let served = "";
   const t0 = Date.now();
   for (let r = 0; r < repeats; r += 1) {
-    for (const row of await runPack({ port, arm: "primary", day: r + 1, date: "2026-01-01", concurrency: 8, deadlineMs: 60_000 })) {
+    for (const row of await runPack({ port, arm: "primary", day: r + 1, date: "2026-01-01", concurrency: Number(process.env["CANARY_CONCURRENCY"] ?? "2"), deadlineMs: 70_000, attempts: 3, retryPauseMs: 5000 })) {
       const e = per.get(row.taskId) ?? { n: 0, pass: 0, err: 0 };
       if (row.score === null) e.err += 1;
       else {

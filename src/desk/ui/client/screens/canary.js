@@ -55,7 +55,7 @@ export async function render(ctx) {
             { class: "stats" },
             stat("Change against the baseline", pts(d.delta), `99% interval ${pts(d.ci.low)} to ${pts(d.ci.high)}, on ${d.tasksUsed} tasks`, d.verdict === "regressed"),
             stat("Smallest change it can see", `${(d.mde * 100).toFixed(1)} points`, `one window, 80% power; for a two-window call ${(d.mdeVerdict * 100).toFixed(1)} points`),
-            stat("Control arm", d.control ? (d.control.moved ? "moved" : "flat") : "none", d.control ? `${pts(d.control.delta)}, 95% interval ${pts(d.control.low)} to ${pts(d.control.high)}` : "a platform event cannot be ruled out", Boolean(d.control && d.control.moved)),
+            stat("Control arm", d.control ? (d.control.moved ? "moved" : "flat") : d.controlRan ? "not read" : "none", d.control ? `${pts(d.control.delta)}, 95% interval ${pts(d.control.low)} to ${pts(d.control.high)}` : d.controlRan ? "the rule stopped before the control arm was needed" : "a platform event cannot be ruled out", Boolean(d.control && d.control.moved)),
           )
         : null,
       change ? h("p", { class: "note" }, `Consistent with, not caused by: the served model id the endpoint reported changed on day ${change.day}${change.date ? ` (${change.date})` : ""}, from ${change.from} to ${change.to}.`) : null,

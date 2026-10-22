@@ -42,16 +42,16 @@ export interface Injection {
 }
 
 export const DEFAULT_SIM: SimParams = {
-  tasks: 24,
-  clusters: 6,
-  repeats: 5,
+  tasks: 52,
+  clusters: 13,
+  repeats: 1,
   days: 90,
   beta: [3.6, 2.4],
   pLow: 0.2,
   pHigh: 0.85,
   shockSd: 0.3,
   errorRate: 0.01,
-  control: { tasks: 3, repeats: 3, shockSd: 0.3 },
+  control: { tasks: 26, repeats: 1, shockSd: 0.3 },
   drop: null,
 };
 

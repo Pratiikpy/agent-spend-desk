@@ -37,7 +37,7 @@ const worker = async (): Promise<void> => {
     const todo: RunRow["arm"][] = (["primary", "control"] as const).filter((a) => !done.has(`${day}|${a}`));
     const t0 = Date.now();
     const results = await Promise.all(
-      todo.map((arm) => runPack({ port: port(arm === "control" ? CONTROL : day < SWITCH ? BEFORE : AFTER), arm, day, tasks: arm === "control" ? CONTROL_TASKS : TASKS, date: dateOf(day), concurrency: Number(process.env["CANARY_CONCURRENCY"] ?? "2"), deadlineMs: 70_000, attempts: Number(process.env["CANARY_ATTEMPTS"] ?? "4"), retryPauseMs: Number(process.env["CANARY_PAUSE_MS"] ?? "9000") })),
+      todo.map((arm) => runPack({ port: port(arm === "control" ? CONTROL : day < SWITCH ? BEFORE : AFTER), arm, day, tasks: arm === "control" ? CONTROL_TASKS : TASKS, date: dateOf(day), concurrency: arm === "primary" && day < SWITCH ? 6 : Number(process.env["CANARY_CONCURRENCY"] ?? "2"), deadlineMs: 70_000, attempts: Number(process.env["CANARY_ATTEMPTS"] ?? "4"), retryPauseMs: Number(process.env["CANARY_PAUSE_MS"] ?? "9000") })),
     );
     for (const rows of results) appendRows(values.out!, rows);
     const line = results.map((rows) => `${rows[0]!.arm} ${rows.filter((r) => r.score === 1).length}/${rows.filter((r) => r.score !== null).length}${rows.some((r) => r.score === null) ? ` (${rows.filter((r) => r.score === null).length} errors)` : ""}`).join(", ");

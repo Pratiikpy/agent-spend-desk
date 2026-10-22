@@ -199,6 +199,7 @@ export function canaryScreen(ctx: UiContext): object {
     errorRate: v.errorRate,
     harnessUnchanged: v.harnessUnchanged,
     control: last ? { moved: last.moved, delta: last.delta, low: last.low, high: last.high, tasks: last.tasks } : null,
+    controlRan: series.control !== null,
     notes: v.notes,
     primary: line("primary"),
     controlArm: series.control ? line("control") : null,

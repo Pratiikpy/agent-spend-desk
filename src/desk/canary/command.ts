@@ -66,7 +66,7 @@ export function canaryCommand(o: { runsPath: string; sample: boolean; day?: numb
   if (v.control.length > 0) {
     const last = v.control[v.control.length - 1]!.reading;
     lines.push(`  control arm: ${last.moved ? `MOVED ${pts(last.delta)} (${last.tasks} tasks)` : `flat (${pts(last.delta)}, 95% interval ${pts(last.low)} to ${pts(last.high)}, ${last.tasks} tasks)`}`);
-  } else lines.push("  control arm: none in this data");
+  } else lines.push(series.control ? "  control arm: not read, the rule stopped before it was needed" : "  control arm: none in this data");
   lines.push(`  harness: ${v.harnessUnchanged ? "unchanged" : "CHANGED"} (${harnessHash().slice(0, 19)}); error rate ${v.errorRate === null ? "n/a" : pct(v.errorRate)}`);
   const signs = v.heldOutSigns.filter((s): s is number => s !== null).map((s) => (s < 0 ? "down" : s > 0 ? "up" : "flat"));
   if (signs.length > 0) lines.push(`  held-out half of the tasks: ${signs.join(", ")}`);
