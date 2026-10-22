@@ -22,7 +22,12 @@ describe("money", () => {
   });
 
   it("formats dollars without floating point", () => {
-    expect(formatUsd(587_416)).toBe("$0.58");
+    expect(formatUsd(587_416)).toBe("$0.59");
+    expect(formatUsd(584_999)).toBe("$0.58");
+    expect(formatUsd(585_000)).toBe("$0.59");
+    expect(formatUsd(999_999)).toBe("$1.00");
+    expect(formatUsd(-587_416)).toBe("-$0.59");
+    expect(formatUsd(0)).toBe("$0.00");
     expect(formatUsd(4_812_000_000)).toBe("$4,812.00");
   });
 });

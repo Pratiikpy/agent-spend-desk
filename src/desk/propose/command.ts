@@ -8,6 +8,8 @@ import { parsePolicyYaml, usdToMicros } from "../policy/parse.ts";
 import { loadSnapshot } from "../pricing/pricebook.ts";
 import { replaySessionsFromLedger } from "../replay/from-ledger.ts";
 import { propose, renderProposal, writeProposal } from "./run.ts";
+import { buildPolicyChangePack } from "../dossier/policy-change.ts";
+import { issueApproval, type DossierPaths } from "../dossier/command.ts";
 
 export interface ProposeCommandOptions {
   dbPath: string;
@@ -24,6 +26,8 @@ export interface ProposeCommandOptions {
   /** Read the person from the branch prefix; see BridgeOptions. */
   personFromBranch: boolean;
   outDir: string;
+  /** Issue an approval request and prepare the signed dossier. */
+  dossier?: DossierPaths;
   env: Record<string, string | undefined>;
 }
 
@@ -60,7 +64,25 @@ export async function proposeCommand(o: ProposeCommandOptions): Promise<string> 
     const trace = new MemoryTrace();
     const result = await propose({ current, sessions, splitMs, targetMinMicros: usdToMicros(o.minUsd, "--min-usd"), port, trace, budget: new Budget(DRAFT_LIVE) });
     const files = writeProposal(result, o.outDir);
-    return `${renderProposal(result, { sessions, splitMs })}\nmodel route: ${label}\nwritten: ${files.policyPath}, ${files.tracePath}`;
+    let tail = "";
+    if (o.dossier) {
+      if (!result.restrict.narrows) {
+        tail = "\n" + "\n" + "No approval request was issued: the proposal does not only narrow the current policy.";
+      } else {
+        const day = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
+        const pack = buildPolicyChangePack({
+          current,
+          proposed: result.final,
+          trainingSessions: sessions.filter((s) => s.startMs < splitMs),
+          heldOutSessions: sessions.filter((s) => s.startMs >= splitMs),
+          tenant: "local",
+          period: { from: day(sessions[0]!.startMs), to: day(sessions[sessions.length - 1]!.startMs) },
+          createdAt: new Date().toISOString(),
+        });
+        tail = "\n" + "\n" + issueApproval(pack, o.dossier).text;
+      }
+    }
+    return `${renderProposal(result, { sessions, splitMs })}\nmodel route: ${label}\nwritten: ${files.policyPath}, ${files.tracePath}${tail}`;
   } finally {
     db.close();
   }

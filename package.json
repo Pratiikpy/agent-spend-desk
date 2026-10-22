@@ -14,7 +14,10 @@
     "test:watch": "vitest",
     "conformance": "tsx scripts/run-conformance.ts",
     "ingest": "tsx src/desk/cli.ts ingest",
-    "bill": "tsx src/desk/cli.ts bill"
+    "bill": "tsx src/desk/cli.ts bill",
+    "desk": "tsx src/desk/cli.ts",
+    "desk-verify": "node src/desk/verify/main.ts",
+    "gate": "tsx src/desk/gate/main.ts"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",

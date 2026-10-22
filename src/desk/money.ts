@@ -44,12 +44,12 @@ export function allocateExact(numerators: readonly number[], denominator: number
   return out;
 }
 
+/** Dollars and cents, rounded half up, so the figure on a card, in a bill, in an answer and in a dossier is the same one. */
 export function formatUsd(micros: Micros): string {
   const sign = micros < 0 ? "-" : "";
-  const abs = Math.abs(micros);
-  const dollars = Math.floor(abs / MICROS_PER_USD);
-  const cents = Math.floor((abs % MICROS_PER_USD) / 10_000);
-  return `${sign}$${dollars.toLocaleString("en-US")}.${String(cents).padStart(2, "0")}`;
+  const cents = Math.floor((Math.abs(micros) + 5_000) / 10_000);
+  const dollars = Math.floor(cents / 100);
+  return `${sign}$${dollars.toLocaleString("en-US")}.${String(cents % 100).padStart(2, "0")}`;
 }
 
 /**
