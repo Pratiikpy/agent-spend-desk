@@ -1,0 +1,246 @@
+import { statSync } from "node:fs";
+
+import { listPriceCost } from "../cost/cost.ts";
+import { parseClaudeCodeLine, type ParsedCall } from "../ingest/claude-code.ts";
+import { readJsonlLines } from "../ingest/jsonl.ts";
+import { resolvePrice, type PriceSnapshot } from "../pricing/pricebook.ts";
+import type { Ledger } from "./db.ts";
+
+export interface IngestReport {
+  files: number;
+  linesRead: number;
+  callsNew: number;
+  callsMerged: number;
+  malformedLines: number;
+  malformedReasons: Record<string, number>;
+  truncatedTails: number;
+  usageConflicts: number;
+  /** A later line of a call reported a smaller output count than an earlier one (read order, not data loss). */
+  outputRegressions: number;
+  resetFiles: number;
+  unpricedCalls: number;
+  unpricedModels: Record<string, string>;
+}
+
+interface ExistingCall {
+  input_tokens: number;
+  output_tokens: number;
+  reasoning_tokens: number;
+  cache_read_tokens: number;
+  cache_write_5m_tokens: number;
+  cache_write_1h_tokens: number;
+  tool_names: string;
+  block_lines: number;
+  usage_conflicts: number;
+}
+
+export function recordSnapshot(db: Ledger, snapshot: PriceSnapshot): void {
+  db.prepare(
+    `INSERT OR IGNORE INTO price_snapshot (snapshot_id, source, source_url, fetched_at, license, upstream_sha256, content_hash, note)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+  ).run(snapshot.snapshotId, snapshot.source, snapshot.sourceUrl, snapshot.fetchedAt, snapshot.license, snapshot.upstreamSha256, snapshot.contentHash, snapshot.note);
+}
+
+/**
+ * Ingest Claude Code session logs into the ledger. Incremental: each file remembers the byte
+ * offset it was read to, so a re-run reads only what was appended. Re-running over the same
+ * bytes changes nothing (calls are keyed by message id, so a resumed session that copies earlier
+ * messages into a new file is not counted twice). A final line without a newline that is not
+ * yet valid JSON is left for the next run and is not counted as bad data.
+ */
+export async function ingestClaudeCode(
+  db: Ledger,
+  files: readonly string[],
+  snapshot: PriceSnapshot,
+  now: () => Date = () => new Date(),
+): Promise<IngestReport> {
+  const started = now().toISOString();
+  recordSnapshot(db, snapshot);
+  const report: IngestReport = {
+    files: 0,
+    linesRead: 0,
+    callsNew: 0,
+    callsMerged: 0,
+    malformedLines: 0,
+    malformedReasons: {},
+    truncatedTails: 0,
+    usageConflicts: 0,
+    outputRegressions: 0,
+    resetFiles: 0,
+    unpricedCalls: 0,
+    unpricedModels: {},
+  };
+
+  const getSource = db.prepare("SELECT id, size_bytes, offset_bytes FROM ingest_source WHERE path = ?");
+  const putSource = db.prepare(
+    `INSERT INTO ingest_source (kind, path, size_bytes, offset_bytes, last_ingested_at) VALUES ('claude_code', ?, ?, ?, ?)
+     ON CONFLICT (path) DO UPDATE SET size_bytes = excluded.size_bytes, offset_bytes = excluded.offset_bytes, last_ingested_at = excluded.last_ingested_at`,
+  );
+  const getCall = db.prepare("SELECT * FROM model_call WHERE call_id = ?");
+  const insertSession = db.prepare(
+    `INSERT INTO session (session_id, tool, project_path, git_branch, tool_version) VALUES (?, 'claude_code', ?, ?, ?)
+     ON CONFLICT (session_id) DO UPDATE SET
+       project_path = COALESCE(session.project_path, excluded.project_path),
+       git_branch = COALESCE(session.git_branch, excluded.git_branch),
+       tool_version = COALESCE(session.tool_version, excluded.tool_version)`,
+  );
+  const insertCall = db.prepare(
+    `INSERT INTO model_call (call_id, session_id, request_id, ts, model, is_sidechain, input_tokens, output_tokens, reasoning_tokens,
+       cache_read_tokens, cache_write_5m_tokens, cache_write_1h_tokens, cache_ttl_basis, cache_split_mismatch, service_tier, speed,
+       stop_reason, is_api_error, tool_names, block_lines, usage_conflicts, source_id)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0, ?)`,
+  );
+  const mergeCall = db.prepare(
+    `UPDATE model_call SET input_tokens = ?, output_tokens = ?, reasoning_tokens = ?, cache_read_tokens = ?, cache_write_5m_tokens = ?,
+       cache_write_1h_tokens = ?, tool_names = ?, block_lines = ?, usage_conflicts = ? WHERE call_id = ?`,
+  );
+
+  const touched = new Set<string>();
+  const touchedSessions = new Set<string>();
+
+  for (const file of files) {
+    const stat = statSync(file);
+    const known = getSource.get(file) as { id: number; size_bytes: number; offset_bytes: number } | undefined;
+    let offset = known?.offset_bytes ?? 0;
+    if (known && stat.size < offset) {
+      offset = 0; // the file shrank or was replaced: read it again from the start; call ids keep this idempotent
+      report.resetFiles += 1;
+    }
+    report.files += 1;
+    let committedOffset = offset;
+
+    db.exec("BEGIN");
+    try {
+      // ensure a source row exists so calls can reference it
+      putSource.run(file, stat.size, committedOffset, started);
+      const sourceId = (getSource.get(file) as { id: number }).id;
+
+      for await (const line of readJsonlLines(file, offset)) {
+        report.linesRead += 1;
+        const outcome = parseClaudeCodeLine(line.text);
+        if (outcome.kind === "malformed") {
+          if (!line.terminated && outcome.reason === "invalid-json") {
+            report.truncatedTails += 1;
+            break; // a partial last line: leave it for the next run
+          }
+          report.malformedLines += 1;
+          report.malformedReasons[outcome.reason] = (report.malformedReasons[outcome.reason] ?? 0) + 1;
+        } else if (outcome.kind === "call") {
+          mergeOrInsert(outcome.call, sourceId);
+        }
+        committedOffset = line.endOffset;
+      }
+      putSource.run(file, stat.size, committedOffset, started);
+      db.exec("COMMIT");
+    } catch (error) {
+      db.exec("ROLLBACK");
+      throw error;
+    }
+  }
+
+  recomputeCosts(db, snapshot, touched, report);
+  updateSessionSpans(db, touchedSessions);
+
+  db.prepare(
+    `INSERT INTO ingest_run (kind, started_at, finished_at, files, lines_read, calls_new, calls_merged, malformed_lines, truncated_tails, usage_conflicts)
+     VALUES ('claude_code', ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  ).run(started, now().toISOString(), report.files, report.linesRead, report.callsNew, report.callsMerged, report.malformedLines, report.truncatedTails, report.usageConflicts);
+  return report;
+
+  function mergeOrInsert(call: ParsedCall, sourceId: number): void {
+    touched.add(call.callId);
+    touchedSessions.add(call.sessionId);
+    insertSession.run(call.sessionId, call.cwd, call.gitBranch, call.toolVersion);
+    const existing = getCall.get(call.callId) as ExistingCall | undefined;
+    if (!existing) {
+      insertCall.run(
+        call.callId, call.sessionId, call.requestId, call.ts, call.model, call.isSidechain ? 1 : 0, call.inputTokens, call.outputTokens,
+        call.reasoningTokens, call.cacheReadTokens, call.cacheWrite5mTokens, call.cacheWrite1hTokens, call.cacheTtlBasis,
+        call.cacheSplitMismatch ? 1 : 0, call.serviceTier, call.speed, call.stopReason, call.isApiError ? 1 : 0,
+        JSON.stringify([...new Set(call.toolNames)]), sourceId,
+      );
+      report.callsNew += 1;
+      return;
+    }
+    // Another content block of a call already seen. Real logs (checked on subagent logs) show that the
+    // output token count grows from block to block while the call streams (5, then 143), and that the
+    // input and cache counts never change. So output takes the larger value and that is normal; any
+    // change to an input or cache field, or an output that goes down, is a real conflict and is counted.
+    const next = {
+      input: Math.max(existing.input_tokens, call.inputTokens),
+      output: Math.max(existing.output_tokens, call.outputTokens),
+      reasoning: Math.max(existing.reasoning_tokens, call.reasoningTokens),
+      read: Math.max(existing.cache_read_tokens, call.cacheReadTokens),
+      w5: Math.max(existing.cache_write_5m_tokens, call.cacheWrite5mTokens),
+      w1: Math.max(existing.cache_write_1h_tokens, call.cacheWrite1hTokens),
+    };
+    const inputOrCacheChanged =
+      existing.input_tokens !== call.inputTokens || existing.cache_read_tokens !== call.cacheReadTokens ||
+      existing.cache_write_5m_tokens !== call.cacheWrite5mTokens || existing.cache_write_1h_tokens !== call.cacheWrite1hTokens;
+    const outputRegressed = call.outputTokens < existing.output_tokens;
+    const differs = inputOrCacheChanged || outputRegressed;
+    if (outputRegressed) report.outputRegressions += 1;
+    const tools = [...new Set([...(JSON.parse(existing.tool_names) as string[]), ...call.toolNames])];
+    const conflicts = existing.usage_conflicts + (differs ? 1 : 0);
+    if (inputOrCacheChanged) report.usageConflicts += 1;
+    mergeCall.run(next.input, next.output, next.reasoning, next.read, next.w5, next.w1, JSON.stringify(tools), existing.block_lines + 1, conflicts, call.callId);
+    report.callsMerged += 1;
+  }
+}
+
+function recomputeCosts(db: Ledger, snapshot: PriceSnapshot, callIds: ReadonlySet<string>, report: IngestReport): void {
+  if (callIds.size === 0) return;
+  const load = db.prepare(
+    `SELECT call_id, model, input_tokens, output_tokens, cache_read_tokens, cache_write_5m_tokens, cache_write_1h_tokens FROM model_call WHERE call_id = ?`,
+  );
+  const upsert = db.prepare(
+    `INSERT OR REPLACE INTO cost_event (call_id, class, snapshot_id, matched_as, ladder_step, unpriced_reason, total_micros, input_micros,
+       output_micros, cache_read_micros, cache_write_5m_micros, cache_write_1h_micros)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  );
+  db.exec("BEGIN");
+  try {
+    for (const id of callIds) {
+      const r = load.get(id) as {
+        call_id: string; model: string; input_tokens: number; output_tokens: number; cache_read_tokens: number;
+        cache_write_5m_tokens: number; cache_write_1h_tokens: number;
+      };
+      const resolved = resolvePrice(snapshot, r.model);
+      if (resolved.kind === "unpriced") {
+        upsert.run(id, "unpriced", null, null, null, resolved.reason, null, null, null, null, null, null);
+        report.unpricedCalls += 1;
+        report.unpricedModels[r.model] = resolved.reason;
+        continue;
+      }
+      const cost = listPriceCost(
+        {
+          inputTokens: r.input_tokens, outputTokens: r.output_tokens, cacheReadTokens: r.cache_read_tokens,
+          cacheWrite5mTokens: r.cache_write_5m_tokens, cacheWrite1hTokens: r.cache_write_1h_tokens,
+        },
+        resolved.row,
+      );
+      const c = cost.components;
+      upsert.run(id, "estimated", snapshot.snapshotId, resolved.matchedAs, resolved.ladderStep, null, cost.totalMicros, c.input, c.output, c.cacheRead, c.cacheWrite5m, c.cacheWrite1h);
+    }
+    db.exec("COMMIT");
+  } catch (error) {
+    db.exec("ROLLBACK");
+    throw error;
+  }
+}
+
+function updateSessionSpans(db: Ledger, sessionIds: ReadonlySet<string>): void {
+  if (sessionIds.size === 0) return;
+  const update = db.prepare(
+    `UPDATE session SET started_at = (SELECT MIN(ts) FROM model_call WHERE session_id = ?), ended_at = (SELECT MAX(ts) FROM model_call WHERE session_id = ?)
+     WHERE session_id = ?`,
+  );
+  db.exec("BEGIN");
+  try {
+    for (const id of sessionIds) update.run(id, id, id);
+    db.exec("COMMIT");
+  } catch (error) {
+    db.exec("ROLLBACK");
+    throw error;
+  }
+}

@@ -1,0 +1,16 @@
+---
+description: Rules for designing and implementing the agents
+globs: src/**
+alwaysApply: false
+---
+
+# Agent design rules
+
+The organizers discount linear pipelines, prompt wrappers and single agents presented as many.
+
+- Implement at least three real collaboration behaviours: delegation, tool use, critique, revision after critique, risk or unsupported-claim flagging, shared structured state, branching on confidence, fallback on failure, traceable evidence in the final answer.
+- Critique is real: a critic scores against a written rubric (accuracy, appropriateness, actionability, 0–3 each). Below 7 of 9 it returns one fix; the proposer revises once. Write a test that forces this path.
+- Hand-offs use compact structured messages (BRIEF, CITES, RISKS, OPEN_QS or QUOTES, SOURCE, LIMITS, TIMESTAMP), not whole documents.
+- Every claim in a final answer maps to a source. Unsupported claims are removed or turned into questions, never invented.
+- Caps (turns, tool calls, wall clock, retries) live in code. On a cap hit, degrade to the fallback and log why.
+- See `docs/design/agent-pairings.md` and `docs/templates/agent-loop-spec.template.md`.

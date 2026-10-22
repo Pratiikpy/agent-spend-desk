@@ -1,0 +1,18 @@
+---
+description: Core standards for the Open Agent Hackathon 2026 build
+alwaysApply: true
+---
+
+# Project standards
+
+- This is a hackathon entry judged on Impact (30), Technical (20), Innovation (15), Demo (15), Product & UX (10) and Sponsor Tech (10). Read `CLAUDE.md` and `docs/00-INDEX.md` first.
+- There is no time limit and no build limit. Always design and build for the best possible product; never reduce scope or quality because of a deadline. Every other hackathon rule still applies.
+- Build locally, but do not commit or push before 22 Oct 2026 00:00 UTC (earlier-committed work is ineligible).
+- Zetaris and Meterless are required integrations. Never guess their APIs, package names or environment variables; use only sourced facts in `docs/sponsors/`.
+- Never write secrets into any file. Real values live in `.env` (gitignored). `.env.example` holds placeholders only.
+- No hardcoded outputs, no stubs, no TODO placeholders.
+- Every external call has a timeout and a bounded retry. Caps on turns and tool calls are enforced in code.
+- Provide and test a `SAMPLE_MODE=true` fallback that runs without credentials.
+- Every agent decision writes a JSON line to the run trace including a `why` field.
+- Prefer small, auditable, swappable modules with typed contracts and tests.
+- Log each working session in `docs/sponsors/cursor-usage-log.md`; Cursor is the required development environment.

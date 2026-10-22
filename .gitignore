@@ -1,0 +1,51 @@
+# Secrets and local config
+.env
+.env.*
+!.env.example
+.claude/settings.local.json
+
+# Organizer material and internal working notes (decision D-004)
+docs/event/
+docs/intel/
+docs/open-questions.md
+docs/evaluation/reviews/
+docs/plan/days/
+
+# Runtime output
+logs/
+*.log
+*.jsonl
+!output_examples/traces/*.jsonl
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node
+node_modules/
+dist/
+build/
+.next/
+
+# OS and editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Third-party reference clones (not our work; never committed)
+research/
+
+# Internal coverage trace quotes organizer material (D-004)
+docs/design/01-demand-traceability-matrix.md
+
+# Local Desk ledger (built from the owner's own logs)
+data/desk/
+
+# Browser automation scratch
+.playwright-mcp/

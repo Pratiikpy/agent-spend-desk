@@ -1,0 +1,22 @@
+{
+  "name": "plumbline",
+  "version": "0.0.0",
+  "description": "Counterparty-release decision system: reconcile conflicting sources, explain with verified evidence, decide under rules and precedent.",
+  "private": true,
+  "type": "module",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.4"
+  }
+}

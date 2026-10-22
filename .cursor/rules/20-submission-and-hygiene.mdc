@@ -1,0 +1,14 @@
+---
+description: Submission requirements and repository hygiene
+alwaysApply: true
+---
+
+# Submission and hygiene
+
+- Submission (HackOS) requires: demo video 1–4 min showing the workflow and how Zetaris and Meterless are integrated; slide deck; GitHub repo with README (setup, usage, dependencies); sponsor technology explanation. See `docs/submission/submission-checklist.md`.
+- The repo must run from a clean clone with no manual steps and no runtime package installs. Keep it light: samples, not raw datasets, checkpoints, archives or videos.
+- Document every data source in `data/README.md`: URL, licence, subset, record count, how to regenerate, limitations.
+- Commit samples under `input_examples/` and `output_examples/`, including at least one cleaned trace.
+- Before any commit run `python scripts/secret_scan.py` and `python scripts/repo_size_check.py`.
+- Commit messages are plain and specific. No author or co-author trailers, no tool attribution.
+- Never claim "best", "production-ready" or "accurate" without evidence; state limitations plainly.
