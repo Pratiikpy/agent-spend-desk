@@ -1,17 +1,36 @@
-# Pre-existing components declaration (working draft; confirm before submission)
+# Pre-existing components declaration
 
-Purpose: the submission checklist requires every component, data set or code that existed before the 22 Oct 2026 00:00 UTC window to be declared. This file records the facts as of 2026-10-16. It is a working draft: it is updated whenever something is added, and the final text is copied into the README and the submission form.
+For the submission form and the README. It lists everything that existed before the window opened (22 Oct 2026 00:00 UTC), and everything that is third-party. It was checked against the repository on 2026-10-23.
 
-Repository state. There is no git repository yet and nothing has been committed or pushed. The first commit will be made on or after 22 Oct 2026 00:00 UTC (hook `.claude/hooks/window_guard.py`; the hook covers the assistant's shell tools only, so no other git client, including an editor's git view, is used before then).
+## Repository
 
-| Item | Where | What it is | Created | Status |
-|---|---|---|---|---|
-| Runtime starter | `src/runtime/canonical.ts`, `errors.ts`, `json.ts`, `schema.ts` (505 lines) | Early local code for canonical JSON, errors, JSON helpers and schemas, written with an AI assistant | 2026-10-13 | Uncommitted, local only. To be either re-created inside the window or declared here as pre-existing. Decision pending with the organizer's written answer on pre-window preparation (open question F13). |
-| Design documents | `docs/` | Architecture, blueprints, research profiles, sponsor notes | 2026-10-13 to 2026-10-16 | Uncommitted. Internal working docs (`docs/intel/`, `docs/event/`, `docs/open-questions.md`, review folders) are gitignored by decision D-004. |
-| Third-party reference clones | `research/` | Read-only copies of open-source repositories for study | 2026-10-13 onward | Gitignored, never part of the submission; any mechanism taken from them is credited per its licence (see `docs/design/prior-art/profiles/99-synthesis-best-of-by-module.md`). |
-| Sponsor material | `meterless/`, `docs/sponsors/` | Organizer and sponsor documents and our notes | 2026-10-13 onward | Organizer originals are local reference only. |
-| Tooling | `scripts/secret_scan.py`, `scripts/repo_size_check.py`, `.claude/`, `.cursor/` | Guard scripts, hooks, agent definitions | 2026-10-13 | Part of the repository; AI-assisted, logged in `docs/sponsors/ai-use-provenance-log.md`. |
+The git history starts on 2026-10-22 at 15:06 UTC (the first commit is `e994d41`, "Add the Desk ledger..."), after the window opened. Nothing was committed or pushed earlier. Work that was written before the window was kept out of git until then and is listed here.
 
-Not pre-existing: no application code beyond the starter above, no data sets, no trained models. Created from 2026-10-22: `src/desk/` (ledger, log reader, price book, cost), `tests/desk/`, `data/prices/` (a dated snapshot of LiteLLM's MIT-licensed price file), `scripts/build-price-snapshot.ts`, `scripts/run-conformance.ts`, and, from Meterless under Apache-2.0, `src/engines/` and `vendor/meterless/` (see `vendor/meterless/NOTICE.md`).
+## Written before the window
 
-Open: the organizers' written answer on whether local preparation before the window is eligible (open question F13); whether the runtime starter is kept, rewritten inside the window or removed.
+| Item | Where | What it is | Written |
+|---|---|---|---|
+| Runtime starter | `src/runtime/` (`canonical.ts`, `errors.ts`, `json.ts`, `schema.ts`, 505 lines) | Canonical JSON and hashing, typed errors, JSON helpers and a small schema library. Used by `src/desk/` (for example the Ask program schema and the dossier hashes) | 2026-10-13, with an AI assistant |
+| Design documents | `docs/design/`, `docs/plan/`, `docs/DECISIONS.md`, `docs/00-INDEX.md` | The architecture, module blueprints, research profiles of open-source repositories, and the decision log. The Desk's own specification (`docs/design/desk/`) was written 2026-10-20 to 2026-10-22 | 2026-10-13 to 2026-10-22 |
+| Sponsor notes and templates | `docs/sponsors/`, `docs/submission/*.template.md`, `docs/templates/` | Notes on Zetaris, Meterless, NVIDIA and Cursor and the submission templates | 2026-10-13 to 2026-10-16 |
+| Guard scripts and assistant configuration | `scripts/secret_scan.py`, `scripts/repo_size_check.py`, `.claude/`, `.cursor/`, `AGENTS.md`, `CLAUDE.md` | Secret scan, repository size check, hooks, subagent and skill definitions, rules for the editor and assistants | 2026-10-13 to 2026-10-16 |
+
+No application code other than the runtime starter existed before the window. There were no data sets and no trained models.
+
+## Written in the window (2026-10-22 onward)
+
+Everything else: `src/desk/` (ledger, log reader, price book, autopsy, landing, policy language and replay, agents, Ask, engine adapters, Zetaris silo port, gate, dossiers and the offline verifier, canary, card, UI, propose, prove, demo), `src/sponsors/zetaris/`, `tests/`, `infra/silos/`, `policies/`, `scripts/` other than the two guard scripts, the sample generator, the recorded replies in `data/sample/`, `input_examples/`, `output_examples/`, the README, the deck and the video script. Prose and code were written with AI assistants and are logged in `docs/sponsors/ai-use-provenance-log.md`.
+
+## Third-party
+
+| Item | Where | Licence |
+|---|---|---|
+| Meterless reference engines (World Model, H-MEM, Markovian) and their conformance suites | `src/engines/`, `vendor/meterless/` (`NOTICE.md`) | Apache-2.0 |
+| LiteLLM price file, a dated snapshot of first-party Anthropic prices | `data/prices/` | MIT |
+| Outfit and JetBrains Mono fonts | `assets/fonts/` | SIL Open Font License 1.1 (licence texts beside the files) |
+| npm packages: `yaml`, `@resvg/resvg-js`, and for development `tsx`, `typescript`, `vitest`, `@types/node` | `package.json` | Each under its own licence, installed by `npm install` |
+| Models and services: NVIDIA Nemotron through NVIDIA's API, Zetaris (run locally in Docker) | not in the repository | Used under each provider's terms |
+
+## Open
+
+The organisers' written answer on whether preparation before the window is eligible was not received. If it is not, the runtime starter and the design documents are the two items that matter, and the Desk can be built without either: nothing in `src/desk/` depends on the design documents, and the starter is 505 lines.
