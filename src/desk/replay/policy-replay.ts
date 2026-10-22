@@ -38,7 +38,7 @@ export interface PausedSession {
 
 export interface ReplayResult {
   totalMicros: number;
-  /** Cost of the calls that would not have been made. */
+  /** Cost of the calls that would not have been made. An upper bound on savings: it assumes a paused session does nothing more, including useful work. */
   savedMicros: number;
   askedCalls: number;
   deniedCalls: number;

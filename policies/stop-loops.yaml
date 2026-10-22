@@ -1,0 +1,11 @@
+version: 1
+rules:
+  - id: allow-claude
+    kind: permit
+    when: { model: { in: ["claude-*"] } }
+  - id: stop-loops
+    kind: forbid
+    when:
+      waste_rule: { in: ["C-LOOP-1"] }
+      recoverable_usd: { gt: "2.00" }
+    action: pause_with_checkpoint

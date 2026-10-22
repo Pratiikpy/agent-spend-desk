@@ -13,6 +13,11 @@ import { linkOutcomes } from "./outcomes/link.ts";
 import { ingestClaudeCode } from "./ledger/ingest.ts";
 import { formatUsd } from "./money.ts";
 import { loadSnapshot } from "./pricing/pricebook.ts";
+import { readFileSync } from "node:fs";
+import { parsePolicyYaml } from "./policy/parse.ts";
+import { replaySessionsFromLedger } from "./replay/from-ledger.ts";
+import { replayPolicy } from "./replay/policy-replay.ts";
+import { windTunnel } from "./replay/wind-tunnel.ts";
 
 const DEFAULT_SNAPSHOT = "data/prices/anthropic-litellm-2026-10-22.json";
 
@@ -27,6 +32,7 @@ const { values, positionals } = parseArgs({
     hours: { type: "string", default: "5" },
     repo: { type: "string", multiple: true },
     days: { type: "string", default: "14" },
+    policy: { type: "string", multiple: true },
   },
 });
 
@@ -95,8 +101,30 @@ if (command === "ingest") {
     console.log(`${state.padEnd(10)} ${String(x.sessions).padStart(6)} sessions  ${formatUsd(x.micros).padStart(12)}  ${share.toFixed(1).padStart(5)}%${note}`);
   }
   console.log(`estimated list-price total ${formatUsd(b.totalMicros)}; weakly linked (low confidence): ${formatUsd(b.lowConfidenceMicros)}`);
+} else if (command === "replay" || command === "tunnel") {
+  const since = values.since ?? "0000-00-00";
+  const until = values.until ?? "9999-99-99";
+  const sessions = replaySessionsFromLedger(db, loadSnapshot(values.prices), since, until);
+  for (const file of values.policy ?? []) {
+    const policy = parsePolicyYaml(readFileSync(file, "utf8"));
+    if (command === "replay") {
+      const r = replayPolicy(policy, sessions);
+      console.log(`${file}: ${sessions.length} sessions, total ${formatUsd(r.totalMicros)}; upper bound on spend avoided ${formatUsd(r.savedMicros)}, assuming a paused session does nothing more (${r.totalMicros === 0 ? 0 : ((r.savedMicros / r.totalMicros) * 100).toFixed(1)}%)`);
+      console.log(`  paused ${r.paused.length} sessions, asked ${r.askedCalls} times; landed sessions that would have been paused: ${r.landedBlocked.length} of ${r.landedTotal}`);
+    } else {
+      const t = windTunnel(policy, sessions);
+      if (t.status !== "ok") {
+        console.log(`${file}: ${t.sessions} sessions is too little history to simulate`);
+        continue;
+      }
+      const pct = (x: number) => `${(x * 100).toFixed(0)}%`;
+      console.log(`${file}: ${t.simulatedMonths} simulated months from ${t.sessions} sessions`);
+      console.log(`  upper bound on spend avoided ${formatUsd(t.savedMicros.mid)} a month (90% interval ${formatUsd(t.savedMicros.low)} to ${formatUsd(t.savedMicros.high)}); blocks landed work in ${pct(t.pBlockedLanded.mid)} of months (${pct(t.pBlockedLanded.low)} to ${pct(t.pBlockedLanded.high)})`);
+      if (t.historyMayNotPredict) console.log("  warning: the last four weeks differ from the earlier history; this month may not look like the past");
+    }
+  }
 } else {
-  console.error(`unknown command "${command}". Use: ingest | bill | autopsy | landing`);
+  console.error(`unknown command "${command}". Use: ingest | bill | autopsy | landing | replay | tunnel`);
   process.exitCode = 2;
 }
 db.close();
