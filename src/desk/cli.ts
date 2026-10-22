@@ -13,7 +13,7 @@ import { linkOutcomes } from "./outcomes/link.ts";
 import { ingestClaudeCode } from "./ledger/ingest.ts";
 import { formatUsd } from "./money.ts";
 import { loadSnapshot } from "./pricing/pricebook.ts";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { parsePolicyYaml } from "./policy/parse.ts";
 import { replaySessionsFromLedger } from "./replay/from-ledger.ts";
 import { replayPolicy } from "./replay/policy-replay.ts";
@@ -27,6 +27,9 @@ import { askCommand, rememberCommand, verifyAnswerCommand } from "./ask/command.
 import { runGateCli } from "./gate/cli.ts";
 import { approve } from "./dossier/command.ts";
 import { startUiServer } from "./ui/server.ts";
+import { formatLine, prove, summarise } from "./prove/run.ts";
+import { demo } from "./demo.ts";
+import { canaryCommand, canaryRunCommand, OWN_RUNS, SAMPLE_RUNS } from "./canary/command.ts";
 
 const DOSSIER_PATHS = { dbPath: "data/desk/dossier.db", pendingDir: "data/desk/pending", outDir: "data/desk/dossiers" };
 const DEFAULT_SNAPSHOT = "data/prices/anthropic-litellm-2026-10-22.json";
@@ -71,6 +74,10 @@ const { values, positionals } = parseArgs({
 const command = positionals[0] ?? "card";
 const sampleMode = values.sample || process.env.SAMPLE_MODE === "true";
 const ledgerPath = sampleMode && !process.argv.includes("--db") && command !== "card" ? join(values.out, "ledger.db") : values.db;
+// Commands that read the sample ledger build it first when it is not there, so `--sample` works from a fresh clone.
+if (sampleMode && ["propose", "silos", "ask", "ui", "verify-answer"].includes(command) && !existsSync(ledgerPath)) {
+  await runCard({ mode: "sample", claudeDir: "", dbPath: "", pricesPath: values.prices, outDir: values["card-dir"], sampleDir: values.out, days: 14, hours: 5, repos: [], color: false });
+}
 const db = command === "card" ? openLedger(":memory:") : openLedger(ledgerPath);
 
 if (command === "ingest") {
@@ -149,6 +156,21 @@ Ctrl+C stops it.`);
     process.once("SIGTERM", resolve);
   });
   await ui.close();
+} else if (command === "canary") {
+  if (positionals[1] === "run") {
+    loadDotenv(".env");
+    console.log(await canaryRunCommand({ runsPath: OWN_RUNS, env: process.env, today: new Date().toISOString().slice(0, 10) }));
+  } else {
+    console.log(canaryCommand({ runsPath: sampleMode ? SAMPLE_RUNS : OWN_RUNS, sample: sampleMode }).text);
+  }
+} else if (command === "prove") {
+  const lines = await prove({ dir: "data/desk/prove", ...(positionals[1] ? { only: positionals[1] } : {}), log: (l) => console.log(formatLine(l)) });
+  const t = summarise(lines);
+  console.log(`
+${t.pass} PASS, ${t.fail} FAIL, ${t.notRun} NOT RUN. NOT RUN is not a pass: it names a check the spec asks for that is not built or not recorded.`);
+  process.exitCode = t.exit;
+} else if (command === "demo") {
+  await demo({ sampleDir: values.out, prices: values.prices, cassetteDir: values.cassettes, out: (t) => console.log(t) });
 } else if (command === "bill") {
   const since = values.since ?? "0000-00-00";
   const until = values.until ?? "9999-99-99";
@@ -236,7 +258,7 @@ Ctrl+C stops it.`);
   console.log(`logs: ${sampleLogsDir(values.out)}`);
   console.log(`repos: ${sampleReposDir(values.out)}`);
 } else {
-  console.error(`unknown command "${command}". Use: card | propose | silos | ask | remember | verify-answer | gate | approve | ui | ingest | bill | autopsy | landing | replay | tunnel | sample build`);
+  console.error(`unknown command "${command}". Use: card | propose | silos | ask | remember | verify-answer | gate | approve | ui | canary | prove | demo | ingest | bill | autopsy | landing | replay | tunnel | sample build`);
   process.exitCode = 2;
 }
 db.close();

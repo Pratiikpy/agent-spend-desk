@@ -24,3 +24,7 @@ One row per session. Attach a screenshot under `docs/submission/evidence/cursor/
 ## What to say in the sponsor explanation
 
 Draft from real rows above only: which Cursor features we used, for what, with at least two concrete examples (a refactor, a debugging session, a generated test), and what the effect was.
+
+## Status as of 2026-10-22 (written so that no claim outruns the evidence)
+
+No Cursor session has been logged. Every commit so far was produced in a terminal with Claude Code, an assistant that Cursor's rules permit but that is not Cursor. `.cursor/rules/` mirrors the project standards and is the only Cursor artefact in the repository. The sponsor explanation therefore states no Cursor use beyond what the table above records, and the table is empty. Until real sessions are logged here, with a screenshot each, the explanation says so plainly.

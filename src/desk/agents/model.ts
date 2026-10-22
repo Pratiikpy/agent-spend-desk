@@ -26,6 +26,8 @@ export interface ModelRequest {
   /** Ask for a JSON object as the reply. */
   json?: boolean;
   maxTokens?: number;
+  /** Sampling temperature; 0 unless a caller (the canary) wants real sampling noise. */
+  temperature?: number;
 }
 
 export interface ToolCall {
@@ -130,7 +132,7 @@ export class OpenAiPort implements ModelPort {
       model: this.cfg.model,
       messages: request.messages,
       max_tokens: request.maxTokens ?? 1024,
-      temperature: 0,
+      temperature: request.temperature ?? 0,
       chat_template_kwargs: { enable_thinking: false },
     };
     if (request.tools && request.tools.length > 0) {

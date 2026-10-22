@@ -371,3 +371,25 @@ Prateek accepted the proposal. Whenever Zetaris is running, every source goes th
 - **Why:** an eight-pass idea hunt (1,970+ sources, 3,000+ quoted claims, `research/idea-hunt/`) found no idea above the 80-point bar, and the closest was the Desk at 53.4 after a hostile red team. Plumbline scored 33.0 on the same rubric after its red team (10 open weaknesses: Zelis, Cohere Health, Anterior and Microsoft's governance toolkit already ship parts of the insurer release-or-hold desk). The Desk keeps Plumbline's kernel and replaces the insurer scene with a user, a bill and a wow moment that are checkable by anyone with agent logs.
 - **Basis:** Prateek chose "Spend and Worth Desk + Plumbline core" on 2026-10-20 and asked for the best architecture, feature list and PRD built by copying what the best repositories do.
 - **Limits:** no idea cleared 80; scores are agent judgement with attached evidence; the leaders' quotes were NOT re-opened after the final round; all 34 repository profiles (57 to 90) were read through the GitHub API without running the code; the canary and replay statistics are unproven until the simulation runs. Reversible: keep the Plumbline spec v5.3 and PRD v3.0 untouched.
+
+---
+
+## D-037 · 2026-10-22 · Build in the main session; no parallel subagents
+
+- **Decision:** the Desk is built directly, one piece at a time, each tested before the next. Six parallel forks were started and stopped by Prateek the same day; the half-written, untested files they left were either finished and tested here (gate, dossier, verifier, canary, Ask, engines) or deleted (task replay).
+- **Why:** token cost and incoherent partial work. Recorded in the user-level instructions.
+
+## D-038 · 2026-10-22 · Route replay of recorded tasks (DK7) is not built
+
+- **Decision:** not built, and listed as NOT RUN by `desk prove`. The policy replay, the wind tunnel and the held-out proposal check are built and tested.
+- **Why:** a cheaper-route replay needs recorded tool results for real tasks and a priced route; the sample is constructed, the Nemotron route has no verified price, and a replay on invented prices would be the "claim without evidence" the project forbids. The fork's task-replay code (1,700 lines, no tests) was deleted rather than shipped.
+
+## D-039 · 2026-10-22 · Dollar figures round half up everywhere
+
+- **Decision:** `formatUsd` rounds to the nearest cent. It truncated before. The card, the bill, answers, the approval card and the dossier now show the same cents, and the Auditor's figure check agrees with the verifier's rounding.
+- **Why:** a one-cent difference between the proposal report and its dossier appeared in the first end-to-end run.
+
+## D-040 · 2026-10-22 · The canary is real model runs on assigned dates
+
+- **Decision:** a 16-task pack with checkers that read text (no model output is executed). The scenario series is one real run per day and arm against NVIDIA's API; day 1 is 30 September so that day 15 is the 14 October the sample plants its own change on. The primary arm serves nemotron-3.5-super-120b until day 14 and nemotron-3.5-lightning-30b from day 15; the control arm serves nemotron-3-ultra-550b throughout. The served model id is read from each reply. Dates are assigned, the switch is on purpose, and every card says so.
+- **Why:** the sample has no real prompts to replay, a simulated series would prove only the simulator, and real runs show real sampling noise. nemotron-3-nano-omni (the first control) answered HTTP 429 on about a quarter of attempts and was replaced.
