@@ -1,0 +1,16 @@
+{
+  "key": "220470fdba0dd25910d50a59b10e150b",
+  "recordedAt": "2026-10-22T16:49:47.286Z",
+  "role": "policy_drafter",
+  "response": {
+    "content": "{\"add_rules\": [{\"id\": \"stop-loops\", \"kind\": \"forbid\", \"when\": {\"waste_rule\": {\"in\": [\"C-LOOP-1\"]}, \"recoverable_usd\": {\"gt\": \"152.73\"}}, \"action\": \"pause_with_checkpoint\"}, {\"id\": \"stop-fanout\", \"kind\": \"forbid\", \"when\": {\"waste_rule\": {\"in\": [\"C-FANOUT-1\"]}, \"recoverable_usd\": {\"gt\": \"5171.07\"}}, \"action\": \"pause_with_checkpoint\"}, {\"id\": \"stop-idle\", \"kind\": \"forbid\", \"when\": {\"waste_rule\": {\"in\": [\"C-IDLE-1\"]}, \"recoverable_usd\": {\"gt\": \"16.14\"}}, \"action\": \"pause_with_checkpoint\"}]}",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 401,
+      "outputTokens": 196,
+      "reasoningTokens": 0
+    }
+  }
+}

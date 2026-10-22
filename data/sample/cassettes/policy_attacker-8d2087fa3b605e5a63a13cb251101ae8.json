@@ -1,0 +1,16 @@
+{
+  "key": "8d2087fa3b605e5a63a13cb251101ae8",
+  "recordedAt": "2026-10-22T16:49:51.871Z",
+  "role": "policy_attacker",
+  "response": {
+    "content": "{\"requests\": [{\"project\": \"alpha\", \"person\": \"alice\", \"agent\": \"agent-1\", \"model\": \"model-a\", \"task_type\": \"batch\", \"waste_rule\": \"C-FANOUT-1\", \"action\": \"continue\", \"recoverable_usd\": \"2.00\", \"day_spend_after_usd\": \"0\", \"month_spend_after_usd\": \"0\"}, {\"project\": \"beta\", \"person\": \"bob\", \"agent\": \"agent-2\", \"model\": \"model-b\", \"task_type\": \"stream\", \"waste_rule\": \"C-LOOP-1\", \"action\": \"continue\", \"recoverable_usd\": \"2.00\", \"day_spend_after_usd\": \"0\", \"month_spend_after_usd\": \"0\"}, {\"project\": \"gamma\", \"person\": \"carol\", \"agent\": \"agent-3\", \"model\": \"model-c\", \"task_type\": \"monitor\", \"waste_rule\": \"C-IDLE-1\", \"action\": \"continue\", \"recoverable_usd\": \"2.00\", \"day_spend_after_usd\": \"0\", \"month_spend_after_usd\": \"0\"}]}",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 434,
+      "outputTokens": 273,
+      "reasoningTokens": 0
+    }
+  }
+}

@@ -20,6 +20,8 @@ import { replayPolicy } from "./replay/policy-replay.ts";
 import { windTunnel } from "./replay/wind-tunnel.ts";
 import { buildSample, sampleLogsDir, sampleReposDir } from "./sample/gen.ts";
 import { runCard } from "./card/run.ts";
+import { loadDotenv } from "./env.ts";
+import { proposeCommand } from "./propose/command.ts";
 
 const DEFAULT_SNAPSHOT = "data/prices/anthropic-litellm-2026-10-22.json";
 
@@ -40,12 +42,18 @@ const { values, positionals } = parseArgs({
     months: { type: "string" },
     sample: { type: "boolean", default: false },
     "card-dir": { type: "string", default: "data/desk/card" },
+    split: { type: "string" },
+    "min-usd": { type: "string", default: "2.00" },
+    cassettes: { type: "string", default: "data/sample/cassettes" },
+    record: { type: "boolean", default: false },
+    "person-from-branch": { type: "boolean", default: false },
   },
 });
 
 const command = positionals[0] ?? "card";
 const sampleMode = values.sample || process.env.SAMPLE_MODE === "true";
-const db = command === "card" ? openLedger(":memory:") : openLedger(values.db);
+const ledgerPath = sampleMode && !process.argv.includes("--db") && command !== "card" ? join(values.out, "ledger.db") : values.db;
+const db = command === "card" ? openLedger(":memory:") : openLedger(ledgerPath);
 
 if (command === "ingest") {
   const files = findJsonlLogs(values["claude-dir"]);
@@ -73,6 +81,23 @@ if (command === "ingest") {
   console.log(r.text);
   if (r.files.length > 0) console.log(`
 written: ${r.files.join(", ")}`);
+} else if (command === "propose") {
+  loadDotenv(".env");
+  console.log(
+    await proposeCommand({
+      dbPath: ledgerPath,
+      pricesPath: values.prices,
+      policyPath: values.policy?.[0] ?? "policies/daily-cap.yaml",
+      ...(values.split ? { split: values.split } : {}),
+      minUsd: values["min-usd"],
+      cassetteDir: values.cassettes,
+      record: values.record,
+      sampleMode,
+      personFromBranch: values["person-from-branch"],
+      outDir: "data/desk/proposals",
+      env: process.env,
+    }),
+  );
 } else if (command === "bill") {
   const since = values.since ?? "0000-00-00";
   const until = values.until ?? "9999-99-99";
@@ -129,7 +154,7 @@ written: ${r.files.join(", ")}`);
 } else if (command === "replay" || command === "tunnel") {
   const since = values.since ?? "0000-00-00";
   const until = values.until ?? "9999-99-99";
-  const sessions = replaySessionsFromLedger(db, loadSnapshot(values.prices), since, until);
+  const sessions = replaySessionsFromLedger(db, loadSnapshot(values.prices), since, until, { personFromBranch: sampleMode || values["person-from-branch"] });
   for (const file of values.policy ?? []) {
     const policy = parsePolicyYaml(readFileSync(file, "utf8"));
     if (command === "replay") {
@@ -160,7 +185,7 @@ written: ${r.files.join(", ")}`);
   console.log(`logs: ${sampleLogsDir(values.out)}`);
   console.log(`repos: ${sampleReposDir(values.out)}`);
 } else {
-  console.error(`unknown command "${command}". Use: card | ingest | bill | autopsy | landing | replay | tunnel | sample build`);
+  console.error(`unknown command "${command}". Use: card | propose | ingest | bill | autopsy | landing | replay | tunnel | sample build`);
   process.exitCode = 2;
 }
 db.close();

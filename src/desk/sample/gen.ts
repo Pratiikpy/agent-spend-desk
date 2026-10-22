@@ -160,7 +160,7 @@ function genThread(r: Rng, p: Planned, spec: ThreadSpec, repoPath: string, start
     const output = int(r, 120, 2600);
     lines.push(JSON.stringify({
       parentUuid: null, isSidechain: spec.sidechain, type: "assistant", uuid: `${id}-0`, timestamp: iso(t), sessionId: p.id, requestId: `req_${id}`, apiBlockIndex: 0,
-      cwd: repoPath, gitBranch: "main", version: "sample-1",
+      cwd: repoPath, gitBranch: `${p.engineer}/${p.repo}-work`, version: "sample-1",
       message: {
         id, type: "message", role: "assistant", model, stop_reason: "tool_use",
         content: [{ type: "tool_use", id: `tu_${id}`, name: tool.name, input: tool.input }],
