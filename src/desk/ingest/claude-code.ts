@@ -16,6 +16,8 @@ export interface ParsedToolUse {
   name: string;
   /** First 16 hex characters of the SHA-256 of the canonical JSON of the tool input. The input itself is never stored. */
   inputHash: string;
+  /** For file-editing tools only: the file the tool wrote to, kept in the local ledger to link a session to commits. */
+  editedPath?: string;
 }
 
 export interface ParsedCall {
@@ -136,7 +138,10 @@ export function parseClaudeCodeLine(line: string): LineOutcome {
         if (!name) continue;
         toolNames.push(name);
         const id = text(block["id"]);
-        if (id) toolUses.push({ toolUseId: id, name, inputHash: hashInput(block["input"]) });
+        if (id) {
+          const edited = EDIT_TOOLS.has(name) ? editedPathOf(block["input"]) : undefined;
+          toolUses.push({ toolUseId: id, name, inputHash: hashInput(block["input"]), ...(edited ? { editedPath: edited } : {}) });
+        }
       }
     }
   }
@@ -215,4 +220,11 @@ function parseUserLine(d: Record<string, unknown>): LineOutcome {
   const promptId = text(d["uuid"]);
   if (!hasText || !promptId) return { kind: "ignored" };
   return { kind: "human_prompt", prompt: { promptId, sessionId, ts } };
+}
+
+const EDIT_TOOLS = new Set(["Edit", "Write", "MultiEdit", "NotebookEdit"]);
+
+function editedPathOf(input: unknown): string | undefined {
+  if (!isObject(input)) return undefined;
+  return text(input["file_path"]) ?? text(input["notebook_path"]) ?? undefined;
 }

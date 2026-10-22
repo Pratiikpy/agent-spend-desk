@@ -107,6 +107,7 @@ export async function ingestClaudeCode(
   const upsertToolResult = db.prepare(
     "INSERT OR REPLACE INTO tool_result (tool_use_id, session_id, ts, is_error, result_chars) VALUES (?, ?, ?, ?, ?)",
   );
+  const insertEdit = db.prepare("INSERT OR IGNORE INTO session_edit (tool_use_id, session_id, path, ts) VALUES (?, ?, ?, ?)");
   const insertPrompt = db.prepare("INSERT OR IGNORE INTO human_prompt (prompt_id, session_id, ts) VALUES (?, ?, ?)");
   const touched = new Set<string>();
   const touchedSessions = new Set<string>();
@@ -214,6 +215,7 @@ export async function ingestClaudeCode(
     for (const t of call.toolUses) {
       const r = insertToolCall.run(t.toolUseId, call.callId, call.sessionId, t.name, t.inputHash, call.ts);
       report.toolCalls += Number(r.changes);
+      if (t.editedPath) insertEdit.run(t.toolUseId, call.sessionId, t.editedPath, call.ts);
     }
   }
 }

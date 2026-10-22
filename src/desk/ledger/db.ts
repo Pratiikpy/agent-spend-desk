@@ -142,7 +142,57 @@ CREATE TABLE human_prompt (
 CREATE INDEX human_prompt_session_ts ON human_prompt (session_id, ts);
 `;
 
-const MIGRATIONS: readonly string[] = [SCHEMA_V1, SCHEMA_V2];
+const SCHEMA_V3 = `
+-- Files a session wrote to (from file-editing tools). Local only: used to link sessions to commits.
+CREATE TABLE session_edit (
+  tool_use_id TEXT PRIMARY KEY REFERENCES tool_call (tool_use_id),
+  session_id TEXT NOT NULL,
+  path TEXT NOT NULL,
+  ts TEXT NOT NULL
+);
+CREATE INDEX session_edit_session ON session_edit (session_id);
+
+CREATE TABLE repo (
+  repo_id INTEGER PRIMARY KEY,
+  root TEXT NOT NULL UNIQUE,
+  default_ref TEXT NOT NULL,
+  scanned_at TEXT NOT NULL
+);
+
+CREATE TABLE git_commit (
+  repo_id INTEGER NOT NULL REFERENCES repo (repo_id),
+  sha TEXT NOT NULL,
+  authored_at TEXT NOT NULL,
+  author_email TEXT NOT NULL,
+  agent_trailer INTEGER NOT NULL CHECK (agent_trailer IN (0, 1)),
+  files TEXT NOT NULL,
+  merged INTEGER NOT NULL CHECK (merged IN (0, 1)),
+  reverted INTEGER NOT NULL CHECK (reverted IN (0, 1)),
+  PRIMARY KEY (repo_id, sha)
+);
+CREATE INDEX git_commit_time ON git_commit (authored_at);
+
+CREATE TABLE session_commit (
+  session_id TEXT NOT NULL,
+  repo_id INTEGER NOT NULL,
+  sha TEXT NOT NULL,
+  method TEXT NOT NULL CHECK (method IN ('explicit', 'trailer_window', 'file_overlap', 'time_window')),
+  confidence TEXT NOT NULL CHECK (confidence IN ('high', 'medium', 'low')),
+  PRIMARY KEY (session_id, repo_id, sha),
+  FOREIGN KEY (repo_id, sha) REFERENCES git_commit (repo_id, sha)
+);
+
+-- The furthest a session's work got, derived from git alone. A state needing CI (checks_green) is not claimed here.
+CREATE TABLE session_outcome (
+  session_id TEXT PRIMARY KEY,
+  state TEXT NOT NULL CHECK (state IN ('unlinked', 'committed', 'merged', 'kept', 'reverted')),
+  best_confidence TEXT CHECK (best_confidence IN ('high', 'medium', 'low')),
+  commits INTEGER NOT NULL,
+  computed_at TEXT NOT NULL
+);
+`;
+
+const MIGRATIONS: readonly string[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3];
 
 export function openLedger(path: string): Ledger {
   if (path !== ":memory:") mkdirSync(dirname(path), { recursive: true });

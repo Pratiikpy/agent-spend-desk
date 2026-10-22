@@ -7,6 +7,9 @@ import { renderAutopsyText } from "./autopsy/card.ts";
 import { buildAutopsy, heaviestWindow } from "./autopsy/engine.ts";
 import { loadAutopsyCalls } from "./autopsy/load.ts";
 import { openLedger } from "./ledger/db.ts";
+import { landingBreakdown } from "./outcomes/breakdown.ts";
+import { findRepoRoot } from "./outcomes/git.ts";
+import { linkOutcomes } from "./outcomes/link.ts";
 import { ingestClaudeCode } from "./ledger/ingest.ts";
 import { formatUsd } from "./money.ts";
 import { loadSnapshot } from "./pricing/pricebook.ts";
@@ -22,6 +25,7 @@ const { values, positionals } = parseArgs({
     since: { type: "string" },
     until: { type: "string" },
     hours: { type: "string", default: "5" },
+    repo: { type: "string", multiple: true },
     days: { type: "string", default: "14" },
   },
 });
@@ -66,8 +70,33 @@ if (command === "ingest") {
   } else {
     console.log(renderAutopsyText(buildAutopsy(calls, window.startMs, window.endMs)));
   }
+} else if (command === "landing") {
+  let repos = values.repo ?? [];
+  if (repos.length === 0) {
+    // No repository given: find the git roots of the folders the sessions ran in.
+    const folders = db.prepare("SELECT DISTINCT project_path FROM session WHERE project_path IS NOT NULL").all() as unknown as { project_path: string }[];
+    const roots = new Set<string>();
+    for (const f of folders) {
+      const root = findRepoRoot(f.project_path);
+      if (root) roots.add(root);
+    }
+    repos = [...roots];
+    console.log(`found ${repos.length} repositories from session folders`);
+  }
+  const report = linkOutcomes(db, repos, Date.now());
+  console.log(`read ${report.repos} repositories, ${report.commits} commits; ${report.sessions} sessions, ${report.links} links`);
+  const since = values.since ?? "0000-00-00";
+  const until = values.until ?? "9999-99-99";
+  const b = landingBreakdown(db, since, until);
+  for (const state of ["kept", "merged", "committed", "reverted", "unlinked"] as const) {
+    const x = b.byState[state];
+    const share = b.totalMicros === 0 ? 0 : (x.micros / b.totalMicros) * 100;
+    const note = state === "unlinked" ? "  (cannot be tied to a commit from these sources: unknowable, not waste)" : "";
+    console.log(`${state.padEnd(10)} ${String(x.sessions).padStart(6)} sessions  ${formatUsd(x.micros).padStart(12)}  ${share.toFixed(1).padStart(5)}%${note}`);
+  }
+  console.log(`estimated list-price total ${formatUsd(b.totalMicros)}; weakly linked (low confidence): ${formatUsd(b.lowConfidenceMicros)}`);
 } else {
-  console.error(`unknown command "${command}". Use: ingest | bill | autopsy`);
+  console.error(`unknown command "${command}". Use: ingest | bill | autopsy | landing`);
   process.exitCode = 2;
 }
 db.close();
