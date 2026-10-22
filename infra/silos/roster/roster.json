@@ -1,0 +1,5 @@
+[
+  {"team": "payments",  "lead": "Team Lead A", "seats": 4, "seat_plan": "claude-max-5x", "seat_price_usd": 100},
+  {"team": "discovery", "lead": "Team Lead B", "seats": 3, "seat_plan": "claude-max-5x", "seat_price_usd": 100},
+  {"team": "growth",    "lead": "Team Lead C", "seats": 2, "seat_plan": "cursor-pro",    "seat_price_usd": 20}
+]

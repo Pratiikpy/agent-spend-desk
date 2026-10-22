@@ -55,3 +55,19 @@ UI 3000, REST 8888 (`/api/v1.0`), JDBC 10000.
 ## Correction and new verified fact (2026-10-17)
 
 The empty results for `SHOW DATASOURCES` and `GET /datasource/datasources` are explained: the organizers' discovery command is `SHOW LIGHTNING DATABASES` (setup guide, `docs/event/06-...`, step 1.9). Run over the REST route after the stack restarted, it returned HTTP 200 with two rows, `NY_TAXI` (id 6, "NY Taxi sample data") and `TPCDS_DB` (id 307, "TPC-DS benchmark sample data"); `SELECT 1` again returned 200. So the earlier "NOT VERIFIED as to cause" is closed for these two endpoints. Not yet run: the organizers' Pikachu recipe and the registration of our own synthetic silos (files on the laptop are invisible to Zetaris; use a local REST service or an S3-style bucket).
+
+## Verified 2026-10-22: our own sources and a cross-source join (gate Z-G1, partly)
+
+The local stack lives in WSL (Ubuntu-22.04) and stops with the distro, so a long-running WSL process is needed to keep it up; Windows reaches it at `localhost:3000` (UI) and `localhost:8888` (REST). Run with the helper `python scripts/zetaris.py "<one statement, no trailing semicolon>"`.
+
+| Check | Result |
+|---|---|
+| Live query | `SHOW LIGHTNING DATABASES` returns `NY_TAXI` and `TPCDS_DB` over the REST route |
+| Dialect of this build | The open-source `REGISTER OR REPLACE JDBC DATASOURCE ... NAMESPACE lightning.datasource...` statement is not accepted (parse error). The commands reference in `zetaris/getting-started` (`docs/guides/zetaris-lightning-sql-commands.md`) applies: `CREATE DATASOURCE <name> DESCRIBE BY "..." OPTIONS (jdbcdriver "...", jdbcurl "...", username "...", password "...")` then `REGISTER DATASOURCE TABLES FROM <name>` |
+| Our own JDBC source | A synthetic Postgres (`infra/silos/start-ci-silo.sh`, container `desk-silo-ci` on the `zetaris_default` Docker network) registered as `ci_silo`; queried as `ci_silo.pull_requests`; an aggregate returned the expected counts |
+| Our own REST source | A static JSON endpoint (`infra/silos/start-roster-silo.sh`, container `desk-silo-roster`) registered with `CREATE LIGHTNING DATABASE desk_roster` and `CREATE LIGHTNING REST TABLE roster FROM desk_roster REQUEST (endpoint ..., method "GET", http_encoding "URLENCODED", response_type "JSON", insecure_ssl "false") HEADER () BODY ()`; queried as `desk_roster.roster` |
+| Cross-source join | `ci_silo.pull_requests` joined to `desk_roster.roster` on `team` in one statement: correct grouped result (3 rows) and a 7-row detail result |
+| Row limit | The REST body's `limit` parameter was 100; 7 rows came back, so results above 5 rows work |
+| Still open | A third source of file type (invoices as CSV or Parquet in object storage), the Unified Semantic Layer, JDBC access from DBeaver, and what a judge without Docker sees (the fallback path) |
+
+Containers need the Zetaris containers' network name (`zetaris_default`) so that the Zetaris driver can reach them by container name; a source on the Windows host or a laptop file path is not reachable (documented by Zetaris).
