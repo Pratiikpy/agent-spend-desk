@@ -18,6 +18,7 @@ import { parsePolicyYaml } from "./policy/parse.ts";
 import { replaySessionsFromLedger } from "./replay/from-ledger.ts";
 import { replayPolicy } from "./replay/policy-replay.ts";
 import { windTunnel } from "./replay/wind-tunnel.ts";
+import { buildSample, sampleLogsDir, sampleReposDir } from "./sample/gen.ts";
 
 const DEFAULT_SNAPSHOT = "data/prices/anthropic-litellm-2026-10-22.json";
 
@@ -33,6 +34,9 @@ const { values, positionals } = parseArgs({
     repo: { type: "string", multiple: true },
     days: { type: "string", default: "14" },
     policy: { type: "string", multiple: true },
+    out: { type: "string", default: "data/desk/sample" },
+    seed: { type: "string" },
+    months: { type: "string" },
   },
 });
 
@@ -110,7 +114,8 @@ if (command === "ingest") {
     if (command === "replay") {
       const r = replayPolicy(policy, sessions);
       console.log(`${file}: ${sessions.length} sessions, total ${formatUsd(r.totalMicros)}; upper bound on spend avoided ${formatUsd(r.savedMicros)}, assuming a paused session does nothing more (${r.totalMicros === 0 ? 0 : ((r.savedMicros / r.totalMicros) * 100).toFixed(1)}%)`);
-      console.log(`  paused ${r.paused.length} sessions, asked ${r.askedCalls} times; landed sessions that would have been paused: ${r.landedBlocked.length} of ${r.landedTotal}`);
+      const byDefault = r.paused.filter((p) => p.verdictReason.includes("default deny")).length;
+      console.log(`  paused ${r.paused.length} sessions (${byDefault} because no permit matched, ${r.paused.length - byDefault} by a rule), asked ${r.askedCalls} times; landed sessions that would have been paused: ${r.landedBlocked.length} of ${r.landedTotal}`);
     } else {
       const t = windTunnel(policy, sessions);
       if (t.status !== "ok") {
@@ -123,8 +128,18 @@ if (command === "ingest") {
       if (t.historyMayNotPredict) console.log("  warning: the last four weeks differ from the earlier history; this month may not look like the past");
     }
   }
+} else if (command === "sample") {
+  if (positionals[1] !== "build") {
+    console.error("Use: sample build [--out dir] [--seed n] [--months n]");
+    process.exit(2);
+  }
+  const started = Date.now();
+  const truth = buildSample({ outDir: values.out, ...(values.seed ? { seed: Number(values.seed) } : {}), ...(values.months ? { months: Number(values.months) } : {}) });
+  console.log(`built a constructed scenario: ${truth.sessions.length} sessions over ${truth.months} months in ${((Date.now() - started) / 1000).toFixed(1)}s`);
+  console.log(`logs: ${sampleLogsDir(values.out)}`);
+  console.log(`repos: ${sampleReposDir(values.out)}`);
 } else {
-  console.error(`unknown command "${command}". Use: ingest | bill | autopsy | landing | replay | tunnel`);
+  console.error(`unknown command "${command}". Use: ingest | bill | autopsy | landing | replay | tunnel | sample build`);
   process.exitCode = 2;
 }
 db.close();

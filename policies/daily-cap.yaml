@@ -1,6 +1,6 @@
 version: 1
 rules:
-  - id: allow-claude-capped
+  - id: allow-capped
     kind: permit
-    when: { model: { in: ["claude-*"] } }
+    when: {}
     cap: { window: day, max_usd: "150.00", warn_at: 0.5, ask_at: 0.8 }

@@ -41,13 +41,16 @@ export function loadAutopsyCalls(db: Ledger, snapshot: PriceSnapshot, sinceIso: 
     .all(sinceIso, untilIso) as unknown as CallRow[];
   if (rows.length === 0) return [];
 
-  const toolsByCall = new Map<string, { name: string; inputHash: string }[]>();
+  const toolsByCall = new Map<string, { name: string; inputHash: string; resultIsError: boolean }[]>();
   const toolRows = db
-    .prepare("SELECT t.call_id, t.name, t.input_hash FROM tool_call t JOIN model_call m ON m.call_id = t.call_id WHERE m.ts >= ? AND m.ts <= ?")
-    .all(sinceIso, untilIso) as unknown as { call_id: string; name: string; input_hash: string }[];
+    .prepare(
+      `SELECT t.call_id, t.name, t.input_hash, COALESCE(r.is_error, 0) AS is_error FROM tool_call t
+       JOIN model_call m ON m.call_id = t.call_id LEFT JOIN tool_result r ON r.tool_use_id = t.tool_use_id WHERE m.ts >= ? AND m.ts <= ?`,
+    )
+    .all(sinceIso, untilIso) as unknown as { call_id: string; name: string; input_hash: string; is_error: number }[];
   for (const t of toolRows) {
     const list = toolsByCall.get(t.call_id) ?? [];
-    list.push({ name: t.name, inputHash: t.input_hash });
+    list.push({ name: t.name, inputHash: t.input_hash, resultIsError: t.is_error === 1 });
     toolsByCall.set(t.call_id, list);
   }
 

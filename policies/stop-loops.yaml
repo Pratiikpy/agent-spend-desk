@@ -1,8 +1,8 @@
 version: 1
 rules:
-  - id: allow-claude
+  - id: allow-all
     kind: permit
-    when: { model: { in: ["claude-*"] } }
+    when: {}
   - id: stop-loops
     kind: forbid
     when:

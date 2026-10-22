@@ -19,6 +19,8 @@ interface Spec {
   sidechain?: boolean;
   thread?: string;
   tools?: [string, string][];
+  /** The tool results came back as errors (a failing command). Default true so repeated tools count as a loop. */
+  errors?: boolean;
   toolResultChars?: number;
   prompt?: boolean;
   sincePrompt?: number | null;
@@ -42,7 +44,7 @@ function call(s: Spec): AutopsyCall {
     tokens,
     readMicrosPerToken: OPUS5.cacheReadPerMTokMicros / 1_000_000,
     micros: s.unpriced ? null : { input: c.input, output: c.output, read: c.cacheRead, write5m: c.cacheWrite5m, write1h: c.cacheWrite1h },
-    tools: (s.tools ?? []).map(([name, inputHash]) => ({ name, inputHash })),
+    tools: (s.tools ?? []).map(([name, inputHash]) => ({ name, inputHash, resultIsError: s.errors ?? true })),
     toolResultChars: s.toolResultChars ?? 0,
     humanPromptBefore: s.prompt ?? false,
     msSinceHumanPrompt: s.sincePrompt === undefined ? 1 * MIN : s.sincePrompt === null ? null : s.sincePrompt * MIN,
@@ -121,6 +123,15 @@ describe("limit autopsy", () => {
     const a = run(calls);
     expect(a.loopCalls).toBe(2);
     expect(micros(a, "loops")).toBeGreaterThan(0);
+  });
+
+  it("does not call the same successful read repeated a loop", () => {
+    const same: [string, string][] = [["Read", "cafe"]];
+    const calls = [
+      call({ t: 0, write5m: 10_000 }),
+      ...[1, 2, 3, 4, 5].map((t) => call({ t, read: 10_000 + t * 300, write5m: 300, tools: same, toolResultChars: 100, errors: false })),
+    ];
+    expect(run(calls).loopCalls).toBe(0);
   });
 
   it("does not call different inputs a loop, and resets after a human prompt", () => {

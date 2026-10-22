@@ -1,7 +1,7 @@
 import { resolve, sep } from "node:path";
 
 import type { Ledger } from "../ledger/db.ts";
-import { linkSession, outcomeOf, LANDING_ORDER, type Confidence, type LandingState, type Link, type SessionFacts } from "./attribute.ts";
+import { assignCommits, outcomeOf, type Confidence, type LandingState, type Link, type SessionFacts } from "./attribute.ts";
 import { relativeTo, scanRepo, type GitCommit } from "./git.ts";
 
 export interface LinkReport {
@@ -38,10 +38,13 @@ export function linkOutcomes(db: Ledger, repoRoots: readonly string[], nowMs: nu
     )
     .all() as unknown as { session_id: string; project_path: string | null; start_ts: string; end_ts: string; calls: number }[];
   const editsBySession = new Map<string, string[]>();
-  for (const e of db.prepare("SELECT session_id, path FROM session_edit").all() as unknown as { session_id: string; path: string }[]) {
+  const lastEditBySession = new Map<string, number>();
+  for (const e of db.prepare("SELECT session_id, path, ts FROM session_edit").all() as unknown as { session_id: string; path: string; ts: string }[]) {
     const list = editsBySession.get(e.session_id) ?? [];
     list.push(e.path);
     editsBySession.set(e.session_id, list);
+    const t = Date.parse(e.ts);
+    if (!Number.isNaN(t)) lastEditBySession.set(e.session_id, Math.max(lastEditBySession.get(e.session_id) ?? 0, t));
   }
 
   const earliest = sessions.reduce((min, s) => (s.start_ts < min ? s.start_ts : min), sessions[0]?.start_ts ?? new Date(nowMs).toISOString());
@@ -69,22 +72,20 @@ export function linkOutcomes(db: Ledger, repoRoots: readonly string[], nowMs: nu
         report.commits += 1;
       }
       const commitMap = new Map(scan.commits.map((c) => [c.sha, c]));
+      const facts: SessionFacts[] = [];
       for (const s of sessions) {
         const edited = (editsBySession.get(s.session_id) ?? []).map((p) => relativeTo(root, p)).filter((p): p is string => p !== null);
         const inRepo = (s.project_path !== null && isUnder(root, s.project_path)) || edited.length > 0;
-        if (!inRepo) continue;
-        const facts: SessionFacts = { sessionId: s.session_id, startMs: Date.parse(s.start_ts), endMs: Date.parse(s.end_ts), calls: s.calls, editedFiles: edited };
-        const links = linkSession(facts, scan.commits);
-        if (links.length === 0) continue;
-        const entry = bySession.get(s.session_id) ?? { links: [], commits: new Map<string, GitCommit>() };
-        for (const l of links) {
-          entry.links.push(l);
-          const c = commitMap.get(l.sha);
-          if (c) entry.commits.set(l.sha, c);
-          insertLink.run(s.session_id, repoId, l.sha, l.method, l.confidence);
-          report.links += 1;
-        }
-        bySession.set(s.session_id, entry);
+        if (inRepo) facts.push({ sessionId: s.session_id, startMs: Date.parse(s.start_ts), endMs: Date.parse(s.end_ts), calls: s.calls, editedFiles: edited, ...(lastEditBySession.has(s.session_id) ? { lastEditMs: lastEditBySession.get(s.session_id)! } : {}) });
+      }
+      for (const l of assignCommits(facts, scan.commits)) {
+        const entry = bySession.get(l.sessionId) ?? { links: [], commits: new Map<string, GitCommit>() };
+        entry.links.push(l);
+        const c = commitMap.get(l.sha);
+        if (c) entry.commits.set(l.sha, c);
+        insertLink.run(l.sessionId, repoId, l.sha, l.method, l.confidence);
+        report.links += 1;
+        bySession.set(l.sessionId, entry);
       }
     }
 
@@ -101,6 +102,5 @@ export function linkOutcomes(db: Ledger, repoRoots: readonly string[], nowMs: nu
     db.exec("ROLLBACK");
     throw error;
   }
-  void LANDING_ORDER;
   return report;
 }

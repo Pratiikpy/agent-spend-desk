@@ -3,7 +3,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { linkSession, outcomeOf, type SessionFacts } from "../../src/desk/outcomes/attribute.ts";
+import { assignCommits, outcomeOf, type SessionFacts } from "../../src/desk/outcomes/attribute.ts";
 import { scanRepo, relativeTo, findRepoRoot, type GitCommit } from "../../src/desk/outcomes/git.ts";
 import { linkOutcomes } from "../../src/desk/outcomes/link.ts";
 import { openLedger, type Ledger } from "../../src/desk/ledger/db.ts";
@@ -21,32 +21,56 @@ const session = (over: Partial<SessionFacts> = {}): SessionFacts => ({
 });
 
 describe("attribution", () => {
-  it("rates an agent trailer inside the window high", () => {
-    const [l] = linkSession(session(), [commit({ agentTrailer: true })]);
-    expect(l).toMatchObject({ method: "trailer_window", confidence: "high" });
+  const one = (sess: SessionFacts, c: GitCommit) => assignCommits([sess], [c])[0];
+
+  it("rates an agent trailer, the matching files and the window high", () => {
+    expect(one(session(), commit({ agentTrailer: true }))).toMatchObject({ method: "trailer_window", confidence: "high" });
   });
 
-  it("rates changed files inside the window medium, and files alone low", () => {
-    expect(linkSession(session(), [commit()])[0]).toMatchObject({ method: "file_overlap", confidence: "medium" });
-    expect(linkSession(session(), [commit({ authoredAt: "2026-10-25T10:00:00Z" })])[0]).toMatchObject({ method: "file_overlap", confidence: "low" });
+  it("rates matching files inside the window medium, and files outside the window low", () => {
+    expect(one(session(), commit())).toMatchObject({ method: "file_overlap", confidence: "medium" });
+    expect(one(session(), commit({ authoredAt: "2026-10-25T10:00:00Z" }))).toMatchObject({ method: "file_overlap", confidence: "low" });
+  });
+
+  it("needs at least half of the commit's files to have been written by the session", () => {
+    expect(one(session(), commit({ files: ["src/a.ts", "x.ts", "y.ts"] }))).toMatchObject({ confidence: "low" });
+    expect(one(session(), commit({ files: ["src/a.ts", "x.ts"] }))).toMatchObject({ confidence: "medium" });
   });
 
   it("gives the time window alone only to a session with enough calls", () => {
     const c = commit({ files: ["other.ts"] });
-    expect(linkSession(session({ editedFiles: [], calls: 2 }), [c])).toEqual([]);
-    expect(linkSession(session({ editedFiles: [], calls: 9 }), [c])[0]).toMatchObject({ method: "time_window", confidence: "low" });
+    expect(assignCommits([session({ editedFiles: [], calls: 2 })], [c])).toEqual([]);
+    expect(assignCommits([session({ editedFiles: [], calls: 9 })], [c])[0]).toMatchObject({ method: "time_window", confidence: "low" });
   });
 
   it("allows a commit up to 30 minutes after the session and not 31", () => {
     const end = Date.parse("2026-10-20T11:00:00Z");
     const near = commit({ files: ["x"], authoredAt: new Date(end + 30 * 60_000).toISOString() });
     const far = commit({ files: ["x"], authoredAt: new Date(end + 31 * 60_000).toISOString() });
-    expect(linkSession(session({ editedFiles: [] }), [near])).toHaveLength(1);
-    expect(linkSession(session({ editedFiles: [] }), [far])).toHaveLength(0);
+    expect(assignCommits([session({ editedFiles: [] })], [near])).toHaveLength(1);
+    expect(assignCommits([session({ editedFiles: [] })], [far])).toHaveLength(0);
   });
 
   it("ignores a commit with a bad date instead of crashing", () => {
-    expect(linkSession(session(), [commit({ authoredAt: "not a date" })])).toEqual([]);
+    expect(assignCommits([session()], [commit({ authoredAt: "not a date" })])).toEqual([]);
+  });
+
+  it("gives one commit to the one session that wrote its files, not to every session in the window", () => {
+    const author = session({ sessionId: "author", editedFiles: ["src/a.ts"], lastEditMs: Date.parse("2026-10-20T10:15:00Z") });
+    const bystander = session({ sessionId: "other", editedFiles: ["src/zzz.ts"], calls: 30 });
+    const links = assignCommits([bystander, author], [commit()]);
+    expect(links).toEqual([expect.objectContaining({ sessionId: "author", confidence: "medium" })]);
+  });
+
+  it("prefers the session that finished its edit just before the commit over one still running", () => {
+    const author = session({ sessionId: "author", endMs: Date.parse("2026-10-20T10:12:00Z"), lastEditMs: Date.parse("2026-10-20T10:12:00Z") });
+    const running = session({ sessionId: "running", endMs: Date.parse("2026-10-20T11:30:00Z"), lastEditMs: Date.parse("2026-10-20T10:55:00Z") });
+    expect(assignCommits([running, author], [commit()])).toEqual([expect.objectContaining({ sessionId: "author" })]);
+  });
+
+  it("links two equally good sessions at low confidence, because the data cannot tell them apart", () => {
+    const links = assignCommits([session({ sessionId: "a" }), session({ sessionId: "b" })], [commit()]);
+    expect(links.map((l) => [l.sessionId, l.confidence])).toEqual([["a", "low"], ["b", "low"]]);
   });
 });
 
@@ -61,6 +85,12 @@ describe("landing state", () => {
     expect(outcomeOf([link(m.sha)], new Map([[m.sha, m]]), NOW).state).toBe("merged");
     const k = commit({ sha: "d".repeat(40), merged: true, authoredAt: "2026-10-01T00:00:00Z" });
     expect(outcomeOf([link(k.sha)], new Map([[k.sha, k]]), NOW).state).toBe("kept");
+  });
+
+  it("lets a low-confidence link count but not move the state", () => {
+    const m = commit({ sha: "f".repeat(40), merged: true, reverted: true, authoredAt: "2026-10-01T00:00:00Z" });
+    const weak = { sessionId: "s1", sha: m.sha, method: "time_window" as const, confidence: "low" as const };
+    expect(outcomeOf([weak], new Map([[m.sha, m]]), NOW)).toEqual({ state: "unlinked", bestConfidence: "low", commits: 1 });
   });
 
   it("lets a revert win over a merge, because undone work did not land", () => {

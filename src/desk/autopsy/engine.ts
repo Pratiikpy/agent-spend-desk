@@ -19,7 +19,7 @@ export type Cause = (typeof CAUSES)[number];
 export const CONFIG = {
   /** A call with no prompt, no tool result and more than this long since the last human prompt is background work. */
   idleAfterPromptMs: 30 * 60 * 1000,
-  /** The same tool with identical input this many times within `loopWindowCalls` calls is a loop from that call on. */
+  /** The same tool with identical input failing this many times within `loopWindowCalls` calls is a loop from that call on. */
   loopRepeats: 3,
   loopWindowCalls: 12,
   /** A call whose cache read falls below this share of the previous context lost the cache. */
@@ -35,6 +35,8 @@ export const CONFIG = {
 export interface AutopsyToolUse {
   name: string;
   inputHash: string;
+  /** The tool result came back as an error. A loop is a command that keeps failing the same way. */
+  resultIsError?: boolean;
 }
 
 export interface AutopsyCall {
@@ -123,7 +125,9 @@ export function analyseThread(calls: readonly AutopsyCall[]): Map<string, PerCal
 
     // loops: count identical tool signatures over the last few calls, reset by a human prompt
     if (call.humanPromptBefore) recentSignatures.length = 0;
-    const signatures = call.tools.map((t) => `${t.name}#${t.inputHash}`);
+    // Only failing tool uses can start or continue a loop. Reading the same file again is waste of another kind
+    // (re-sent history), and flagging it as a loop was found to give false positives against planted truth.
+    const signatures = call.tools.filter((t) => t.resultIsError === true).map((t) => `${t.name}#${t.inputHash}`);
     let loop = false;
     for (const s of signatures) {
       let seen = 0;

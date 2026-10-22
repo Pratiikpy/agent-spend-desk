@@ -24,8 +24,8 @@ SKIP_DIRS = {
     ".git", "node_modules", ".venv", "venv", "__pycache__", ".mypy_cache",
     ".pytest_cache", ".ruff_cache", "dist", "build", ".next", "logs",
 }
-# Gitignored material is never published: organizer docs and third-party reference clones.
-SKIP_PATH_PREFIXES = ("docs/event/", "research/")
+# Gitignored material is never published: organizer docs, third-party reference clones and the local Desk ledger and generated samples.
+SKIP_PATH_PREFIXES = ("docs/event/", "research/", "data/desk/")
 SKIP_SUFFIXES = {
     ".pdf", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".mp4", ".mov", ".zip",
     ".gz", ".tar", ".parquet", ".bin", ".pt", ".pth", ".safetensors", ".ico",
