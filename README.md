@@ -19,11 +19,11 @@ desk. is an agent spend and worth desk. It is for the person who pays for AI cod
 | Why did it change? | An answer from typed, read-only steps the Auditor checks; engines switchable | `desk ask` |
 | Can it stop a runaway? | A local gate Claude Code calls before each tool use; fails closed | `desk gate serve` |
 
-Everything runs on screens too: `npm run desk -- ui` opens ten screens (brief, bill, autopsy, sessions, outcomes, policy, ask, org data, dossiers, doctor) on a local, read-only server.
+Everything runs on screens too: `npm run desk -- ui` opens eleven screens (brief, bill, autopsy, sessions, outcomes, policy, canary, ask, org data, dossiers, doctor) on a local, read-only server.
 
 ## Run it
 
-Needs Node 22.19 or later (the ledger is Node's built-in SQLite). Nothing else for the sample.
+Needs Node 22.19 or later (the ledger is Node's built-in SQLite). Tested on Node 24.20; Node 22 is NOT VERIFIED. Nothing else for the sample.
 
 ```
 git clone <this repository> && cd <folder>
@@ -38,6 +38,10 @@ npm test                          # the unit and integration tests
 On Windows PowerShell the same commands work; use `$env:SAMPLE_MODE="true"` instead of `--sample` if you prefer the variable.
 
 Your own logs: `npm run desk` reads `~/.claude/projects` read-only. Add `--repo <path>` to tie sessions to commits. Nothing is written outside `data/desk/`.
+
+### Live sponsors (optional)
+
+With keys in `.env` (names in `.env.example`) the same commands run live. `desk propose --record` and `desk ask --record` call Nemotron and record the replies; `desk silos --record` records the Zetaris answers. Zetaris runs locally in Docker (install steps and every verified fact: `docs/sponsors/zetaris-local-setup.md`); the three synthetic silos start with `infra/silos/start-ci-silo.sh`, `start-roster-silo.sh` and `start-invoices-silo.sh`, and `desk silos seed` plus `infra/silos/load-sample-silos.sh` load them from the sample. `desk canary run` runs the day's pack on the model in `.env`.
 
 ### What the first run does
 

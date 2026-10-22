@@ -28,7 +28,7 @@ See `docs/sponsors/cursor-usage-log.md`. At the time of writing no Cursor sessio
 
 - **Where NVIDIA technology contributes:** Nemotron, through NVIDIA's OpenAI-compatible API, is the model behind every language role: the policy Drafter and Attacker, the Ask planner (which calls a `plan_answer` tool whose argument is a typed program), the Explainer, and the canary's runs. The code is identical for any OpenAI-compatible endpoint; only a URL, a key and a model id change.
 - **Where in the code:** `src/desk/agents/model.ts` (`ModelPort`: live, recorded, none).
-- **Evidence:** the served model id comes back on every reply and is on the trace (`private/nvidia/nemotron-3.5-super-120b-a12b`); tool calling with a JSON-schema argument was exercised live on 2026-10-22; the recorded replies in `data/sample/cassettes/` came from live calls. The canary's real runs use three Nemotron models (120B, 30B, 550B) and read the served model id from the reply to see a switch.
+- **Evidence:** the served model id comes back on every reply and is on the trace (`private/nvidia/nemotron-3.5-super-120b-a12b`); tool calling with a JSON-schema argument was exercised live on 2026-10-22; the recorded replies in `data/sample/cassettes/` came from live calls. The canary's real runs use two Nemotron models (120B, 30B) and read the served model id from the reply to see a switch.
 - **Limits measured:** latency from 0.4 s to 56 s for the same small request, HTTP 500 on about one call in four under rapid use and HTTP 429 on some models under concurrency. The code retries, caps retries, times out, falls back to a rule brain, and says so on the trace.
 
 ## What is unique about our use

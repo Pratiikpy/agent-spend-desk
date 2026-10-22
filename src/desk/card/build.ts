@@ -58,7 +58,7 @@ export function buildCard(input: CardInput): Card | { empty: true; couldNotKnow:
       empty: true,
       couldNotKnow: [
         input.ingest.logFilesFound === 0 ? `No agent logs were found. Searched: ${searched.join(", ") || "(nothing)"}.` : `${input.ingest.logFilesFound} log files were read but none contained a priced model call.`,
-        "Run with SAMPLE_MODE=true to see the same card on a constructed sample, offline.",
+        "Run `desk card --sample` (or set SAMPLE_MODE=true) to see the same card on a constructed sample, offline.",
       ],
     };
   }
