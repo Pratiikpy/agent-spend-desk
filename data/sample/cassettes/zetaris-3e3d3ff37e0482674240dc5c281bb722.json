@@ -1,0 +1,7144 @@
+{
+  "sql": "SELECT pr_id, repo, team, head_sha, merged_at, checks_green, reverted FROM ci_silo.pull_requests ORDER BY pr_id",
+  "recordedAt": "2026-10-22T17:12:07.102Z",
+  "headers": [
+    "pr_id",
+    "repo",
+    "team",
+    "head_sha",
+    "merged_at",
+    "checks_green",
+    "reverted"
+  ],
+  "rows": [
+    [
+      "1",
+      "web-app",
+      "growth",
+      "a90cc1278644eabfa59ad091254614367894737c",
+      "2026-08-31 11:22:21.0",
+      "true",
+      "false"
+    ],
+    [
+      "2",
+      "payments-api",
+      "payments",
+      "c047958a7661424f1b53c7083ae28ce9d8583914",
+      "2026-08-31 12:28:53.0",
+      "true",
+      "false"
+    ],
+    [
+      "3",
+      "data-pipeline",
+      "discovery",
+      "24fe415a0ac15bbb8ad05ed611655fbda9379664",
+      "2026-08-31 12:40:54.0",
+      "true",
+      "false"
+    ],
+    [
+      "4",
+      "infra",
+      "platform",
+      "3ea6199b7fb2ed4690ba46eb7d6856688aebf986",
+      "2026-08-31 12:43:33.0",
+      "true",
+      "false"
+    ],
+    [
+      "5",
+      "mobile-client",
+      "growth",
+      "093c2db18e6974fac5283860ddc8d850b16a58bf",
+      "2026-08-31 14:00:19.0",
+      "false",
+      "false"
+    ],
+    [
+      "6",
+      "web-app",
+      "growth",
+      "08a324b1f0c67f3f7b324e260be5beb73591fe93",
+      "2026-09-01 11:22:21.0",
+      "true",
+      "false"
+    ],
+    [
+      "7",
+      "web-app",
+      "growth",
+      "f57345e0de9d4b38344fda9d75528d6e843edb1c",
+      "2026-09-01 12:22:56.0",
+      "true",
+      "false"
+    ],
+    [
+      "8",
+      "payments-api",
+      "payments",
+      "d680218861637c2ca1b37deb4133297dbc8ba661",
+      "2026-09-01 12:28:53.0",
+      "true",
+      "false"
+    ],
+    [
+      "9",
+      "data-pipeline",
+      "discovery",
+      "90ba4663a78189ae801c7091241b03f0ff498ed3",
+      "2026-09-01 12:40:54.0",
+      "true",
+      "false"
+    ],
+    [
+      "10",
+      "infra",
+      "platform",
+      "dcb9d1231a7fcf1af629d2c79caa0e2303ccf894",
+      "2026-09-01 12:43:33.0",
+      "true",
+      "false"
+    ],
+    [
+      "11",
+      "mobile-client",
+      "growth",
+      "0feb99d029b6ba49e9f4acf4ff8378609d2e6c18",
+      "2026-09-01 14:00:19.0",
+      "true",
+      "false"
+    ],
+    [
+      "12",
+      "web-app",
+      "growth",
+      "49a2f77465a9c14c39a568efd4e09696ad076608",
+      "2026-09-01 15:03:42.0",
+      "true",
+      "false"
+    ],
+    [
+      "13",
+      "infra",
+      "platform",
+      "a332f63bafa222d110fb2669ee0d9f8d536a9738",
+      "2026-09-01 15:10:48.0",
+      "true",
+      "false"
+    ],
+    [
+      "14",
+      "infra",
+      "platform",
+      "c69e1a492ebdee27a9b74bfab296f16001614884",
+      "2026-09-01 16:04:17.0",
+      "true",
+      "false"
+    ],
+    [
+      "15",
+      "mobile-client",
+      "growth",
+      "2c4b641f5f8680993f0e3245a8dd18fd92839cb7",
+      "2026-09-01 16:53:32.0",
+      "false",
+      "false"
+    ],
+    [
+      "16",
+      "mobile-client",
+      "growth",
+      "fad0276a957308c4a8501ad493e3127ec0ee4b16",
+      "2026-09-01 17:39:04.0",
+      "true",
+      "false"
+    ],
+    [
+      "17",
+      "web-app",
+      "growth",
+      "bb862e7bff8f81a1b19490c81f9da18e2d21250b",
+      "2026-09-01 19:20:02.0",
+      "true",
+      "false"
+    ],
+    [
+      "18",
+      "web-app",
+      "growth",
+      "bec482da61b609f9b7c2fd912051cc6ac621f05d",
+      "2026-09-02 10:25:40.0",
+      "false",
+      "false"
+    ],
+    [
+      "19",
+      "web-app",
+      "growth",
+      "5270833af8a4b3e748cc3386f818cf8d6cecbdad",
+      "2026-09-02 11:01:01.0",
+      "true",
+      "false"
+    ],
+    [
+      "20",
+      "web-app",
+      "growth",
+      "aa6d37dce32fab164b35c3fbb2382e5bd775cc3e",
+      "2026-09-02 12:00:45.0",
+      "true",
+      "false"
+    ],
+    [
+      "21",
+      "infra",
+      "platform",
+      "3daed9f4f3f6197f980879e23d1161ad6cfd8d1e",
+      "2026-09-02 13:11:08.0",
+      "true",
+      "false"
+    ],
+    [
+      "22",
+      "mobile-client",
+      "growth",
+      "0b83dd4027a8a797617499108038a094a4c7df88",
+      "2026-09-02 14:08:18.0",
+      "true",
+      "false"
+    ],
+    [
+      "23",
+      "infra",
+      "platform",
+      "720fd5cf7bbbe655299e09d2336c70d30dd344f7",
+      "2026-09-02 14:11:41.0",
+      "true",
+      "true"
+    ],
+    [
+      "24",
+      "payments-api",
+      "payments",
+      "4abd04c153e180b46567c1062890eecc258bb670",
+      "2026-09-02 14:54:18.0",
+      "true",
+      "false"
+    ],
+    [
+      "25",
+      "mobile-client",
+      "growth",
+      "6af06c8997eed3abf48e968dd2fe508deb45e26d",
+      "2026-09-02 15:32:44.0",
+      "true",
+      "false"
+    ],
+    [
+      "26",
+      "payments-api",
+      "payments",
+      "c4c1277850cdb31063c06bbc4a46bd3bc4734161",
+      "2026-09-02 16:47:35.0",
+      "true",
+      "false"
+    ],
+    [
+      "27",
+      "web-app",
+      "growth",
+      "7a37c4d2a4b8536dca746f2ef36a7bc0d744bf5b",
+      "2026-09-02 16:54:55.0",
+      "true",
+      "false"
+    ],
+    [
+      "28",
+      "mobile-client",
+      "growth",
+      "86ae6b374d5ac623866270f904ec130aa8a01021",
+      "2026-09-02 16:55:59.0",
+      "true",
+      "false"
+    ],
+    [
+      "29",
+      "web-app",
+      "growth",
+      "f21d2a97f3b59cad1d566e133077859c75339706",
+      "2026-09-02 18:04:41.0",
+      "true",
+      "false"
+    ],
+    [
+      "30",
+      "web-app",
+      "growth",
+      "d896b9379ccddac0dcceb36ea1f56b0f9b0d7b65",
+      "2026-09-02 18:29:18.0",
+      "true",
+      "false"
+    ],
+    [
+      "31",
+      "web-app",
+      "growth",
+      "c074c138c2a963c09edabbd14e5c653c8d518202",
+      "",
+      "false",
+      "false"
+    ],
+    [
+      "32",
+      "web-app",
+      "growth",
+      "086f13d0f13d612301d6563ac4bc656b53b4be3d",
+      "",
+      "true",
+      "false"
+    ],
+    [
+      "33",
+      "infra",
+      "platform",
+      "e13c8fabf65e487fe6b0188697b782c717532f4a",
+      "2026-09-03 11:50:35.0",
+      "true",
+      "false"
+    ],
+    [
+      "34",
+      "data-pipeline",
+      "discovery",
+      "aa9f463adfd796e9485fb0bd3ada44f371a7fb61",
+      "2026-09-03 11:58:59.0",
+      "true",
+      "false"
+    ],
+    [
+      "35",
+      "data-pipeline",
+      "discovery",
+      "00d3b562a26a96ea24978ec4c17911f5e2f5cbde",
+      "2026-09-03 12:54:24.0",
+      "true",
+      "true"
+    ],
+    [
+      "36",
+      "infra",
+      "platform",
+      "3a26804a3f48423bc96f11ec9afa8b8e2e66c62b",
+      "2026-09-03 13:54:07.0",
+      "true",
+      "false"
+    ],
+    [
+      "37",
+      "mobile-client",
+      "growth",
+      "87a2ce76203c84ecc2b0f631dfbc6c2a465fe846",
+      "2026-09-03 14:14:14.0",
+      "true",
+      "false"
+    ],
+    [
+      "38",
+      "mobile-client",
+      "growth",
+      "a6e2aecdd0a32f140e873f920f15b2c195f9002f",
+      "2026-09-03 15:04:16.0",
+      "true",
+      "false"
+    ],
+    [
+      "39",
+      "payments-api",
+      "payments",
+      "e1cf5d8bbd8ddc7443eacec8981c9274c2cc0a2b",
+      "2026-09-03 15:29:19.0",
+      "true",
+      "false"
+    ],
+    [
+      "40",
+      "infra",
+      "platform",
+      "692d002d2e30d12bc1c346d428894f85f2b47571",
+      "2026-09-03 15:34:28.0",
+      "true",
+      "false"
+    ],
+    [
+      "41",
+      "payments-api",
+      "payments",
+      "d0722fca8291429201a0db8875371123c740f252",
+      "2026-09-03 17:30:20.0",
+      "true",
+      "false"
+    ],
+    [
+      "42",
+      "mobile-client",
+      "growth",
+      "ee153cbe3bf2e6da8923b5c692d505d3f36532ca",
+      "2026-09-03 18:13:07.0",
+      "false",
+      "false"
+    ],
+    [
+      "43",
+      "data-pipeline",
+      "discovery",
+      "0902099569e6dd4a8483d4c0ae509c6388c267e5",
+      "",
+      "true",
+      "false"
+    ],
+    [
+      "44",
+      "payments-api",
+      "payments",
+      "35b5e4d3d966d28b63ae897013315b39ec1c598f",
+      "2026-09-03 18:16:17.0",
+      "true",
+      "false"
+    ],
+    [
+      "45",
+      "payments-api",
+      "payments",
+      "1d3fcebe3879e9bcc201f85fa50604ea872fb5b7",
+      "2026-09-03 19:28:39.0",
+      "true",
+      "false"
+    ],
+    [
+      "46",
+      "mobile-client",
+      "growth",
+      "ee98740133c0b5bcb1454b36a29d01b4c9ef4cc8",
+      "2026-09-03 20:00:54.0",
+      "true",
+      "false"
+    ],
+    [
+      "47",
+      "data-pipeline",
+      "discovery",
+      "298a75344834d6190e2bb877479524682dfeb49a",
+      "2026-09-03 21:51:39.0",
+      "false",
+      "false"
+    ],
+    [
+      "48",
+      "web-app",
+      "growth",
+      "2b3e6c61e8ecdc733b6f6d3a9c9a880e650b4798",
+      "2026-09-04 05:45:23.0",
+      "true",
+      "false"
+    ],
+    [
+      "49",
+      "infra",
+      "platform",
+      "1c4ce6e95585c3b11bdd96f139adad97b934fa3c",
+      "2026-09-04 09:43:40.0",
+      "false",
+      "false"
+    ],
+    [
+      "50",
+      "data-pipeline",
+      "discovery",
+      "1c6d2132c59a97813fb469d39ad85784c058d9a4",
+      "2026-09-04 12:45:11.0",
+      "true",
+      "false"
+    ],
+    [
+      "51",
+      "web-app",
+      "growth",
+      "e5f65016ab163a6db0b161454f12b37c4409ef0a",
+      "2026-09-04 13:02:03.0",
+      "true",
+      "false"
+    ],
+    [
+      "52",
+      "data-pipeline",
+      "discovery",
+      "ef375bb0f1d879c257dba1cd45f6174284451387",
+      "2026-09-04 13:19:02.0",
+      "true",
+      "false"
+    ],
+    [
+      "53",
+      "data-pipeline",
+      "discovery",
+      "7cf956e9a42e564557ab66547b6aca3b5202824f",
+      "",
+      "true",
+      "false"
+    ],
+    [
+      "54",
+      "mobile-client",
+      "growth",
+      "5a064333b17a3a9d15cb9d7e8472f380f1027351",
+      "2026-09-04 13:57:04.0",
+      "true",
+      "false"
+    ],
+    [
+      "55",
+      "data-pipeline",
+      "discovery",
+      "6d6462645c6e58a19a10e088138e999bbdfa44eb",
+      "2026-09-04 14:41:30.0",
+      "true",
+      "false"
+    ],
+    [
+      "56",
+      "mobile-client",
+      "growth",
+      "2d7f1d290b632b22a8acae4e30953a929b1b8b40",
+      "2026-09-04 15:43:00.0",
+      "true",
+      "false"
+    ],
+    [
+      "57",
+      "infra",
+      "platform",
+      "3f6f191c1f4bcff696dc0fc60e2ef9f61bcc0203",
+      "2026-09-04 16:38:30.0",
+      "true",
+      "false"
+    ],
+    [
+      "58",
+      "mobile-client",
+      "growth",
+      "2a8a520cc7989f89365bbb8ad81d422f99dc66f5",
+      "2026-09-04 17:05:52.0",
+      "false",
+      "false"
+    ],
+    [
+      "59",
+      "mobile-client",
+      "growth",
+      "645926d9c40e73cbdc2f1023ddd6fbd28fe32e3d",
+      "",
+      "true",
+      "false"
+    ],
+    [
+      "60",
+      "infra",
+      "platform",
+      "d7bb7293ddf85316f03c6aad6421a771d1e33d98",
+      "2026-09-04 17:37:22.0",
+      "true",
+      "false"
+    ],
+    [
+      "61",
+      "data-pipeline",
+      "discovery",
+      "296c821958b9de13330913aa3d24ff4334ca3a74",
+      "2026-09-04 17:38:17.0",
+      "true",
+      "true"
+    ],
+    [
+      "62",
+      "infra",
+      "platform",
+      "83ffd94c7315f363988ca90599f3b1054474561b",
+      "2026-09-04 17:40:43.0",
+      "true",
+      "false"
+    ],
+    [
+      "63",
+      "payments-api",
+      "payments",
+      "a029989711bac8449d821135175fbc588e3ee0bb",
+      "2026-09-04 19:16:55.0",
+      "false",
+      "false"
+    ],
+    [
+      "64",
+      "mobile-client",
+      "growth",
+      "08341526de44f72cb2d80a2485da803a529b0c9a",
+      "2026-09-04 20:23:15.0",
+      "true",
+      "false"
+    ],
+    [
+      "65",
+      "data-pipeline",
+      "discovery",
+      "4682f438ccb01c4cd65b73832d4ca0150463fe99",
+      "2026-09-05 12:48:24.0",
+      "false",
+      "false"
+    ],
+    [
+      "66",
+      "infra",
+      "platform",
+      "cad77f0a95a43c9edd328a51f2eda222b2edc697",
+      "2026-09-06 13:56:41.0",
+      "true",
+      "false"
+    ],
+    [
+      "67",
+      "mobile-client",
+      "growth",
+      "e602b54b4757a96d01999779d5adb63570497433",
+      "2026-09-07 10:19:05.0",
+      "true",
+      "false"
+    ],
+    [
+      "68",
+      "mobile-client",
+      "growth",
+      "ae9a6a9da259bcf860dfb091fc048b00b8968bd7",
+      "2026-09-07 10:40:46.0",
+      "true",
+      "false"
+    ],
+    [
+      "69",
+      "web-app",
+      "growth",
+      "d036ed82024ff77fa8dd3408f7a0497a60abae0d",
+      "2026-09-07 11:01:53.0",
+      "true",
+      "false"
+    ],
+    [
+      "70",
+      "payments-api",
+      "payments",
+      "af9042d5d2e039409e942db013b5099ef412ee21",
+      "2026-09-07 11:31:09.0",
+      "true",
+      "false"
+    ],
+    [
+      "71",
+      "mobile-client",
+      "growth",
+      "0bcb8668e7c51b4f68956fe689fa6771a6fccbe1",
+      "2026-09-07 12:54:28.0",
+      "true",
+      "false"
+    ],
+    [
+      "72",
+      "payments-api",
+      "payments",
+      "e6abcbef8e047f295d690aaacce6e36b01f40459",
+      "2026-09-07 14:24:22.0",
+      "true",
+      "false"
+    ],
+    [
+      "73",
+      "infra",
+      "platform",
+      "a8b1d0047ca8b6463e783be005a1bc0601e2ff5b",
+      "2026-09-07 14:47:16.0",
+      "true",
+      "false"
+    ],
+    [
+      "74",
+      "infra",
+      "platform",
+      "6bfb84301c201f28f72bc9cdc723e7b211e58bb1",
+      "2026-09-07 14:55:52.0",
+      "true",
+      "false"
+    ],
+    [
+      "75",
+      "mobile-client",
+      "growth",
+      "1053aad9c1d38a9e2d2ecf708379be670cf12600",
+      "2026-09-07 15:12:03.0",
+      "true",
+      "false"
+    ],
+    [
+      "76",
+      "mobile-client",
+      "growth",
+      "6feef4b5c6af57c49e93b748fb7eb27526aff0df",
+      "2026-09-07 16:37:01.0",
+      "true",
+      "false"
+    ],
+    [
+      "77",
+      "mobile-client",
+      "growth",
+      "6b07f540b4f8f9f1d45ed76f526bec19786f0483",
+      "2026-09-07 16:46:21.0",
+      "true",
+      "false"
+    ],
+    [
+      "78",
+      "mobile-client",
+      "growth",
+      "a2282459e8fd3fc443cd790002460f7916505390",
+      "2026-09-07 16:47:12.0",
+      "true",
+      "false"
+    ],
+    [
+      "79",
+      "payments-api",
+      "payments",
+      "9b37a2e14a8ef04c6eec1c1f424c5cf3ec44ee2c",
+      "",
+      "true",
+      "false"
+    ],
+    [
+      "80",
+      "infra",
+      "platform",
+      "24039be48c57241b11aee45022f6ac8b0d49fc6c",
+      "2026-09-07 17:10:18.0",
+      "true",
+      "false"
+    ],
+    [
+      "81",
+      "mobile-client",
+      "growth",
+      "75278cb4f8f5ee7f17d0fb9e726f240436695c86",
+      "2026-09-07 17:13:40.0",
+      "true",
+      "false"
+    ],
+    [
+      "82",
+      "web-app",
+      "growth",
+      "9b252a2d6cd29ba9e768f79f4e13aac9ad9f2622",
+      "2026-09-07 17:13:56.0",
+      "true",
+      "true"
+    ],
+    [
+      "83",
+      "infra",
+      "platform",
+      "cb5125f1a42e61421867413250887945e9198e72",
+      "2026-09-07 18:24:07.0",
+      "true",
+      "false"
+    ],
+    [
+      "84",
+      "mobile-client",
+      "growth",
+      "ff1d97fd390322b90ec343429384f9cb762f19b4",
+      "2026-09-07 19:57:52.0",
+      "true",
+      "false"
+    ],
+    [
+      "85",
+      "payments-api",
+      "payments",
+      "dc213f7713b47bb11610227ea88d09470f9296a4",
+      "2026-09-08 09:34:20.0",
+      "true",
+      "false"
+    ],
+    [
+      "86",
+      "data-pipeline",
+      "discovery",
+      "d88873670cb287e6b6aa940218c99391fc80a60d",
+      "2026-09-08 11:21:04.0",
+      "true",
+      "false"
+    ],
+    [
+      "87",
+      "infra",
+      "platform",
+      "e382ca196e33b58df33deb2c62ce967617703ee6",
+      "2026-09-08 11:23:14.0",
+      "true",
+      "false"
+    ],
+    [
+      "88",
+      "data-pipeline",
+      "discovery",
+      "2f2a7b05c25ea80f9d341ae46d39addb3408c5b9",
+      "2026-09-08 11:41:58.0",
+      "true",
+      "false"
+    ],
+    [
+      "89",
+      "payments-api",
+      "payments",
+      "239e25ab90081060d8eac2f5f3e1b3056ebeb141",
+      "2026-09-08 11:58:58.0",
+      "true",
+      "false"
+    ],
+    [
+      "90",
+      "infra",
+      "platform",
+      "ffcfc209656d3c069d5cca93853c2d15ad9620a3",
+      "2026-09-08 12:06:24.0",
+      "true",
+      "false"
+    ],
+    [
+      "91",
+      "web-app",
+      "growth",
+      "55c0a1910633b87d6884438da6a4fb661fe1b5be",
+      "2026-09-08 12:15:48.0",
+      "true",
+      "false"
+    ],
+    [
+      "92",
+      "data-pipeline",
+      "discovery",
+      "4a517510f3dd6df51fecf73c72d37401085dc4c9",
+      "2026-09-08 12:37:05.0",
+      "true",
+      "false"
+    ],
+    [
+      "93",
+      "data-pipeline",
+      "discovery",
+      "bd151724df87e7abac5f5b0c142ac4492f3ca415",
+      "2026-09-08 12:38:56.0",
+      "true",
+      "false"
+    ],
+    [
+      "94",
+      "mobile-client",
+      "growth",
+      "b326fffd2ee3efb5a7ef7a75c1174638ad607bb1",
+      "2026-09-08 13:41:53.0",
+      "true",
+      "false"
+    ],
+    [
+      "95",
+      "payments-api",
+      "payments",
+      "75e79c72bd333c70958fb6f434fc17732d21416a",
+      "2026-09-08 13:43:46.0",
+      "true",
+      "false"
+    ],
+    [
+      "96",
+      "web-app",
+      "growth",
+      "f004c6def27083c9dca51e4dd709a89d676e0a0d",
+      "2026-09-08 14:35:56.0",
+      "false",
+      "false"
+    ],
+    [
+      "97",
+      "web-app",
+      "growth",
+      "6f49b38c125321d0c440c083dc26ad996828f079",
+      "2026-09-08 15:03:20.0",
+      "true",
+      "false"
+    ],
+    [
+      "98",
+      "web-app",
+      "growth",
+      "458df7b87f03e0f5ba09ebc11ab99ad8e1a1db96",
+      "2026-09-08 16:29:51.0",
+      "true",
+      "false"
+    ],
+    [
+      "99",
+      "data-pipeline",
+      "discovery",
+      "5b0845e339970b809654fb69d7a885a4d4c6b4b8",
+      "2026-09-08 16:47:07.0",
+      "true",
+      "false"
+    ],
+    [
+      "100",
+      "data-pipeline",
+      "discovery",
+      "8360537436321b294da7e440437ff98850ba2835",
+      "2026-09-08 17:20:17.0",
+      "true",
+      "false"
+    ],
+    [
+      "101",
+      "data-pipeline",
+      "discovery",
+      "784544ac1c38ddf2a6be258d67dfededd87d3db7",
+      "",
+      "true",
+      "false"
+    ],
+    [
+      "102",
+      "infra",
+      "platform",
+      "d9ce753ae86b4f78d155205f3a02e99ea61a2914",
+      "2026-09-08 18:33:35.0",
+      "true",
+      "false"
+    ],
+    [
+      "103",
+      "data-pipeline",
+      "discovery",
+      "25f0277b17f75d8eca252100a1d92d4dacb1fc2e",
+      "2026-09-08 20:09:00.0",
+      "true",
+      "false"
+    ],
+    [
+      "104",
+      "mobile-client",
+      "growth",
+      "305fa6bb481342ee65d7089a5418acb5adf09aa4",
+      "",
+      "true",
+      "false"
+    ],
+    [
+      "105",
+      "payments-api",
+      "payments",
+      "d6b4818cc71cf54574160d26a9b0d4987fb326dd",
+      "2026-09-08 22:38:28.0",
+      "true",
+      "false"
+    ],
+    [
+      "106",
+      "mobile-client",
+      "growth",
+      "87645af4d0560a894b7f4f73517c7d21165d6363",
+      "2026-09-09 13:02:47.0",
+      "true",
+      "false"
+    ],
+    [
+      "107",
+      "infra",
+      "platform",
+      "1792cdd53b444206cfebe8521170586471bb941f",
+      "2026-09-09 14:30:46.0",
+      "true",
+      "false"
+    ],
+    [
+      "108",
+      "infra",
+      "platform",
+      "5c3f0ec0fcab6016a4efec37e283b33cee3f41dd",
+      "2026-09-09 15:15:52.0",
+      "true",
+      "false"
+    ],
+    [
+      "109",
+      "mobile-client",
+      "growth",
+      "f9f1bd4178bd15077c37cd15871b6620bc0595e8",
+      "2026-09-09 16:03:38.0",
+      "true",
+      "false"
+    ],
+    [
+      "110",
+      "infra",
+      "platform",
+      "04f2b8d6a43adcfbf2302a7c765984108903526f",
+      "2026-09-09 16:12:35.0",
+      "true",
+      "true"
+    ],
+    [
+      "111",
+      "payments-api",
+      "payments",
+      "180ec8a994cc7472611259d41c7073c6445656fc",
+      "2026-09-09 16:42:35.0",
+      "true",
+      "false"
+    ],
+    [
+      "112",
+      "payments-api",
+      "payments",
+      "aecc93d603d8c702ef14ad4a5e82d915b54b124d",
+      "2026-09-09 16:55:19.0",
+      "true",
+      "true"
+    ],
+    [
+      "113",
+      "mobile-client",
+      "growth",
+      "585e248c2541112c2184c74341e6ef676a4f64d3",
+      "2026-09-09 16:58:35.0",
+      "true",
+      "false"
+    ],
+    [
+      "114",
+      "infra",
+      "platform",
+      "4585e8f01ffe615f9a71bc9aa933f3b19ea4aa7f",
+      "2026-09-09 18:10:53.0",
+      "true",
+      "false"
+    ],
+    [
+      "115",
+      "mobile-client",
+      "growth",
+      "f0adb636be0277fb998f59813b785d5c96e14ffe",
+      "2026-09-09 18:11:31.0",
+      "true",
+      "false"
+    ],
+    [
+      "116",
+      "infra",
+      "platform",
+      "adf453c910d0edbdfb774f849797e681431b3759",
+      "2026-09-09 18:47:16.0",
+      "true",
+      "false"
+    ],
+    [
+      "117",
+      "data-pipeline",
+      "discovery",
+      "6ba1f05f7f50cee7d19a5e481f1bdf1ce691f9e0",
+      "2026-09-10 09:48:42.0",
+      "true",
+      "false"
+    ],
+    [
+      "118",
+      "mobile-client",
+      "growth",
+      "9a4aa594479ef7843c3ff6e8501cc60021d9f271",
+      "2026-09-10 10:39:52.0",
+      "true",
+      "false"
+    ],
+    [
+      "119",
+      "web-app",
+      "growth",
+      "2e520032e5f56439c042ab07a0b03ad5cccc050f",
+      "2026-09-10 12:14:36.0",
+      "true",
+      "false"
+    ],
+    [
+      "120",
+      "web-app",
+      "growth",
+      "af1a3fb4882265b10221ce74360fb320be492dd0",
+      "2026-09-10 13:08:26.0",
+      "true",
+      "true"
+    ],
+    [
+      "121",
+      "data-pipeline",
+      "discovery",
+      "47fe7c98c39e8a3ed2624716c12fa506d7b22c9e",
+      "2026-09-10 13:47:39.0",
+      "true",
+      "false"
+    ],
+    [
+      "122",
+      "infra",
+      "platform",
+      "e004cdc7b79b063601eb398856d1e79f0a472b7e",
+      "2026-09-10 14:21:14.0",
+      "true",
+      "false"
+    ],
+    [
+      "123",
+      "mobile-client",
+      "growth",
+      "8796d02944304d572c42c058ea514b6c1d83381a",
+      "2026-09-10 18:04:20.0",
+      "true",
+      "false"
+    ],
+    [
+      "124",
+      "data-pipeline",
+      "discovery",
+      "899ac930ba881f0c58791981015162503f71d036",
+      "2026-09-10 18:12:50.0",
+      "true",
+      "false"
+    ],
+    [
+      "125",
+      "payments-api",
+      "payments",
+      "5b67154d75af8f610a4fbcae6c8952e7c774c5cf",
+      "2026-09-10 20:33:28.0",
+      "true",
+      "false"
+    ],
+    [
+      "126",
+      "data-pipeline",
+      "discovery",
+      "bcc33646f5d9f8754cde1b2d5e565bfd644688d1",
+      "2026-09-11 11:32:47.0",
+      "true",
+      "false"
+    ],
+    [
+      "127",
+      "payments-api",
+      "payments",
+      "2ef334fdea95c31a2f5273d5eb51d4ac17b4adee",
+      "2026-09-11 12:18:00.0",
+      "true",
+      "false"
+    ],
+    [
+      "128",
+      "web-app",
+      "growth",
+      "c1cdceab4e6429d4ffc750a3d63e958041e14a86",
+      "2026-09-11 12:29:56.0",
+      "true",
+      "false"
+    ],
+    [
+      "129",
+      "mobile-client",
+      "growth",
+      "48970cb4d8e4132df1b2aaa4403fa03d4b91e626",
+      "",
+      "true",
+      "false"
+    ],
+    [
+      "130",
+      "mobile-client",
+      "growth",
+      "e015f0af9b8c0f6dcc833d087bee8f666c452146",
+      "2026-09-11 13:37:34.0",
+      "true",
+      "false"
+    ],
+    [
+      "131",
+      "data-pipeline",
+      "discovery",
+      "f61b85c8bd7977bb6e523c8f3e4d66667524f7cb",
+      "2026-09-11 13:42:58.0",
+      "true",
+      "false"
+    ],
+    [
+      "132",
+      "web-app",
+      "growth",
+      "d152f1db8244d314db0ae2c5207b1fa1e625b9b6",
+      "2026-09-11 14:43:29.0",
+      "true",
+      "false"
+    ],
+    [
+      "133",
+      "infra",
+      "platform",
+      "7a7c498b7f41d26d3a07a359c140309ff661b6d3",
+      "2026-09-11 14:58:28.0",
+      "true",
+      "false"
+    ],
+    [
+      "134",
+      "mobile-client",
+      "growth",
+      "07571ac87eab201678e6f4647b90e04bfaf8d050",
+      "2026-09-11 15:46:00.0",
+      "true",
+      "false"
+    ],
+    [
+      "135",
+      "infra",
+      "platform",
+      "dd1c606fe8dea6d6f119380079d98fb69fd0f165",
+      "",
+      "true",
+      "false"
+    ],
+    [
+      "136",
+      "mobile-client",
+      "growth",
+      "10c427f949e477b9764b7ed08f0117cf294435f8",
+      "",
+      "true",
+      "true"
+    ],
+    [
+      "137",
+      "payments-api",
+      "payments",
+      "f8232a87ae3f87adb0823da3c972fff34177b263",
+      "2026-09-11 16:31:58.0",
+      "true",
+      "false"
+    ],
+    [
+      "138",
+      "web-app",
+      "growth",
+      "9a38495ceb47fef1b90b9a6ab778f3384bf46740",
+      "2026-09-11 17:06:53.0",
+      "true",
+      "false"
+    ],
+    [
+      "139",
+      "infra",
+      "platform",
+      "acc98ea11ee92c088214ca8dcaab6ed6f03de74c",
+      "2026-09-11 17:15:37.0",
+      "true",
+      "false"
+    ],
+    [
+      "140",
+      "payments-api",
+      "payments",
+      "96ac4a089b6cdadefb9caf8d693346079c059f0b",
+      "2026-09-11 21:33:14.0",
+      "true",
+      "false"
+    ],
+    [
+      "141",
+      "infra",
+      "platform",
+      "22339e33c424ce923b9bda8fb4c429898eee1223",
+      "2026-09-12 00:43:22.0",
+      "true",
+      "false"
+    ],
+    [
+      "142",
+      "payments-api",
+      "payments",
+      "81d0804efdc84b55012b5783c41aba836ff93566",
+      "2026-09-12 16:36:19.0",
+      "true",
+      "false"
+    ],
+    [
+      "143",
+      "web-app",
+      "growth",
+      "66257865e3189d17c29bbc5958485ff878ee7d75",
+      "2026-09-13 12:50:26.0",
+      "true",
+      "false"
+    ],
+    [
+      "144",
+      "web-app",
+      "growth",
+      "6d87236747f7ea8a103e4dc5a8346d085fad719d",
+      "2026-09-13 17:05:56.0",
+      "true",
+      "false"
+    ],
+    [
+      "145",
+      "infra",
+      "platform",
+      "898d685d190b9c52386b67539049fe644c1797c2",
+      "2026-09-14 11:35:35.0",
+      "true",
+      "false"
+    ],
+    [
+      "146",
+      "mobile-client",
+      "growth",
+      "1ec51cf7a145063f5f234da9007b6b1fc51d7bcd",
+      "2026-09-14 11:57:50.0",
+      "true",
+      "false"
+    ],
+    [
+      "147",
+      "mobile-client",
+      "growth",
+      "61a771c93d3ab19d2dc0488419b5898471ad8fa7",
+      "2026-09-14 12:35:30.0",
+      "true",
+      "false"
+    ],
+    [
+      "148",
+      "mobile-client",
+      "growth",
+      "7e12797ffd34a85e929b707c06d42a11ce462480",
+      "2026-09-14 12:55:38.0",
+      "true",
+      "false"
+    ],
+    [
+      "149",
+      "data-pipeline",
+      "discovery",
+      "b98a5b7cc96f6eaf5404b3129192cb29fce78274",
+      "2026-09-14 13:18:18.0",
+      "true",
+      "false"
+    ],
+    [
+      "150",
+      "mobile-client",
+      "growth",
+      "4896bfac088a07913d1320a73de8490f88986d23",
+      "2026-09-14 13:46:47.0",
+      "true",
+      "false"
+    ],
+    [
+      "151",
+      "mobile-client",
+      "growth",
+      "2f2e922b2908d8c94ee5a51ae37a201b5e8aba2c",
+      "2026-09-14 15:03:13.0",
+      "true",
+      "true"
+    ],
+    [
+      "152",
+      "infra",
+      "platform",
+      "a5b85210ba77152a9c29e1610e54c76fbfb15cc4",
+      "2026-09-14 15:17:39.0",
+      "false",
+      "false"
+    ],
+    [
+      "153",
+      "infra",
+      "platform",
+      "a6e4d068435a69b94cdd47fc81e82165e03dc56b",
+      "2026-09-14 15:56:52.0",
+      "true",
+      "false"
+    ],
+    [
+      "154",
+      "mobile-client",
+      "growth",
+      "e6b3bc3ff56ef60540c5a03b6d2d2acbcf16f7c1",
+      "2026-09-14 16:28:11.0",
+      "true",
+      "false"
+    ],
+    [
+      "155",
+      "mobile-client",
+      "growth",
+      "a558ecdee8347e908ba62aab961f52d764e7e78a",
+      "2026-09-14 17:17:23.0",
+      "true",
+      "true"
+    ],
+    [
+      "156",
+      "infra",
+      "platform",
+      "984e1e6c5714e38333b92cf74482118e5d9d5e38",
+      "2026-09-14 17:29:51.0",
+      "false",
+      "false"
+    ],
+    [
+      "157",
+      "data-pipeline",
+      "discovery",
+      "cb554f8f9fe66b6fbdcd3378970bdc545be4151d",
+      "2026-09-14 18:02:00.0",
+      "true",
+      "false"
+    ],
+    [
+      "158",
+      "web-app",
+      "growth",
+      "5edf59f8480a04486b12f86be963c38dd4f232dc",
+      "",
+      "true",
+      "false"
+    ],
+    [
+      "159",
+      "infra",
+      "platform",
+      "17583840ae9a06233326c08d50b3cde4c6a81d74",
+      "2026-09-14 19:39:00.0",
+      "true",
+      "false"
+    ],
+    [
+      "160",
+      "mobile-client",
+      "growth",
+      "47f684c2ed446e768ffdd694a26778bc0a5530e2",
+      "2026-09-14 20:12:41.0",
+      "true",
+      "false"
+    ],
+    [
+      "161",
+      "infra",
+      "platform",
+      "5dc3bce5e2e1a604309c4d4a315308c2ef4d4fe9",
+      "2026-09-14 21:45:49.0",
+      "true",
+      "false"
+    ],
+    [
+      "162",
+      "payments-api",
+      "payments",
+      "7cd201ccb73227d4dfd42b984cc02e089608b664",
+      "2026-09-14 22:33:21.0",
+      "true",
+      "false"
+    ],
+    [
+      "163",
+      "mobile-client",
+      "growth",
+      "fbdbc0f66c6c2268382fcb02a4d6968171ff44ca",
+      "2026-09-14 23:22:14.0",
+      "true",
+      "false"
+    ],
+    [
+      "164",
+      "mobile-client",
+      "growth",
+      "7f610a7c4260e9fa1192147a9359008379cefe91",
+      "2026-09-15 11:22:07.0",
+      "true",
+      "false"
+    ],
+    [
+      "165",
+      "payments-api",
+      "payments",
+      "1d1a40bc66e5e49112229f3871bda5a7c9715724",
+      "2026-09-15 11:27:32.0",
+      "true",
+      "false"
+    ],
+    [
+      "166",
+      "data-pipeline",
+      "discovery",
+      "6797444de6218f6bd0baa8f162a69d5c8132be17",
+      "2026-09-15 11:46:17.0",
+      "true",
+      "false"
+    ],
+    [
+      "167",
+      "web-app",
+      "growth",
+      "8cfacce3f44c8f0e83d97aee21efa08b0b5f7075",
+      "2026-09-15 12:31:53.0",
+      "true",
+      "false"
+    ],
+    [
+      "168",
+      "web-app",
+      "growth",
+      "fc5548a2c1040bfc66b4a0de05171a8c9515193b",
+      "2026-09-15 13:43:04.0",
+      "true",
+      "false"
+    ],
+    [
+      "169",
+      "payments-api",
+      "payments",
+      "5bbaeb5611db57306e69a5083e8b70cdd5f745a4",
+      "2026-09-15 13:49:52.0",
+      "true",
+      "false"
+    ],
+    [
+      "170",
+      "web-app",
+      "growth",
+      "f5892667df214784ecba46ebff8acde26af826f1",
+      "2026-09-15 14:33:25.0",
+      "true",
+      "false"
+    ],
+    [
+      "171",
+      "web-app",
+      "growth",
+      "3886300c30d6f9e4a33a871d4c558557413a6551",
+      "",
+      "true",
+      "false"
+    ],
+    [
+      "172",
+      "web-app",
+      "growth",
+      "6d5efb5a94e7908991684d25f524392ed22e1152",
+      "2026-09-15 15:05:20.0",
+      "true",
+      "false"
+    ],
+    [
+      "173",
+      "web-app",
+      "growth",
+      "d565f025ed6509462bcf9db67f9acdefc8d3c836",
+      "2026-09-15 15:40:25.0",
+      "true",
+      "false"
+    ],
+    [
+      "174",
+      "payments-api",
+      "payments",
+      "dfbe7ff71aa9232e9e8fec042083a0ffe358e2b1",
+      "",
+      "true",
+      "false"
+    ],
+    [
+      "175",
+      "infra",
+      "platform",
+      "4663c36f24e486c9400e9e863285898a62000ce8",
+      "2026-09-15 15:53:35.0",
+      "true",
+      "false"
+    ],
+    [
+      "176",
+      "infra",
+      "platform",
+      "d77db6432c59d63daa89a1b445c94a4fe65573ee",
+      "2026-09-15 16:41:54.0",
+      "true",
+      "false"
+    ],
+    [
+      "177",
+      "web-app",
+      "growth",
+      "55d2e63c7fefbc516138f173cc82a00f9ff18fb0",
+      "",
+      "true",
+      "false"
+    ],
+    [
+      "178",
+      "mobile-client",
+      "growth",
+      "a7fc9e68f93299c0c136aa07bd9bdf8737ad487a",
+      "2026-09-15 17:06:12.0",
+      "true",
+      "false"
+    ],
+    [
+      "179",
+      "payments-api",
+      "payments",
+      "b7eb937e4e90c3f93682954d219e879829d772e8",
+      "2026-09-15 17:34:17.0",
+      "true",
+      "false"
+    ],
+    [
+      "180",
+      "infra",
+      "platform",
+      "36c88d3e4013c89bad2e0233d6f1fcb40c8c78b2",
+      "2026-09-15 18:21:03.0",
+      "true",
+      "false"
+    ],
+    [
+      "181",
+      "infra",
+      "platform",
+      "d5ba36405bef8c1828d5c7d195ae88516eff6602",
+      "2026-09-15 18:35:03.0",
+      "true",
+      "false"
+    ],
+    [
+      "182",
+      "web-app",
+      "growth",
+      "cf94b24d1aa438f9ffe066eccae2b320274317e6",
+      "2026-09-15 18:53:28.0",
+      "true",
+      "false"
+    ],
+    [
+      "183",
+      "mobile-client",
+      "growth",
+      "e92efa90064a90cd5d4aef3c4e228a779ddeba5e",
+      "2026-09-15 20:32:25.0",
+      "true",
+      "false"
+    ],
+    [
+      "184",
+      "infra",
+      "platform",
+      "89bc049ebfce1e1497c2e5a86c99bfdb3ab88d69",
+      "2026-09-16 13:36:32.0",
+      "true",
+      "false"
+    ],
+    [
+      "185",
+      "web-app",
+      "growth",
+      "03f080fe418fffa5e15ebbe7e14f5e81e22bc263",
+      "2026-09-16 13:42:21.0",
+      "true",
+      "false"
+    ],
+    [
+      "186",
+      "infra",
+      "platform",
+      "7b9f17386f4669e0c5ee50e89331e19f48642005",
+      "2026-09-16 14:06:36.0",
+      "true",
+      "false"
+    ],
+    [
+      "187",
+      "mobile-client",
+      "growth",
+      "3e3969d42c57e0efe121e2600b97e25a5d734d6f",
+      "2026-09-16 14:14:39.0",
+      "true",
+      "true"
+    ],
+    [
+      "188",
+      "infra",
+      "platform",
+      "3d3a00997ad6f9e8ed2866bd943d40a08c811de6",
+      "2026-09-16 14:42:00.0",
+      "true",
+      "false"
+    ],
+    [
+      "189",
+      "mobile-client",
+      "growth",
+      "abcbfdf0295d0ed4f68103d2aaa690a8828f2ede",
+      "2026-09-16 14:54:09.0",
+      "true",
+      "false"
+    ],
+    [
+      "190",
+      "data-pipeline",
+      "discovery",
+      "7a004c6ef4306e2ac7d8d7ef26f4817d59f467b7",
+      "2026-09-16 15:20:30.0",
+      "true",
+      "false"
+    ],
+    [
+      "191",
+      "web-app",
+      "growth",
+      "4c92b0b202e172bcea96dc9626c4816ce3a92592",
+      "2026-09-16 16:00:22.0",
+      "true",
+      "true"
+    ],
+    [
+      "192",
+      "data-pipeline",
+      "discovery",
+      "3f19a345cade2b311c6650b5fed7d5af2ff7de1e",
+      "2026-09-16 16:06:49.0",
+      "true",
+      "false"
+    ],
+    [
+      "193",
+      "mobile-client",
+      "growth",
+      "3b73d7e6d4c393929910b783befe1691ad85b4f9",
+      "2026-09-16 16:11:01.0",
+      "true",
+      "false"
+    ],
+    [
+      "194",
+      "mobile-client",
+      "growth",
+      "c33b53a9d51dd26408af48e7809633fdce0deca8",
+      "2026-09-16 18:56:30.0",
+      "true",
+      "false"
+    ],
+    [
+      "195",
+      "data-pipeline",
+      "discovery",
+      "94e672578d85c29f9916b1ac6e9577fe210606ac",
+      "2026-09-16 19:33:35.0",
+      "true",
+      "false"
+    ],
+    [
+      "196",
+      "data-pipeline",
+      "discovery",
+      "c1b6a6bd2c7e259b2c3556684a7276f9b3bc067e",
+      "2026-09-16 19:44:35.0",
+      "true",
+      "false"
+    ],
+    [
+      "197",
+      "data-pipeline",
+      "discovery",
+      "47aca8807afa207b344e4cc593cefbeab45fcbc7",
+      "2026-09-16 20:14:04.0",
+      "true",
+      "false"
+    ],
+    [
+      "198",
+      "data-pipeline",
+      "discovery",
+      "fbcced9fb28be846e87993691a585114ec4c0cf0",
+      "",
+      "true",
+      "false"
+    ],
+    [
+      "199",
+      "data-pipeline",
+      "discovery",
+      "5dca53162791b2516d04dde69853c97500b52265",
+      "2026-09-17 09:58:10.0",
+      "true",
+      "false"
+    ],
+    [
+      "200",
+      "payments-api",
+      "payments",
+      "7222c8f642684a20219f5cba95d676969ae0a55e",
+      "2026-09-17 10:05:20.0",
+      "false",
+      "false"
+    ],
+    [
+      "201",
+      "data-pipeline",
+      "discovery",
+      "4f45517ea492461307c2f2bd7e8ceb40492da979",
+      "2026-09-17 14:09:10.0",
+      "true",
+      "false"
+    ],
+    [
+      "202",
+      "data-pipeline",
+      "discovery",
+      "f1df722e50e492fe6e934b11cab4b973f0408d80",
+      "2026-09-17 14:20:21.0",
+      "true",
+      "false"
+    ],
+    [
+      "203",
+      "web-app",
+      "growth",
+      "869429ef834be7adc4bb0b0c9518d124168e5b49",
+      "2026-09-17 15:22:03.0",
+      "true",
+      "false"
+    ],
+    [
+      "204",
+      "payments-api",
+      "payments",
+      "a3627ff4286f5cccdeb4889e4df310f6b0c87439",
+      "2026-09-17 15:40:54.0",
+      "true",
+      "false"
+    ],
+    [
+      "205",
+      "data-pipeline",
+      "discovery",
+      "d4410da46ef4417c4aab027d741b7f5c0c9d36a6",
+      "2026-09-17 15:58:30.0",
+      "false",
+      "false"
+    ],
+    [
+      "206",
+      "payments-api",
+      "payments",
+      "7c1bb6c8c0aa64527c556b14ee366655731ab1ba",
+      "2026-09-17 16:12:45.0",
+      "true",
+      "false"
+    ],
+    [
+      "207",
+      "data-pipeline",
+      "discovery",
+      "83bbe273adbaa5b95ec9dc73c3dcd51a75545fe7",
+      "2026-09-17 16:37:34.0",
+      "true",
+      "false"
+    ],
+    [
+      "208",
+      "infra",
+      "platform",
+      "a8877a19cc3cb9d488426bf44114ea3c22dfb8b8",
+      "2026-09-17 16:55:23.0",
+      "true",
+      "false"
+    ],
+    [
+      "209",
+      "mobile-client",
+      "growth",
+      "22cb0018c30bfdd16fb33a0d95c5f8699be273f7",
+      "2026-09-17 17:18:23.0",
+      "true",
+      "false"
+    ],
+    [
+      "210",
+      "web-app",
+      "growth",
+      "627b2de695688c4dcd8d1969839ab382a6316529",
+      "2026-09-17 17:29:14.0",
+      "true",
+      "false"
+    ],
+    [
+      "211",
+      "web-app",
+      "growth",
+      "480349653b4992a76a93ba7952042a51aa27bea6",
+      "2026-09-17 17:36:42.0",
+      "true",
+      "false"
+    ],
+    [
+      "212",
+      "data-pipeline",
+      "discovery",
+      "bcfdc97852f12e3729213d4a66458bbc09c0a7e4",
+      "2026-09-17 17:39:36.0",
+      "true",
+      "false"
+    ],
+    [
+      "213",
+      "infra",
+      "platform",
+      "a2d4cff0a299e3970cd30d81f60c6af9ecb99019",
+      "2026-09-17 19:09:46.0",
+      "true",
+      "false"
+    ],
+    [
+      "214",
+      "data-pipeline",
+      "discovery",
+      "b6c19096a4c1e7f0a4f5065ae5599208efdff92a",
+      "2026-09-17 19:48:19.0",
+      "true",
+      "false"
+    ],
+    [
+      "215",
+      "data-pipeline",
+      "discovery",
+      "6d1e50b2dde0ce5bc762940f4810de17b4c4fea4",
+      "2026-09-17 20:50:33.0",
+      "true",
+      "false"
+    ],
+    [
+      "216",
+      "mobile-client",
+      "growth",
+      "8adcdcef7e8c9d0e8d7a0b8cd6f63cc2e618c8df",
+      "2026-09-17 21:07:06.0",
+      "true",
+      "false"
+    ],
+    [
+      "217",
+      "payments-api",
+      "payments",
+      "3e53e69fc6f919fbab25954bdca70d25f3f31e28",
+      "",
+      "true",
+      "false"
+    ],
+    [
+      "218",
+      "data-pipeline",
+      "discovery",
+      "1f40f44394629dd1866389f25d6981bf0d88d139",
+      "2026-09-18 11:04:54.0",
+      "true",
+      "false"
+    ],
+    [
+      "219",
+      "payments-api",
+      "payments",
+      "276121bfebd5b3d5b758c2862be037d872fe3d3e",
+      "2026-09-18 12:20:21.0",
+      "true",
+      "false"
+    ],
+    [
+      "220",
+      "web-app",
+      "growth",
+      "efa3726e00c8a77bedb6375c7d8d12edfbf2383e",
+      "2026-09-18 13:03:45.0",
+      "true",
+      "false"
+    ],
+    [
+      "221",
+      "mobile-client",
+      "growth",
+      "aadaca81ced47c8c8a4ab0b334b768affcfc779a",
+      "2026-09-18 13:18:08.0",
+      "true",
+      "false"
+    ],
+    [
+      "222",
+      "data-pipeline",
+      "discovery",
+      "bb71e3366e7771a28ffe9ac434fd31cb9a5aa71e",
+      "2026-09-18 13:41:47.0",
+      "true",
+      "false"
+    ],
+    [
+      "223",
+      "payments-api",
+      "payments",
+      "82e5d458236336d1b96fbf1eaaebec0d82ecdd22",
+      "2026-09-18 17:22:16.0",
+      "true",
+      "false"
+    ],
+    [
+      "224",
+      "mobile-client",
+      "growth",
+      "bc85d1693b30fa4298b9f0500c2e21400a7ad6f8",
+      "2026-09-18 18:45:50.0",
+      "true",
+      "false"
+    ],
+    [
+      "225",
+      "payments-api",
+      "payments",
+      "b733bd415ad03b14d6298dee3ede85ef85140c72",
+      "2026-09-18 19:22:06.0",
+      "true",
+      "false"
+    ],
+    [
+      "226",
+      "web-app",
+      "growth",
+      "b138cb411d36b8ac459c19b23686fa015120cc69",
+      "2026-09-18 20:36:22.0",
+      "true",
+      "false"
+    ],
+    [
+      "227",
+      "data-pipeline",
+      "discovery",
+      "0b68cde3e41a35c589c9e307c8c7f06f80f76893",
+      "2026-09-18 22:36:58.0",
+      "true",
+      "false"
+    ],
+    [
+      "228",
+      "mobile-client",
+      "growth",
+      "7049071693b1d83cddce825676b5f5106e17e3ee",
+      "2026-09-19 14:47:13.0",
+      "true",
+      "false"
+    ],
+    [
+      "229",
+      "mobile-client",
+      "growth",
+      "e7edd91daec64012887419d755702960a476e505",
+      "2026-09-20 17:01:23.0",
+      "true",
+      "false"
+    ],
+    [
+      "230",
+      "data-pipeline",
+      "discovery",
+      "d2b0bbd26cf99902ee2255e3ab028bd1ae660ae6",
+      "2026-09-21 09:25:06.0",
+      "true",
+      "false"
+    ],
+    [
+      "231",
+      "web-app",
+      "growth",
+      "62334f58e1197f3ebdeef6f098de594f3c4d5fde",
+      "2026-09-21 10:34:32.0",
+      "true",
+      "false"
+    ],
+    [
+      "232",
+      "infra",
+      "platform",
+      "61b53cc8625134f84c84fd22224eff842c5f07c5",
+      "2026-09-21 10:51:40.0",
+      "true",
+      "false"
+    ],
+    [
+      "233",
+      "mobile-client",
+      "growth",
+      "cfc2fa425fbab1ad91458b516cdc071bd74d582b",
+      "2026-09-21 11:11:55.0",
+      "true",
+      "false"
+    ],
+    [
+      "234",
+      "mobile-client",
+      "growth",
+      "50b3b53e115b591af8d69f5d4cc445409b1ff0f6",
+      "2026-09-21 12:03:33.0",
+      "false",
+      "false"
+    ],
+    [
+      "235",
+      "infra",
+      "platform",
+      "9bcb28c94f0e3aaa7fb39604ee4ee237ffaef18e",
+      "2026-09-21 12:15:54.0",
+      "true",
+      "false"
+    ],
+    [
+      "236",
+      "web-app",
+      "growth",
+      "599825aba15a3fb769fde13550c34c4fa8c5666f",
+      "2026-09-21 12:47:16.0",
+      "true",
+      "false"
+    ],
+    [
+      "237",
+      "payments-api",
+      "payments",
+      "93c9c1de9ac73cac7e0c7728591e0b3d0337e138",
+      "2026-09-21 12:58:52.0",
+      "true",
+      "false"
+    ],
+    [
+      "238",
+      "mobile-client",
+      "growth",
+      "510999192ee987d0c1c9db8732aea723562e4b48",
+      "2026-09-21 13:03:48.0",
+      "true",
+      "false"
+    ],
+    [
+      "239",
+      "mobile-client",
+      "growth",
+      "c98df1860bd99b44eaa8b76e49873a5f4c6cb90d",
+      "2026-09-21 13:33:32.0",
+      "true",
+      "false"
+    ],
+    [
+      "240",
+      "data-pipeline",
+      "discovery",
+      "e410856c8555e89517a5ff94569dc95788b2a4f8",
+      "2026-09-21 13:53:15.0",
+      "true",
+      "true"
+    ],
+    [
+      "241",
+      "mobile-client",
+      "growth",
+      "abd2cb978459dde71c4f707c127da61f03daab4b",
+      "2026-09-21 14:10:39.0",
+      "true",
+      "false"
+    ],
+    [
+      "242",
+      "data-pipeline",
+      "discovery",
+      "07306728601846bd2ab81f5762c2c4a9f8c61d61",
+      "",
+      "true",
+      "false"
+    ],
+    [
+      "243",
+      "web-app",
+      "growth",
+      "449f085bfd8ce18d37ddf26a9176c13942b90dca",
+      "2026-09-21 14:59:31.0",
+      "false",
+      "false"
+    ],
+    [
+      "244",
+      "payments-api",
+      "payments",
+      "7ed9a4920af21374c0a9696508ea15a98a2ed1da",
+      "2026-09-21 16:10:33.0",
+      "true",
+      "false"
+    ],
+    [
+      "245",
+      "data-pipeline",
+      "discovery",
+      "92a7a313f36c896e9a82cf17603ee2ed9a7da040",
+      "2026-09-21 16:42:56.0",
+      "true",
+      "false"
+    ],
+    [
+      "246",
+      "mobile-client",
+      "growth",
+      "4514dea11f16c3451db6ca00a81049a43cff1d79",
+      "2026-09-21 16:45:07.0",
+      "true",
+      "true"
+    ],
+    [
+      "247",
+      "infra",
+      "platform",
+      "99affbe66ba55ff77ebedc053b8a0ba83e198cbd",
+      "2026-09-21 17:19:29.0",
+      "true",
+      "false"
+    ],
+    [
+      "248",
+      "mobile-client",
+      "growth",
+      "0c67b81d6b33ed1f79c4050bf8b685570426634a",
+      "2026-09-21 17:57:54.0",
+      "true",
+      "false"
+    ],
+    [
+      "249",
+      "mobile-client",
+      "growth",
+      "ebf19e54d540ea4d86a2994dbf09ac38a8e95799",
+      "2026-09-21 19:20:06.0",
+      "true",
+      "false"
+    ],
+    [
+      "250",
+      "payments-api",
+      "payments",
+      "89cd41032f9bc1f67d032e27411dfecb7ed94a4c",
+      "2026-09-21 19:48:24.0",
+      "true",
+      "false"
+    ],
+    [
+      "251",
+      "data-pipeline",
+      "discovery",
+      "ede7b88edd6499736d3228157085d94347dbc263",
+      "2026-09-21 21:34:38.0",
+      "true",
+      "false"
+    ],
+    [
+      "252",
+      "web-app",
+      "growth",
+      "6ca6f6bf42f3144f865272390f65289efaa038e7",
+      "2026-09-21 23:15:06.0",
+      "true",
+      "false"
+    ],
+    [
+      "253",
+      "web-app",
+      "growth",
+      "1d583410f0d2d7442282210f6801ad7dad3fcef2",
+      "2026-09-22 01:51:04.0",
+      "true",
+      "false"
+    ],
+    [
+      "254",
+      "mobile-client",
+      "growth",
+      "4c3386f236596ae04b80bf1ab4b91c968f9b07d5",
+      "2026-09-22 10:50:18.0",
+      "true",
+      "false"
+    ],
+    [
+      "255",
+      "web-app",
+      "growth",
+      "3af7d6aa198db0e03b2a48e803327c97bea72de9",
+      "2026-09-22 11:35:19.0",
+      "true",
+      "false"
+    ],
+    [
+      "256",
+      "payments-api",
+      "payments",
+      "964cbbfeb09d5b859dc67f427f5a8cc1796a4688",
+      "2026-09-22 12:11:48.0",
+      "true",
+      "false"
+    ],
+    [
+      "257",
+      "payments-api",
+      "payments",
+      "104760ef360db4c2a85fa7ee9f7e49e635ae8b38",
+      "2026-09-22 12:28:57.0",
+      "true",
+      "false"
+    ],
+    [
+      "258",
+      "data-pipeline",
+      "discovery",
+      "2e0d3271f49b8ad996c5a8047a6cdfe53169aa4c",
+      "",
+      "true",
+      "false"
+    ],
+    [
+      "259",
+      "data-pipeline",
+      "discovery",
+      "e0d25265da8d06b94d5b2403435525052dd13fd5",
+      "2026-09-22 14:17:20.0",
+      "true",
+      "false"
+    ],
+    [
+      "260",
+      "data-pipeline",
+      "discovery",
+      "969b7efab4bc7c52b1f314a6e3372b23da3abfde",
+      "",
+      "true",
+      "false"
+    ],
+    [
+      "261",
+      "data-pipeline",
+      "discovery",
+      "83d4ded4b43215a2b10fbdb8d43b4d2d38429047",
+      "",
+      "true",
+      "false"
+    ],
+    [
+      "262",
+      "mobile-client",
+      "growth",
+      "853fc91ec6777a090adeb20146000cbf665f44b7",
+      "2026-09-22 15:24:16.0",
+      "true",
+      "false"
+    ],
+    [
+      "263",
+      "infra",
+      "platform",
+      "3a91b3c3745d8db155e3c54ee84278a224365014",
+      "2026-09-22 15:34:29.0",
+      "false",
+      "false"
+    ],
+    [
+      "264",
+      "mobile-client",
+      "growth",
+      "8dc19b0e84290263e1a48b8e0e612e6f3ca161c9",
+      "2026-09-22 15:40:24.0",
+      "true",
+      "true"
+    ],
+    [
+      "265",
+      "web-app",
+      "growth",
+      "c92e53d8ac6c683c1b6384abbc47055cb389f77a",
+      "2026-09-22 15:54:22.0",
+      "true",
+      "false"
+    ],
+    [
+      "266",
+      "web-app",
+      "growth",
+      "27471492caa72e32b9147ec87506ceeaabac7144",
+      "2026-09-22 16:14:35.0",
+      "true",
+      "false"
+    ],
+    [
+      "267",
+      "infra",
+      "platform",
+      "195be54fa612e9b9779f76043271ec09109dd42e",
+      "2026-09-22 16:28:50.0",
+      "false",
+      "false"
+    ],
+    [
+      "268",
+      "payments-api",
+      "payments",
+      "58afb206856b5004d1a5617a48d0150c09c1eb38",
+      "2026-09-22 16:34:08.0",
+      "false",
+      "false"
+    ],
+    [
+      "269",
+      "payments-api",
+      "payments",
+      "d409de2d2292dc993f3d8b7a311713e2e71fd1ff",
+      "2026-09-22 17:44:03.0",
+      "true",
+      "false"
+    ],
+    [
+      "270",
+      "payments-api",
+      "payments",
+      "2f35947932df8543d3766203548aabb73001c686",
+      "2026-09-22 18:06:44.0",
+      "true",
+      "false"
+    ],
+    [
+      "271",
+      "web-app",
+      "growth",
+      "9ffd4c2a31237c0f910d4babc947a130d4aae38d",
+      "2026-09-22 19:34:47.0",
+      "true",
+      "false"
+    ],
+    [
+      "272",
+      "infra",
+      "platform",
+      "2cdd40465210b039b86b5ee8ed109fb51dd0b6a1",
+      "2026-09-23 11:01:34.0",
+      "true",
+      "false"
+    ],
+    [
+      "273",
+      "infra",
+      "platform",
+      "2e159c459847f9841b2411e9dc25985f456506b6",
+      "2026-09-23 12:50:02.0",
+      "true",
+      "false"
+    ],
+    [
+      "274",
+      "payments-api",
+      "payments",
+      "c40b50c3e8ccc5d888fc4ccc62253d413758d96e",
+      "2026-09-23 13:26:14.0",
+      "true",
+      "false"
+    ],
+    [
+      "275",
+      "web-app",
+      "growth",
+      "fcf040b73bf9cec355948279e3bee7cf52d39744",
+      "2026-09-23 13:52:57.0",
+      "true",
+      "false"
+    ],
+    [
+      "276",
+      "mobile-client",
+      "growth",
+      "455d7f043c30c05576484be666690a0bd18cf688",
+      "2026-09-23 17:59:24.0",
+      "true",
+      "false"
+    ],
+    [
+      "277",
+      "payments-api",
+      "payments",
+      "d971fde14ec9cf29954fcfc9cdd20d2d6e530268",
+      "2026-09-23 18:09:02.0",
+      "true",
+      "false"
+    ],
+    [
+      "278",
+      "data-pipeline",
+      "discovery",
+      "7a97a445d9b93012806744a26ff23daec702b348",
+      "2026-09-23 18:42:51.0",
+      "true",
+      "false"
+    ],
+    [
+      "279",
+      "mobile-client",
+      "growth",
+      "0a9adaadafd3ca7ba5c04404e31db7c4c3a4a112",
+      "2026-09-23 22:21:55.0",
+      "true",
+      "false"
+    ],
+    [
+      "280",
+      "payments-api",
+      "payments",
+      "e7019cb605bf42374c823fccb59d62b31861f307",
+      "2026-09-24 09:52:00.0",
+      "true",
+      "false"
+    ],
+    [
+      "281",
+      "mobile-client",
+      "growth",
+      "49ba11dc3bb728bae9338a6c00c0e3871f54b0d0",
+      "2026-09-24 10:05:38.0",
+      "true",
+      "false"
+    ],
+    [
+      "282",
+      "infra",
+      "platform",
+      "4715dc9ffa140373d384b63ed9157e9cbb73c782",
+      "2026-09-24 10:52:45.0",
+      "true",
+      "false"
+    ],
+    [
+      "283",
+      "data-pipeline",
+      "discovery",
+      "231e870dec8015efea871a6f60703dfac39e3c19",
+      "2026-09-24 10:58:34.0",
+      "false",
+      "false"
+    ],
+    [
+      "284",
+      "payments-api",
+      "payments",
+      "e12caa5eabf204f15d3760673a1f08336e38aacc",
+      "2026-09-24 11:37:52.0",
+      "true",
+      "false"
+    ],
+    [
+      "285",
+      "data-pipeline",
+      "discovery",
+      "b07fbbd02e854d23fee5c5a798187dd0f793cc5c",
+      "2026-09-24 11:42:26.0",
+      "true",
+      "false"
+    ],
+    [
+      "286",
+      "payments-api",
+      "payments",
+      "a82a28daa629327c32a06ff1ba2b227d8faa45c4",
+      "2026-09-24 13:25:06.0",
+      "true",
+      "false"
+    ],
+    [
+      "287",
+      "payments-api",
+      "payments",
+      "8fb4b95c0f63c79d1035f7182d24d7cdbb31946f",
+      "2026-09-24 13:44:32.0",
+      "true",
+      "false"
+    ],
+    [
+      "288",
+      "web-app",
+      "growth",
+      "18951a7fe011653158e7de83443387a655a806f2",
+      "2026-09-24 13:45:08.0",
+      "true",
+      "false"
+    ],
+    [
+      "289",
+      "payments-api",
+      "payments",
+      "95f4f1b18dc34950fa605b6e37b450ecc544f258",
+      "2026-09-24 13:48:21.0",
+      "true",
+      "false"
+    ],
+    [
+      "290",
+      "payments-api",
+      "payments",
+      "f03567ec26e44ccc49a64c1accf34c08164cd40f",
+      "2026-09-24 14:42:01.0",
+      "true",
+      "false"
+    ],
+    [
+      "291",
+      "web-app",
+      "growth",
+      "f8ca433bb1eb3dccd613252e6b63f0090d5bcd4f",
+      "2026-09-24 14:42:38.0",
+      "true",
+      "false"
+    ],
+    [
+      "292",
+      "web-app",
+      "growth",
+      "92ad64aa85109930c9c9f8ec6eb76485dbd5e198",
+      "2026-09-24 15:27:44.0",
+      "true",
+      "false"
+    ],
+    [
+      "293",
+      "web-app",
+      "growth",
+      "75d532110fe9a761d9a5796546976484f3b1f793",
+      "2026-09-24 15:36:57.0",
+      "true",
+      "false"
+    ],
+    [
+      "294",
+      "web-app",
+      "growth",
+      "9faf64982d333be239296617ab225ffb775f2d94",
+      "2026-09-24 15:52:02.0",
+      "true",
+      "false"
+    ],
+    [
+      "295",
+      "data-pipeline",
+      "discovery",
+      "08e3f43c72be424fb681bbaa8bab249c0c540dc9",
+      "2026-09-24 15:57:58.0",
+      "false",
+      "false"
+    ],
+    [
+      "296",
+      "mobile-client",
+      "growth",
+      "3baad8bfe6ec66f4e9dafaeb1d430e998622f028",
+      "2026-09-24 16:03:05.0",
+      "true",
+      "false"
+    ],
+    [
+      "297",
+      "data-pipeline",
+      "discovery",
+      "646fbc866d379bbfdb4902544a381b1efb129b6f",
+      "",
+      "true",
+      "false"
+    ],
+    [
+      "298",
+      "mobile-client",
+      "growth",
+      "9683f6f457835518629a1d1e28e688c82af585ec",
+      "2026-09-24 16:29:07.0",
+      "true",
+      "false"
+    ],
+    [
+      "299",
+      "payments-api",
+      "payments",
+      "0b2b97343fd49a238f06aae10f4b36df479bd176",
+      "2026-09-24 16:31:09.0",
+      "true",
+      "false"
+    ],
+    [
+      "300",
+      "mobile-client",
+      "growth",
+      "76dd92ded7d4ab8ae9226badf2ad1961acb6d66d",
+      "",
+      "true",
+      "false"
+    ],
+    [
+      "301",
+      "data-pipeline",
+      "discovery",
+      "0a07f124cdc3facc8fb30117cf5f77f966985784",
+      "2026-09-24 20:09:36.0",
+      "true",
+      "false"
+    ],
+    [
+      "302",
+      "mobile-client",
+      "growth",
+      "9cd90db508561084c989a1c459553ac1741b9fa6",
+      "2026-09-24 20:49:35.0",
+      "false",
+      "false"
+    ],
+    [
+      "303",
+      "web-app",
+      "growth",
+      "ca64b34a32e7a800145a2ff5162efba647d6a4b7",
+      "2026-09-24 22:06:28.0",
+      "true",
+      "false"
+    ],
+    [
+      "304",
+      "infra",
+      "platform",
+      "33fb0e7b82e67be4f9a2f24418eab08b8273f97a",
+      "2026-09-25 11:35:34.0",
+      "true",
+      "false"
+    ],
+    [
+      "305",
+      "data-pipeline",
+      "discovery",
+      "798ccefe059bd62be005c44176639f4a3e385901",
+      "2026-09-25 12:40:49.0",
+      "true",
+      "false"
+    ],
+    [
+      "306",
+      "data-pipeline",
+      "discovery",
+      "8a0d2bd359b50ba8635936310c6c5646e295cc31",
+      "2026-09-25 12:43:57.0",
+      "true",
+      "false"
+    ],
+    [
+      "307",
+      "web-app",
+      "growth",
+      "0f8bd2218648ce552c8b63d6c9e6589639d9cfda",
+      "2026-09-25 13:34:09.0",
+      "true",
+      "false"
+    ],
+    [
+      "308",
+      "data-pipeline",
+      "discovery",
+      "c445ea7944b85499e26fa3c50194a7fb13d22ff4",
+      "2026-09-25 13:48:15.0",
+      "true",
+      "false"
+    ],
+    [
+      "309",
+      "web-app",
+      "growth",
+      "e86666c1c7c81f5d296974037d2b977006d4ff64",
+      "2026-09-25 13:57:02.0",
+      "true",
+      "false"
+    ],
+    [
+      "310",
+      "infra",
+      "platform",
+      "3db83d5f84aaaa9b85b26b96c8364027082e9013",
+      "2026-09-25 14:19:37.0",
+      "true",
+      "false"
+    ],
+    [
+      "311",
+      "mobile-client",
+      "growth",
+      "b763cc1cf0cbb4eca038a20f74f128df4031c4b5",
+      "2026-09-25 15:14:10.0",
+      "true",
+      "false"
+    ],
+    [
+      "312",
+      "payments-api",
+      "payments",
+      "0ea4257488c47be0856ebfd54fad7ba1f4565480",
+      "2026-09-25 15:15:41.0",
+      "true",
+      "true"
+    ],
+    [
+      "313",
+      "mobile-client",
+      "growth",
+      "d1cf6e79040e1ed3fecfc10cba55f26f86b217a8",
+      "2026-09-25 15:31:24.0",
+      "true",
+      "false"
+    ],
+    [
+      "314",
+      "data-pipeline",
+      "discovery",
+      "98e22da0f2b1a2a43ed6adc69a20d9d41a617a97",
+      "2026-09-25 16:17:10.0",
+      "true",
+      "false"
+    ],
+    [
+      "315",
+      "mobile-client",
+      "growth",
+      "dd604acd7ece0c321badbc9f77e19f428d2d555e",
+      "2026-09-25 17:25:11.0",
+      "true",
+      "false"
+    ],
+    [
+      "316",
+      "infra",
+      "platform",
+      "f970f2db7b381fa9ee7d499a037120f3c9e33617",
+      "2026-09-25 17:40:12.0",
+      "true",
+      "false"
+    ],
+    [
+      "317",
+      "infra",
+      "platform",
+      "b9780b015d339b56525540da186d9a35dcd487f0",
+      "2026-09-25 17:44:14.0",
+      "true",
+      "false"
+    ],
+    [
+      "318",
+      "infra",
+      "platform",
+      "52bb1dc3fe1ff18ab581b514b92b182eb115fbb1",
+      "2026-09-25 18:39:38.0",
+      "true",
+      "true"
+    ],
+    [
+      "319",
+      "infra",
+      "platform",
+      "d7c935059fcfb20eeb0c621bf609f5d283df2344",
+      "2026-09-25 19:48:35.0",
+      "true",
+      "false"
+    ],
+    [
+      "320",
+      "payments-api",
+      "payments",
+      "166d532f77c28b742f5b4e617c95a7d2a0071997",
+      "2026-09-25 20:23:15.0",
+      "true",
+      "false"
+    ],
+    [
+      "321",
+      "data-pipeline",
+      "discovery",
+      "ca0aba700ff3c8ea722715ab8a6e5a10b783aef3",
+      "2026-09-25 20:42:29.0",
+      "true",
+      "false"
+    ],
+    [
+      "322",
+      "mobile-client",
+      "growth",
+      "02fabe9bf09902352fa316a94b0395b4726af95e",
+      "2026-09-25 22:35:33.0",
+      "true",
+      "false"
+    ],
+    [
+      "323",
+      "payments-api",
+      "payments",
+      "597cd521ae867a3da0e1080918c25e56a98a2332",
+      "2026-09-27 15:12:41.0",
+      "true",
+      "false"
+    ],
+    [
+      "324",
+      "infra",
+      "platform",
+      "0fff3a3d23c15bb0b658366aca8a587cc04ce8c2",
+      "2026-09-27 18:27:38.0",
+      "true",
+      "false"
+    ],
+    [
+      "325",
+      "mobile-client",
+      "growth",
+      "bde7efcc05b853cd8d3538cab234e2b06fb0ec82",
+      "2026-09-28 09:55:34.0",
+      "true",
+      "false"
+    ],
+    [
+      "326",
+      "data-pipeline",
+      "discovery",
+      "117fc31c9d9e8f8d6ad8e6a5ca203bc5fbe6fed9",
+      "",
+      "true",
+      "false"
+    ],
+    [
+      "327",
+      "data-pipeline",
+      "discovery",
+      "999e872cf17b43aab32a5bd5869affa3e6f454c5",
+      "2026-09-28 11:08:43.0",
+      "true",
+      "false"
+    ],
+    [
+      "328",
+      "infra",
+      "platform",
+      "0708ea8d40fea62aad60a97dcbe72e361fcaa661",
+      "2026-09-28 11:48:02.0",
+      "true",
+      "false"
+    ],
+    [
+      "329",
+      "infra",
+      "platform",
+      "82e69ed250e1fd54588050c4eeb447d225985967",
+      "2026-09-28 12:15:34.0",
+      "true",
+      "false"
+    ],
+    [
+      "330",
+      "web-app",
+      "growth",
+      "5910fe283afad3083918fd30d3ca89975e7e0245",
+      "2026-09-28 12:31:53.0",
+      "true",
+      "false"
+    ],
+    [
+      "331",
+      "web-app",
+      "growth",
+      "6137b73c51a83af1defec7ca6f194bb7ff19dc83",
+      "2026-09-28 12:56:00.0",
+      "true",
+      "false"
+    ],
+    [
+      "332",
+      "data-pipeline",
+      "discovery",
+      "3f3ec0a00c6439dab510d07369da30bc8910d154",
+      "2026-09-28 13:16:20.0",
+      "true",
+      "false"
+    ],
+    [
+      "333",
+      "mobile-client",
+      "growth",
+      "63bdad423710179a65ab09b55bcc49ee2b91118a",
+      "2026-09-28 13:25:00.0",
+      "true",
+      "false"
+    ],
+    [
+      "334",
+      "payments-api",
+      "payments",
+      "3a17be22e9910483814e9c52349e35614550f7ba",
+      "2026-09-28 14:10:02.0",
+      "true",
+      "false"
+    ],
+    [
+      "335",
+      "payments-api",
+      "payments",
+      "19fba56776a63739bbd0d5ad354d8afe08fa4b2e",
+      "2026-09-28 14:53:24.0",
+      "true",
+      "false"
+    ],
+    [
+      "336",
+      "infra",
+      "platform",
+      "6dd5c091885684c87ebbb7e0c333b6b0cdcc362e",
+      "2026-09-28 15:20:20.0",
+      "false",
+      "false"
+    ],
+    [
+      "337",
+      "infra",
+      "platform",
+      "25ea61bbdee55ec488f91c12139809539eea2239",
+      "",
+      "true",
+      "false"
+    ],
+    [
+      "338",
+      "web-app",
+      "growth",
+      "c0904c8b481cdfb55023624caac0a97e757162a6",
+      "2026-09-28 15:42:58.0",
+      "true",
+      "false"
+    ],
+    [
+      "339",
+      "data-pipeline",
+      "discovery",
+      "a029c50b9cf80b8fc98fa70ddb0d2c5e0d3c1293",
+      "2026-09-28 16:30:51.0",
+      "true",
+      "false"
+    ],
+    [
+      "340",
+      "data-pipeline",
+      "discovery",
+      "03cded419ad856d82453195c27b7fd486a0a01ef",
+      "2026-09-28 16:39:28.0",
+      "true",
+      "false"
+    ],
+    [
+      "341",
+      "mobile-client",
+      "growth",
+      "a645ee60070cf6b3a4ccc5bda00e3e3a13ea1c78",
+      "",
+      "true",
+      "true"
+    ],
+    [
+      "342",
+      "web-app",
+      "growth",
+      "eb8aa5349b48e4136654374ebd9070bf8ebbb5ce",
+      "2026-09-28 19:54:40.0",
+      "true",
+      "false"
+    ],
+    [
+      "343",
+      "mobile-client",
+      "growth",
+      "5b334a413861e992cab24a58b8f55b1fcc860b69",
+      "2026-09-28 21:16:37.0",
+      "true",
+      "false"
+    ],
+    [
+      "344",
+      "mobile-client",
+      "growth",
+      "3eefbdfa560e049a016fd3849dbab9b2911a174b",
+      "2026-09-28 23:09:19.0",
+      "true",
+      "false"
+    ],
+    [
+      "345",
+      "data-pipeline",
+      "discovery",
+      "1dd5d180fed556bb4944ce0deae467ab4928ff43",
+      "2026-09-29 09:30:21.0",
+      "true",
+      "false"
+    ],
+    [
+      "346",
+      "data-pipeline",
+      "discovery",
+      "2acef06b4af6f45c905c00790ef444a5044dd416",
+      "",
+      "true",
+      "false"
+    ],
+    [
+      "347",
+      "web-app",
+      "growth",
+      "8dce9f5fdbdb71732dd0ee13c32c7beb5496a13a",
+      "2026-09-29 09:43:18.0",
+      "true",
+      "false"
+    ],
+    [
+      "348",
+      "mobile-client",
+      "growth",
+      "2a190721462aa8423fdd1814182e28927d77e4ab",
+      "2026-09-29 12:03:42.0",
+      "true",
+      "false"
+    ],
+    [
+      "349",
+      "data-pipeline",
+      "discovery",
+      "5c639cfb3707361342741e93c7fb9d5c55a21982",
+      "2026-09-29 12:26:57.0",
+      "true",
+      "true"
+    ],
+    [
+      "350",
+      "infra",
+      "platform",
+      "a6a20cceee61318f2bdda2874d3e6aa40501ad0b",
+      "2026-09-29 12:54:22.0",
+      "true",
+      "false"
+    ],
+    [
+      "351",
+      "web-app",
+      "growth",
+      "616ce5eeee2ee12c21ad6ef623e1a8a17126dd11",
+      "2026-09-29 13:49:01.0",
+      "true",
+      "false"
+    ],
+    [
+      "352",
+      "web-app",
+      "growth",
+      "027f3b890e78329df4f2d3be666eeb654a3d9d6c",
+      "2026-09-29 14:14:05.0",
+      "true",
+      "true"
+    ],
+    [
+      "353",
+      "infra",
+      "platform",
+      "ae01a9109e12ab3b49fbf995cddda41dda0ccadb",
+      "2026-09-29 14:46:29.0",
+      "true",
+      "false"
+    ],
+    [
+      "354",
+      "web-app",
+      "growth",
+      "6ee7a1e719dcafd6e6d09584805ef753254de242",
+      "2026-09-29 15:08:23.0",
+      "true",
+      "false"
+    ],
+    [
+      "355",
+      "data-pipeline",
+      "discovery",
+      "7041b186943a195f8f57a2724f08f09e319adc86",
+      "2026-09-29 15:11:27.0",
+      "true",
+      "false"
+    ],
+    [
+      "356",
+      "infra",
+      "platform",
+      "6310e41257c731b310577921e4e0ef3e877ab5a9",
+      "2026-09-29 15:23:01.0",
+      "true",
+      "false"
+    ],
+    [
+      "357",
+      "data-pipeline",
+      "discovery",
+      "c23b983fc036b7b21e7e3e385aa25bbcb0dca9f1",
+      "2026-09-29 15:38:44.0",
+      "true",
+      "false"
+    ],
+    [
+      "358",
+      "mobile-client",
+      "growth",
+      "a12ea112c28609603e39a17790349fca7572b86e",
+      "2026-09-29 15:41:54.0",
+      "true",
+      "false"
+    ],
+    [
+      "359",
+      "data-pipeline",
+      "discovery",
+      "8f908ce7ddcbea51f9db3b1b8264bbcff8e2ee72",
+      "2026-09-29 17:02:12.0",
+      "true",
+      "false"
+    ],
+    [
+      "360",
+      "data-pipeline",
+      "discovery",
+      "da2ce8353aab06d35eef79141b5a2f6490866912",
+      "2026-09-29 18:02:04.0",
+      "true",
+      "false"
+    ],
+    [
+      "361",
+      "payments-api",
+      "payments",
+      "91b2be2a9aae81e7770e4e13baede7b0602f455b",
+      "2026-09-29 18:05:18.0",
+      "true",
+      "false"
+    ],
+    [
+      "362",
+      "data-pipeline",
+      "discovery",
+      "6bf165f98dc456b8c644d4da2fb009464b114bb3",
+      "2026-09-30 10:23:20.0",
+      "true",
+      "false"
+    ],
+    [
+      "363",
+      "payments-api",
+      "payments",
+      "08d338dc1b4f6190ea65c8b1b1537ff0d0801e6c",
+      "2026-09-30 10:44:43.0",
+      "true",
+      "false"
+    ],
+    [
+      "364",
+      "data-pipeline",
+      "discovery",
+      "937d088d9857de7616f79b54e9bf639fadf33626",
+      "2026-09-30 10:49:39.0",
+      "true",
+      "false"
+    ],
+    [
+      "365",
+      "payments-api",
+      "payments",
+      "a776e3e24399047c0f94360458970dd02810989d",
+      "2026-09-30 11:15:21.0",
+      "true",
+      "false"
+    ],
+    [
+      "366",
+      "data-pipeline",
+      "discovery",
+      "3b011a85a126a56a81af552a5dd43a26707c5902",
+      "2026-09-30 13:06:49.0",
+      "true",
+      "false"
+    ],
+    [
+      "367",
+      "data-pipeline",
+      "discovery",
+      "f6645619b16d6acf1f0d553c8b44ddba5dd00462",
+      "2026-09-30 13:41:33.0",
+      "true",
+      "false"
+    ],
+    [
+      "368",
+      "payments-api",
+      "payments",
+      "6eec86159919093335f45ec50a1a652e9bc01508",
+      "2026-09-30 13:48:15.0",
+      "true",
+      "false"
+    ],
+    [
+      "369",
+      "infra",
+      "platform",
+      "61207450f26e0cb3c97de373d6cdb6c6591f612f",
+      "2026-09-30 13:53:17.0",
+      "true",
+      "false"
+    ],
+    [
+      "370",
+      "mobile-client",
+      "growth",
+      "7be44ec10a722e75abfa345be5595e6fc7b06004",
+      "2026-09-30 13:54:25.0",
+      "true",
+      "false"
+    ],
+    [
+      "371",
+      "web-app",
+      "growth",
+      "3985617efe0a06b32c75e83015f21f03321fa9c9",
+      "2026-09-30 14:02:05.0",
+      "true",
+      "false"
+    ],
+    [
+      "372",
+      "payments-api",
+      "payments",
+      "580e82deec01b627c97939d92de1546dab589513",
+      "2026-09-30 14:05:37.0",
+      "true",
+      "false"
+    ],
+    [
+      "373",
+      "infra",
+      "platform",
+      "9dd68ce65d5c8254cb1aea91ec35b4073367bfe7",
+      "2026-09-30 14:09:45.0",
+      "true",
+      "true"
+    ],
+    [
+      "374",
+      "web-app",
+      "growth",
+      "ab3ddb6088e5c36af622d120d9634a476036df12",
+      "2026-09-30 14:34:50.0",
+      "true",
+      "false"
+    ],
+    [
+      "375",
+      "data-pipeline",
+      "discovery",
+      "2099f48336ee2a7b633070e9de9a55e3986032e0",
+      "2026-09-30 15:01:30.0",
+      "true",
+      "false"
+    ],
+    [
+      "376",
+      "payments-api",
+      "payments",
+      "bd748ad2a3a36521e05a67a88533174604e196e4",
+      "2026-09-30 15:20:11.0",
+      "true",
+      "false"
+    ],
+    [
+      "377",
+      "data-pipeline",
+      "discovery",
+      "1796d5ee3ea255dbfa9a4615dfa91cec2480e8f9",
+      "2026-09-30 15:36:44.0",
+      "true",
+      "false"
+    ],
+    [
+      "378",
+      "web-app",
+      "growth",
+      "1628695b54c30118b5b811885c0b5c503b076f2c",
+      "",
+      "true",
+      "false"
+    ],
+    [
+      "379",
+      "mobile-client",
+      "growth",
+      "3e69de5709a6be5c08987f5d5ab2338e9e47474a",
+      "2026-09-30 16:53:26.0",
+      "true",
+      "false"
+    ],
+    [
+      "380",
+      "infra",
+      "platform",
+      "3a7259791f71a949d5ce1a7cdfc766dd863ea8fd",
+      "2026-09-30 17:12:48.0",
+      "true",
+      "false"
+    ],
+    [
+      "381",
+      "infra",
+      "platform",
+      "945cfccd94a7f819065d8dc6e51abcd0babfd268",
+      "2026-09-30 17:26:20.0",
+      "true",
+      "false"
+    ],
+    [
+      "382",
+      "data-pipeline",
+      "discovery",
+      "777aa2ce2474ce004986a6bdb57c6d17182dae37",
+      "2026-09-30 18:23:49.0",
+      "true",
+      "false"
+    ],
+    [
+      "383",
+      "data-pipeline",
+      "discovery",
+      "e0160ded7627543954e0c774fc6279c0e54c90bd",
+      "2026-09-30 18:40:19.0",
+      "true",
+      "false"
+    ],
+    [
+      "384",
+      "web-app",
+      "growth",
+      "72b54132ea77a6c4f823a91d13fd6bc76e961e1d",
+      "2026-09-30 19:56:37.0",
+      "true",
+      "false"
+    ],
+    [
+      "385",
+      "web-app",
+      "growth",
+      "66ce244c53c98c2bd3d954c0a7669c0874759a42",
+      "2026-10-01 10:16:38.0",
+      "true",
+      "false"
+    ],
+    [
+      "386",
+      "data-pipeline",
+      "discovery",
+      "d3b2548ff776c763a59cce77fb816b2d6f2c1706",
+      "2026-10-01 10:22:06.0",
+      "true",
+      "false"
+    ],
+    [
+      "387",
+      "web-app",
+      "growth",
+      "bef89c808478d093e21ed944fea949641d119930",
+      "2026-10-01 12:58:38.0",
+      "true",
+      "false"
+    ],
+    [
+      "388",
+      "web-app",
+      "growth",
+      "f663e064e65add096e82478640ce55b25765ffeb",
+      "2026-10-01 13:04:01.0",
+      "true",
+      "false"
+    ],
+    [
+      "389",
+      "data-pipeline",
+      "discovery",
+      "ccc9aa99cef08185514cb046823f112cc18a94ac",
+      "2026-10-01 13:40:35.0",
+      "true",
+      "false"
+    ],
+    [
+      "390",
+      "mobile-client",
+      "growth",
+      "d20a3ad1f7fb3b858485358780c95bc4a36019b5",
+      "2026-10-01 15:07:54.0",
+      "true",
+      "false"
+    ],
+    [
+      "391",
+      "infra",
+      "platform",
+      "9dbcfde8bcc7555568118b62e8e4628468483a20",
+      "2026-10-01 15:21:56.0",
+      "true",
+      "false"
+    ],
+    [
+      "392",
+      "infra",
+      "platform",
+      "fe8d6c1d93bfbb182a90f8e343a68c2cc15bff87",
+      "2026-10-01 15:31:59.0",
+      "true",
+      "false"
+    ],
+    [
+      "393",
+      "web-app",
+      "growth",
+      "e444665fc624c74dc97be3234382162c7e7d9e76",
+      "2026-10-01 15:53:09.0",
+      "true",
+      "false"
+    ],
+    [
+      "394",
+      "mobile-client",
+      "growth",
+      "3169ad8668ffcd4e840359c671753bdf3ae028e5",
+      "2026-10-01 16:20:39.0",
+      "true",
+      "false"
+    ],
+    [
+      "395",
+      "mobile-client",
+      "growth",
+      "c89261aac975ebd396a8ad083b51f343a4d2faf8",
+      "2026-10-01 17:09:47.0",
+      "true",
+      "false"
+    ],
+    [
+      "396",
+      "payments-api",
+      "payments",
+      "5bf720cde855bd46c0c8dedb61401666937fc19f",
+      "",
+      "true",
+      "false"
+    ],
+    [
+      "397",
+      "mobile-client",
+      "growth",
+      "34d0fc41b68e01d1f3954b4180beae717c519210",
+      "2026-10-01 18:29:54.0",
+      "true",
+      "false"
+    ],
+    [
+      "398",
+      "data-pipeline",
+      "discovery",
+      "41347fe8f1ec6857c90a1f43c14acbe5f539e430",
+      "2026-10-01 20:40:53.0",
+      "true",
+      "false"
+    ],
+    [
+      "399",
+      "mobile-client",
+      "growth",
+      "16b70b4da6e5445fc86671e9a843475b7270b25e",
+      "2026-10-01 23:19:44.0",
+      "true",
+      "false"
+    ],
+    [
+      "400",
+      "data-pipeline",
+      "discovery",
+      "f8dd4fca7542e3ff55bcc8ebd03ca54307f87978",
+      "2026-10-01 23:48:53.0",
+      "true",
+      "false"
+    ],
+    [
+      "401",
+      "infra",
+      "platform",
+      "65965a7890c70802a0ce31d33c80a20d11bf1955",
+      "2026-10-02 10:15:27.0",
+      "true",
+      "true"
+    ],
+    [
+      "402",
+      "web-app",
+      "growth",
+      "22c151f08c226160f98ec21be07b493534569d43",
+      "2026-10-02 10:46:23.0",
+      "false",
+      "false"
+    ],
+    [
+      "403",
+      "infra",
+      "platform",
+      "409b0853293c9914adeef9b5a4b51a96fc1f80c2",
+      "2026-10-02 11:58:00.0",
+      "true",
+      "false"
+    ],
+    [
+      "404",
+      "data-pipeline",
+      "discovery",
+      "8238d82fe4683e1c9be5b14676df2dc15d49861a",
+      "2026-10-02 12:19:57.0",
+      "true",
+      "false"
+    ],
+    [
+      "405",
+      "payments-api",
+      "payments",
+      "0c68667ab305eb51f833a3f2182b8414893be5dd",
+      "2026-10-02 13:50:36.0",
+      "true",
+      "true"
+    ],
+    [
+      "406",
+      "mobile-client",
+      "growth",
+      "3db0749bc31b0bcb1de495ad15ee86a5ebf72265",
+      "2026-10-02 14:07:24.0",
+      "true",
+      "true"
+    ],
+    [
+      "407",
+      "infra",
+      "platform",
+      "cae41373457fdd84ac614dbd96aa89e6b33acfb8",
+      "2026-10-02 14:42:19.0",
+      "false",
+      "false"
+    ],
+    [
+      "408",
+      "mobile-client",
+      "growth",
+      "9fdffc2b62ff46d3a8988530e58b6c6039911a95",
+      "2026-10-02 16:05:44.0",
+      "true",
+      "false"
+    ],
+    [
+      "409",
+      "payments-api",
+      "payments",
+      "9ce7a3107d35f8fd075fb762a9286848e1d9c1a0",
+      "2026-10-02 16:55:48.0",
+      "true",
+      "false"
+    ],
+    [
+      "410",
+      "data-pipeline",
+      "discovery",
+      "4eb8536e97357bcdd3110b637952f03b2e0ce751",
+      "2026-10-02 17:43:16.0",
+      "true",
+      "false"
+    ],
+    [
+      "411",
+      "payments-api",
+      "payments",
+      "db32fee7a9fc14d78f7f0effc81b7d09ef21974b",
+      "2026-10-02 19:00:32.0",
+      "true",
+      "false"
+    ],
+    [
+      "412",
+      "mobile-client",
+      "growth",
+      "ebb5cc98a97d68ed8816653aefdb7a1c6a9725d4",
+      "2026-10-02 19:21:36.0",
+      "true",
+      "false"
+    ],
+    [
+      "413",
+      "infra",
+      "platform",
+      "1296467aa6e0c2220c8158b9997a6ba725070cb1",
+      "2026-10-02 19:41:50.0",
+      "true",
+      "false"
+    ],
+    [
+      "414",
+      "payments-api",
+      "payments",
+      "69be1f9b392a7732e23342775b501043c6cb14bd",
+      "2026-10-03 13:42:36.0",
+      "true",
+      "false"
+    ],
+    [
+      "415",
+      "mobile-client",
+      "growth",
+      "dbca0238f2895d128af69b1f12946fe7f346960b",
+      "2026-10-03 13:51:24.0",
+      "true",
+      "false"
+    ],
+    [
+      "416",
+      "infra",
+      "platform",
+      "d70438a00c99e04f099e93ac4b63cec0571bab74",
+      "2026-10-04 13:56:45.0",
+      "true",
+      "false"
+    ],
+    [
+      "417",
+      "mobile-client",
+      "growth",
+      "946b7e88ac5bfccda17f31ba817f9e001b15e081",
+      "2026-10-05 09:58:04.0",
+      "true",
+      "false"
+    ],
+    [
+      "418",
+      "infra",
+      "platform",
+      "f1ddd7863b9f7269c8844dc96ca2266e472eb49e",
+      "2026-10-05 09:59:27.0",
+      "true",
+      "false"
+    ],
+    [
+      "419",
+      "data-pipeline",
+      "discovery",
+      "6ab1e7b7e86e480c6ad483b3c0f9eb6fa758f913",
+      "2026-10-05 11:11:47.0",
+      "true",
+      "false"
+    ],
+    [
+      "420",
+      "data-pipeline",
+      "discovery",
+      "dd87429889e1e21b50ae667e90f06450c8fd0d2e",
+      "2026-10-05 11:54:28.0",
+      "true",
+      "false"
+    ],
+    [
+      "421",
+      "payments-api",
+      "payments",
+      "67ba0f71d1c7d73a702527a2ad9265702c320cb5",
+      "2026-10-05 12:02:02.0",
+      "true",
+      "false"
+    ],
+    [
+      "422",
+      "web-app",
+      "growth",
+      "e973217cec96028a7e58b4bcc7b174b2522e5143",
+      "2026-10-05 12:26:00.0",
+      "false",
+      "false"
+    ],
+    [
+      "423",
+      "data-pipeline",
+      "discovery",
+      "5733267b040e5143c060c0efe34a7e46642e04e0",
+      "2026-10-05 12:35:24.0",
+      "true",
+      "false"
+    ],
+    [
+      "424",
+      "mobile-client",
+      "growth",
+      "75dde674efc655aa340fc0da190b858dd6aaf4e1",
+      "2026-10-05 12:47:28.0",
+      "true",
+      "false"
+    ],
+    [
+      "425",
+      "data-pipeline",
+      "discovery",
+      "e66f961e2b47377f0e756dbc549e79ce83ac6a05",
+      "2026-10-05 12:59:20.0",
+      "true",
+      "false"
+    ],
+    [
+      "426",
+      "web-app",
+      "growth",
+      "356d7993a281838d93fe368edac2849e1fec305a",
+      "2026-10-05 13:06:23.0",
+      "true",
+      "false"
+    ],
+    [
+      "427",
+      "mobile-client",
+      "growth",
+      "edef1e12d9164e3fe2bd760f00639a3d01910a79",
+      "2026-10-05 13:44:59.0",
+      "true",
+      "false"
+    ],
+    [
+      "428",
+      "data-pipeline",
+      "discovery",
+      "24e0b392151bfe4766b2f71c044e407e2fddaaf1",
+      "2026-10-05 13:50:52.0",
+      "true",
+      "false"
+    ],
+    [
+      "429",
+      "infra",
+      "platform",
+      "e75d92efa795193628b0ce4abb36128d7e7c1b92",
+      "2026-10-05 14:04:56.0",
+      "false",
+      "false"
+    ],
+    [
+      "430",
+      "payments-api",
+      "payments",
+      "79815d076159c9ad370098b1aa67d107239a3a30",
+      "2026-10-05 17:21:09.0",
+      "false",
+      "false"
+    ],
+    [
+      "431",
+      "mobile-client",
+      "growth",
+      "ea16fc6ac433d905c4091903ed3a4d1b0d40b250",
+      "",
+      "true",
+      "false"
+    ],
+    [
+      "432",
+      "web-app",
+      "growth",
+      "7bcd18c06b7b591094f4f0cccfcfd5154a2b1443",
+      "2026-10-05 19:38:49.0",
+      "true",
+      "false"
+    ],
+    [
+      "433",
+      "web-app",
+      "growth",
+      "6f08399ecc8cd66ff2db5b1d78bf02e48d8ab4f6",
+      "2026-10-05 21:05:54.0",
+      "true",
+      "false"
+    ],
+    [
+      "434",
+      "mobile-client",
+      "growth",
+      "4be9c55abb52007627fb82b5c4b795fe27bc7bc7",
+      "2026-10-06 10:50:51.0",
+      "false",
+      "false"
+    ],
+    [
+      "435",
+      "mobile-client",
+      "growth",
+      "8ff55cbb396a10276fdab048fe5d92c6205d2c9e",
+      "2026-10-06 11:20:28.0",
+      "true",
+      "false"
+    ],
+    [
+      "436",
+      "mobile-client",
+      "growth",
+      "1e49a1c0f858570156e39f92916cdf95686d2627",
+      "",
+      "true",
+      "false"
+    ],
+    [
+      "437",
+      "mobile-client",
+      "growth",
+      "5981b6ff42ce1a41983cb5e03f00764faf1e1eb8",
+      "2026-10-06 13:03:23.0",
+      "false",
+      "false"
+    ],
+    [
+      "438",
+      "web-app",
+      "growth",
+      "a13cd8efeac83a02e6dbb6d587b373439270cf8a",
+      "2026-10-06 13:04:15.0",
+      "true",
+      "false"
+    ],
+    [
+      "439",
+      "mobile-client",
+      "growth",
+      "c490906afbddb30c29805a1cf6c7b4b43d55e1c8",
+      "2026-10-06 13:56:38.0",
+      "true",
+      "false"
+    ],
+    [
+      "440",
+      "web-app",
+      "growth",
+      "7b7fa41771dfd353e0d971196b5931875797a27c",
+      "2026-10-06 14:50:43.0",
+      "true",
+      "false"
+    ],
+    [
+      "441",
+      "web-app",
+      "growth",
+      "1344446554b1398fb5e3f82903234da15c41b20a",
+      "2026-10-06 16:00:07.0",
+      "true",
+      "false"
+    ],
+    [
+      "442",
+      "mobile-client",
+      "growth",
+      "78deb9c49279de24dd43f7e247089a7c999c1bd2",
+      "2026-10-06 16:04:10.0",
+      "true",
+      "false"
+    ],
+    [
+      "443",
+      "mobile-client",
+      "growth",
+      "f54567f494958ebfc62b10733a532629c7364d38",
+      "2026-10-06 17:45:31.0",
+      "true",
+      "false"
+    ],
+    [
+      "444",
+      "data-pipeline",
+      "discovery",
+      "fa6cf23c36345a95a0c3e402f79afcdbb27ad32d",
+      "",
+      "true",
+      "false"
+    ],
+    [
+      "445",
+      "data-pipeline",
+      "discovery",
+      "ca2dbe0bf2955adb9c9553a4b5b43d6af3c5f184",
+      "2026-10-06 18:19:58.0",
+      "true",
+      "false"
+    ],
+    [
+      "446",
+      "web-app",
+      "growth",
+      "a8fc77a9232d2118018b03a5074c939dc589c88a",
+      "2026-10-06 21:11:10.0",
+      "true",
+      "false"
+    ],
+    [
+      "447",
+      "web-app",
+      "growth",
+      "047fd829fd5973b0a94bdc93663e558e3abd64c0",
+      "2026-10-07 09:55:09.0",
+      "true",
+      "true"
+    ],
+    [
+      "448",
+      "data-pipeline",
+      "discovery",
+      "e904a1df27395a75269a55587487afe3d9337fed",
+      "2026-10-07 10:41:29.0",
+      "false",
+      "false"
+    ],
+    [
+      "449",
+      "infra",
+      "platform",
+      "7ef3780098bd93b64690684eaea8db4f2e0f02d7",
+      "2026-10-07 11:16:46.0",
+      "true",
+      "false"
+    ],
+    [
+      "450",
+      "web-app",
+      "growth",
+      "82d0631fcb4e9651141000e13fc707a3614922d7",
+      "2026-10-07 11:47:10.0",
+      "true",
+      "false"
+    ],
+    [
+      "451",
+      "infra",
+      "platform",
+      "f7894496147088d73571735f5568a3c487a5e6c9",
+      "2026-10-07 13:20:35.0",
+      "true",
+      "false"
+    ],
+    [
+      "452",
+      "mobile-client",
+      "growth",
+      "291ef85d82929afd357b51ba6e77ce0686c12f7c",
+      "2026-10-07 15:22:08.0",
+      "true",
+      "false"
+    ],
+    [
+      "453",
+      "payments-api",
+      "payments",
+      "866b4f9412d1c076693de2d6040803482c92e6d4",
+      "2026-10-07 15:28:11.0",
+      "true",
+      "false"
+    ],
+    [
+      "454",
+      "payments-api",
+      "payments",
+      "485bc86c52600f3f47d4700ca62a9a476c54b71b",
+      "2026-10-07 15:28:21.0",
+      "true",
+      "false"
+    ],
+    [
+      "455",
+      "mobile-client",
+      "growth",
+      "642c840800326cab606a71425df3581cb458a5d1",
+      "2026-10-07 15:50:51.0",
+      "true",
+      "false"
+    ],
+    [
+      "456",
+      "data-pipeline",
+      "discovery",
+      "e65881ee207f9b9a4d5aa0a15b84cc6d9c2ccd6c",
+      "2026-10-07 16:06:57.0",
+      "true",
+      "false"
+    ],
+    [
+      "457",
+      "infra",
+      "platform",
+      "742136d46bf055be50cd0f1c7442b1f7161607b8",
+      "2026-10-07 16:27:34.0",
+      "true",
+      "true"
+    ],
+    [
+      "458",
+      "infra",
+      "platform",
+      "9ad9690aa04a1f8c467880d3180ab696961eb730",
+      "2026-10-07 16:54:14.0",
+      "true",
+      "false"
+    ],
+    [
+      "459",
+      "mobile-client",
+      "growth",
+      "b31973c374b9064e5b4aa90090d0c86d8bbf5cae",
+      "",
+      "true",
+      "true"
+    ],
+    [
+      "460",
+      "mobile-client",
+      "growth",
+      "3f9966be8878e6c541c14e93a560e6b4f96bf7fa",
+      "2026-10-07 18:02:46.0",
+      "true",
+      "false"
+    ],
+    [
+      "461",
+      "data-pipeline",
+      "discovery",
+      "e68039af62b7b11c01107196067b56f0b3a847d7",
+      "2026-10-07 19:09:54.0",
+      "true",
+      "false"
+    ],
+    [
+      "462",
+      "mobile-client",
+      "growth",
+      "45dbf9a933e2219af76103dce59851a47f969006",
+      "2026-10-07 19:14:12.0",
+      "true",
+      "false"
+    ],
+    [
+      "463",
+      "mobile-client",
+      "growth",
+      "a7cb5e72c8556da2e168cfbf19611d0288e60f19",
+      "2026-10-07 23:10:52.0",
+      "false",
+      "false"
+    ],
+    [
+      "464",
+      "payments-api",
+      "payments",
+      "a6a254f4cb7c408ad86844a368b08768c6cc9600",
+      "2026-10-08 10:21:00.0",
+      "true",
+      "false"
+    ],
+    [
+      "465",
+      "web-app",
+      "growth",
+      "d8d813c81648533672ba2f6f17faf7f9a0c36d1a",
+      "2026-10-08 11:11:10.0",
+      "true",
+      "false"
+    ],
+    [
+      "466",
+      "web-app",
+      "growth",
+      "4b9af2088a793d2d34d487cdfd237687afe3e390",
+      "2026-10-08 11:25:38.0",
+      "true",
+      "false"
+    ],
+    [
+      "467",
+      "infra",
+      "platform",
+      "f3539a36f8d0b9f2f810b81f50d39f35ff813476",
+      "2026-10-08 12:00:27.0",
+      "true",
+      "false"
+    ],
+    [
+      "468",
+      "data-pipeline",
+      "discovery",
+      "75deebc6c0f76587270562d94f5dfa2f926ebe00",
+      "2026-10-08 12:42:39.0",
+      "true",
+      "false"
+    ],
+    [
+      "469",
+      "data-pipeline",
+      "discovery",
+      "7d60006a9d26f465e9a2ed66fa39d1daad743a23",
+      "2026-10-08 12:53:03.0",
+      "false",
+      "false"
+    ],
+    [
+      "470",
+      "web-app",
+      "growth",
+      "7beaa1469c2225852e1edb0029f28dad71cf9329",
+      "2026-10-08 12:55:33.0",
+      "true",
+      "false"
+    ],
+    [
+      "471",
+      "payments-api",
+      "payments",
+      "a9be06e619d3b5cce7cd9470385ecadd61381a75",
+      "2026-10-08 13:14:11.0",
+      "true",
+      "false"
+    ],
+    [
+      "472",
+      "data-pipeline",
+      "discovery",
+      "d4d9dc8715ea9af21c691d0096e5f24ad2e4294b",
+      "2026-10-08 13:16:15.0",
+      "true",
+      "false"
+    ],
+    [
+      "473",
+      "payments-api",
+      "payments",
+      "f1547081c7d4e418a0647d25d9a67059ca41a33a",
+      "2026-10-08 13:21:00.0",
+      "true",
+      "false"
+    ],
+    [
+      "474",
+      "data-pipeline",
+      "discovery",
+      "edab32c88c4780418857d62dbf75f905e29067a6",
+      "2026-10-08 14:52:01.0",
+      "true",
+      "false"
+    ],
+    [
+      "475",
+      "web-app",
+      "growth",
+      "ba828563abc967464a41071cdb598301d28123fc",
+      "",
+      "true",
+      "false"
+    ],
+    [
+      "476",
+      "infra",
+      "platform",
+      "2e1ef0536e2cac650f9f1ec48bb32cd4fbc0ce2b",
+      "2026-10-08 16:23:16.0",
+      "false",
+      "false"
+    ],
+    [
+      "477",
+      "payments-api",
+      "payments",
+      "f44741fbefd8cd391e79231ed5bb8eccba4218fa",
+      "2026-10-08 16:23:26.0",
+      "true",
+      "false"
+    ],
+    [
+      "478",
+      "payments-api",
+      "payments",
+      "de80a644d96cf23350a6256246e849e04642be85",
+      "2026-10-08 16:25:37.0",
+      "true",
+      "false"
+    ],
+    [
+      "479",
+      "mobile-client",
+      "growth",
+      "cf9a9ddd31ad9d18747b64f2dbcdc7c51912d936",
+      "2026-10-08 17:28:21.0",
+      "true",
+      "false"
+    ],
+    [
+      "480",
+      "payments-api",
+      "payments",
+      "41fb4cbf4dc611359c461510422e02858dbd3e00",
+      "2026-10-08 17:28:54.0",
+      "true",
+      "false"
+    ],
+    [
+      "481",
+      "mobile-client",
+      "growth",
+      "48228986f36c12be161c255453caa5d2b71896ed",
+      "2026-10-08 17:29:35.0",
+      "true",
+      "false"
+    ],
+    [
+      "482",
+      "mobile-client",
+      "growth",
+      "49fc8a946b143ab0a15779c9f496bdba1b8f37f1",
+      "2026-10-08 18:05:16.0",
+      "true",
+      "false"
+    ],
+    [
+      "483",
+      "payments-api",
+      "payments",
+      "0e1f8fc4f2005539a7332879a496342ac9e3a8bb",
+      "2026-10-08 19:28:12.0",
+      "true",
+      "false"
+    ],
+    [
+      "484",
+      "web-app",
+      "growth",
+      "bf074ceb7809a21b402402f082ee82cfd90706a2",
+      "2026-10-09 10:21:24.0",
+      "true",
+      "false"
+    ],
+    [
+      "485",
+      "data-pipeline",
+      "discovery",
+      "8100058b39dec75babe4622bf12786b48ea58c36",
+      "",
+      "true",
+      "false"
+    ],
+    [
+      "486",
+      "payments-api",
+      "payments",
+      "ad807b27b2b449bcd0dbf7bad544740873880542",
+      "2026-10-09 12:31:16.0",
+      "true",
+      "false"
+    ],
+    [
+      "487",
+      "web-app",
+      "growth",
+      "1bc4be4884bc7fedfb14e2707ac9d814eabcf9e3",
+      "2026-10-09 12:42:40.0",
+      "true",
+      "false"
+    ],
+    [
+      "488",
+      "infra",
+      "platform",
+      "c381f58278dba5092d27d13ee533510c5ec2ce5d",
+      "2026-10-09 13:54:27.0",
+      "true",
+      "true"
+    ],
+    [
+      "489",
+      "payments-api",
+      "payments",
+      "5d93f1dc995965906ab06d5033ce25a27f9435e7",
+      "2026-10-09 14:32:20.0",
+      "true",
+      "false"
+    ],
+    [
+      "490",
+      "payments-api",
+      "payments",
+      "4dda9312a704d4c8b924cfe7d11b11ac56d5d71b",
+      "2026-10-09 15:34:00.0",
+      "false",
+      "false"
+    ],
+    [
+      "491",
+      "infra",
+      "platform",
+      "6c8e632170db38f96aebd03a4ba658f828de555c",
+      "2026-10-09 15:36:55.0",
+      "true",
+      "false"
+    ],
+    [
+      "492",
+      "web-app",
+      "growth",
+      "e9fb468bd010c8245e38d28001ba27d85080ba44",
+      "2026-10-09 16:31:34.0",
+      "true",
+      "false"
+    ],
+    [
+      "493",
+      "data-pipeline",
+      "discovery",
+      "7a170d39bcaf3fa1cf7d7cfea9d79e6938a853a6",
+      "2026-10-09 16:35:53.0",
+      "true",
+      "true"
+    ],
+    [
+      "494",
+      "payments-api",
+      "payments",
+      "2a6f2070d029af2c8c48d7a4592ebe927c6a31ab",
+      "2026-10-09 17:22:31.0",
+      "true",
+      "false"
+    ],
+    [
+      "495",
+      "mobile-client",
+      "growth",
+      "f56a58454ad2e3a56f6d1f91a0037247312fbfc2",
+      "2026-10-09 17:51:09.0",
+      "false",
+      "false"
+    ],
+    [
+      "496",
+      "infra",
+      "platform",
+      "98df61a166e0622b355a4164ce08660396294678",
+      "2026-10-09 17:56:22.0",
+      "true",
+      "false"
+    ],
+    [
+      "497",
+      "payments-api",
+      "payments",
+      "7a75080c6f246c04a140a65620b71d11b064c8be",
+      "2026-10-09 20:18:37.0",
+      "true",
+      "false"
+    ],
+    [
+      "498",
+      "payments-api",
+      "payments",
+      "33693d38793b60a0b7119cc847c8af52c51a719a",
+      "2026-10-09 20:44:33.0",
+      "true",
+      "false"
+    ],
+    [
+      "499",
+      "mobile-client",
+      "growth",
+      "2f2211c678b96aab226600c7f1b74260d0036fe3",
+      "2026-10-09 21:23:44.0",
+      "true",
+      "false"
+    ],
+    [
+      "500",
+      "web-app",
+      "growth",
+      "1f33b7b5912f580fff4d87e3016ce3ce0bf48505",
+      "2026-10-09 21:28:05.0",
+      "true",
+      "false"
+    ],
+    [
+      "501",
+      "infra",
+      "platform",
+      "516ab87a0e7f8170a9dc6934e5d2721bb9b56671",
+      "2026-10-10 16:11:34.0",
+      "true",
+      "false"
+    ],
+    [
+      "502",
+      "infra",
+      "platform",
+      "515c9c39d67708142f15b0127888e572bb8ec560",
+      "2026-10-12 09:46:43.0",
+      "true",
+      "false"
+    ],
+    [
+      "503",
+      "payments-api",
+      "payments",
+      "be3da3f1d72d553afe194bb6a93528fc24bf22f8",
+      "2026-10-12 11:08:58.0",
+      "true",
+      "false"
+    ],
+    [
+      "504",
+      "mobile-client",
+      "growth",
+      "15fc09dbb04a226ad1cbb2f95fa4a833d95404a1",
+      "",
+      "true",
+      "false"
+    ],
+    [
+      "505",
+      "mobile-client",
+      "growth",
+      "1d60d1c8d4b35ec5dccb225ff80432df18bfb937",
+      "2026-10-12 12:44:00.0",
+      "true",
+      "false"
+    ],
+    [
+      "506",
+      "web-app",
+      "growth",
+      "ba19e502a6aa9563519bd64520121e469eab7023",
+      "2026-10-12 13:19:46.0",
+      "true",
+      "false"
+    ],
+    [
+      "507",
+      "infra",
+      "platform",
+      "51adbe11cab1697400764816d9d7fae1033ee7e6",
+      "2026-10-12 13:34:02.0",
+      "true",
+      "false"
+    ],
+    [
+      "508",
+      "infra",
+      "platform",
+      "19425e0e9de8ec0602ac0a8367ec4eef839684af",
+      "2026-10-12 13:54:57.0",
+      "true",
+      "false"
+    ],
+    [
+      "509",
+      "web-app",
+      "growth",
+      "a8ad6d2cf441198a32fee78196afbc92a0b0f8dc",
+      "2026-10-12 14:08:06.0",
+      "true",
+      "false"
+    ],
+    [
+      "510",
+      "data-pipeline",
+      "discovery",
+      "a7fb030f1b4b1e9314e0f6713919c0db8399f9b4",
+      "2026-10-12 14:28:32.0",
+      "true",
+      "false"
+    ],
+    [
+      "511",
+      "mobile-client",
+      "growth",
+      "42c07bc1891a500c3408e49feae712185cb8d655",
+      "2026-10-12 15:25:07.0",
+      "false",
+      "false"
+    ],
+    [
+      "512",
+      "infra",
+      "platform",
+      "f66340deab769189a3e615be9d72f10a11b7005f",
+      "2026-10-12 15:27:54.0",
+      "true",
+      "false"
+    ],
+    [
+      "513",
+      "web-app",
+      "growth",
+      "15527c19b775efb43a03b96706d4bac3c8cd687a",
+      "2026-10-12 15:35:19.0",
+      "true",
+      "false"
+    ],
+    [
+      "514",
+      "payments-api",
+      "payments",
+      "371a8558b33bfeae53dbb4de093c0cd39f2e0ea3",
+      "2026-10-12 15:38:59.0",
+      "true",
+      "false"
+    ],
+    [
+      "515",
+      "infra",
+      "platform",
+      "6e9179cec74a139af80cef1de7770b6a7a6ce11c",
+      "2026-10-12 16:10:57.0",
+      "true",
+      "false"
+    ],
+    [
+      "516",
+      "data-pipeline",
+      "discovery",
+      "eac6d00c8cd6d5ea97d8950a2145027546e99c7e",
+      "2026-10-12 17:29:25.0",
+      "true",
+      "false"
+    ],
+    [
+      "517",
+      "web-app",
+      "growth",
+      "fa6546cb50cd34a3e3c1a31d0ca7f2fac512257e",
+      "2026-10-12 20:38:35.0",
+      "true",
+      "false"
+    ],
+    [
+      "518",
+      "web-app",
+      "growth",
+      "1ba674d8a11a2d863cb9f1b6f27a2320cd6254a8",
+      "2026-10-13 09:51:09.0",
+      "true",
+      "false"
+    ],
+    [
+      "519",
+      "mobile-client",
+      "growth",
+      "11a749838508a4dcd54690efd1fa65bf371eaafe",
+      "2026-10-13 10:36:53.0",
+      "true",
+      "false"
+    ],
+    [
+      "520",
+      "payments-api",
+      "payments",
+      "cffb41354d7fbdbd0a677520c4e55f1a99eee340",
+      "2026-10-13 10:45:33.0",
+      "true",
+      "false"
+    ],
+    [
+      "521",
+      "mobile-client",
+      "growth",
+      "bfed59e15c29d1bddb1238cfcfb9b53a89ed0f23",
+      "2026-10-13 11:06:26.0",
+      "true",
+      "false"
+    ],
+    [
+      "522",
+      "data-pipeline",
+      "discovery",
+      "2104f78a806eeb5f50bffb321285d41ca5775edd",
+      "2026-10-13 11:45:24.0",
+      "true",
+      "false"
+    ],
+    [
+      "523",
+      "web-app",
+      "growth",
+      "7ce88a43af79cc51963e7195ff995e8f6d618771",
+      "2026-10-13 13:13:04.0",
+      "false",
+      "false"
+    ],
+    [
+      "524",
+      "web-app",
+      "growth",
+      "c81a0191539a7971aa883fa8be4eaf5ced22334e",
+      "2026-10-13 13:16:44.0",
+      "true",
+      "false"
+    ],
+    [
+      "525",
+      "infra",
+      "platform",
+      "8002fe1355b6f729eee2b64b64a9cb507a41d224",
+      "2026-10-13 13:25:44.0",
+      "true",
+      "false"
+    ],
+    [
+      "526",
+      "payments-api",
+      "payments",
+      "af2a9857e8686f58a0ff17ec69c15249f681f15e",
+      "2026-10-13 14:06:06.0",
+      "false",
+      "false"
+    ],
+    [
+      "527",
+      "infra",
+      "platform",
+      "e9701924b95a33e30ba41467eb0d7e7d8325d3a6",
+      "2026-10-13 15:59:39.0",
+      "true",
+      "false"
+    ],
+    [
+      "528",
+      "data-pipeline",
+      "discovery",
+      "bf5b5f0985ade6f4909b2418522948fe36ad8e98",
+      "2026-10-13 16:22:53.0",
+      "true",
+      "false"
+    ],
+    [
+      "529",
+      "web-app",
+      "growth",
+      "ab102be8064bdf6b4fb7b68aa8915aaec5a887b5",
+      "2026-10-13 16:33:34.0",
+      "true",
+      "false"
+    ],
+    [
+      "530",
+      "mobile-client",
+      "growth",
+      "cc49f41bbce2190cc5f2940c33e555526a37139c",
+      "2026-10-13 17:18:26.0",
+      "true",
+      "false"
+    ],
+    [
+      "531",
+      "data-pipeline",
+      "discovery",
+      "0a3cf42d0cec4ed0a68b915b1e94d7085fbe1951",
+      "2026-10-13 17:43:56.0",
+      "true",
+      "false"
+    ],
+    [
+      "532",
+      "web-app",
+      "growth",
+      "621c5cedf6b18cac7738fb45155a4f98956b651b",
+      "2026-10-13 18:29:24.0",
+      "true",
+      "false"
+    ],
+    [
+      "533",
+      "mobile-client",
+      "growth",
+      "8aa12e92b1ec18a9c7b6625acb321350406d796a",
+      "2026-10-13 18:48:41.0",
+      "false",
+      "false"
+    ],
+    [
+      "534",
+      "mobile-client",
+      "growth",
+      "06036ea7aa4090985c51320f7551ed558804fa33",
+      "2026-10-14 09:42:39.0",
+      "true",
+      "false"
+    ],
+    [
+      "535",
+      "infra",
+      "platform",
+      "68f0a5c2193367d9642d11fdfe87532aba1d12b5",
+      "2026-10-14 10:17:42.0",
+      "false",
+      "false"
+    ],
+    [
+      "536",
+      "payments-api",
+      "payments",
+      "3ef21af5f0293564b7a37a36356f8992eba1efd3",
+      "2026-10-14 10:31:22.0",
+      "true",
+      "false"
+    ],
+    [
+      "537",
+      "payments-api",
+      "payments",
+      "7e48d0694541a9d98c5752e7942cfbb62abbc065",
+      "2026-10-14 10:38:21.0",
+      "true",
+      "false"
+    ],
+    [
+      "538",
+      "infra",
+      "platform",
+      "4f944a487fbe019db2c34ac136eca0d31ceeb3ce",
+      "2026-10-14 12:09:24.0",
+      "true",
+      "false"
+    ],
+    [
+      "539",
+      "mobile-client",
+      "growth",
+      "952bfe02602d4d307021ca4eee4f3e360029d5d1",
+      "2026-10-14 12:41:05.0",
+      "true",
+      "false"
+    ],
+    [
+      "540",
+      "mobile-client",
+      "growth",
+      "813b5ea93ee4842371002d195c1efd6e9a595e53",
+      "2026-10-14 13:51:20.0",
+      "false",
+      "false"
+    ],
+    [
+      "541",
+      "web-app",
+      "growth",
+      "2ab75b274a22ead4d22ef86b826c3b05942c77a1",
+      "2026-10-14 14:47:06.0",
+      "false",
+      "false"
+    ],
+    [
+      "542",
+      "payments-api",
+      "payments",
+      "2a5f22c9135125d9194084844a436511c1379a7e",
+      "2026-10-14 14:57:43.0",
+      "true",
+      "false"
+    ],
+    [
+      "543",
+      "payments-api",
+      "payments",
+      "7bdc45df2c96498ab1ff327275a2e8b77f726a55",
+      "2026-10-14 15:04:59.0",
+      "true",
+      "false"
+    ],
+    [
+      "544",
+      "mobile-client",
+      "growth",
+      "e843567de7a464da1ecb2acfc3f90ed4aa59d725",
+      "2026-10-14 16:20:05.0",
+      "false",
+      "false"
+    ],
+    [
+      "545",
+      "data-pipeline",
+      "discovery",
+      "199a21b472e2896b5e219a83933c436f869a881d",
+      "2026-10-14 16:35:04.0",
+      "true",
+      "false"
+    ],
+    [
+      "546",
+      "web-app",
+      "growth",
+      "0dbdcd067c16291de3dc13c18d8c0eb897102e40",
+      "2026-10-14 16:44:41.0",
+      "true",
+      "false"
+    ],
+    [
+      "547",
+      "infra",
+      "platform",
+      "e56820af3ff397ff3e550fde9384ab15104d0382",
+      "2026-10-14 17:36:41.0",
+      "false",
+      "false"
+    ],
+    [
+      "548",
+      "data-pipeline",
+      "discovery",
+      "88c49d377160f9695b4dc4b6f73faead75cf36ee",
+      "2026-10-14 17:39:52.0",
+      "true",
+      "false"
+    ],
+    [
+      "549",
+      "payments-api",
+      "payments",
+      "b9f36ea405b244da0ebf96d946c0d5a7964774bb",
+      "",
+      "false",
+      "false"
+    ],
+    [
+      "550",
+      "mobile-client",
+      "growth",
+      "56e676d753ca0f776481e30cf1dc3e991ec62f73",
+      "2026-10-14 17:53:05.0",
+      "true",
+      "false"
+    ],
+    [
+      "551",
+      "web-app",
+      "growth",
+      "dce9c84bad3eb9eb523a340b63b227eb5c17ca9d",
+      "2026-10-14 19:03:57.0",
+      "true",
+      "false"
+    ],
+    [
+      "552",
+      "payments-api",
+      "payments",
+      "a159d779444c3e70a9e0b0f74a5a06b9cc6b38dd",
+      "2026-10-14 19:40:40.0",
+      "true",
+      "false"
+    ],
+    [
+      "553",
+      "data-pipeline",
+      "discovery",
+      "a4081e9f4d1249126e0c073e1e80a5e4f031ce58",
+      "2026-10-14 20:14:25.0",
+      "true",
+      "false"
+    ],
+    [
+      "554",
+      "web-app",
+      "growth",
+      "298591a0d63023f1e27f1781ae2af7806ff7ef1e",
+      "2026-10-14 23:06:34.0",
+      "true",
+      "false"
+    ],
+    [
+      "555",
+      "infra",
+      "platform",
+      "c9fb5625ce309174ce074d724d8f17cb03ce0c3f",
+      "2026-10-15 09:57:44.0",
+      "true",
+      "false"
+    ],
+    [
+      "556",
+      "web-app",
+      "growth",
+      "fba73a938665d4fe6052960dc8eb8cfd28ce4b80",
+      "2026-10-15 11:42:36.0",
+      "true",
+      "false"
+    ],
+    [
+      "557",
+      "web-app",
+      "growth",
+      "a46de7bab1ef8cf519040e284bc22b6846d5622a",
+      "2026-10-15 12:00:30.0",
+      "true",
+      "false"
+    ],
+    [
+      "558",
+      "payments-api",
+      "payments",
+      "a1dd13c984774e429193568eb0d46e202f13418f",
+      "2026-10-15 12:09:07.0",
+      "true",
+      "true"
+    ],
+    [
+      "559",
+      "payments-api",
+      "payments",
+      "82e6af5bdcc469355dea8aae7536ba9344d62f0c",
+      "",
+      "true",
+      "false"
+    ],
+    [
+      "560",
+      "web-app",
+      "growth",
+      "edc9eae5e1bed626f13b073f26ed32eb1f5326a0",
+      "2026-10-15 12:52:20.0",
+      "true",
+      "false"
+    ],
+    [
+      "561",
+      "infra",
+      "platform",
+      "a369c4919de90a5b407ec1d9f8ab9aacde058fba",
+      "2026-10-15 13:06:43.0",
+      "false",
+      "false"
+    ],
+    [
+      "562",
+      "web-app",
+      "growth",
+      "b8cc3e95764d4a6aabfbb040ef2ed8ad99281d72",
+      "2026-10-15 13:15:12.0",
+      "true",
+      "false"
+    ],
+    [
+      "563",
+      "infra",
+      "platform",
+      "e44674c1ce74679822ce6adbb8b39103bbce8027",
+      "2026-10-15 13:37:27.0",
+      "true",
+      "false"
+    ],
+    [
+      "564",
+      "web-app",
+      "growth",
+      "503ab3e5a29deba2473cdbb0ad962ce61c4184a1",
+      "2026-10-15 13:39:02.0",
+      "true",
+      "false"
+    ],
+    [
+      "565",
+      "mobile-client",
+      "growth",
+      "a9fb334812f9233d70b93b414015b1e06c01af71",
+      "2026-10-15 14:31:58.0",
+      "true",
+      "false"
+    ],
+    [
+      "566",
+      "payments-api",
+      "payments",
+      "7c79765ed58e782c4e48745f0a1b69429b2b9c7c",
+      "2026-10-15 15:21:25.0",
+      "true",
+      "false"
+    ],
+    [
+      "567",
+      "infra",
+      "platform",
+      "c2bde9c2248dd02a088be469d1240af33029a9f4",
+      "2026-10-15 15:25:44.0",
+      "true",
+      "false"
+    ],
+    [
+      "568",
+      "web-app",
+      "growth",
+      "4de1f156417f93ca88d7dd20b582362f8579d38b",
+      "",
+      "true",
+      "false"
+    ],
+    [
+      "569",
+      "infra",
+      "platform",
+      "c0802e7c7778b2938a146401098060ed25093d31",
+      "2026-10-15 16:17:03.0",
+      "true",
+      "false"
+    ],
+    [
+      "570",
+      "data-pipeline",
+      "discovery",
+      "28a2585c1a233a7f4554a47855500588a517fbbc",
+      "2026-10-15 17:58:39.0",
+      "true",
+      "false"
+    ],
+    [
+      "571",
+      "web-app",
+      "growth",
+      "10021dd07cde3103ae3266a994a944b8c9695ffc",
+      "2026-10-15 18:16:09.0",
+      "true",
+      "false"
+    ],
+    [
+      "572",
+      "data-pipeline",
+      "discovery",
+      "e1a2a3d2d80cfee0f8e6436eda9b83f98e9c3388",
+      "2026-10-15 18:29:43.0",
+      "true",
+      "false"
+    ],
+    [
+      "573",
+      "payments-api",
+      "payments",
+      "14ac9248fe99f3aa19990dfe4a8e33de5b1d0c6a",
+      "",
+      "true",
+      "false"
+    ],
+    [
+      "574",
+      "mobile-client",
+      "growth",
+      "d2878be4c98f59b69f009957c989fa186c92638b",
+      "2026-10-15 20:46:43.0",
+      "true",
+      "false"
+    ],
+    [
+      "575",
+      "mobile-client",
+      "growth",
+      "614eaa04ff61574ee10a5fd7f0c455d4ffbcd3ba",
+      "2026-10-15 21:15:42.0",
+      "true",
+      "false"
+    ],
+    [
+      "576",
+      "infra",
+      "platform",
+      "3606cf001cab478e3ed15ad5a06130abee3f6cc6",
+      "2026-10-16 09:47:29.0",
+      "true",
+      "false"
+    ],
+    [
+      "577",
+      "infra",
+      "platform",
+      "0e75c7c2cc3ca85f8f683aa5a7d75e509e2693e3",
+      "2026-10-16 10:54:22.0",
+      "true",
+      "false"
+    ],
+    [
+      "578",
+      "mobile-client",
+      "growth",
+      "eda479afa0726ce03c71b27ec3ba7365e57835c4",
+      "2026-10-16 11:00:37.0",
+      "true",
+      "false"
+    ],
+    [
+      "579",
+      "payments-api",
+      "payments",
+      "c459cd9f10382694c70b7b5ebba420d861bbe141",
+      "2026-10-16 12:06:07.0",
+      "true",
+      "false"
+    ],
+    [
+      "580",
+      "payments-api",
+      "payments",
+      "f1cccfe50afe9031d44cb7bc019ee7d1d0df3a0d",
+      "2026-10-16 13:11:21.0",
+      "true",
+      "false"
+    ],
+    [
+      "581",
+      "mobile-client",
+      "growth",
+      "cf867625530012dd33e3743a1b8575bc5a6dd4fa",
+      "2026-10-16 13:19:19.0",
+      "true",
+      "false"
+    ],
+    [
+      "582",
+      "web-app",
+      "growth",
+      "b1c3d2af2b2137d009fa15a6bbe0dffc19a1ac9c",
+      "2026-10-16 13:46:29.0",
+      "true",
+      "false"
+    ],
+    [
+      "583",
+      "mobile-client",
+      "growth",
+      "bfe0d7357c659cfa1ea9b8f09a1f64b750e66552",
+      "2026-10-16 13:51:25.0",
+      "true",
+      "false"
+    ],
+    [
+      "584",
+      "payments-api",
+      "payments",
+      "b8c6effef24cd8f7b8d74d4e134a6c1451444046",
+      "2026-10-16 15:34:22.0",
+      "true",
+      "false"
+    ],
+    [
+      "585",
+      "payments-api",
+      "payments",
+      "975d3b868eb26f8cffaccd7f87e9d588c6e7309a",
+      "2026-10-16 15:39:57.0",
+      "true",
+      "false"
+    ],
+    [
+      "586",
+      "mobile-client",
+      "growth",
+      "288b8716077f83beaefb78d1c33c1c7abb59217e",
+      "2026-10-16 15:57:56.0",
+      "true",
+      "true"
+    ],
+    [
+      "587",
+      "mobile-client",
+      "growth",
+      "d14cb428fb5b4cf9bd616dde918b471310d788b0",
+      "2026-10-16 16:05:00.0",
+      "true",
+      "false"
+    ],
+    [
+      "588",
+      "data-pipeline",
+      "discovery",
+      "dae1757a0df7ab9dcd38b86773773906f89e0540",
+      "",
+      "true",
+      "false"
+    ],
+    [
+      "589",
+      "payments-api",
+      "payments",
+      "e7d986ae07b5ad7658e1773e8695b3f1a8ad52ad",
+      "2026-10-16 16:57:04.0",
+      "true",
+      "false"
+    ],
+    [
+      "590",
+      "infra",
+      "platform",
+      "e92be2091b7eaa329f842503a1e8b41a4d88b201",
+      "2026-10-16 17:10:54.0",
+      "true",
+      "false"
+    ],
+    [
+      "591",
+      "infra",
+      "platform",
+      "38d697363c603c514bb900b1abf2dde6acbf1c7c",
+      "2026-10-16 17:30:12.0",
+      "false",
+      "false"
+    ],
+    [
+      "592",
+      "mobile-client",
+      "growth",
+      "e4a036f5706ea280612ba190dada949e7bba6009",
+      "2026-10-16 17:59:54.0",
+      "true",
+      "false"
+    ],
+    [
+      "593",
+      "data-pipeline",
+      "discovery",
+      "07debcf3ac239cc8b4e8a99835f93ba302f40d62",
+      "2026-10-16 18:00:38.0",
+      "true",
+      "false"
+    ],
+    [
+      "594",
+      "data-pipeline",
+      "discovery",
+      "3928501c2f2227ff90aae236e264ffdea9c4d64b",
+      "2026-10-16 18:16:43.0",
+      "true",
+      "false"
+    ],
+    [
+      "595",
+      "web-app",
+      "growth",
+      "434ac2aecdd30cf86e24d02e1c005eddb941670a",
+      "2026-10-16 18:29:29.0",
+      "true",
+      "false"
+    ],
+    [
+      "596",
+      "mobile-client",
+      "growth",
+      "e0c18af7b5f44c3247e2accc925912e0cfc7dd7d",
+      "2026-10-16 21:51:16.0",
+      "true",
+      "false"
+    ],
+    [
+      "597",
+      "mobile-client",
+      "growth",
+      "288f6d421b88ce7235e87529d257b82ee74a24aa",
+      "2026-10-18 15:42:56.0",
+      "true",
+      "false"
+    ],
+    [
+      "598",
+      "mobile-client",
+      "growth",
+      "1be82302ca50a53c7343b2659197218465edd126",
+      "2026-10-19 10:34:37.0",
+      "true",
+      "false"
+    ],
+    [
+      "599",
+      "payments-api",
+      "payments",
+      "2e7458e9df581f29a93c8ec85d14ccd998c083de",
+      "2026-10-19 12:18:18.0",
+      "true",
+      "false"
+    ],
+    [
+      "600",
+      "web-app",
+      "growth",
+      "75ce67aca9cddc404be029bf31bd2a0b4eb25c8e",
+      "2026-10-19 12:24:07.0",
+      "true",
+      "false"
+    ],
+    [
+      "601",
+      "data-pipeline",
+      "discovery",
+      "4bd277d28d243bbd21372bcb12b643dde277d988",
+      "",
+      "true",
+      "false"
+    ],
+    [
+      "602",
+      "data-pipeline",
+      "discovery",
+      "70b4f39f2e93f3b4b80e65dc6cacf049ed512291",
+      "2026-10-19 13:23:45.0",
+      "true",
+      "false"
+    ],
+    [
+      "603",
+      "payments-api",
+      "payments",
+      "30d1f3fca9bb30029fe1583c24f07cabbbb89276",
+      "2026-10-19 13:28:23.0",
+      "true",
+      "false"
+    ],
+    [
+      "604",
+      "infra",
+      "platform",
+      "a4a324d8a5b0663fe28b5a03e70757a97171d641",
+      "2026-10-19 13:59:25.0",
+      "false",
+      "false"
+    ],
+    [
+      "605",
+      "infra",
+      "platform",
+      "0d8b75dc21becda7d6b7c5db5653b74379987189",
+      "",
+      "true",
+      "false"
+    ],
+    [
+      "606",
+      "infra",
+      "platform",
+      "f6b7dd194467e593bab828bf6a96abd38a58b0dc",
+      "2026-10-19 15:20:07.0",
+      "true",
+      "false"
+    ],
+    [
+      "607",
+      "data-pipeline",
+      "discovery",
+      "c97b34daf65619033caf62565b1189a032d9a485",
+      "2026-10-19 15:20:56.0",
+      "true",
+      "false"
+    ],
+    [
+      "608",
+      "mobile-client",
+      "growth",
+      "030eabf064a8018a49a09e4833e69af437bba618",
+      "2026-10-19 15:44:39.0",
+      "true",
+      "false"
+    ],
+    [
+      "609",
+      "infra",
+      "platform",
+      "dce95166f50692c9d2f6c37aa1be4bb3cc25d428",
+      "2026-10-19 15:57:10.0",
+      "true",
+      "false"
+    ],
+    [
+      "610",
+      "payments-api",
+      "payments",
+      "87cb16fa36dd2ab7136f25bb7574f3e6a0a6a0fc",
+      "2026-10-19 16:02:26.0",
+      "true",
+      "false"
+    ],
+    [
+      "611",
+      "data-pipeline",
+      "discovery",
+      "e410c9a264b64e942673f51caa9d897af7ec37d5",
+      "2026-10-19 16:14:38.0",
+      "true",
+      "false"
+    ],
+    [
+      "612",
+      "data-pipeline",
+      "discovery",
+      "e05c26669853c8fc19f6a0a814df570f5c08f887",
+      "2026-10-19 16:50:02.0",
+      "true",
+      "false"
+    ],
+    [
+      "613",
+      "infra",
+      "platform",
+      "f7804b5858b76ba862fab918129a61d4b01a2ee7",
+      "2026-10-19 18:14:16.0",
+      "true",
+      "false"
+    ],
+    [
+      "614",
+      "mobile-client",
+      "growth",
+      "84a75432f5bd8cabfc581427bdcbe29a8b0f131f",
+      "2026-10-19 18:28:35.0",
+      "true",
+      "false"
+    ],
+    [
+      "615",
+      "data-pipeline",
+      "discovery",
+      "d4cbb4838a532987e0c253c3a2ad8e97844996b6",
+      "2026-10-19 18:37:48.0",
+      "true",
+      "false"
+    ],
+    [
+      "616",
+      "web-app",
+      "growth",
+      "0d69e374921bddeded09a8305244d6f03bda98c9",
+      "2026-10-19 18:54:12.0",
+      "true",
+      "false"
+    ],
+    [
+      "617",
+      "infra",
+      "platform",
+      "8e3ad171e88fd52a0c90258540bf98dd272e99a4",
+      "2026-10-19 19:02:31.0",
+      "true",
+      "false"
+    ],
+    [
+      "618",
+      "infra",
+      "platform",
+      "71368b53df1aaf9c4c8ef6cfac65d77f1572924b",
+      "2026-10-19 20:34:24.0",
+      "true",
+      "false"
+    ],
+    [
+      "619",
+      "payments-api",
+      "payments",
+      "c359732661103773c509e9dd94431eaefb1df12a",
+      "2026-10-19 20:35:46.0",
+      "true",
+      "false"
+    ],
+    [
+      "620",
+      "web-app",
+      "growth",
+      "8f6ae040076041210a0c49bec3c1b83dbea35e27",
+      "2026-10-19 21:36:19.0",
+      "true",
+      "true"
+    ],
+    [
+      "621",
+      "data-pipeline",
+      "discovery",
+      "9788833dc2039e0d945e51713e1bb4256e5577a8",
+      "2026-10-20 12:39:46.0",
+      "true",
+      "false"
+    ],
+    [
+      "622",
+      "data-pipeline",
+      "discovery",
+      "f3115fe45cb3b5b8fd804db1ca0822f62e043f51",
+      "2026-10-20 13:12:16.0",
+      "false",
+      "false"
+    ],
+    [
+      "623",
+      "data-pipeline",
+      "discovery",
+      "dc23db245d733d556c7191bab67b134e1c6d3c8f",
+      "2026-10-20 13:26:54.0",
+      "true",
+      "false"
+    ],
+    [
+      "624",
+      "data-pipeline",
+      "discovery",
+      "fa6805e48db8c66488598b3b13a1772a412c8f96",
+      "2026-10-20 15:23:11.0",
+      "true",
+      "false"
+    ],
+    [
+      "625",
+      "payments-api",
+      "payments",
+      "123b43b2a385b8f816ec29f452a0b9816b5b189b",
+      "2026-10-20 15:38:13.0",
+      "true",
+      "false"
+    ],
+    [
+      "626",
+      "infra",
+      "platform",
+      "4b75935fa5afb50a0df79529904e2756045d0aff",
+      "2026-10-20 16:34:27.0",
+      "true",
+      "false"
+    ],
+    [
+      "627",
+      "infra",
+      "platform",
+      "662de37bfc4c022248dbc51f5feca051347bf335",
+      "2026-10-20 16:40:35.0",
+      "true",
+      "true"
+    ],
+    [
+      "628",
+      "infra",
+      "platform",
+      "e3547d8c022c30d85ed877608d524f519ed00e83",
+      "2026-10-20 17:00:08.0",
+      "true",
+      "false"
+    ],
+    [
+      "629",
+      "web-app",
+      "growth",
+      "0969b0e09bbec4a41f01879ea08b6086fdc97702",
+      "2026-10-20 17:20:59.0",
+      "true",
+      "false"
+    ],
+    [
+      "630",
+      "infra",
+      "platform",
+      "1994bda9d6ec947fee8536b7b5f20ec4d269460d",
+      "2026-10-20 19:14:33.0",
+      "true",
+      "false"
+    ],
+    [
+      "631",
+      "payments-api",
+      "payments",
+      "4e8bd0d4716e25f03a8ac0eb23b516c742885ada",
+      "2026-10-20 20:32:01.0",
+      "false",
+      "false"
+    ],
+    [
+      "632",
+      "mobile-client",
+      "growth",
+      "72ae13ceded719d640ae0264eb6d1eb77baf6627",
+      "2026-10-20 20:37:10.0",
+      "true",
+      "false"
+    ],
+    [
+      "633",
+      "web-app",
+      "growth",
+      "a5192d59855d532a6975b69e1ad655775ff47b28",
+      "2026-10-20 21:28:19.0",
+      "true",
+      "false"
+    ],
+    [
+      "634",
+      "mobile-client",
+      "growth",
+      "e51c2887073bfa7daf2c89e5d47fefc208d22dbe",
+      "2026-10-20 22:46:48.0",
+      "true",
+      "false"
+    ],
+    [
+      "635",
+      "web-app",
+      "growth",
+      "df8cf1934f0223415b0f35b444589636cdd49e58",
+      "2026-10-21 09:29:28.0",
+      "true",
+      "false"
+    ],
+    [
+      "636",
+      "data-pipeline",
+      "discovery",
+      "f7cbab8002093930025aafe3e203161d8cc3c702",
+      "2026-10-21 11:32:47.0",
+      "true",
+      "false"
+    ],
+    [
+      "637",
+      "mobile-client",
+      "growth",
+      "b63df3bf3bf2c494ea799e04d7c1af93bb27f336",
+      "2026-10-21 11:42:35.0",
+      "true",
+      "false"
+    ],
+    [
+      "638",
+      "payments-api",
+      "payments",
+      "08e67822716f776a0f60a5541c21876c1ab1f430",
+      "2026-10-21 13:34:22.0",
+      "true",
+      "false"
+    ],
+    [
+      "639",
+      "data-pipeline",
+      "discovery",
+      "8f08c7b32ac23a4c689428fa5aa8a6505843cb72",
+      "2026-10-21 14:19:51.0",
+      "true",
+      "false"
+    ],
+    [
+      "640",
+      "infra",
+      "platform",
+      "63351b2311224e1cda88111fa412b36a77c857f4",
+      "2026-10-21 16:01:27.0",
+      "false",
+      "false"
+    ],
+    [
+      "641",
+      "infra",
+      "platform",
+      "279c26048657d8fa98529cffd71012e9c5e1ed1a",
+      "2026-10-21 16:06:58.0",
+      "false",
+      "false"
+    ],
+    [
+      "642",
+      "payments-api",
+      "payments",
+      "cd4852b0a3b639484b89a9f804541c6bbc2cf0a7",
+      "2026-10-21 16:44:44.0",
+      "true",
+      "false"
+    ],
+    [
+      "643",
+      "data-pipeline",
+      "discovery",
+      "4d42a884e9a68f6fefb019636d48417fe665bcc1",
+      "2026-10-21 17:02:42.0",
+      "true",
+      "false"
+    ],
+    [
+      "644",
+      "mobile-client",
+      "growth",
+      "439016ebd41437bdd869b2bf622bc7f9d3964a98",
+      "2026-10-21 17:26:27.0",
+      "true",
+      "false"
+    ],
+    [
+      "645",
+      "infra",
+      "platform",
+      "2939eb0ba504a3c8a5a7cdb2095ce2415daf2bb0",
+      "2026-10-21 17:44:54.0",
+      "true",
+      "false"
+    ],
+    [
+      "646",
+      "data-pipeline",
+      "discovery",
+      "d9b3dde47010b3e3faae9c5f6a92d920f5e0f411",
+      "2026-10-21 18:09:57.0",
+      "true",
+      "false"
+    ],
+    [
+      "647",
+      "payments-api",
+      "payments",
+      "43f059f59db1c4779219b0b5d55fbc5c26c838ba",
+      "2026-10-21 18:16:39.0",
+      "false",
+      "false"
+    ],
+    [
+      "648",
+      "web-app",
+      "growth",
+      "91748b615d9e7d6adbbe18e94de5b8278831b01f",
+      "2026-10-21 18:56:31.0",
+      "true",
+      "false"
+    ],
+    [
+      "649",
+      "infra",
+      "platform",
+      "ca507577b37fec49c309b7569daa3714622a49dc",
+      "2026-10-21 19:18:20.0",
+      "true",
+      "false"
+    ],
+    [
+      "650",
+      "mobile-client",
+      "growth",
+      "2f0629061baa49638318540a4338352e7d6fbb7b",
+      "2026-10-21 19:19:28.0",
+      "true",
+      "false"
+    ],
+    [
+      "651",
+      "payments-api",
+      "payments",
+      "1377200f734dc653d796d348ccf0b1a2127200c9",
+      "",
+      "true",
+      "true"
+    ],
+    [
+      "652",
+      "web-app",
+      "growth",
+      "c863aa8a538f1e0445b30da1fefeac33767785dd",
+      "2026-10-21 20:17:58.0",
+      "true",
+      "false"
+    ],
+    [
+      "653",
+      "infra",
+      "platform",
+      "3d54b45e4708de104fa8fbdf045c4b6e6ed1744d",
+      "2026-10-21 20:21:16.0",
+      "false",
+      "false"
+    ],
+    [
+      "654",
+      "infra",
+      "platform",
+      "633305681f549c081b285732785a990d583edaec",
+      "2026-10-21 20:38:00.0",
+      "true",
+      "false"
+    ],
+    [
+      "655",
+      "mobile-client",
+      "growth",
+      "80ab8a4595f93e4f2f40f3b8fd1e717a80027186",
+      "",
+      "true",
+      "false"
+    ],
+    [
+      "656",
+      "infra",
+      "platform",
+      "f90efa86ccc0a418eb22b026ad92e5cbbf1ea64e",
+      "2026-10-22 10:03:43.0",
+      "true",
+      "false"
+    ],
+    [
+      "657",
+      "payments-api",
+      "payments",
+      "f249744a2156150f93424d3757ddf821c4387e99",
+      "2026-10-22 11:27:25.0",
+      "true",
+      "false"
+    ],
+    [
+      "658",
+      "payments-api",
+      "payments",
+      "d70834442f3f766b8a0a8bc1ae6d445a7f369caf",
+      "2026-10-22 14:06:49.0",
+      "true",
+      "false"
+    ],
+    [
+      "659",
+      "web-app",
+      "growth",
+      "8b2b284adfc4bb040320e433c8ce4323227de97e",
+      "2026-10-22 14:37:45.0",
+      "true",
+      "false"
+    ],
+    [
+      "660",
+      "data-pipeline",
+      "discovery",
+      "ef0a03a3f57ca311ab45564a024957e1b93e8c39",
+      "2026-10-22 15:23:25.0",
+      "true",
+      "false"
+    ],
+    [
+      "661",
+      "payments-api",
+      "payments",
+      "3bdcdb67b1ca92467eb9769b7f8fd1af1fa3a5e5",
+      "2026-10-22 15:23:31.0",
+      "true",
+      "false"
+    ],
+    [
+      "662",
+      "data-pipeline",
+      "discovery",
+      "6acf74d94d7804551997001bc2cbb667fa995583",
+      "2026-10-22 15:31:43.0",
+      "true",
+      "false"
+    ],
+    [
+      "663",
+      "web-app",
+      "growth",
+      "d96e00fb472877c083fffb0e63b1601b10ac5a52",
+      "",
+      "true",
+      "false"
+    ],
+    [
+      "664",
+      "web-app",
+      "growth",
+      "c51faf6deda704bd9f4da09495838861e268589a",
+      "2026-10-22 15:51:34.0",
+      "true",
+      "false"
+    ],
+    [
+      "665",
+      "web-app",
+      "growth",
+      "34e5d318dac68ccb320387729ce83b78b65abe62",
+      "2026-10-22 16:14:27.0",
+      "true",
+      "false"
+    ],
+    [
+      "666",
+      "data-pipeline",
+      "discovery",
+      "0792af7d42aeb8e489c4d6ef4c4260b19752407a",
+      "2026-10-22 16:29:35.0",
+      "true",
+      "false"
+    ],
+    [
+      "667",
+      "infra",
+      "platform",
+      "10b116190b586832d6b76ddce6f9e6fd7a134e3c",
+      "2026-10-22 17:11:09.0",
+      "true",
+      "false"
+    ],
+    [
+      "668",
+      "mobile-client",
+      "growth",
+      "454ac8e9a307193d7e46f8d22009831525d4fb14",
+      "2026-10-22 17:48:11.0",
+      "true",
+      "false"
+    ],
+    [
+      "669",
+      "data-pipeline",
+      "discovery",
+      "11ed12e832e0d8a01934ac817e854acb12bfdcda",
+      "2026-10-22 17:53:39.0",
+      "true",
+      "false"
+    ],
+    [
+      "670",
+      "web-app",
+      "growth",
+      "085df4480b7e17af3749201b2f71d85cb453c312",
+      "2026-10-22 18:31:21.0",
+      "true",
+      "false"
+    ],
+    [
+      "671",
+      "payments-api",
+      "payments",
+      "99b824c4455a76aafdaaeae9806cfed1e41e6b8c",
+      "2026-10-22 19:59:12.0",
+      "false",
+      "false"
+    ],
+    [
+      "672",
+      "infra",
+      "platform",
+      "30d9e2e7725f2b58e754d6077c2da82d0a9f2bf0",
+      "2026-10-22 20:02:14.0",
+      "true",
+      "false"
+    ],
+    [
+      "673",
+      "payments-api",
+      "payments",
+      "0620abb6d977c8a71b0152e36e2c5a03e13f3d60",
+      "2026-10-22 20:03:56.0",
+      "true",
+      "false"
+    ],
+    [
+      "674",
+      "mobile-client",
+      "growth",
+      "665863369b6f1be2d5a751a37abc7b342d6e8542",
+      "2026-10-22 20:57:54.0",
+      "false",
+      "false"
+    ],
+    [
+      "675",
+      "infra",
+      "platform",
+      "b48b17e9c842002f49f43b5d4392118f6be29b99",
+      "",
+      "true",
+      "true"
+    ],
+    [
+      "676",
+      "payments-api",
+      "payments",
+      "dc4d540c262361b0a35f9e5ff7cc44993f88ec2f",
+      "2026-10-23 10:29:23.0",
+      "true",
+      "false"
+    ],
+    [
+      "677",
+      "infra",
+      "platform",
+      "19322445b323faf6f15b230d59f7cc1c9aa9e57a",
+      "2026-10-23 11:09:57.0",
+      "true",
+      "false"
+    ],
+    [
+      "678",
+      "data-pipeline",
+      "discovery",
+      "88a49c02860a941e2fec8db26063b9d79781f369",
+      "2026-10-23 11:19:59.0",
+      "true",
+      "false"
+    ],
+    [
+      "679",
+      "mobile-client",
+      "growth",
+      "dd139569d35586b029a7688ac1395fd20183891e",
+      "2026-10-23 11:38:33.0",
+      "true",
+      "false"
+    ],
+    [
+      "680",
+      "infra",
+      "platform",
+      "0e50df010ebd45d10ca637643c1219e35f358473",
+      "2026-10-23 13:06:12.0",
+      "true",
+      "false"
+    ],
+    [
+      "681",
+      "payments-api",
+      "payments",
+      "06060df0c37dbbcc3b2882adac46743110979d03",
+      "2026-10-23 13:42:33.0",
+      "true",
+      "false"
+    ],
+    [
+      "682",
+      "data-pipeline",
+      "discovery",
+      "e32d7030629a5a50c65d961d478c03afd1df81bd",
+      "",
+      "true",
+      "false"
+    ],
+    [
+      "683",
+      "infra",
+      "platform",
+      "9765dc80a53e0706a6bd965ec314d73032af6c91",
+      "2026-10-23 14:27:22.0",
+      "true",
+      "false"
+    ],
+    [
+      "684",
+      "mobile-client",
+      "growth",
+      "9dd9d30bf9ef2f351bedd506fa325bf70b498aa5",
+      "2026-10-23 14:40:17.0",
+      "true",
+      "false"
+    ],
+    [
+      "685",
+      "web-app",
+      "growth",
+      "00fa5fa78b3ad8dc3f94878d641bda02943051e1",
+      "2026-10-23 14:44:52.0",
+      "true",
+      "false"
+    ],
+    [
+      "686",
+      "infra",
+      "platform",
+      "929fe9a2b7045ed0e44b84c74a298b3e88521d09",
+      "2026-10-23 15:22:13.0",
+      "true",
+      "false"
+    ],
+    [
+      "687",
+      "data-pipeline",
+      "discovery",
+      "0c7561c1851f5d4a6100f986be441de580adce70",
+      "",
+      "true",
+      "false"
+    ],
+    [
+      "688",
+      "mobile-client",
+      "growth",
+      "96e0929c1cbb1d81c344c1e677d493263ee733f5",
+      "2026-10-23 16:12:59.0",
+      "true",
+      "false"
+    ],
+    [
+      "689",
+      "infra",
+      "platform",
+      "4e834fa305e41ea6715c1812042e7044d6e34a27",
+      "2026-10-23 16:31:35.0",
+      "true",
+      "false"
+    ],
+    [
+      "690",
+      "data-pipeline",
+      "discovery",
+      "9d8418cf61dca6ce254a4686700d5d2c9bf52ede",
+      "2026-10-23 16:37:45.0",
+      "true",
+      "false"
+    ],
+    [
+      "691",
+      "web-app",
+      "growth",
+      "0fc6478480691a8e930c22ee749cdf722f24a98e",
+      "2026-10-23 17:37:08.0",
+      "true",
+      "false"
+    ],
+    [
+      "692",
+      "web-app",
+      "growth",
+      "158240c447fe2166bcb777378b2826f739bf0c01",
+      "2026-10-23 18:51:21.0",
+      "true",
+      "false"
+    ],
+    [
+      "693",
+      "payments-api",
+      "payments",
+      "cb83a3dc51be5cd73cfb1ddf9750ab7ee4bb8b1f",
+      "2026-10-23 19:00:34.0",
+      "false",
+      "false"
+    ],
+    [
+      "694",
+      "web-app",
+      "growth",
+      "71e6be79bb024bdcb0125b6983262a2b8ba6d115",
+      "2026-10-23 20:35:01.0",
+      "true",
+      "false"
+    ],
+    [
+      "695",
+      "infra",
+      "platform",
+      "cc5a71aeffceab6a7aa3358cb9b8672de09edd71",
+      "2026-10-26 11:28:40.0",
+      "true",
+      "false"
+    ],
+    [
+      "696",
+      "data-pipeline",
+      "discovery",
+      "00586482a3c0b8cab6149c5f67fab8059254537e",
+      "",
+      "true",
+      "false"
+    ],
+    [
+      "697",
+      "mobile-client",
+      "growth",
+      "2211a0f26f2cd495340f093a208e0ff9d8e6237d",
+      "2026-10-26 12:38:26.0",
+      "false",
+      "false"
+    ],
+    [
+      "698",
+      "mobile-client",
+      "growth",
+      "9e22c36caf957b55df8e0eb319a548f536c6f7fe",
+      "2026-10-26 12:48:47.0",
+      "true",
+      "false"
+    ],
+    [
+      "699",
+      "payments-api",
+      "payments",
+      "0862efa382ca7ec0536fa4f2cd9f8a71ec9313b7",
+      "",
+      "true",
+      "true"
+    ],
+    [
+      "700",
+      "web-app",
+      "growth",
+      "0f47315fc73adf0de2fb09fb1981ec480fbc56e5",
+      "2026-10-26 13:06:21.0",
+      "false",
+      "false"
+    ],
+    [
+      "701",
+      "web-app",
+      "growth",
+      "79ce3d2b74c983d8c72c0c6b32ef4d421f7aaa88",
+      "2026-10-26 13:24:14.0",
+      "true",
+      "false"
+    ],
+    [
+      "702",
+      "mobile-client",
+      "growth",
+      "fddee21fb12925e6fa164cb4b872820985167d10",
+      "2026-10-26 14:10:48.0",
+      "true",
+      "false"
+    ],
+    [
+      "703",
+      "payments-api",
+      "payments",
+      "5659540eb63a91c4378542e6792ff1b88866e951",
+      "2026-10-26 14:43:48.0",
+      "true",
+      "false"
+    ],
+    [
+      "704",
+      "infra",
+      "platform",
+      "4de097e9c1dd6c33aba1109ffd11b2f28973f05e",
+      "2026-10-26 14:51:58.0",
+      "true",
+      "false"
+    ],
+    [
+      "705",
+      "payments-api",
+      "payments",
+      "1ea90bfe9bf00a1c62e9208358b20858bcb37b6e",
+      "2026-10-26 15:16:32.0",
+      "false",
+      "false"
+    ],
+    [
+      "706",
+      "web-app",
+      "growth",
+      "ab02860964e5189a8316da687054b499f4dc5e5a",
+      "2026-10-26 15:22:57.0",
+      "true",
+      "false"
+    ],
+    [
+      "707",
+      "data-pipeline",
+      "discovery",
+      "8af35dfd4e338bf36057bc76b8c454dc5a069558",
+      "2026-10-26 17:55:23.0",
+      "true",
+      "false"
+    ],
+    [
+      "708",
+      "web-app",
+      "growth",
+      "f243344a4c2449c0257cf3231f56581bcb17aaf2",
+      "2026-10-26 18:38:08.0",
+      "true",
+      "false"
+    ],
+    [
+      "709",
+      "mobile-client",
+      "growth",
+      "30951d141660630dcf44ded6104730c7ece9ccc3",
+      "2026-10-26 18:38:29.0",
+      "true",
+      "false"
+    ],
+    [
+      "710",
+      "mobile-client",
+      "growth",
+      "57c436d2a626a3d9eea5c07ac7dce1033e301b0d",
+      "2026-10-26 18:44:06.0",
+      "true",
+      "false"
+    ],
+    [
+      "711",
+      "web-app",
+      "growth",
+      "3fdd4574716d7a979c3bf703a8fc411ca3d66f72",
+      "2026-10-26 18:54:17.0",
+      "true",
+      "false"
+    ],
+    [
+      "712",
+      "payments-api",
+      "payments",
+      "87ebf4e37df93e32734022e01266427e49d3bea8",
+      "2026-10-26 19:00:35.0",
+      "true",
+      "false"
+    ],
+    [
+      "713",
+      "payments-api",
+      "payments",
+      "608c55ffbf9b72d095ada161d22ec080918f4264",
+      "2026-10-26 22:18:27.0",
+      "true",
+      "false"
+    ],
+    [
+      "714",
+      "infra",
+      "platform",
+      "4c4cb6e4397e4def0b03f4bd8f23b13ba4c222d2",
+      "2026-10-27 10:11:55.0",
+      "true",
+      "false"
+    ],
+    [
+      "715",
+      "mobile-client",
+      "growth",
+      "5b8aa0085b69cd797d494086f537a0189b2b65dc",
+      "2026-10-27 10:50:19.0",
+      "false",
+      "false"
+    ],
+    [
+      "716",
+      "payments-api",
+      "payments",
+      "d9cd3280d29e85f4ddedcd01faea5c156634de69",
+      "2026-10-27 11:31:42.0",
+      "true",
+      "false"
+    ],
+    [
+      "717",
+      "mobile-client",
+      "growth",
+      "e6c0291d9dd3b346c2e1c1aa1842ed71b5fe7609",
+      "",
+      "true",
+      "true"
+    ],
+    [
+      "718",
+      "data-pipeline",
+      "discovery",
+      "bfc2d10550ea216b18e5018cd80c9607513ca54a",
+      "2026-10-27 12:47:50.0",
+      "true",
+      "false"
+    ],
+    [
+      "719",
+      "data-pipeline",
+      "discovery",
+      "375566efdc3395ca777dfcd5f129aa318a180866",
+      "2026-10-27 12:47:58.0",
+      "true",
+      "false"
+    ],
+    [
+      "720",
+      "payments-api",
+      "payments",
+      "94791f96ceccaedfe2c6c8c779f24854bdfb4347",
+      "2026-10-27 12:56:26.0",
+      "true",
+      "false"
+    ],
+    [
+      "721",
+      "web-app",
+      "growth",
+      "bc8f25c72aaf4e7a9c12fe74d346e9dbac3210d0",
+      "2026-10-27 13:30:39.0",
+      "true",
+      "true"
+    ],
+    [
+      "722",
+      "web-app",
+      "growth",
+      "1d43525683b709e67dae5d403dee96fa9b928a33",
+      "2026-10-27 13:40:33.0",
+      "true",
+      "false"
+    ],
+    [
+      "723",
+      "web-app",
+      "growth",
+      "082a96dabb3fa6b7d2bb10f5feae2d2fc87fd418",
+      "2026-10-27 14:09:51.0",
+      "true",
+      "false"
+    ],
+    [
+      "724",
+      "infra",
+      "platform",
+      "78e88f34df1bde95b5afaf10f36045b4962c173b",
+      "2026-10-27 14:23:22.0",
+      "false",
+      "false"
+    ],
+    [
+      "725",
+      "payments-api",
+      "payments",
+      "ef8f36764697146e2020c9513aeefb3619cfcbe6",
+      "2026-10-27 14:59:51.0",
+      "true",
+      "false"
+    ],
+    [
+      "726",
+      "web-app",
+      "growth",
+      "1cb36696ac7e3aef6f4296bbc64a629627f567af",
+      "2026-10-27 14:59:57.0",
+      "true",
+      "false"
+    ],
+    [
+      "727",
+      "infra",
+      "platform",
+      "a76b7220016b82162b78a85eb05c20f45dec7e18",
+      "2026-10-27 15:56:04.0",
+      "true",
+      "false"
+    ],
+    [
+      "728",
+      "mobile-client",
+      "growth",
+      "51ff8ce2088b5a2f75b25944af4f32d62eb01130",
+      "2026-10-27 16:07:38.0",
+      "true",
+      "false"
+    ],
+    [
+      "729",
+      "data-pipeline",
+      "discovery",
+      "2b5cc39574281b9dd993b31a6379d687356c724e",
+      "2026-10-27 17:39:44.0",
+      "true",
+      "false"
+    ],
+    [
+      "730",
+      "payments-api",
+      "payments",
+      "3304196288993622f738db5535bfa1befdff73dc",
+      "2026-10-27 18:35:13.0",
+      "true",
+      "false"
+    ],
+    [
+      "731",
+      "infra",
+      "platform",
+      "41dec8c4e9157f44138cbc8f57b7bf3d17e7c4eb",
+      "2026-10-27 20:26:37.0",
+      "true",
+      "false"
+    ],
+    [
+      "732",
+      "payments-api",
+      "payments",
+      "8fc8329e63a0eaa57bf285f759a044075c4628e0",
+      "",
+      "true",
+      "false"
+    ],
+    [
+      "733",
+      "data-pipeline",
+      "discovery",
+      "c0ceeaeaf05637aed215f6a9a3b358562910cdde",
+      "2026-10-28 10:52:04.0",
+      "true",
+      "false"
+    ],
+    [
+      "734",
+      "data-pipeline",
+      "discovery",
+      "d8c6349265b20d52399137ad353a8d20274168e1",
+      "2026-10-28 12:00:05.0",
+      "true",
+      "false"
+    ],
+    [
+      "735",
+      "data-pipeline",
+      "discovery",
+      "ebb3d45e97df69b76f8a2a7413803cbc6ee329eb",
+      "2026-10-28 12:48:54.0",
+      "true",
+      "false"
+    ],
+    [
+      "736",
+      "infra",
+      "platform",
+      "ca345f62053ad9649a3882b8da6eb05ad53a7990",
+      "2026-10-28 13:18:10.0",
+      "true",
+      "false"
+    ],
+    [
+      "737",
+      "web-app",
+      "growth",
+      "c3b5281406d5cbe91074cc6fb426b4399262c6cb",
+      "2026-10-28 13:42:15.0",
+      "true",
+      "false"
+    ],
+    [
+      "738",
+      "payments-api",
+      "payments",
+      "7683dfdbbc821b4df922e4504c9b64572e80b418",
+      "2026-10-28 14:35:57.0",
+      "true",
+      "false"
+    ],
+    [
+      "739",
+      "mobile-client",
+      "growth",
+      "d1aecbc57820d07cfe4adf9b2c8c8234b4464583",
+      "2026-10-28 14:49:09.0",
+      "true",
+      "false"
+    ],
+    [
+      "740",
+      "mobile-client",
+      "growth",
+      "56defe2875dc718e06e9bdd18d19ea03e3407e2a",
+      "2026-10-28 15:42:58.0",
+      "true",
+      "false"
+    ],
+    [
+      "741",
+      "web-app",
+      "growth",
+      "f1f47dbda1c18b027d79ae41c2270f0ba57b2911",
+      "",
+      "true",
+      "false"
+    ],
+    [
+      "742",
+      "web-app",
+      "growth",
+      "5811ca5f4287328aaf0e84499fb757708dec4f30",
+      "2026-10-28 16:04:07.0",
+      "true",
+      "false"
+    ],
+    [
+      "743",
+      "mobile-client",
+      "growth",
+      "a154ec9a1c8d26353f582c9a24323328d42309ec",
+      "2026-10-28 16:12:31.0",
+      "true",
+      "false"
+    ],
+    [
+      "744",
+      "payments-api",
+      "payments",
+      "16d2751292fce218750348390c58fa8fbb1f5dfe",
+      "2026-10-28 17:00:15.0",
+      "true",
+      "false"
+    ],
+    [
+      "745",
+      "payments-api",
+      "payments",
+      "d7c3a25d81107914f9741bc54a23ca64415b9451",
+      "2026-10-28 18:15:37.0",
+      "true",
+      "false"
+    ],
+    [
+      "746",
+      "mobile-client",
+      "growth",
+      "af82d3c463cc07b9d9ad683e8babda7851511463",
+      "2026-10-28 18:22:47.0",
+      "true",
+      "false"
+    ],
+    [
+      "747",
+      "web-app",
+      "growth",
+      "58823eb5ab2dcea4509bc45946eab2c6241b4b17",
+      "2026-10-28 18:29:02.0",
+      "true",
+      "false"
+    ],
+    [
+      "748",
+      "web-app",
+      "growth",
+      "551271a1d2e726027effb4179ccfbb092ad2a580",
+      "2026-10-28 19:00:10.0",
+      "true",
+      "false"
+    ],
+    [
+      "749",
+      "data-pipeline",
+      "discovery",
+      "8b5981ba5ae448fab80813f57f5a5d58ad68c90e",
+      "2026-10-28 19:03:39.0",
+      "true",
+      "false"
+    ],
+    [
+      "750",
+      "mobile-client",
+      "growth",
+      "b2103799c616b8ef36dedcc5a1fbcc68be3f2619",
+      "2026-10-28 20:05:32.0",
+      "true",
+      "false"
+    ],
+    [
+      "751",
+      "infra",
+      "platform",
+      "b8fc7867d3793ec22ea6bb496e95b09984555275",
+      "2026-10-29 09:38:16.0",
+      "true",
+      "false"
+    ],
+    [
+      "752",
+      "web-app",
+      "growth",
+      "1962a4285c0fc424f0a4d6867c518be72ed40911",
+      "2026-10-29 10:07:57.0",
+      "true",
+      "false"
+    ],
+    [
+      "753",
+      "infra",
+      "platform",
+      "6e1edc62ed97a2d2b0946d6ac4d6e1263eac8564",
+      "2026-10-29 11:43:56.0",
+      "true",
+      "false"
+    ],
+    [
+      "754",
+      "payments-api",
+      "payments",
+      "ba6ba63b3216022ae285037145fa41a5d4280e5e",
+      "2026-10-29 12:59:43.0",
+      "true",
+      "false"
+    ],
+    [
+      "755",
+      "web-app",
+      "growth",
+      "af29be67483af22ed01582eb41a45bd18a06c69f",
+      "2026-10-29 13:25:39.0",
+      "true",
+      "false"
+    ],
+    [
+      "756",
+      "mobile-client",
+      "growth",
+      "f55a34dadeba06dda2a94d6bb5927ab2b796d7d9",
+      "2026-10-29 13:47:41.0",
+      "true",
+      "false"
+    ],
+    [
+      "757",
+      "web-app",
+      "growth",
+      "a8c3122c400f9735598f55a11b17fe34f7986d1f",
+      "2026-10-29 14:04:38.0",
+      "true",
+      "false"
+    ],
+    [
+      "758",
+      "data-pipeline",
+      "discovery",
+      "960c80e5799bfb98d54ad341d1402ddeea91d900",
+      "2026-10-29 14:21:07.0",
+      "true",
+      "false"
+    ],
+    [
+      "759",
+      "data-pipeline",
+      "discovery",
+      "3e7dd5088825247315e4f13f09bc99512b28611e",
+      "2026-10-29 15:15:59.0",
+      "true",
+      "false"
+    ],
+    [
+      "760",
+      "mobile-client",
+      "growth",
+      "f0d9daa432778664d1494253465fd5c5276212b8",
+      "2026-10-29 16:06:49.0",
+      "true",
+      "false"
+    ],
+    [
+      "761",
+      "web-app",
+      "growth",
+      "38afb627a4854d141b44a9307c415f8d724c4f86",
+      "2026-10-29 16:19:01.0",
+      "true",
+      "true"
+    ],
+    [
+      "762",
+      "infra",
+      "platform",
+      "baf369fc1f289f736a26d573ee20d60503eb09c5",
+      "2026-10-29 19:33:50.0",
+      "true",
+      "false"
+    ],
+    [
+      "763",
+      "data-pipeline",
+      "discovery",
+      "f444c7e62d99b8da712b5c1148fe95e224351870",
+      "2026-10-29 19:45:36.0",
+      "true",
+      "false"
+    ],
+    [
+      "764",
+      "payments-api",
+      "payments",
+      "252311d1f58a9903952546262451dda362fb8c2c",
+      "2026-10-29 19:53:26.0",
+      "true",
+      "false"
+    ],
+    [
+      "765",
+      "infra",
+      "platform",
+      "b7e98def2c442beea311e5a4f6eacec2993de198",
+      "2026-10-29 20:32:41.0",
+      "true",
+      "false"
+    ],
+    [
+      "766",
+      "infra",
+      "platform",
+      "affdf79a2ecc6f92711ea17947efaa27964e7671",
+      "2026-10-29 22:03:34.0",
+      "true",
+      "false"
+    ],
+    [
+      "767",
+      "payments-api",
+      "payments",
+      "684f2edfc22508c6f59a113a3d3765fb23e0667a",
+      "2026-10-29 22:34:45.0",
+      "true",
+      "false"
+    ],
+    [
+      "768",
+      "mobile-client",
+      "growth",
+      "517f2d2f52f73f83f40a25ae7516c256fd547336",
+      "2026-10-29 23:06:03.0",
+      "true",
+      "false"
+    ],
+    [
+      "769",
+      "web-app",
+      "growth",
+      "5bbba1d18c7aa5629a127686eb5a4c9f76c78f44",
+      "2026-10-30 09:54:34.0",
+      "true",
+      "false"
+    ],
+    [
+      "770",
+      "infra",
+      "platform",
+      "241c8067dabfd60a71fc25434d3694f1da4d75e3",
+      "2026-10-30 10:48:11.0",
+      "true",
+      "false"
+    ],
+    [
+      "771",
+      "mobile-client",
+      "growth",
+      "b22db352ca0cbe0e95ec743c6d871aba319551df",
+      "2026-10-30 11:32:30.0",
+      "true",
+      "false"
+    ],
+    [
+      "772",
+      "web-app",
+      "growth",
+      "91eb31ac1f2704f10fdb3c43ba16228dde2d34d0",
+      "2026-10-30 11:40:34.0",
+      "true",
+      "true"
+    ],
+    [
+      "773",
+      "web-app",
+      "growth",
+      "efdb2a819f51aba34f559dd565866d7f57fee867",
+      "2026-10-30 12:39:09.0",
+      "true",
+      "false"
+    ],
+    [
+      "774",
+      "data-pipeline",
+      "discovery",
+      "19a006bae39482a7a01302214d73b4cbbd39beba",
+      "2026-10-30 13:04:32.0",
+      "true",
+      "false"
+    ],
+    [
+      "775",
+      "mobile-client",
+      "growth",
+      "1dd29592839472a7ffedb1c0e92df9d2abf81315",
+      "",
+      "true",
+      "true"
+    ],
+    [
+      "776",
+      "web-app",
+      "growth",
+      "c6db2a3c3bbfc97cc7673141a0cf95b2a73601cf",
+      "2026-10-30 14:07:53.0",
+      "true",
+      "true"
+    ],
+    [
+      "777",
+      "data-pipeline",
+      "discovery",
+      "ce1c1d52daf1fa4873a7c6e5e68277a2ab3cf032",
+      "2026-10-30 14:31:38.0",
+      "false",
+      "false"
+    ],
+    [
+      "778",
+      "data-pipeline",
+      "discovery",
+      "7086a42f4e6f772721040de1c0ebf605dd0f9c1d",
+      "2026-10-30 14:35:47.0",
+      "true",
+      "false"
+    ],
+    [
+      "779",
+      "payments-api",
+      "payments",
+      "09af54fa41a52bb1ab7ced02d6466403d1e30d40",
+      "2026-10-30 15:12:55.0",
+      "true",
+      "false"
+    ],
+    [
+      "780",
+      "data-pipeline",
+      "discovery",
+      "86e96a92ac3e4986382d8558cb3b12ddf36aea53",
+      "2026-10-30 15:48:23.0",
+      "true",
+      "false"
+    ],
+    [
+      "781",
+      "web-app",
+      "growth",
+      "7eea55fc53ab545368d19e785378ff053575bae2",
+      "2026-10-30 16:33:15.0",
+      "true",
+      "false"
+    ],
+    [
+      "782",
+      "mobile-client",
+      "growth",
+      "de99cf3990b79a4e126b62ec52b70f165e3bda6b",
+      "2026-10-30 17:56:26.0",
+      "true",
+      "false"
+    ],
+    [
+      "783",
+      "data-pipeline",
+      "discovery",
+      "9dc3e212e857d6b236a461681fc8d951772d8a4e",
+      "2026-10-30 18:47:08.0",
+      "true",
+      "true"
+    ],
+    [
+      "784",
+      "infra",
+      "platform",
+      "cdc13fa1753e0678dc8bd41a1072ccaf4467d6bb",
+      "",
+      "true",
+      "true"
+    ],
+    [
+      "785",
+      "infra",
+      "platform",
+      "0f384a4fd00d75879962fc4a2e9bd40f305e25c6",
+      "2026-10-30 19:01:05.0",
+      "true",
+      "false"
+    ],
+    [
+      "786",
+      "mobile-client",
+      "growth",
+      "dac62c9487bad5454ea588550d11dce7705ba7f3",
+      "2026-10-31 02:14:10.0",
+      "true",
+      "false"
+    ],
+    [
+      "787",
+      "web-app",
+      "growth",
+      "8cc56f556435b77911c656851a7870bc0907117b",
+      "2026-10-31 14:01:53.0",
+      "false",
+      "false"
+    ],
+    [
+      "788",
+      "data-pipeline",
+      "discovery",
+      "f3bd2f8f24cdf39df32079835210588dadffd651",
+      "2026-10-31 18:29:08.0",
+      "true",
+      "false"
+    ],
+    [
+      "789",
+      "web-app",
+      "growth",
+      "950f9337bc03054398add436913e3814c72a802f",
+      "2026-11-01 11:25:34.0",
+      "true",
+      "false"
+    ],
+    [
+      "790",
+      "infra",
+      "platform",
+      "59560a746f280a258e974d57b7d74ce496e5a7ca",
+      "2026-11-02 18:35:57.0",
+      "true",
+      "false"
+    ],
+    [
+      "791",
+      "web-app",
+      "growth",
+      "a0c9b43ee90fd45ebf00af4cc377456dd6e245e5",
+      "2026-11-03 16:12:01.0",
+      "true",
+      "false"
+    ],
+    [
+      "792",
+      "mobile-client",
+      "growth",
+      "dda587786d1ed2daa17595d082d5114e5954bd4a",
+      "2026-11-04 13:01:39.0",
+      "true",
+      "false"
+    ]
+  ],
+  "total": 792
+}

@@ -22,6 +22,7 @@ import { buildSample, sampleLogsDir, sampleReposDir } from "./sample/gen.ts";
 import { runCard } from "./card/run.ts";
 import { loadDotenv } from "./env.ts";
 import { proposeCommand } from "./propose/command.ts";
+import { silosCommand, silosSeed } from "./silo/command.ts";
 
 const DEFAULT_SNAPSHOT = "data/prices/anthropic-litellm-2026-10-22.json";
 
@@ -47,6 +48,7 @@ const { values, positionals } = parseArgs({
     cassettes: { type: "string", default: "data/sample/cassettes" },
     record: { type: "boolean", default: false },
     "person-from-branch": { type: "boolean", default: false },
+    "no-zetaris": { type: "boolean", default: false },
   },
 });
 
@@ -98,6 +100,15 @@ written: ${r.files.join(", ")}`);
       env: process.env,
     }),
   );
+} else if (command === "silos") {
+  loadDotenv(".env");
+  if (positionals[1] === "seed") {
+    console.log(silosSeed(ledgerPath, join(values.out, "silos")));
+  } else {
+    console.log(
+      await silosCommand({ dbPath: ledgerPath, cassetteDir: values.cassettes, sampleMode, record: values.record, disabled: values["no-zetaris"], env: process.env }),
+    );
+  }
 } else if (command === "bill") {
   const since = values.since ?? "0000-00-00";
   const until = values.until ?? "9999-99-99";
@@ -185,7 +196,7 @@ written: ${r.files.join(", ")}`);
   console.log(`logs: ${sampleLogsDir(values.out)}`);
   console.log(`repos: ${sampleReposDir(values.out)}`);
 } else {
-  console.error(`unknown command "${command}". Use: card | propose | ingest | bill | autopsy | landing | replay | tunnel | sample build`);
+  console.error(`unknown command "${command}". Use: card | propose | silos | ingest | bill | autopsy | landing | replay | tunnel | sample build`);
   process.exitCode = 2;
 }
 db.close();

@@ -1,0 +1,39 @@
+{
+  "sql": "SELECT r.team, r.seats, r.seat_plan, p.landed_prs, b.billed_usd, b.billed_usd / p.landed_prs AS usd_per_landed_pr FROM desk_roster.roster r JOIN (SELECT team, COUNT(*) AS landed_prs FROM ci_silo.pull_requests WHERE merged_at IS NOT NULL AND checks_green AND NOT reverted GROUP BY team) p ON p.team = r.team LEFT JOIN (SELECT workspace, SUM(CAST(amount_usd AS DOUBLE)) AS billed_usd FROM desk_invoices.lines_sample GROUP BY workspace) b ON b.workspace = r.team ORDER BY r.team",
+  "recordedAt": "2026-10-22T17:12:07.987Z",
+  "headers": [
+    "team",
+    "seats",
+    "seat_plan",
+    "landed_prs",
+    "billed_usd",
+    "usd_per_landed_pr"
+  ],
+  "rows": [
+    [
+      "discovery",
+      "5",
+      "claude-max-5x",
+      "127",
+      "1407.8993030000001",
+      "11.085821283464568"
+    ],
+    [
+      "growth",
+      "5",
+      "cursor-pro",
+      "275",
+      "3102.114745000001",
+      "11.280417254545458"
+    ],
+    [
+      "payments",
+      "4",
+      "claude-max-5x",
+      "114",
+      "1170.2313650000003",
+      "10.265187412280705"
+    ]
+  ],
+  "total": 3
+}

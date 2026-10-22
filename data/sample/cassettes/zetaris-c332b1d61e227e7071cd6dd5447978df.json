@@ -1,0 +1,35 @@
+{
+  "sql": "SELECT team, lead, seats, seat_plan, seat_price_usd FROM desk_roster.roster ORDER BY team",
+  "recordedAt": "2026-10-22T17:12:07.305Z",
+  "headers": [
+    "team",
+    "lead",
+    "seats",
+    "seat_plan",
+    "seat_price_usd"
+  ],
+  "rows": [
+    [
+      "discovery",
+      "Team Lead A",
+      "5",
+      "claude-max-5x",
+      "100"
+    ],
+    [
+      "growth",
+      "Team Lead B",
+      "5",
+      "cursor-pro",
+      "20"
+    ],
+    [
+      "payments",
+      "Team Lead C",
+      "4",
+      "claude-max-5x",
+      "100"
+    ]
+  ],
+  "total": 3
+}
