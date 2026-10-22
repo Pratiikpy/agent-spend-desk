@@ -45,7 +45,7 @@ With keys in `.env` (names in `.env.example`) the same commands run live. `desk 
 
 ### What the first run does
 
-`--sample` generates a constructed scenario from a seed: 14 engineers, 987 sessions over two months, as real-format Claude Code logs and real git repositories, with waste planted at known places (loops, idle polling, cache misses, sub-agent fan-out) and a tool-version and model-mix change planted on 14 October 2026. It is not a real team. `truth.json` records what was planted, and the checks compare what the Desk finds with it.
+`--sample` generates a constructed scenario from a seed (about 590 MB under `data/desk/`, about 20 seconds): 14 engineers, 987 sessions over two months, as real-format Claude Code logs and real git repositories, with waste planted at known places (loops, idle polling, cache misses, sub-agent fan-out) and a tool-version and model-mix change planted on 14 October 2026. It is not a real team. `truth.json` records what was planted, and the checks compare what the Desk finds with it.
 
 ## How it is built
 

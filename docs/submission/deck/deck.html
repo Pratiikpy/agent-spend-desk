@@ -12,45 +12,56 @@
 :root { --ink: #0a0a0a; --paper: #fff; --veil: #f8fafc; --halo: #fafaf7; --line: #e5e7eb; --graphite: #6b7280; --cipher: #059669; --cipher-soft: #e7f6ef; --redline: #c2410c; }
 * { box-sizing: border-box; }
 html, body { margin: 0; background: #d4d4d8; font-family: "Outfit", sans-serif; color: var(--ink); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-.slide { width: 1920px; height: 1080px; background: var(--paper); position: relative; overflow: hidden; page-break-after: always; break-after: page; margin: 0 auto; display: grid; grid-template-columns: 360px 1fr; padding: 96px 112px 80px; column-gap: 72px; }
+.slide { width: 1920px; height: 1080px; background: var(--paper); position: relative; overflow: hidden; page-break-after: always; break-after: page; margin: 0 auto; display: grid; grid-template-columns: 300px 1fr; padding: 72px 96px 88px; column-gap: 56px; align-content: start; }
 @media screen { .slide { margin: 24px auto; } }
 .meta { font-family: "JetBrains Mono", monospace; font-size: 22px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--graphite); line-height: 1.5; padding-top: 18px; }
 .meta b { display: block; color: var(--ink); font-weight: 500; margin-bottom: 8px; }
-h1 { font-size: 132px; line-height: 0.96; letter-spacing: -0.05em; font-weight: 700; margin: 0; }
-h2 { font-size: 84px; line-height: 1.02; letter-spacing: -0.045em; font-weight: 700; margin: 0 0 36px; }
-h3 { font-size: 36px; letter-spacing: -0.03em; font-weight: 600; margin: 0 0 10px; }
-p { font-size: 34px; line-height: 1.38; margin: 0 0 22px; max-width: 1180px; }
-.lead { font-size: 44px; line-height: 1.3; color: #2a2a2c; max-width: 1200px; }
+h1 { font-size: 112px; line-height: 0.98; letter-spacing: -0.05em; font-weight: 700; margin: 0; }
+h2 { font-size: 72px; line-height: 1.03; letter-spacing: -0.045em; font-weight: 700; margin: 0 0 30px; max-width: 1380px; }
+h3 { font-size: 31px; letter-spacing: -0.03em; font-weight: 600; margin: 0 0 10px; }
+p { font-size: 30px; line-height: 1.34; margin: 0 0 18px; max-width: 1280px; }
+.lead { font-size: 40px; line-height: 1.3; color: #2a2a2c; max-width: 1300px; }
 .mono { font-family: "JetBrains Mono", monospace; }
-.small { font-size: 26px; color: var(--graphite); }
-.foot { position: absolute; left: 112px; right: 112px; bottom: 44px; display: flex; justify-content: space-between; font-family: "JetBrains Mono", monospace; font-size: 18px; color: var(--graphite); border-top: 1px solid var(--line); padding-top: 14px; }
+.small { font-size: 24px; color: var(--graphite); }
+.foot { position: absolute; left: 96px; right: 96px; bottom: 30px; display: flex; justify-content: space-between; font-family: "JetBrains Mono", monospace; font-size: 18px; color: var(--graphite); border-top: 1px solid var(--line); padding-top: 14px; }
 .bar { width: 96px; height: 14px; background: var(--ink); display: inline-block; margin-right: 18px; vertical-align: middle; }
-.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
-.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
 .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px; }
-.card { border: 1px solid var(--line); border-radius: 20px; padding: 30px 34px; background: var(--veil); }
+.card { border: 1px solid var(--line); border-radius: 18px; padding: 24px 28px; background: var(--veil); }
 .card.w { background: var(--paper); }
-.card p { font-size: 28px; margin-bottom: 10px; }
-.card h3 { font-size: 32px; }
-.num { font-size: 76px; font-weight: 700; letter-spacing: -0.045em; line-height: 1; }
+.card p { font-size: 26px; margin-bottom: 8px; line-height: 1.3; }
+.card h3 { font-size: 30px; }
+.num { font-size: 68px; font-weight: 700; letter-spacing: -0.045em; line-height: 1; }
 .cap { font-family: "JetBrains Mono", monospace; font-size: 18px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--graphite); margin-bottom: 10px; }
 .pill { display: inline-block; font-family: "JetBrains Mono", monospace; font-size: 20px; padding: 3px 14px; border: 1px solid var(--line); border-radius: 999px; color: var(--graphite); }
 .pill.live { color: #047857; border-color: var(--cipher); background: var(--cipher-soft); }
 .pill.risk { color: var(--redline); border-color: var(--redline); background: #fdeee7; }
 .redact { background: var(--ink); color: transparent; border-radius: 3px; }
 ul { margin: 0; padding: 0; list-style: none; }
-li { font-size: 32px; line-height: 1.34; padding-left: 30px; position: relative; margin-bottom: 14px; max-width: 1200px; }
+li { font-size: 29px; line-height: 1.3; padding-left: 28px; position: relative; margin-bottom: 12px; max-width: 1300px; }
 li::before { content: ""; position: absolute; left: 0; top: 0.66em; width: 14px; height: 3px; background: var(--ink); }
-table { border-collapse: collapse; width: 100%; font-size: 28px; }
-th, td { text-align: left; padding: 14px 18px; border-bottom: 1px solid var(--line); vertical-align: top; }
+table { border-collapse: collapse; width: 100%; font-size: 26px; }
+th, td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
 th { font-family: "JetBrains Mono", monospace; font-size: 18px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--graphite); font-weight: 500; background: var(--veil); }
 td.r, th.r { text-align: right; font-family: "JetBrains Mono", monospace; }
 img.shot { width: 100%; border: 1px solid var(--line); border-radius: 16px; display: block; }
 .shots { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 22px; }
-.shots figure { margin: 0; }
+.shots figure { margin: 0; min-width: 0; }
 .shots figcaption { font-family: "JetBrains Mono", monospace; font-size: 18px; color: var(--graphite); margin-top: 8px; }
+
+.dense h2 { font-size: 54px; margin-bottom: 22px; }
+.dense p { font-size: 25px; margin-bottom: 12px; }
+.dense .lead { font-size: 31px; }
+.dense .card { padding: 18px 22px; }
+.dense .card p { font-size: 21px; margin-bottom: 6px; }
+.dense .card h3 { font-size: 25px; }
+.dense li { font-size: 23px; margin-bottom: 8px; }
+.dense table { font-size: 21px; }
+.dense th, .dense td { padding: 7px 12px; }
+.dense .num { font-size: 54px; }
 .title { grid-template-columns: 1fr; align-content: center; background: var(--paper); }
-.title .mark { display: flex; align-items: center; gap: 28px; font-size: 52px; font-weight: 700; letter-spacing: -0.04em; margin-bottom: 70px; }
+.title .mark { display: flex; align-items: center; gap: 24px; font-size: 48px; font-weight: 700; letter-spacing: -0.04em; margin-bottom: 70px; }
 svg text { font-family: "JetBrains Mono", monospace; }
 </style>
 </head>
@@ -60,8 +71,8 @@ svg text { font-family: "JetBrains Mono", monospace; }
   <div>
     <div class="mark"><svg width="64" height="64" viewBox="0 0 32 32"><rect x="2" y="11" width="15" height="6" fill="#0a0a0a"/><circle cx="24" cy="20" r="5" fill="#0a0a0a"/></svg>desk.</div>
     <h1>Every dollar your agents spend,<br>tied to work that landed.</h1>
-    <p class="lead" style="margin-top:56px">A local desk for the person who pays for AI coding agents. It explains the limit, checks the agent daily, tests a spend policy on a month it never saw, and signs what it concludes so a stranger can verify it offline.</p>
-    <p class="small mono" style="margin-top:40px">Open Agent Hackathon 2026 &nbsp;/&nbsp; Track 3, Reasoning Architecture &nbsp;/&nbsp; Zetaris &nbsp;·&nbsp; Meterless &nbsp;·&nbsp; NVIDIA Nemotron &nbsp;·&nbsp; Cursor</p>
+    <p class="lead" style="margin-top:40px">A local desk for the person who pays for AI coding agents. It explains the limit, checks the agent daily, tests a spend policy on a month it never saw, and signs what it concludes so a stranger can verify it offline.</p>
+    <p class="small mono" style="margin-top:24px">Open Agent Hackathon 2026 &nbsp;/&nbsp; Track 3, Reasoning Architecture &nbsp;/&nbsp; Zetaris &nbsp;·&nbsp; Meterless &nbsp;·&nbsp; NVIDIA Nemotron &nbsp;·&nbsp; Cursor</p>
   </div>
 </section>
 
@@ -70,7 +81,7 @@ svg text { font-family: "JetBrains Mono", monospace; }
   <div>
     <h2>"Limit reached." I do not know why.</h2>
     <p class="lead">An engineering lead pays for a team's coding agents, on seats and on tokens. The bill arrives as a number. The limit arrives as a message. Nothing says what the money bought.</p>
-    <div class="grid3" style="margin-top:40px">
+    <div class="grid3" style="margin-top:24px">
       <div class="card"><div class="cap">The user</div><h3>An engineering lead</h3><p>5 to 50 engineers, a mix of seat plans and API tokens, accountable to finance, not reading token counts.</p></div>
       <div class="card"><div class="cap">The decision</div><h3>Next month's caps and routes</h3><p>Which limits to set, which models to route where, and on what evidence.</p></div>
       <div class="card"><div class="cap">The pain</div><h3>Seen in public, repeatedly</h3><p>A $6,000 overnight loop. Limits that vanish in two hours. Failed attempts that still cost. Evidence table in the repo.</p></div>
@@ -88,7 +99,7 @@ svg text { font-family: "JetBrains Mono", monospace; }
       <div class="card"><div class="cap">Evidence 2</div><h3>The canary</h3><p>A fixed pack of tasks, one real run a day on two arms, and a regression statistic that says what it cannot see.</p></div>
       <div class="card"><div class="cap">Evidence 3</div><h3>The held-out replay</h3><p>A policy drafted from one month, replayed on the next. Landed work it would have blocked is the headline.</p></div>
     </div>
-    <p class="lead" style="margin-top:44px">The decision is a cap diff. The output is a <b>signed dossier</b> whose figures are recomputed from the rows inside it. Cost without outcome is a meter; outcome without cost is a report.</p>
+    <p class="lead" style="margin-top:26px">The decision is a cap diff. The output is a <b>signed dossier</b> whose figures are recomputed from the rows inside it. Cost without outcome is a meter; outcome without cost is a report.</p>
   </div>
   <div class="foot"><span>desk.</span><span>docs/design/desk/00-architecture-master-spec.md</span></div>
 </section>
@@ -116,7 +127,7 @@ svg text { font-family: "JetBrains Mono", monospace; }
   <div class="meta"><b>04</b>Architecture</div>
   <div>
     <h2>Agents propose. Code checks. A stranger can verify.</h2>
-    <svg viewBox="0 0 1500 640" width="1500" height="640" role="img" aria-label="Architecture diagram: sources feed the ledger; the Ask loop and the Propose loop sit on the ledger; the gate, the approval echo and the signed dossier sit under them">
+    <svg viewBox="0 0 1500 640" width="1300" height="555" role="img" aria-label="Architecture diagram: sources feed the ledger; the Ask loop and the Propose loop sit on the ledger; the gate, the approval echo and the signed dossier sit under them">
       <g font-size="19" fill="#0a0a0a">
         <rect x="0" y="20" width="270" height="86" rx="14" fill="#f8fafc" stroke="#e5e7eb"/><text x="20" y="56">agent logs</text><text x="20" y="84" fill="#6b7280" font-size="16">Claude Code, read-only</text>
         <rect x="0" y="130" width="270" height="86" rx="14" fill="#f8fafc" stroke="#0a0a0a" stroke-width="2"/><text x="20" y="166">Zetaris</text><text x="20" y="194" fill="#6b7280" font-size="16">invoices · CI · roster</text>
@@ -187,7 +198,7 @@ svg text { font-family: "JetBrains Mono", monospace; }
       <div class="card w"><div class="cap">Replayed on October</div><div class="num" style="color:#c2410c">5 of 333</div><p>landed sessions the same policy would have blocked on a month it never saw. Reported first, not hidden.</p></div>
       <div class="card w"><div class="cap">Restrict-only check</div><div class="num">0 escapes</div><p>in 3,000 random policy pairs against an independent oracle; a checker that always says "narrows" is caught.</p></div>
     </div>
-    <ul style="margin-top:40px">
+    <ul style="margin-top:24px">
       <li>A dossier carries the rows its figures come from; the verifier recomputes them with the same interpreter the gate uses.</li>
       <li>Change one byte of a row: <span class="mono">row_hash_mismatch: replay_heldout#2</span>, exit 1. Untouched: PASS, exit 0, on plain Node with the network off.</li>
       <li>PASS prints what it does not mean: that the logs were truthful, that estimates equal the invoice.</li>
@@ -205,7 +216,7 @@ svg text { font-family: "JetBrains Mono", monospace; }
       <div class="card"><div class="cap">SQL</div><h3>CI in Postgres</h3><p>Pull requests with merge, check and revert facts.</p></div>
       <div class="card"><div class="cap">REST</div><h3>Roster as a service</h3><p>Teams, seats, plans.</p></div>
     </div>
-    <table style="margin-top:34px">
+    <table style="margin-top:20px">
       <tr><th></th><th class="r">With Zetaris</th><th class="r">Zetaris stopped (real drill)</th></tr>
       <tr><td>Billed spend</td><td class="r">$6,123.23 (whole ledger)</td><td class="r">$0.00, every dollar an estimate</td></tr>
       <tr><td>Landed sessions on green CI</td><td class="r">584 of 644; 60 on red</td><td class="r">unknown: landing stops at merged</td></tr>
@@ -225,7 +236,7 @@ svg text { font-family: "JetBrains Mono", monospace; }
       <div class="card"><div class="cap">H-MEM · 13/13</div><h3>The owner's words</h3><p>"Landed means committed, merged or kept" moves landed work from 63% to 67% of spend, and says whose note it followed. Engine off: the default.</p></div>
       <div class="card"><div class="cap">Markovian · 8/8</div><h3>Long ranges</h3><p>A nine-week ledger read in nine bounded chunks with a carry state. Engine off: a different, unbounded read.</p></div>
     </div>
-    <ul style="margin-top:34px">
+    <ul style="margin-top:20px">
       <li>Counts come from Meterless's own conformance runners, run against our copies, recorded with the commit.</li>
       <li>Testing the engines found a bug: the pattern that reads the owner's definition never matched, so the engine had no effect. Fixed; the test fails without it.</li>
       <li>No Meterless API exists; the engines run in our process. Scout Intent is not used, and the Risk Router is ours.</li>
@@ -305,9 +316,39 @@ svg text { font-family: "JetBrains Mono", monospace; }
     <div class="mark"><svg width="64" height="64" viewBox="0 0 32 32"><rect x="2" y="11" width="15" height="6" fill="#0a0a0a"/><circle cx="24" cy="20" r="5" fill="#0a0a0a"/></svg>desk.</div>
     <h1>Run it on your own logs.</h1>
     <p class="lead" style="margin-top:48px"><span class="mono">npm run desk</span><br>Under three minutes. Entirely local. Your own limit autopsy, your own ranked fixes, and what it could not know.</p>
-    <p class="small mono" style="margin-top:40px"><span class="bar"></span>No logs? <span class="mono">npm run desk -- --sample</span> shows the same card offline.</p>
+    <p class="small mono" style="margin-top:24px"><span class="bar"></span>No logs? <span class="mono">npm run desk -- --sample</span> shows the same card offline.</p>
   </div>
 </section>
 
+<script>
+// Each slide is fitted to the frame: the content is zoomed to the largest size that still ends above the footer.
+async function fit() {
+  document.querySelectorAll(".slide").forEach((s, i) => { s.id = "s" + (i + 1); });
+  await document.fonts.ready;
+  for (const slide of document.querySelectorAll(".slide:not(.title)")) {
+    const body = slide.children[1];
+    if (!body) continue;
+    const limit = 1080 - 120;
+    const bottom = () => {
+      const top = slide.getBoundingClientRect().top;
+      let b = 0;
+      body.querySelectorAll("*").forEach((e) => {
+        const r = e.getBoundingClientRect();
+        if (r.height > 0) b = Math.max(b, r.bottom - top);
+      });
+      return b;
+    };
+    let lo = 0.5, hi = 1.3;
+    for (let i = 0; i < 14; i += 1) {
+      const mid = (lo + hi) / 2;
+      body.style.zoom = String(mid);
+      if (bottom() <= limit) lo = mid; else hi = mid;
+    }
+    body.style.zoom = String(lo);
+  }
+  document.body.dataset.fitted = "1";
+}
+fit();
+</script>
 </body>
 </html>
