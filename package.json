@@ -9,9 +9,12 @@
     "node": ">=22"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p src/engines/tsconfig.json",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "conformance": "tsx scripts/run-conformance.ts",
+    "ingest": "tsx src/desk/cli.ts ingest",
+    "bill": "tsx src/desk/cli.ts bill"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",

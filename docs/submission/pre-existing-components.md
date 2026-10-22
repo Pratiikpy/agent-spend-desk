@@ -12,6 +12,6 @@ Repository state. There is no git repository yet and nothing has been committed 
 | Sponsor material | `meterless/`, `docs/sponsors/` | Organizer and sponsor documents and our notes | 2026-10-13 onward | Organizer originals are local reference only. |
 | Tooling | `scripts/secret_scan.py`, `scripts/repo_size_check.py`, `.claude/`, `.cursor/` | Guard scripts, hooks, agent definitions | 2026-10-13 | Part of the repository; AI-assisted, logged in `docs/sponsors/ai-use-provenance-log.md`. |
 
-Not pre-existing: no application code beyond the starter above, no data sets, no trained models.
+Not pre-existing: no application code beyond the starter above, no data sets, no trained models. Created from 2026-10-22: `src/desk/` (ledger, log reader, price book, cost), `tests/desk/`, `data/prices/` (a dated snapshot of LiteLLM's MIT-licensed price file), `scripts/build-price-snapshot.ts`, `scripts/run-conformance.ts`, and, from Meterless under Apache-2.0, `src/engines/` and `vendor/meterless/` (see `vendor/meterless/NOTICE.md`).
 
 Open: the organizers' written answer on whether local preparation before the window is eligible (open question F13); whether the runtime starter is kept, rewritten inside the window or removed.
