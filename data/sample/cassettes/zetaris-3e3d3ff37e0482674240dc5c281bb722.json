@@ -1,6 +1,6 @@
 {
   "sql": "SELECT pr_id, repo, team, head_sha, merged_at, checks_green, reverted FROM ci_silo.pull_requests ORDER BY pr_id",
-  "recordedAt": "2026-10-22T17:12:07.102Z",
+  "recordedAt": "2026-10-22T18:18:21.183Z",
   "headers": [
     "pr_id",
     "repo",

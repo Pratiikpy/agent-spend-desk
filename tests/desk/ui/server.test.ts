@@ -110,7 +110,7 @@ describe("the server's doors", () => {
 describe("the screens' data", () => {
   it("lists the screens, the ledger span and the price snapshot", async () => {
     const m = await json(full, "/api/meta");
-    expect(m.screens.map((s: { id: string }) => s.id)).toEqual(["brief", "bill", "autopsy", "sessions", "outcomes", "policy", "ask", "organisation", "dossiers", "sources"]);
+    expect(m.screens.map((s: { id: string }) => s.id)).toEqual(["brief", "bill", "autopsy", "sessions", "outcomes", "policy", "canary", "ask", "organisation", "dossiers", "sources"]);
     expect(m.calls).toBeGreaterThan(100);
     expect(m.mode).toBe("sample");
   });
@@ -221,7 +221,7 @@ describe("the client code", () => {
   walk(root);
 
   it("has a screen for every registered screen and requests nothing from another origin", () => {
-    for (const id of ["brief", "bill", "autopsy", "sessions", "outcomes", "policy", "ask", "organisation", "dossiers", "sources"]) expect(files.some((f) => f.endsWith(`${id}.js`)), id).toBe(true);
+    for (const id of ["brief", "bill", "autopsy", "sessions", "outcomes", "policy", "canary", "ask", "organisation", "dossiers", "sources"]) expect(files.some((f) => f.endsWith(`${id}.js`)), id).toBe(true);
     for (const f of files.filter((x) => /\.(js|html|css)$/.test(x))) {
       const text = readFileSync(f, "utf8");
       expect(text, f).not.toMatch(/https?:\/\/(?!www\.w3\.org)/);

@@ -290,3 +290,9 @@ pre.src { margin: 0; padding: 14px 16px; background: var(--surface); border: 1px
 .traceline { font-family: var(--mono); font-size: 13px; overflow-wrap: anywhere; }
 
 .nav a .n { display: none; }
+.chart .band { fill: var(--surface); stroke: var(--border); stroke-width: 1; }
+.chart .ln-primary { fill: none; stroke: var(--seg-solid); stroke-width: 2.4; }
+.chart .ln-control { fill: none; stroke: var(--seg-mid); stroke-width: 1.6; stroke-dasharray: 5 4; }
+.chart .rule-risk { stroke: var(--redline); stroke-width: 1.5; stroke-dasharray: 3 3; }
+.keyline { display: inline-block; width: 28px; height: 0; border-top: 2.4px solid var(--seg-solid); vertical-align: middle; margin-right: 8px; }
+.keyline.dash { border-top: 1.6px dashed var(--seg-mid); }

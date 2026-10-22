@@ -1,0 +1,16 @@
+{
+  "key": "d58f33377bce6aeec29713584427d987",
+  "recordedAt": "2026-10-22T18:21:17.858Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Estimated list-price spend between 2026-09-01 and 2026-10-31 was $6,196.64, an estimate from logged tokens and not a bill.\", \"cites\": [\"summary.1\"]}, {\"text\": \"The whole range was read in 9 periods.\", \"cites\": [\"summary.2\"]}, {\"text\": \"Each period covered 7 days.\", \"cites\": [\"summary.3\"]}, {\"text\": \"The costliest period started on 2026-10-06 and cost $818.21.\", \"cites\": [\"summary.4\"]}, {\"text\": \"Model `claude-opus-5` cost $4,581.67 in the range.\", \"cites\": [\"summary.5\"]}, {\"text\": \"Model `claude-sonnet-5-5` cost $1,606.89 in the range.\", \"cites\": [\"summary.6\"]}, {\"text\": \"Model `claude-haiku-5-5` cost $8.09 in the range.\", \"cites\": [\"summary.7\"]}, {\"text\": \"Spending in the last third of the range was 64.8% of the first third.\", \"cites\": [\"summary.8\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 591,
+      "outputTokens": 304,
+      "reasoningTokens": 0
+    }
+  }
+}

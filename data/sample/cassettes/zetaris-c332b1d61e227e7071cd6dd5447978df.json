@@ -1,6 +1,6 @@
 {
   "sql": "SELECT team, lead, seats, seat_plan, seat_price_usd FROM desk_roster.roster ORDER BY team",
-  "recordedAt": "2026-10-22T17:12:07.305Z",
+  "recordedAt": "2026-10-22T18:18:21.444Z",
   "headers": [
     "team",
     "lead",

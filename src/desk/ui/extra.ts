@@ -12,6 +12,10 @@ import { SUPPORTED_QUESTIONS } from "../ask/plan-rules.ts";
 import { ciSummary, fetchSiloFacts, reconcile } from "../silo/facts.ts";
 import { readBundleDir } from "../verify/read-dir.ts";
 import { verifyBundle } from "../verify/verify.ts";
+import { OWN_RUNS, SAMPLE_RUNS } from "../canary/command.ts";
+import { buildSeries, readRows, servedChanges } from "../canary/store.ts";
+import { TASKS } from "../canary/tasks.ts";
+import { DEFAULT_CONFIG, earliestCallDay, evaluateAt, makeContext } from "../canary/verdict.ts";
 import { BadParam, type UiContext } from "./queries.ts";
 
 export interface ExtraPaths {
@@ -152,4 +156,62 @@ export function dossiersScreen(paths: ExtraPaths): object {
     }
   }
   return { state: "ok", bundles, pending, verifyCommand: "node src/desk/verify/main.ts <folder> --pins <file>" };
+}
+
+/** The canary: pass rate per day for each arm, the verdict as of the last day, and what the verdict rests on. */
+export function canaryScreen(ctx: UiContext): object {
+  const path = ctx.mode === "sample" ? SAMPLE_RUNS : OWN_RUNS;
+  const { rows } = readRows(path);
+  const series = buildSeries(rows);
+  if (!series) {
+    return { state: "empty", reason: "No canary runs yet.", hint: `A canary needs ${DEFAULT_CONFIG.baselineDays} baseline days and two ${DEFAULT_CONFIG.windowDays}-day windows: nothing can be called before day ${earliestCallDay()}. Run \`desk canary run\` daily.` };
+  }
+  const days = series.days;
+  const dates = new Map(rows.map((r) => [r.day, r.date]));
+  const rate = (arm: "primary" | "control", day: number): number | null => {
+    const r = rows.filter((x) => x.arm === arm && x.day === day && x.score !== null);
+    return r.length === 0 ? null : r.reduce((a, x) => a + (x.score as number), 0) / r.length;
+  };
+  const line = (arm: "primary" | "control") => Array.from({ length: days }, (_, i) => ({ day: i + 1, date: dates.get(i + 1) ?? "", rate: rate(arm, i + 1) }));
+  const v = evaluateAt(makeContext(series), days);
+  const b = DEFAULT_CONFIG.baselineDays;
+  const w = DEFAULT_CONFIG.windowDays;
+  const meanOf = (arm: "primary" | "control", from: number, to: number): number | null => {
+    const r = rows.filter((x) => x.arm === arm && x.day >= from && x.day <= to && x.score !== null);
+    return r.length === 0 ? null : r.reduce((a, x) => a + (x.score as number), 0) / r.length;
+  };
+  const perTask = TASKS.map((t) => ({ id: t.id, cluster: t.cluster, baseline: taskMean(rows, "primary", t.id, 1, b), latest: taskMean(rows, "primary", t.id, days - w + 1, days) }));
+  const last = v.control.length > 0 ? v.control[v.control.length - 1]!.reading : null;
+  return {
+    state: "ok",
+    sample: ctx.mode === "sample",
+    days,
+    baselineDays: b,
+    windowDays: w,
+    earliestCallDay: earliestCallDay(),
+    verdict: v.verdict,
+    reason: v.reason,
+    delta: v.delta,
+    ci: v.ci,
+    mde: v.mde,
+    mdeVerdict: v.mdeVerdict,
+    tasksUsed: v.tasksUsed,
+    errorRate: v.errorRate,
+    harnessUnchanged: v.harnessUnchanged,
+    control: last ? { moved: last.moved, delta: last.delta, low: last.low, high: last.high, tasks: last.tasks } : null,
+    notes: v.notes,
+    primary: line("primary"),
+    controlArm: series.control ? line("control") : null,
+    baselineMean: { primary: meanOf("primary", 1, b), control: meanOf("control", 1, b) },
+    latestMean: { primary: meanOf("primary", days - w + 1, days), control: meanOf("control", days - w + 1, days) },
+    served: servedChanges(rows, "primary"),
+    controlServed: servedChanges(rows, "control"),
+    perTask,
+    tasks: TASKS.length,
+  };
+}
+
+function taskMean(rows: readonly { arm: string; taskId: string; day: number; score: 0 | 1 | null }[], arm: string, id: string, from: number, to: number): number | null {
+  const r = rows.filter((x) => x.arm === arm && x.taskId === id && x.day >= from && x.day <= to && x.score !== null);
+  return r.length === 0 ? null : r.reduce((a, x) => a + (x.score as number), 0) / r.length;
 }

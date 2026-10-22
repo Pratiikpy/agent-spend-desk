@@ -156,10 +156,11 @@ export const SCREENS = [
   { id: "sessions", title: "Sessions", number: "04" },
   { id: "outcomes", title: "Outcomes", number: "05" },
   { id: "policy", title: "Policy", number: "06" },
-  { id: "ask", title: "Ask", number: "07" },
-  { id: "organisation", title: "Org data", number: "08" },
-  { id: "dossiers", title: "Dossiers", number: "09" },
-  { id: "sources", title: "Doctor", number: "10" },
+  { id: "canary", title: "Canary", number: "07" },
+  { id: "ask", title: "Ask", number: "08" },
+  { id: "organisation", title: "Org data", number: "09" },
+  { id: "dossiers", title: "Dossiers", number: "10" },
+  { id: "sources", title: "Doctor", number: "11" },
 ] as const;
 
 // ---------------------------------------------------------------------------------------------- bill

@@ -10,7 +10,7 @@ import { createRedactor } from "../card/redact.ts";
 import { openLedger, type Ledger } from "../ledger/db.ts";
 import { loadSnapshot } from "../pricing/pricebook.ts";
 import * as q from "./queries.ts";
-import { askScreen, dossiersScreen, silosScreen, type ExtraPaths } from "./extra.ts";
+import { askScreen, canaryScreen, dossiersScreen, silosScreen, type ExtraPaths } from "./extra.ts";
 
 const HERE = fileURLToPath(new URL(".", import.meta.url));
 const CLIENT_DIR = join(HERE, "client");
@@ -168,6 +168,8 @@ export async function startUiServer(opts: UiOptions): Promise<UiServer> {
         return withProblem(q.tunnel(ctx, q.parseRange(p.get("range"), db), p.get("policy") ?? ""));
       case "/api/ask":
         return askScreen(ctx, extra, p.get("q") ?? "", p.get("ablate") ?? "");
+      case "/api/canary":
+        return canaryScreen(ctx);
       case "/api/silos":
         return silosScreen(ctx, extra);
       case "/api/dossiers":

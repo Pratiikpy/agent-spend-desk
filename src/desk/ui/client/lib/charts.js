@@ -80,3 +80,47 @@ export function timeline(calls, spanSec) {
   svg.append(s("text", { x: W - 2, y: H - 6, "text-anchor": "end" }, `${int(Math.round(span / 60))} min`));
   return svg;
 }
+
+/** Pass rate per day for two arms. The baseline days are shaded, a switch of served model is a vertical rule, and the
+ * last two windows are bracketed. Line style, not colour, tells the arms apart. */
+export function passLines(primary, control, opts) {
+  const W = 860;
+  const H = 260;
+  const padL = 44;
+  const padR = 12;
+  const padT = 14;
+  const padB = 34;
+  const n = primary.length;
+  const x = (day) => padL + ((day - 1) / Math.max(1, n - 1)) * (W - padL - padR);
+  const y = (r) => padT + (1 - r) * (H - padT - padB);
+  const svg = s("svg", { class: "chart", viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": `Pass rate by day for the primary arm${control ? " and the control arm" : ""}, ${n} days. ${opts.label || ""}` });
+  svg.append(s("rect", { class: "band", x: x(1), y: padT, width: x(opts.baselineDays) - x(1), height: H - padT - padB }));
+  for (const t of [0, 0.25, 0.5, 0.75, 1]) {
+    svg.append(s("line", { class: "axis", x1: padL, x2: W - padR, y1: y(t), y2: y(t) }));
+    svg.append(s("text", { x: padL - 6, y: y(t) + 4, "text-anchor": "end" }, `${Math.round(t * 100)}%`));
+  }
+  const path = (pts) => {
+    let d = "";
+    let pen = false;
+    for (const p of pts) {
+      if (p.rate === null) {
+        pen = false;
+        continue;
+      }
+      d += `${pen ? "L" : "M"}${x(p.day).toFixed(1)} ${y(p.rate).toFixed(1)} `;
+      pen = true;
+    }
+    return d.trim();
+  };
+  if (control) svg.append(s("path", { class: "ln-control", d: path(control) }));
+  svg.append(s("path", { class: "ln-primary", d: path(primary) }));
+  for (const sw of opts.switches || []) {
+    svg.append(s("line", { class: "rule-risk", x1: x(sw.day), x2: x(sw.day), y1: padT, y2: H - padB }));
+    svg.append(s("text", { x: x(sw.day) + 6, y: padT + 10 }, `served model changed, day ${sw.day}`));
+  }
+  const step = Math.max(1, Math.round(n / 8));
+  for (let d = 1; d <= n; d += step) svg.append(s("text", { x: x(d), y: H - 14, "text-anchor": "middle" }, String(d)));
+  svg.append(s("text", { x: padL, y: H - 2 }, "day"));
+  svg.append(s("text", { x: x(1) + 4, y: H - padB - 6 }, "baseline"));
+  return svg;
+}

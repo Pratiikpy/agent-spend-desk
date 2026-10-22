@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>desk. deck</title>
+<style>
+@font-face { font-family: "Outfit"; src: url("../../../assets/fonts/Outfit-Regular.ttf"); font-weight: 400; }
+@font-face { font-family: "Outfit"; src: url("../../../assets/fonts/Outfit-SemiBold.ttf"); font-weight: 600 800; }
+@font-face { font-family: "JetBrains Mono"; src: url("../../../assets/fonts/JetBrainsMono-Regular.ttf"); font-weight: 400; }
+@font-face { font-family: "JetBrains Mono"; src: url("../../../assets/fonts/JetBrainsMono-Medium.ttf"); font-weight: 500 700; }
+@page { size: 1920px 1080px; margin: 0; }
+:root { --ink: #0a0a0a; --paper: #fff; --veil: #f8fafc; --halo: #fafaf7; --line: #e5e7eb; --graphite: #6b7280; --cipher: #059669; --cipher-soft: #e7f6ef; --redline: #c2410c; }
+* { box-sizing: border-box; }
+html, body { margin: 0; background: #d4d4d8; font-family: "Outfit", sans-serif; color: var(--ink); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.slide { width: 1920px; height: 1080px; background: var(--paper); position: relative; overflow: hidden; page-break-after: always; break-after: page; margin: 0 auto; display: grid; grid-template-columns: 360px 1fr; padding: 96px 112px 80px; column-gap: 72px; }
+@media screen { .slide { margin: 24px auto; } }
+.meta { font-family: "JetBrains Mono", monospace; font-size: 22px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--graphite); line-height: 1.5; padding-top: 18px; }
+.meta b { display: block; color: var(--ink); font-weight: 500; margin-bottom: 8px; }
+h1 { font-size: 132px; line-height: 0.96; letter-spacing: -0.05em; font-weight: 700; margin: 0; }
+h2 { font-size: 84px; line-height: 1.02; letter-spacing: -0.045em; font-weight: 700; margin: 0 0 36px; }
+h3 { font-size: 36px; letter-spacing: -0.03em; font-weight: 600; margin: 0 0 10px; }
+p { font-size: 34px; line-height: 1.38; margin: 0 0 22px; max-width: 1180px; }
+.lead { font-size: 44px; line-height: 1.3; color: #2a2a2c; max-width: 1200px; }
+.mono { font-family: "JetBrains Mono", monospace; }
+.small { font-size: 26px; color: var(--graphite); }
+.foot { position: absolute; left: 112px; right: 112px; bottom: 44px; display: flex; justify-content: space-between; font-family: "JetBrains Mono", monospace; font-size: 18px; color: var(--graphite); border-top: 1px solid var(--line); padding-top: 14px; }
+.bar { width: 96px; height: 14px; background: var(--ink); display: inline-block; margin-right: 18px; vertical-align: middle; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px; }
+.card { border: 1px solid var(--line); border-radius: 20px; padding: 30px 34px; background: var(--veil); }
+.card.w { background: var(--paper); }
+.card p { font-size: 28px; margin-bottom: 10px; }
+.card h3 { font-size: 32px; }
+.num { font-size: 76px; font-weight: 700; letter-spacing: -0.045em; line-height: 1; }
+.cap { font-family: "JetBrains Mono", monospace; font-size: 18px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--graphite); margin-bottom: 10px; }
+.pill { display: inline-block; font-family: "JetBrains Mono", monospace; font-size: 20px; padding: 3px 14px; border: 1px solid var(--line); border-radius: 999px; color: var(--graphite); }
+.pill.live { color: #047857; border-color: var(--cipher); background: var(--cipher-soft); }
+.pill.risk { color: var(--redline); border-color: var(--redline); background: #fdeee7; }
+.redact { background: var(--ink); color: transparent; border-radius: 3px; }
+ul { margin: 0; padding: 0; list-style: none; }
+li { font-size: 32px; line-height: 1.34; padding-left: 30px; position: relative; margin-bottom: 14px; max-width: 1200px; }
+li::before { content: ""; position: absolute; left: 0; top: 0.66em; width: 14px; height: 3px; background: var(--ink); }
+table { border-collapse: collapse; width: 100%; font-size: 28px; }
+th, td { text-align: left; padding: 14px 18px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-family: "JetBrains Mono", monospace; font-size: 18px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--graphite); font-weight: 500; background: var(--veil); }
+td.r, th.r { text-align: right; font-family: "JetBrains Mono", monospace; }
+img.shot { width: 100%; border: 1px solid var(--line); border-radius: 16px; display: block; }
+.shots { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 22px; }
+.shots figure { margin: 0; }
+.shots figcaption { font-family: "JetBrains Mono", monospace; font-size: 18px; color: var(--graphite); margin-top: 8px; }
+.title { grid-template-columns: 1fr; align-content: center; background: var(--paper); }
+.title .mark { display: flex; align-items: center; gap: 28px; font-size: 52px; font-weight: 700; letter-spacing: -0.04em; margin-bottom: 70px; }
+svg text { font-family: "JetBrains Mono", monospace; }
+</style>
+</head>
+<body>
+
+<section class="slide title">
+  <div>
+    <div class="mark"><svg width="64" height="64" viewBox="0 0 32 32"><rect x="2" y="11" width="15" height="6" fill="#0a0a0a"/><circle cx="24" cy="20" r="5" fill="#0a0a0a"/></svg>desk.</div>
+    <h1>Every dollar your agents spend,<br>tied to work that landed.</h1>
+    <p class="lead" style="margin-top:56px">A local desk for the person who pays for AI coding agents. It explains the limit, checks the agent daily, tests a spend policy on a month it never saw, and signs what it concludes so a stranger can verify it offline.</p>
+    <p class="small mono" style="margin-top:40px">Open Agent Hackathon 2026 &nbsp;/&nbsp; Track 3, Reasoning Architecture &nbsp;/&nbsp; Zetaris &nbsp;·&nbsp; Meterless &nbsp;·&nbsp; NVIDIA Nemotron &nbsp;·&nbsp; Cursor</p>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="meta"><b>01</b>Problem and user</div>
+  <div>
+    <h2>"Limit reached." I do not know why.</h2>
+    <p class="lead">An engineering lead pays for a team's coding agents, on seats and on tokens. The bill arrives as a number. The limit arrives as a message. Nothing says what the money bought.</p>
+    <div class="grid3" style="margin-top:40px">
+      <div class="card"><div class="cap">The user</div><h3>An engineering lead</h3><p>5 to 50 engineers, a mix of seat plans and API tokens, accountable to finance, not reading token counts.</p></div>
+      <div class="card"><div class="cap">The decision</div><h3>Next month's caps and routes</h3><p>Which limits to set, which models to route where, and on what evidence.</p></div>
+      <div class="card"><div class="cap">The pain</div><h3>Seen in public, repeatedly</h3><p>A $6,000 overnight loop. Limits that vanish in two hours. Failed attempts that still cost. Evidence table in the repo.</p></div>
+    </div>
+  </div>
+  <div class="foot"><span>desk.</span><span>docs/design/desk/04-evidence-table.md</span></div>
+</section>
+
+<section class="slide">
+  <div class="meta"><b>02</b>What it is</div>
+  <div>
+    <h2>One ledger where every row joins cost and outcome.</h2>
+    <div class="grid3">
+      <div class="card"><div class="cap">Evidence 1</div><h3>The bill and the autopsy</h3><p>Each call priced from a dated price book and placed in exactly one cause. Each session tied to a commit with a stated confidence.</p></div>
+      <div class="card"><div class="cap">Evidence 2</div><h3>The canary</h3><p>A fixed pack of tasks, one real run a day on two arms, and a regression statistic that says what it cannot see.</p></div>
+      <div class="card"><div class="cap">Evidence 3</div><h3>The held-out replay</h3><p>A policy drafted from one month, replayed on the next. Landed work it would have blocked is the headline.</p></div>
+    </div>
+    <p class="lead" style="margin-top:44px">The decision is a cap diff. The output is a <b>signed dossier</b> whose figures are recomputed from the rows inside it. Cost without outcome is a meter; outcome without cost is a report.</p>
+  </div>
+  <div class="foot"><span>desk.</span><span>docs/design/desk/00-architecture-master-spec.md</span></div>
+</section>
+
+<section class="slide">
+  <div class="meta"><b>03</b>The demo, in eight beats</div>
+  <div>
+    <h2>One thread. Offline. Every beat a real command.</h2>
+    <table>
+      <tr><th>#</th><th>Beat</th><th>Command</th><th>Shows</th></tr>
+      <tr><td class="r">1</td><td>Where did my limit go?</td><td class="mono">desk card</td><td>The heaviest window by cause, ranked fixes, what could not be known</td></tr>
+      <tr><td class="r">2</td><td>The bill, through Zetaris</td><td class="mono">desk silos</td><td>Billed against estimated; spend per landed PR by team</td></tr>
+      <tr><td class="r">3</td><td>The canary</td><td class="mono">desk canary</td><td>An induced regression, found, with its interval and control arm</td></tr>
+      <tr><td class="r">4</td><td>Propose, then replay held-out</td><td class="mono">desk propose</td><td>Nemotron drafts; code checks; the Attacker pushes; October judges</td></tr>
+      <tr><td class="r">5</td><td>Ask, engines on and off</td><td class="mono">desk ask</td><td>Auditor rejects, Explainer revises; History engine off changes the answer</td></tr>
+      <tr><td class="r">6</td><td>Approve, verify offline</td><td class="mono">desk approve</td><td>Echo the digest; signed dossier; one byte changed names the row</td></tr>
+      <tr><td class="r">7</td><td>The gate blocks a call</td><td class="mono">desk gate</td><td>Claude Code's hook refused a real Bash call</td></tr>
+      <tr><td class="r">8</td><td>Run it on your own logs</td><td class="mono">desk</td><td>Your autopsy, locally, no account</td></tr>
+    </table>
+  </div>
+  <div class="foot"><span>desk.</span><span>npm run desk -- demo</span></div>
+</section>
+
+<section class="slide">
+  <div class="meta"><b>04</b>Architecture</div>
+  <div>
+    <h2>Agents propose. Code checks. A stranger can verify.</h2>
+    <svg viewBox="0 0 1500 640" width="1500" height="640" role="img" aria-label="Architecture diagram: sources feed the ledger; the Ask loop and the Propose loop sit on the ledger; the gate, the approval echo and the signed dossier sit under them">
+      <g font-size="19" fill="#0a0a0a">
+        <rect x="0" y="20" width="270" height="86" rx="14" fill="#f8fafc" stroke="#e5e7eb"/><text x="20" y="56">agent logs</text><text x="20" y="84" fill="#6b7280" font-size="16">Claude Code, read-only</text>
+        <rect x="0" y="130" width="270" height="86" rx="14" fill="#f8fafc" stroke="#0a0a0a" stroke-width="2"/><text x="20" y="166">Zetaris</text><text x="20" y="194" fill="#6b7280" font-size="16">invoices · CI · roster</text>
+        <rect x="0" y="240" width="270" height="86" rx="14" fill="#f8fafc" stroke="#e5e7eb"/><text x="20" y="276">git repositories</text><text x="20" y="304" fill="#6b7280" font-size="16">commits, merges, reverts</text>
+        <rect x="0" y="350" width="270" height="86" rx="14" fill="#f8fafc" stroke="#0a0a0a" stroke-width="2"/><text x="20" y="386">NVIDIA Nemotron</text><text x="20" y="414" fill="#6b7280" font-size="16">through a ModelPort</text>
+        <path d="M270 63 H330 M270 173 H330 M270 283 H330" stroke="#0a0a0a" stroke-width="2" fill="none"/>
+        <rect x="330" y="20" width="300" height="306" rx="18" fill="#fff" stroke="#0a0a0a" stroke-width="2"/>
+        <text x="352" y="62" font-size="22" font-weight="600">ledger</text>
+        <text x="352" y="98" fill="#6b7280" font-size="16">price book · cost classes</text>
+        <text x="352" y="124" fill="#6b7280" font-size="16">autopsy · landing lattice</text>
+        <text x="352" y="150" fill="#6b7280" font-size="16">policy language · replay</text>
+        <text x="352" y="176" fill="#6b7280" font-size="16">wind tunnel</text>
+        <text x="352" y="214" font-size="18">Meterless engines</text>
+        <text x="352" y="240" fill="#6b7280" font-size="16">World Model · H-MEM</text>
+        <text x="352" y="266" fill="#6b7280" font-size="16">Markovian</text>
+        <path d="M630 100 H720 M630 220 H720" stroke="#0a0a0a" stroke-width="2" fill="none"/>
+        <rect x="720" y="20" width="400" height="190" rx="18" fill="#f8fafc" stroke="#e5e7eb"/>
+        <text x="742" y="58" font-size="21" font-weight="600">Ask</text>
+        <text x="742" y="88" font-size="16" fill="#6b7280">Risk Router → Planner (typed program)</text>
+        <text x="742" y="114" font-size="16" fill="#6b7280">specialists run read-only steps</text>
+        <text x="742" y="140" font-size="16" fill="#6b7280">Auditor ⇄ Explainer (≤ 2 revisions)</text>
+        <text x="742" y="166" font-size="16" fill="#6b7280">rule fallback on any model failure</text>
+        <rect x="720" y="230" width="400" height="190" rx="18" fill="#f8fafc" stroke="#e5e7eb"/>
+        <text x="742" y="268" font-size="21" font-weight="600">Propose</text>
+        <text x="742" y="298" font-size="16" fill="#6b7280">Drafter ⇄ restrict-only check</text>
+        <text x="742" y="324" font-size="16" fill="#6b7280">Attacker finds evasions · hardener closes</text>
+        <text x="742" y="350" font-size="16" fill="#6b7280">replay on a month it never saw</text>
+        <text x="742" y="376" font-size="16" fill="#6b7280">canary: tasks, control arm, statistic</text>
+        <path d="M1120 120 H1190 M1120 330 H1190" stroke="#0a0a0a" stroke-width="2" fill="none"/>
+        <rect x="1190" y="20" width="310" height="190" rx="18" fill="#fff" stroke="#059669" stroke-width="2"/>
+        <text x="1212" y="58" font-size="21" font-weight="600">gate</text>
+        <text x="1212" y="88" font-size="16" fill="#6b7280">reserve · settle · void</text>
+        <text x="1212" y="114" font-size="16" fill="#6b7280">Claude Code hook · MCP</text>
+        <text x="1212" y="140" font-size="16" fill="#6b7280">fails closed, hash-chained</text>
+        <rect x="1190" y="230" width="310" height="190" rx="18" fill="#fff" stroke="#059669" stroke-width="2"/>
+        <text x="1212" y="268" font-size="21" font-weight="600">signed dossier</text>
+        <text x="1212" y="298" font-size="16" fill="#6b7280">approval echo of the digest</text>
+        <text x="1212" y="324" font-size="16" fill="#6b7280">figures recomputed from rows</text>
+        <text x="1212" y="350" font-size="16" fill="#6b7280">desk-verify: plain Node, no network</text>
+        <text x="0" y="500" font-size="17" fill="#6b7280">Black borders: sponsor technology with a call site, a trace line and a switch-off test. Green borders: what a stranger can check.</text>
+      </g>
+    </svg>
+  </div>
+  <div class="foot"><span>desk.</span><span>src/desk/ · src/sponsors/ · src/engines/</span></div>
+</section>
+
+<section class="slide">
+  <div class="meta"><b>05</b>Track 3: the reasoning architecture</div>
+  <div>
+    <h2>Not a pipeline: roles that disagree, and code that decides.</h2>
+    <div class="grid2">
+      <div class="card"><h3>Planner delegates, specialists use tools</h3><p>The model proposes a typed program of at most five steps. Code validates it (an unknown key or a bad date is refused), then runs each step read-only against the ledger.</p></div>
+      <div class="card"><h3>Auditor critiques, Explainer revises</h3><p>A sentence passes only if every figure equals a figure in a cited claim, no comparison lacks an interval, "billed" rests on a billed claim. Rejected: revise, at most twice, then drop.</p></div>
+      <div class="card"><h3>Attacker against Drafter</h3><p>The Drafter's rules must narrow the current policy over every cell of the grid. The Attacker then looks for requests that step around them; the hardener closes what it can and shows what it cannot.</p></div>
+      <div class="card"><h3>Branching, fallback, a trace</h3><p>Risk Router refuses actions phrased as questions. Every model failure falls to a rule brain and says so. Budgets are enforced in code. Every decision is a trace line with a computed reason.</p></div>
+    </div>
+    <p class="small" style="margin-top:20px">Measured, not claimed: <span class="mono">desk prove</span> forces the Auditor to reject, switches each engine off, feeds an injected question, kills the gate's ledger.</p>
+  </div>
+  <div class="foot"><span>desk.</span><span>src/desk/agents/ · src/desk/ask/</span></div>
+</section>
+
+<section class="slide">
+  <div class="meta"><b>06</b>Verification, not trust</div>
+  <div>
+    <h2>The held-out month is the headline, even when it is bad.</h2>
+    <div class="grid3">
+      <div class="card w"><div class="cap">Drafted from September</div><div class="num">0 of 311</div><p>landed sessions blocked on the month the policy was drafted from.</p></div>
+      <div class="card w"><div class="cap">Replayed on October</div><div class="num" style="color:#c2410c">5 of 333</div><p>landed sessions the same policy would have blocked on a month it never saw. Reported first, not hidden.</p></div>
+      <div class="card w"><div class="cap">Restrict-only check</div><div class="num">0 escapes</div><p>in 3,000 random policy pairs against an independent oracle; a checker that always says "narrows" is caught.</p></div>
+    </div>
+    <ul style="margin-top:40px">
+      <li>A dossier carries the rows its figures come from; the verifier recomputes them with the same interpreter the gate uses.</li>
+      <li>Change one byte of a row: <span class="mono">row_hash_mismatch: replay_heldout#2</span>, exit 1. Untouched: PASS, exit 0, on plain Node with the network off.</li>
+      <li>PASS prints what it does not mean: that the logs were truthful, that estimates equal the invoice.</li>
+    </ul>
+  </div>
+  <div class="foot"><span>desk.</span><span>docs/verification/ · npm run desk -- prove</span></div>
+</section>
+
+<section class="slide">
+  <div class="meta"><b>07</b>Zetaris</div>
+  <div>
+    <h2>Three silos of three kinds, one statement.</h2>
+    <div class="grid3">
+      <div class="card"><div class="cap">Files</div><h3>Invoices in a bucket</h3><p>CSV in an S3-compatible store, registered as a file source.</p></div>
+      <div class="card"><div class="cap">SQL</div><h3>CI in Postgres</h3><p>Pull requests with merge, check and revert facts.</p></div>
+      <div class="card"><div class="cap">REST</div><h3>Roster as a service</h3><p>Teams, seats, plans.</p></div>
+    </div>
+    <table style="margin-top:34px">
+      <tr><th></th><th class="r">With Zetaris</th><th class="r">Zetaris stopped (real drill)</th></tr>
+      <tr><td>Billed spend</td><td class="r">$6,123.23 (whole ledger)</td><td class="r">$0.00, every dollar an estimate</td></tr>
+      <tr><td>Landed sessions on green CI</td><td class="r">584 of 644; 60 on red</td><td class="r">unknown: landing stops at merged</td></tr>
+      <tr><td>Spend per landed PR by team</td><td class="r">$8.57 to $10.05</td><td class="r">not available</td></tr>
+    </table>
+    <p class="small" style="margin-top:18px">A join of the invoice lines straight to the PRs repeated each invoice amount per PR (billed spend three times too high) until each silo was aggregated first. Found by running it.</p>
+  </div>
+  <div class="foot"><span>desk.</span><span>src/sponsors/zetaris/ · infra/silos/ · docs/sponsors/zetaris-local-setup.md</span></div>
+</section>
+
+<section class="slide">
+  <div class="meta"><b>08</b>Meterless</div>
+  <div>
+    <h2>Three engines, each of which changes an answer.</h2>
+    <div class="grid3">
+      <div class="card"><div class="cap">World Model · 8/8</div><h3>History</h3><p>"What changed before 15 October?" Tool version <span class="mono">vsample-2</span> first appeared on the 14th; the model mix moved that week. Engine off: <b>unknowable</b>.</p></div>
+      <div class="card"><div class="cap">H-MEM · 13/13</div><h3>The owner's words</h3><p>"Landed means committed, merged or kept" moves landed work from 63% to 67% of spend, and says whose note it followed. Engine off: the default.</p></div>
+      <div class="card"><div class="cap">Markovian · 8/8</div><h3>Long ranges</h3><p>A nine-week ledger read in nine bounded chunks with a carry state. Engine off: a different, unbounded read.</p></div>
+    </div>
+    <ul style="margin-top:34px">
+      <li>Counts come from Meterless's own conformance runners, run against our copies, recorded with the commit.</li>
+      <li>Testing the engines found a bug: the pattern that reads the owner's definition never matched, so the engine had no effect. Fixed; the test fails without it.</li>
+      <li>No Meterless API exists; the engines run in our process. Scout Intent is not used, and the Risk Router is ours.</li>
+    </ul>
+  </div>
+  <div class="foot"><span>desk.</span><span>src/engines/ · src/desk/engines/ · vendor/meterless/</span></div>
+</section>
+
+<section class="slide">
+  <div class="meta"><b>09</b>NVIDIA Nemotron and Cursor</div>
+  <div>
+    <h2>Every language role runs on Nemotron. Every failure is on the trace.</h2>
+    <div class="grid2">
+      <div class="card"><h3>Where Nemotron acts</h3><p>The policy Drafter and Attacker, the Ask planner (a <span class="mono">plan_answer</span> tool call with a JSON-schema argument), the Explainer, and the canary's runs, through one ModelPort for any OpenAI-compatible endpoint.</p></div>
+      <div class="card"><h3>What was measured</h3><p>Latency from 0.4 s to 56 s for the same request; HTTP 500 and 429 under load. Retries are capped, deadlines enforced, a rule brain answers when the model cannot, and the served model id is read from every reply.</p></div>
+      <div class="card"><h3>Offline, byte for byte</h3><p>Recorded replies from live calls replay the same drafts and answers with no key and no network. A cassette miss is an error, never a guess.</p></div>
+      <div class="card"><h3>Cursor</h3><p>The required IDE. The session log is <span class="mono">docs/sponsors/cursor-usage-log.md</span>; this deck claims only what it records.</p></div>
+    </div>
+  </div>
+  <div class="foot"><span>desk.</span><span>src/desk/agents/model.ts</span></div>
+</section>
+
+<section class="slide">
+  <div class="meta"><b>10</b>The canary</div>
+  <div>
+    <h2>A regression called, with its interval and what it cannot see.</h2>
+    <div id="canary-slide"></div>
+  </div>
+  <div class="foot"><span>desk.</span><span>desk canary · docs/verification/canary-simulation.md</span></div>
+</section>
+
+<section class="slide">
+  <div class="meta"><b>11</b>Product</div>
+  <div>
+    <h2>Ten screens. Light and dark. Every figure says where it came from.</h2>
+    <div class="shots">
+      <figure><img class="shot" src="img/brief.png" alt="Brief screen"><figcaption>brief</figcaption></figure>
+      <figure><img class="shot" src="img/autopsy.png" alt="Autopsy screen"><figcaption>autopsy</figcaption></figure>
+      <figure><img class="shot" src="img/canary.png" alt="Canary screen"><figcaption>canary</figcaption></figure>
+      <figure><img class="shot" src="img/policy.png" alt="Policy screen"><figcaption>policy</figcaption></figure>
+      <figure><img class="shot" src="img/ask.png" alt="Ask screen"><figcaption>ask</figcaption></figure>
+      <figure><img class="shot" src="img/dossiers.png" alt="Dossiers screen"><figcaption>dossiers</figcaption></figure>
+    </div>
+  </div>
+  <div class="foot"><span>desk.</span><span>npm run desk -- ui --sample</span></div>
+</section>
+
+<section class="slide">
+  <div class="meta"><b>12</b>What is proven, what is not</div>
+  <div>
+    <h2>Say what was not run.</h2>
+    <div class="grid2">
+      <div class="card"><div class="cap">Run, and passing</div><ul><li>Planted waste found in a constructed scenario, with false positives counted</li><li>Gate invariants through 400 random operations</li><li>Real Claude Code blocked a Bash call (and ran it under an allow policy)</li><li>Zetaris stopped: the output changed</li><li>Clean clone to card in 30 seconds, same figures hash</li></ul></div>
+      <div class="card"><div class="cap">Not built, listed as NOT RUN</div><ul><li>Route replay of recorded tasks on a cheaper model</li><li>Head-to-head reasoning benchmark</li><li>Repeated-run reliability, calibration</li><li>Team mode, seat return</li></ul><div class="cap" style="margin-top:20px">Not verified</div><ul><li>How a plan's limit maps to tokens</li><li>Zetaris semantic layer and data steward</li></ul></div>
+    </div>
+  </div>
+  <div class="foot"><span>desk.</span><span>npm run desk -- prove</span></div>
+</section>
+
+<section class="slide">
+  <div class="meta"><b>13</b>Next</div>
+  <div>
+    <h2>From a desk to a gate for every agent.</h2>
+    <ul>
+      <li><b>Every tool, not one.</b> A gateway door and per-tool adapters, so Codex and Cursor sit behind the same reserve endpoint.</li>
+      <li><b>Real tasks on a cheaper route.</b> Recorded tool results and a priced route, with a reproduction gate: the replay the sample could not honestly support.</li>
+      <li><b>Teams.</b> Roles, seats returned when idle, a CI gate on policy changes.</li>
+      <li><b>Open formats.</b> The ledger and the dossier as a published standard other desks can write.</li>
+      <li><b>Evidence that compounds.</b> Calibration and the benchmark against baselines, with a pre-registered question set.</li>
+    </ul>
+  </div>
+  <div class="foot"><span>desk.</span><span>docs/design/desk/00-architecture-master-spec.md §19</span></div>
+</section>
+
+<section class="slide title">
+  <div>
+    <div class="mark"><svg width="64" height="64" viewBox="0 0 32 32"><rect x="2" y="11" width="15" height="6" fill="#0a0a0a"/><circle cx="24" cy="20" r="5" fill="#0a0a0a"/></svg>desk.</div>
+    <h1>Run it on your own logs.</h1>
+    <p class="lead" style="margin-top:48px"><span class="mono">npm run desk</span><br>Under three minutes. Entirely local. Your own limit autopsy, your own ranked fixes, and what it could not know.</p>
+    <p class="small mono" style="margin-top:40px"><span class="bar"></span>No logs? <span class="mono">npm run desk -- --sample</span> shows the same card offline.</p>
+  </div>
+</section>
+
+</body>
+</html>

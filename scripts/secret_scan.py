@@ -58,7 +58,7 @@ RULES: list[tuple[str, re.Pattern[str]]] = [
             """
         ),
     ),
-    ("personal-windows-path", re.compile(r"[A-Za-z]:\\+Users\\+[A-Za-z0-9_.-]+", re.IGNORECASE)),
+    ("personal-windows-path", re.compile(r"[A-Za-z]:[/\\]+Users[/\\]+[A-Za-z0-9_.-]+", re.IGNORECASE)),
     ("personal-unix-path", re.compile(r"/(?:Users|home)/[A-Za-z0-9_.-]+/")),
 ]
 
