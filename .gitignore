@@ -49,3 +49,6 @@ data/desk/
 
 # Browser automation scratch
 .playwright-mcp/
+
+# Sponsor-provided documents, local reference only (decision D-004)
+meterless/

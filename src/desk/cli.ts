@@ -19,6 +19,7 @@ import { replaySessionsFromLedger } from "./replay/from-ledger.ts";
 import { replayPolicy } from "./replay/policy-replay.ts";
 import { windTunnel } from "./replay/wind-tunnel.ts";
 import { buildSample, sampleLogsDir, sampleReposDir } from "./sample/gen.ts";
+import { runCard } from "./card/run.ts";
 
 const DEFAULT_SNAPSHOT = "data/prices/anthropic-litellm-2026-10-22.json";
 
@@ -37,11 +38,14 @@ const { values, positionals } = parseArgs({
     out: { type: "string", default: "data/desk/sample" },
     seed: { type: "string" },
     months: { type: "string" },
+    sample: { type: "boolean", default: false },
+    "card-dir": { type: "string", default: "data/desk/card" },
   },
 });
 
-const command = positionals[0] ?? "bill";
-const db = openLedger(values.db);
+const command = positionals[0] ?? "card";
+const sampleMode = values.sample || process.env.SAMPLE_MODE === "true";
+const db = command === "card" ? openLedger(":memory:") : openLedger(values.db);
 
 if (command === "ingest") {
   const files = findJsonlLogs(values["claude-dir"]);
@@ -52,6 +56,23 @@ if (command === "ingest") {
   console.log(`calls: ${r.callsNew} new, ${r.callsMerged} extra content-block lines merged, ${r.usageConflicts} input/cache conflicts, ${r.outputRegressions} output regressions`);
   console.log(`skipped: ${r.malformedLines} malformed lines, ${r.truncatedTails} unfinished last lines`);
   if (r.unpricedCalls > 0) console.log(`unpriced: ${r.unpricedCalls} calls on ${Object.entries(r.unpricedModels).map(([m, why]) => `${m} (${why})`).join(", ")}`);
+} else if (command === "card") {
+  const r = await runCard({
+    mode: sampleMode ? "sample" : "own_logs",
+    claudeDir: values["claude-dir"],
+    dbPath: values.db,
+    pricesPath: values.prices,
+    outDir: values["card-dir"],
+    sampleDir: values.out,
+    days: Number(values.days),
+    hours: Number(values.hours),
+    repos: values.repo ?? [],
+    color: Boolean(process.stdout.isTTY) && !process.env.NO_COLOR,
+    ...(process.stdout.columns ? { width: process.stdout.columns } : {}),
+  });
+  console.log(r.text);
+  if (r.files.length > 0) console.log(`
+written: ${r.files.join(", ")}`);
 } else if (command === "bill") {
   const since = values.since ?? "0000-00-00";
   const until = values.until ?? "9999-99-99";
@@ -139,7 +160,7 @@ if (command === "ingest") {
   console.log(`logs: ${sampleLogsDir(values.out)}`);
   console.log(`repos: ${sampleReposDir(values.out)}`);
 } else {
-  console.error(`unknown command "${command}". Use: ingest | bill | autopsy | landing | replay | tunnel | sample build`);
+  console.error(`unknown command "${command}". Use: card | ingest | bill | autopsy | landing | replay | tunnel | sample build`);
   process.exitCode = 2;
 }
 db.close();

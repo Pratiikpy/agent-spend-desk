@@ -94,7 +94,7 @@ export interface Autopsy {
   toolOutputIsEstimate: true;
 }
 
-interface PerCall {
+export interface PerCall {
   cause: Partial<Record<Cause, { micros: number; tokens: number }>>;
   miss?: MissEvent;
   wholeCall?: Cause;
@@ -161,7 +161,8 @@ export function analyseThread(calls: readonly AutopsyCall[]): Map<string, PerCal
   return out;
 }
 
-export function buildAutopsy(calls: readonly AutopsyCall[], startMs: number, endMs: number): Autopsy {
+/** Analyse every thread once; pass the result to `buildAutopsy` when many windows are cut from the same calls. */
+export function analyseCalls(calls: readonly AutopsyCall[]): Map<string, PerCall> {
   const byThread = new Map<string, AutopsyCall[]>();
   for (const c of calls) {
     const list = byThread.get(c.threadKey) ?? [];
@@ -170,6 +171,11 @@ export function buildAutopsy(calls: readonly AutopsyCall[], startMs: number, end
   }
   const analysis = new Map<string, PerCall>();
   for (const list of byThread.values()) for (const [id, r] of analyseThread(list)) analysis.set(id, r);
+  return analysis;
+}
+
+export function buildAutopsy(calls: readonly AutopsyCall[], startMs: number, endMs: number, precomputed?: Map<string, PerCall>): Autopsy {
+  const analysis = precomputed ?? analyseCalls(calls);
 
   const causes = emptyCauses();
   const missEvents: MissEvent[] = [];
