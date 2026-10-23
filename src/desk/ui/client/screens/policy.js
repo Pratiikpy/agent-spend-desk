@@ -40,6 +40,7 @@ export async function render(ctx) {
           stat("Drift", t.drift ? (t.drift.flagged ? "flagged" : "none") : "n/a", t.drift ? `p ${t.drift.p.toFixed(3)}; the last four weeks ${t.drift.flagged ? "differ from" : "match"} the earlier history` : "too little history to test", Boolean(t.drift && t.drift.flagged)),
         ),
         h("p", { class: "note" }, `${int(t.simulatedMonths)} simulated months from ${int(t.sessions)} sessions. The method assumes next month looks like the past. A new model, a new team or a new tool breaks that, and the drift flag only catches some of it.`),
+        t.measured ? h("p", { class: "note" }, `Measured on constructed samples with a change planted in the second month: the 90% one-month range held the realized month in ${t.measured.inside} of ${t.measured.trials} (${pct(t.measured.coverage)}, 95% interval ${pct(t.measured.low)} to ${pct(t.measured.high)}), so read it as a screen rather than a promise.${t.measured.eceRaw !== null ? ` Its chance of blocking landed work had a calibration error of ${t.measured.eceRaw.toFixed(2)}.` : ""}`) : null,
       );
     } catch (e) {
       clear(tunnelBox);

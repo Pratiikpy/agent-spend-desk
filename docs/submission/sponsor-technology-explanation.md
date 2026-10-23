@@ -37,4 +37,4 @@ Four things a typical entry would not do, each with proof. The architecture is m
 
 ## Pre-existing components
 
-`src/runtime/` (canonical JSON, errors and schema helpers, written 2026-10-13), the design documents under `docs/`, and the guard scripts. Meterless's reference engines and conformance suites (Apache-2.0, `vendor/meterless/NOTICE.md`) and a dated snapshot of LiteLLM's MIT price file (`data/prices/`) are third-party. Everything else was written on or after 22 October 2026.
+The design documents under `docs/`, sponsor notes and templates, and two guard scripts were written before the window; no application code was (a small runtime helper written on 2026-10-13 was replaced inside the window on 2026-10-23, see `docs/submission/pre-existing-components.md`). Meterless's reference engines and conformance suites (Apache-2.0, `vendor/meterless/NOTICE.md`) and a dated snapshot of LiteLLM's MIT price file (`data/prices/`) are third-party. Everything else was written on or after 22 October 2026.

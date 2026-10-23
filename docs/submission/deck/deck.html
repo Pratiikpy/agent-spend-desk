@@ -77,16 +77,33 @@ svg.arch { width: 100%; height: auto; display: block; }
   </div>
 </section>
 
-<section class="slide">
+<section class="slide dense">
   <div class="meta"><b>01</b>Problem and user</div>
   <div>
     <h2>"Limit reached." I do not know why.</h2>
-    <p class="lead">An engineering lead pays for a team's coding agents, on seats and on tokens. The bill arrives as a number. The limit arrives as a message. Nothing says what the money bought.</p>
-    <div class="grid3" style="margin-top:24px">
+    <p class="lead">We are building an agent that helps <b>an engineering lead who pays for coding agents</b> decide <b>next month's caps and routes</b> by <b>tying every dollar to the work that landed and testing a policy on a month it never saw</b>, using <b>the agents' own session logs, git history and three Zetaris-joined sources</b>, producing <b>a limit autopsy, a daily regression verdict and a signed, replay-tested policy</b>.</p>
+    <div class="grid3" style="margin-top:22px">
       <div class="card"><div class="cap">The user</div><h3>An engineering lead</h3><p>5 to 50 engineers, a mix of seat plans and API tokens, accountable to finance, not reading token counts.</p></div>
       <div class="card"><div class="cap">The decision</div><h3>Next month's caps and routes</h3><p>Which limits to set, which models to route where, and on what evidence.</p></div>
-      <div class="card"><div class="cap">The pain</div><h3>Seen in public, repeatedly</h3><p>A $6,000 overnight loop. Limits that vanish in two hours. Failed attempts that still cost. Evidence table in the repo.</p></div>
+      <div class="card"><div class="cap">The output</div><h3>A policy someone can check</h3><p>A cap diff with its held-out replay, signed, with the rows its figures come from.</p></div>
     </div>
+    <p class="small" style="margin-top:18px">The bill arrives as a number. The limit arrives as a message. Nothing says what the money bought.</p>
+  </div>
+  <div class="foot"><span>desk.</span><span>README.md · the problem sentence follows the organizers' Approach Guide</span></div>
+</section>
+
+<section class="slide dense">
+  <div class="meta"><b>02</b>Why it matters</div>
+  <div>
+    <h2>The pain is public, and it is the same pain.</h2>
+    <div class="grid2">
+      <div class="card w"><div class="cap">Limits that vanish</div><p>"Did not use Claude Code for three days. Never hit usage limits in the last three months. Now hitting usage limits after 2 hours of continous usage."</p><p class="small mono">anthropics/claude-code #16157</p></div>
+      <div class="card w"><div class="cap">Budgets that drain</div><p>"my ChatGPT Plus Codex budget drains in 2–3 prompts on gpt-5.5, where the same model/plan/app previously gave 20+ prompts."</p><p class="small mono">openai/codex #28879</p></div>
+      <div class="card w"><div class="cap">A bill nobody saw coming</div><p>"The dashboard has a multi-day reporting lag, so I had no idea anything was wrong until the limit email landed." (a $6,000 overnight loop)</p><p class="small mono">r/ClaudeAI</p></div>
+      <div class="card w"><div class="cap">A model that changes under you</div><p>"My session silently routed to a different model path."</p><p class="small mono">r/cursor</p></div>
+    </div>
+    <div class="card w" style="margin-top:20px"><div class="cap">Seats nobody opens</div><p>"Every assigned seat bills at list whether or not the user opens Copilot." Plan for 30 to 55 percent weekly active use of purchased seats in the first year.</p><p class="small mono">Redress Compliance</p></div>
+    <p class="small" style="margin-top:14px">Fetched 2026-10-20 and not re-opened since. The full table, with the rows, is <span class="mono">docs/design/desk/04-evidence-table.md</span>. Each pain has an answer in the product: the autopsy, the daily canary, the held-out replay, seat return.</p>
   </div>
   <div class="foot"><span>desk.</span><span>docs/design/desk/04-evidence-table.md</span></div>
 </section>
@@ -177,19 +194,79 @@ svg.arch { width: 100%; height: auto; display: block; }
   <div class="foot"><span>desk.</span><span>src/desk/ · src/sponsors/ · src/engines/</span></div>
 </section>
 
-<section class="slide">
+<section class="slide dense">
   <div class="meta"><b>05</b>Track 3: the reasoning architecture</div>
   <div>
-    <h2>Not a pipeline: roles that disagree, and code that decides.</h2>
-    <div class="grid2">
-      <div class="card"><h3>Planner delegates, specialists use tools</h3><p>The model proposes a typed program of at most five steps. Code validates it (an unknown key or a bad date is refused), then runs each step read-only against the ledger.</p></div>
-      <div class="card"><h3>Auditor critiques, Explainer revises</h3><p>A sentence passes only if every figure equals a figure in a cited claim, no comparison lacks an interval, "billed" rests on a billed claim. Rejected: revise, at most twice, then drop.</p></div>
-      <div class="card"><h3>Attacker against Drafter</h3><p>The Drafter's rules must narrow the current policy over every cell of the grid. The Attacker then looks for requests that step around them; the hardener closes what it can and shows what it cannot.</p></div>
-      <div class="card"><h3>Branching, fallback, a trace</h3><p>Risk Router refuses actions phrased as questions. Every model failure falls to a rule brain and says so. Budgets are enforced in code. Every decision is a trace line with a computed reason.</p></div>
-    </div>
-    <p class="small" style="margin-top:20px">Measured, not claimed: <span class="mono">desk prove</span> forces the Auditor to reject, switches each engine off, feeds an injected question, kills the gate's ledger.</p>
+    <h2>Data, knowledge, memory and reasoning, turned into an action.</h2>
+    <p class="lead">The track asks for "a novel ability to turn data, knowledge, memory, and reasoning into reliable decisions and actions." Each of the five has a place and a test.</p>
+    <table style="margin-top:14px">
+      <tr><th></th><th>In desk.</th><th>Where</th></tr>
+      <tr><td><b>Data</b></td><td>Agent logs in a SQLite ledger; invoices, CI and a roster through one Zetaris statement</td><td class="mono">ledger/ · sponsors/zetaris/</td></tr>
+      <tr><td><b>Knowledge</b></td><td>A dated price book, a policy language with a restrict-only check, the owner's definition of "landed"</td><td class="mono">policy/ · pricing/</td></tr>
+      <tr><td><b>Memory</b></td><td>Meterless H-MEM holds definitions and past decisions; the World Model holds what changed when</td><td class="mono">engines/</td></tr>
+      <tr><td><b>Reasoning</b></td><td>A typed program the Planner writes and code runs; an Auditor that rejects unsupported figures; a Drafter, an Attacker and a held-out replay for policy</td><td class="mono">ask/ · agents/</td></tr>
+      <tr><td><b>Action</b></td><td>A signed dossier, an approval echo, and a gate Claude Code calls before each tool use</td><td class="mono">dossier/ · gate/</td></tr>
+    </table>
+    <p class="small" style="margin-top:16px">Measured, not claimed: <span class="mono">desk prove</span> forces the Auditor to reject, switches each engine off, feeds an injected question and kills the gate's ledger.</p>
+  </div>
+  <div class="foot"><span>desk.</span><span>src/desk/</span></div>
+</section>
+
+<section class="slide dense">
+  <div class="meta"><b>06</b>The agents</div>
+  <div>
+    <h2>Nine roles. Each one's input and output is typed.</h2>
+    <table>
+      <tr><th>Agent</th><th>Role</th><th>Reads</th><th>Writes</th><th>Works with</th></tr>
+      <tr><td>Risk Router</td><td>Is this a read, or an action phrased as a question?</td><td>The question</td><td>A route and flags</td><td>Planner</td></tr>
+      <tr><td>Planner</td><td>Writes a typed program; may decline</td><td>The question</td><td>Steps, or <span class="mono">cannot_answer</span></td><td>Plan critic</td></tr>
+      <tr><td>Plan critic</td><td>Does the program hold what the question needs?</td><td>Question, program</td><td>An objection or a pass</td><td>Planner</td></tr>
+      <tr><td>Specialists</td><td>Run each step read-only; code does every sum</td><td>Ledger, Zetaris, engines</td><td>Claims with their rows</td><td>Auditor</td></tr>
+      <tr><td>Auditor</td><td>Rejects any figure no claim supports</td><td>Draft, claims</td><td>Accept or fix list</td><td>Explainer</td></tr>
+      <tr><td>Explainer</td><td>Writes from claims; never sees the question</td><td>Claims, a topic</td><td>The answer</td><td>Auditor</td></tr>
+      <tr><td>Drafter</td><td>Drafts a spend policy from one month</td><td>Waste findings</td><td>A policy</td><td>Restrict check</td></tr>
+      <tr><td>Attacker</td><td>Looks for requests that step around it</td><td>The policy</td><td>Counter-examples</td><td>Hardener</td></tr>
+      <tr><td>Canary</td><td>Runs a 52-task pack daily on two arms</td><td>The pack</td><td>Verdict, interval, control</td><td>Gate, dossier</td></tr>
+    </table>
+    <p class="small" style="margin-top:14px">A human stays in the loop where it matters: the gate turns an <span class="mono">ask</span> into an allow only on the owner's approval, echoed with the request id and action digest. It never overrides a deny, and it fails closed.</p>
   </div>
   <div class="foot"><span>desk.</span><span>src/desk/agents/ · src/desk/ask/</span></div>
+</section>
+
+<section class="slide dense">
+  <div class="meta"><b>07</b>Collaboration, against the organizers' checklist</div>
+  <div>
+    <h2>Three of nine were asked for. All nine are here, each with a place to look.</h2>
+    <table>
+      <tr><td><b>Planner delegates subtasks</b></td><td>Program steps run by separate specialists</td><td class="mono">ask/specialists.ts</td></tr>
+      <tr><td><b>Specialist uses data or tools</b></td><td>Ledger queries, the Zetaris statement, Meterless engines</td><td class="mono">silo/ · engines/</td></tr>
+      <tr><td><b>Evaluator critiques the output</b></td><td>The Auditor on every answer; the plan critic on every plan</td><td class="mono">agents/audit.ts · ask/plan-critic.ts</td></tr>
+      <tr><td><b>Agent revises after critique</b></td><td>Explainer up to twice; Planner once after the plan critic; Drafter after a failed check</td><td class="mono">trace: revision.applied</td></tr>
+      <tr><td><b>Risk agent flags unsupported claims</b></td><td>The Risk Router before, the Auditor after</td><td class="mono">ask/risk.ts</td></tr>
+      <tr><td><b>Structured messages to shared memory</b></td><td>A claim ledger per run; H-MEM across runs</td><td class="mono">agents/claims.ts</td></tr>
+      <tr><td><b>Workflow branches on confidence</b></td><td>A plan the critic rejects goes back; too few clusters and the canary will not call; unanswerable is declined</td><td class="mono">canary/ · ask/</td></tr>
+      <tr><td><b>Fallback if data or an API fails</b></td><td>Every language role has a rule brain; Zetaris and Nemotron fall back, and the trace says which</td><td class="mono">agents/model.ts</td></tr>
+      <tr><td><b>Final answer has traceable evidence</b></td><td>Each figure carries its claim and its rows; a trace line gives the reason for every decision</td><td class="mono">logs/ · verify-answer</td></tr>
+    </table>
+  </div>
+  <div class="foot"><span>desk.</span><span>Approach Guide, section 9: Collaboration Design Checklist</span></div>
+</section>
+
+<section class="slide dense">
+  <div class="meta"><b>08</b>The agent's reasoning, on the record</div>
+  <div>
+    <h2>A draft is checked, found to block landed work, and revised.</h2>
+    <p class="lead">A real trace from the Drafter. The first draft would have paused 81 of 311 sessions whose work landed. The check says so; the Drafter revises; the second draft blocks none.</p>
+    <pre class="mono" style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:16px;padding:22px 26px;font-size:20px;line-height:1.5;white-space:pre-wrap;margin:18px 0">{"seq":3,"event":"desk.policy.check","role":"policy_drafter",
+  "detail":{"attempt":1,"narrows":true,"landedBlocked":81,"landedTotal":311}}
+{"seq":4,"event":"revision.applied","role":"policy_drafter",
+  "detail":{"attempt":1,"because":"on the training window it would pause 81 of 311
+   sessions whose work landed; raise the threshold so they are not paused"}}
+{"seq":6,"event":"desk.policy.check","role":"policy_drafter",
+  "detail":{"attempt":2,"narrows":true,"landedBlocked":0,"landedTotal":311}}</pre>
+    <p class="small">Every run writes a JSONL trace with the reason for each decision. A cleaned one is in <span class="mono">output_examples/traces/</span>. Ask writes the same kind of lines when the plan critic sends the Planner back (<span class="mono">desk.plan.critique</span>, <span class="mono">revision.applied</span>).</p>
+  </div>
+  <div class="foot"><span>desk.</span><span>output_examples/traces/propose-sample.jsonl</span></div>
 </section>
 
 <section class="slide">
@@ -283,6 +360,42 @@ svg.arch { width: 100%; height: auto; display: block; }
   <div class="foot"><span>desk.</span><span>src/desk/agents/model.ts</span></div>
 </section>
 
+<section class="slide dense">
+  <div class="meta"><b>00</b>Where each sponsor sits</div>
+  <div>
+    <h2>Each sponsor changes the output when it is switched off.</h2>
+    <table>
+      <tr><th>Sponsor</th><th>Where it sits</th><th>Switched off</th><th>What is unique about how we use it</th></tr>
+      <tr><td><b>Zetaris</b></td><td>Data layer. One statement over a file silo, a SQL silo and a REST silo</td><td>Billed spend falls from $6,123.23 to $0; CI facts and spend per landed PR disappear</td><td>A join that overstated billed spend three times was found by running it and fixed by aggregating each silo first. The API container was killed for real and the output changed</td></tr>
+      <tr><td><b>Meterless</b></td><td>Memory and history. World Model, H-MEM, Markovian, run in our process</td><td>"What changed before 15 October?" becomes unknowable; the owner's definition of landed stops applying</td><td>Each engine changes an answer and a test proves it. Their conformance runners pass 8/8, 13/13 and 8/8 against our copies. Testing found that H-MEM never read an owner's definition; fixed</td></tr>
+      <tr><td><b>NVIDIA Nemotron</b></td><td>Every language role: Drafter, Attacker, Planner, Explainer, the canary, all three benchmark arms</td><td>A rule brain answers and the trace says so</td><td>The same model sits behind all three arms, so the benchmark measures architecture, not model. Tool calling with a typed argument verified live</td></tr>
+      <tr><td><b>Cursor</b></td><td>The required development environment</td><td>Not a runtime component</td><td>Its session log is <span class="mono">docs/sponsors/cursor-usage-log.md</span>. No session is logged in it yet, so this deck claims none</td></tr>
+    </table>
+    <p class="small" style="margin-top:14px">Meterless has no API or key: the organisers confirmed on 2026-10-17 that the engines are reference architectures implemented in our own code. Nemotron is reached through NVIDIA's free API; only a URL, a key and a model id change for any OpenAI-compatible endpoint.</p>
+  </div>
+  <div class="foot"><span>desk.</span><span>docs/submission/sponsor-technology-explanation.md</span></div>
+</section>
+
+<section class="slide dense">
+  <div class="meta"><b>00</b>Technical stack</div>
+  <div>
+    <h2>One runtime, two dependencies, no server to install.</h2>
+    <table>
+      <tr><th>Layer</th><th>What</th><th>Why</th></tr>
+      <tr><td>Language and runtime</td><td>TypeScript on Node 22.19 or later; <span class="mono">node:sqlite</span> for the ledger</td><td>No database server, nothing beyond <span class="mono">npm install</span></td></tr>
+      <tr><td>Runtime dependencies</td><td><span class="mono">yaml</span> for policy files, <span class="mono">@resvg/resvg-js</span> to render charts</td><td>The only two packages the product needs at run time</td></tr>
+      <tr><td>Model</td><td>NVIDIA Nemotron through an OpenAI-compatible API; recorded replies for offline</td><td>The Power rule; tool calling verified</td></tr>
+      <tr><td>Organisational data</td><td>Zetaris in local Docker over three synthetic silos</td><td>One statement over file, SQL and REST</td></tr>
+      <tr><td>Memory and history</td><td>Meterless World Model, H-MEM, Markovian with their own conformance suites</td><td>Used as written; the suites run against our copies</td></tr>
+      <tr><td>Signing and proof</td><td>Ed25519 from <span class="mono">node:crypto</span>; a one-file verifier on plain Node</td><td>A stranger checks a dossier with the network off</td></tr>
+      <tr><td>Interface</td><td>Twelve screens on a local read-only server; light and dark; stacked cards on a phone</td><td>The UI is the product</td></tr>
+      <tr><td>Verification</td><td>vitest, a pre-registered benchmark, <span class="mono">desk prove</span></td><td>Each claim runs; NOT RUN is never a pass</td></tr>
+    </table>
+    <p class="small" style="margin-top:14px">No GPU, no training, no package installed at run time, no download at run time. The development environment is Cursor, with Claude Code as an assistant; the Cursor log records what was done in Cursor.</p>
+  </div>
+  <div class="foot"><span>desk.</span><span>package.json · README.md</span></div>
+</section>
+
 <section class="slide">
   <div class="meta"><b>11</b>The canary</div>
   <div>
@@ -301,7 +414,7 @@ svg.arch { width: 100%; height: auto; display: block; }
 <section class="slide">
   <div class="meta"><b>12</b>Product</div>
   <div>
-    <h2>Eleven screens. Light and dark. Every figure says where it came from.</h2>
+    <h2>Twelve screens. Light and dark. Every figure says where it came from.</h2>
     <div class="shots">
       <figure><img class="shot" src="img/brief.png" alt="Brief screen"><figcaption>brief</figcaption></figure>
       <figure><img class="shot" src="img/autopsy.png" alt="Autopsy screen"><figcaption>autopsy</figcaption></figure>
@@ -312,6 +425,38 @@ svg.arch { width: 100%; height: auto; display: block; }
     </div>
   </div>
   <div class="foot"><span>desk.</span><span>npm run desk -- ui --sample</span></div>
+</section>
+
+<section class="slide dense">
+  <div class="meta"><b>00</b>Against the organizers' red flags</div>
+  <div>
+    <h2>We read their list of reasons to pick a different scope. Here is each one.</h2>
+    <div class="grid2" style="gap:10px 22px">
+      <table>
+        <tr><td>A private API key you do not have</td><td>None needed for the sample</td></tr>
+        <tr><td>A dataset you cannot access quickly</td><td>Generated from a seed on your machine</td></tr>
+        <tr><td>Many GB of raw data, no sample strategy</td><td>Generated, not shipped; <span class="mono">data/README.md</span></td></tr>
+        <tr><td>GPU training</td><td>None</td></tr>
+        <tr><td>Agents run once in a fixed sequence</td><td>Plans are revised after a critic; paths depend on the question</td></tr>
+        <tr><td>Sponsors with no real role</td><td>Each changes the output when off</td></tr>
+        <tr><td>Value cannot be explained</td><td>One sentence, slide 1</td></tr>
+      </table>
+      <table>
+        <tr><td>Output mostly generic text</td><td>Every figure is computed by code and carries its rows</td></tr>
+        <tr><td>Cannot run without internet</td><td>The sample runs offline</td></tr>
+        <tr><td>Fails when an API is down</td><td>Every language role has a rule brain</td></tr>
+        <tr><td>Manual steps not in the README</td><td><span class="mono">npm run desk -- demo</span> is the demo</td></tr>
+        <tr><td>No sample inputs and outputs</td><td><span class="mono">input_examples/</span>, <span class="mono">output_examples/</span></td></tr>
+        <tr><td>Cannot show how the agent got there</td><td>A JSONL trace per run</td></tr>
+      </table>
+    </div>
+    <div class="grid3" style="margin-top:20px">
+      <div class="card w"><div class="cap">The sample card</div><div class="num">~20 s</div><p>offline, from a fresh clone.</p></div>
+      <div class="card w"><div class="cap">The whole demo</div><div class="num">&lt; 1 min</div><p>offline. Target was 5 to 10 minutes.</p></div>
+      <div class="card w"><div class="cap">One live Ask</div><div class="num">8 to 80 s</div><p>two model calls; retries, turns and wall clock are capped in code.</p></div>
+    </div>
+  </div>
+  <div class="foot"><span>desk.</span><span>Approach Guide, section 18 · README.md</span></div>
 </section>
 
 <section class="slide">
@@ -353,7 +498,11 @@ svg.arch { width: 100%; height: auto; display: block; }
 <script>
 // Each slide is fitted to the frame: the content is zoomed to the largest size that still ends above the footer.
 async function fit() {
-  document.querySelectorAll(".slide").forEach((s, i) => { s.id = "s" + (i + 1); });
+  document.querySelectorAll(".slide").forEach((s, i) => {
+    s.id = "s" + (i + 1);
+    const b = s.querySelector(".meta b");
+    if (b) b.textContent = String(i).padStart(2, "0");
+  });
   await document.fonts.ready;
   for (const slide of document.querySelectorAll(".slide:not(.title)")) {
     const body = slide.children[1];

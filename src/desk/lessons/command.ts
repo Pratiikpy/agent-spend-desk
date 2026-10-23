@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 
 import { CassettePort, ReplayOrRecordPort, portFromEnv, type ModelPort } from "../agents/model.ts";
-import { filesFor, RESULTS_FILE } from "../bench/command.ts";
+import { filesFor, RESULTS_FILE, RESULTS_FILE_A_V2 } from "../bench/command.ts";
 import { buildQuestions } from "../bench/questions.ts";
 import { readResults } from "../bench/run.ts";
 import { openLedger, type Ledger } from "../ledger/db.ts";
@@ -10,7 +10,7 @@ import { DEFAULT_LEARN, runLearning, type LearnConfig, type LearnReport } from "
 import { allLessons, openLessons, type Lesson } from "./store.ts";
 
 /** The Desk (version 2) run once on set A, kept beside the first version's results, which the preregistered table rests on. */
-export const RESULTS_FILE_A_V2 = "docs/verification/benchmark/results-v2.jsonl";
+export { RESULTS_FILE_A_V2 };
 export const LEARNING_REPORT = "docs/verification/learning/report.json";
 export const LEARNING_CASSETTES = "data/sample/learning-cassettes";
 

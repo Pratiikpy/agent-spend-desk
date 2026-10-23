@@ -1,13 +1,16 @@
+import { existsSync } from "node:fs";
+
 import { openLedger } from "../ledger/db.ts";
 import { choosePort } from "../propose/command.ts";
 import { BENCH_SEED, BENCH_SEED_B, BENCH_SEED_C, buildQuestions, questionSetHash, type QuestionSet } from "./questions.ts";
-import { ARMS, CATEGORIES, formatReport, readResults, runBench, writeQuestionSet } from "./run.ts";
+import { ARMS, CATEGORIES, formatReport, readResults, runBench, writeQuestionSet, type BenchRow } from "./run.ts";
 import type { ArmId } from "./arms.ts";
 
 /** Where the recorded run lives: committed, so a reader can see every answer and score. */
 export const RESULTS_FILE = "docs/verification/benchmark/results.jsonl";
 export const QUESTIONS_FILE = "docs/verification/benchmark/questions.json";
 export const RESULTS_FILE_B = "docs/verification/benchmark/set-b/results.jsonl";
+export const RESULTS_FILE_A_V2 = "docs/verification/benchmark/results-v2.jsonl";
 export const QUESTIONS_FILE_B = "docs/verification/benchmark/set-b/questions.json";
 export const RESULTS_FILE_C = "docs/verification/learning/train-c/results.jsonl";
 export const QUESTIONS_FILE_C = "docs/verification/learning/train-c/questions.json";
@@ -16,6 +19,19 @@ export const QUESTIONS_FILE_C = "docs/verification/learning/train-c/questions.js
 export const CASSETTES_A = "data/sample/bench-cassettes";
 export const CASSETTES_B = "data/sample/bench-cassettes-b";
 export const CASSETTES_C = "data/sample/learning-cassettes-c";
+
+/**
+ * The rows of set A that today's Desk can be held to: the first two arms from the preregistered file, and the Desk from the
+ * second file once that run is complete. Until it is, the first version's rows stand in, and are the history the table was
+ * preregistered on.
+ */
+export function setARows(): { rows: BenchRow[]; deskVersion: 1 | 2 } {
+  const first = existsSync(RESULTS_FILE) ? readResults(RESULTS_FILE) : [];
+  const v2 = existsSync(RESULTS_FILE_A_V2) ? readResults(RESULTS_FILE_A_V2).filter((r) => r.arm === "A2") : [];
+  const wasA2 = first.filter((r) => r.arm === "A2").length;
+  const done = v2.length >= Math.max(1, wasA2);
+  return { rows: done ? [...first.filter((r) => r.arm !== "A2"), ...v2] : first, deskVersion: done ? 2 : 1 };
+}
 
 export const filesFor = (set: QuestionSet): { results: string; questions: string; seed: number; cassettes: string } =>
   set === "B"

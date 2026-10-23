@@ -5,6 +5,7 @@ import { attributionReliability, renderAttribution, type FateTruth } from "./att
 import { renderCoverage, type TunnelCoverage } from "./windtunnel.ts";
 
 export const COVERAGE_FILE = "docs/verification/calibration/windtunnel.json";
+export const CONTROL_FILE = "docs/verification/calibration/windtunnel-control.json";
 
 /** `desk calibrate`: does stated confidence mean what it says? Needs the sample's planted truth. */
 export function calibrateCommand(o: { dbPath: string; truthPath: string }): string {
@@ -14,6 +15,7 @@ export function calibrateCommand(o: { dbPath: string; truthPath: string }): stri
   try {
     const out = [renderAttribution(attributionReliability(db, truth))];
     if (existsSync(COVERAGE_FILE)) out.push("", renderCoverage(JSON.parse(readFileSync(COVERAGE_FILE, "utf8")) as TunnelCoverage));
+    if (existsSync(CONTROL_FILE)) out.push("", renderCoverage(JSON.parse(readFileSync(CONTROL_FILE, "utf8")) as TunnelCoverage));
     else out.push("", `The wind-tunnel coverage study has not been recorded (${COVERAGE_FILE}); run scripts/calibrate-windtunnel.ts.`);
     return out.join("\n");
   } finally {

@@ -6,6 +6,8 @@ desk. is a local desk for the person who pays for AI coding agents. It explains 
 
 Built for the Open Agent Hackathon 2026, Track 3 (Reasoning Architecture), with Zetaris, Meterless and NVIDIA Nemotron.
 
+> We are building an agent that helps **an engineering lead who pays for coding agents** decide **next month's caps and routes** by **tying every dollar to the work that landed and testing a policy on a month it never saw**, using **the agents' own session logs, git history, and three Zetaris-joined sources (invoices, CI, a seat roster)**, producing **a limit autopsy, a daily regression verdict, and a signed, replay-tested spend policy a stranger can verify offline**.
+
 | | | |
 |---|---|---|
 | ![The morning brief](docs/submission/deck/img/brief.png) | ![The canary calling a regression](docs/submission/deck/img/canary-top.png) | ![An answer checked by code](docs/submission/deck/img/ask.png) |
@@ -20,7 +22,7 @@ git clone <this repository> && cd <folder>
 npm install
 npm run desk -- --sample      # the limit autopsy card, on a constructed sample, offline (about 20 seconds)
 npm run desk -- demo          # the whole demo in eight beats, offline (under a minute)
-npm run desk -- ui --sample   # eleven screens on a local, read-only server
+npm run desk -- ui --sample   # twelve screens on a local, read-only server
 npm run desk -- prove         # every check, each PASS, FAIL or NOT RUN
 npm test                      # the unit and integration tests
 ```
@@ -32,6 +34,58 @@ Verified from a fresh clone: Windows 11 on Node 22.19 and 24.20, and Ubuntu 22.0
 ## The problem
 
 An engineering lead pays for a team's coding agents, on seats and on tokens. The bill is a number and the limit is a message; nothing says what the money bought. The decision is next month's caps and routes, and today it is made without evidence. desk. ties each dollar to the work that landed (a commit, a merge, a revert), shows which cause ate the limit, and tests a policy before it is applied.
+
+The pain is public. These are quotes from the sources we read on 2026-10-20 (each URL was fetched then and not re-opened since; the full table is `docs/design/desk/04-evidence-table.md`):
+
+- "Did not use Claude Code for three days. Never hit usage limits in the last three months. Now hitting usage limits after 2 hours of continous usage." ([claude-code #16157](https://github.com/anthropics/claude-code/issues/16157))
+- "my ChatGPT Plus Codex budget drains in 2–3 prompts on `gpt-5.5`, where the same model/plan/app previously gave 20+ prompts." ([codex #28879](https://github.com/openai/codex/issues/28879))
+- "The dashboard has a multi-day reporting lag, so I had no idea anything was wrong until the limit email landed." (a user who [burned $6,000 of usage](https://www.reddit.com/r/ClaudeAI/comments/1t11mmy/i_accidentally_burned_6000_of_claude_usage/))
+- "My session silently routed to a different model path." ([r/cursor](https://www.reddit.com/r/cursor/comments/1t2gjtl/cursor_silently_switched_models_while_i_was_deep/))
+- "Every assigned seat bills at list whether or not the user opens Copilot." ([Redress Compliance](https://redresscompliance.com/microsoft-copilot-adoption-2026))
+
+The first three are why the autopsy exists, the fourth is why the canary runs every day, the fifth is why seats are tied to landed work.
+
+## How it answers Track 3
+
+The track asks for "a novel ability to turn data, knowledge, memory, and reasoning into reliable decisions and actions." Here each of the five has a place and a test:
+
+| | In desk. | Where |
+|---|---|---|
+| Data | Agent logs into a SQLite ledger; invoices, CI and roster through one Zetaris statement | `src/desk/ledger/`, `src/sponsors/zetaris/` |
+| Knowledge | A price book, a policy language with a restrict-only check, owner definitions of "landed" | `src/desk/policy/`, `src/desk/pricing/` |
+| Memory | Meterless H-MEM holds the owner's definitions and past decisions; the World Model holds what changed when | `src/engines/` |
+| Reasoning | A typed program the Planner writes and code runs; an Auditor that rejects unsupported figures; a Drafter, an Attacker and a held-out replay for policy | `src/desk/ask/`, `src/desk/agents/` |
+| Decisions and actions | A signed dossier, an approval echo, and a gate Claude Code calls before each tool use | `src/desk/dossier/`, `src/desk/gate/` |
+
+## The agents
+
+| Agent | Role | Reads | Writes | Works with |
+|---|---|---|---|---|
+| Risk Router | A code classifier: is this a read of the ledger, or an action or policy change phrased as a question; flags text that tries to redirect the Planner | The question | A route (`read`, `spend_action`, `policy_change`) and flags | Planner |
+| Planner | Turns the question into a typed program; may call `cannot_answer` | The question, the program schema | A program (spend, share, per-day, top sessions, landing, changes before, ...) | Plan critic, specialists |
+| Plan critic | Checks the program against what the question needs (a share needs a numerator and a denominator) and sends the Planner back | The question, the program | A one-line objection or a pass | Planner |
+| Specialists | Run each step read-only; code does every sum and percentage | Ledger, Zetaris facts, Meterless engines | Claims with their rows | Auditor |
+| Auditor | Rejects any sentence whose figure no claim supports | The draft answer, the claims | Accept, or the sentences to fix | Explainer |
+| Explainer | Writes the answer from claims; never sees the question, only what the program is about | Claims, a topic | The answer | Auditor |
+| Drafter | Drafts a spend policy from the training month | Waste findings | A policy | Restrict check, Attacker |
+| Attacker | Looks for requests that step around the policy | The policy | Counter-examples | Hardener |
+| Canary | Runs a 52-task pack daily on two arms | The task pack | A verdict, an interval, the control arm | Gate, dossier |
+
+The organizers' collaboration checklist asks for three of nine; desk. has all nine, each with a place to look:
+
+| Item | Where |
+|---|---|
+| Planner delegates subtasks | The Planner's program steps are run by separate specialists (`src/desk/ask/specialists.ts`) |
+| Specialist uses data or tools | Ledger queries, the Zetaris statement, Meterless engines |
+| Evaluator critiques the output | The Auditor on every answer; the plan critic on every plan |
+| Agent revises after critique | The Explainer revises at most twice; the Planner revises once after the plan critic; the Drafter after a failed check (`revision.applied` in the trace) |
+| Risk agent flags unsupported claims | The Risk Router flags an action phrased as a question before anything runs; the Auditor flags unsupported figures after |
+| Structured messages to shared memory | A claim ledger per run; H-MEM across runs |
+| Branches on confidence | A plan the critic rejects goes back; a range with too few clusters is not called; a question the ledger cannot hold is declined |
+| Fallback if data or an API fails | Every language role has a rule-based fallback; Zetaris and Nemotron fall back to recordings, then to the rule brain, and the trace says which |
+| Final answer has traceable evidence | Each figure carries its claim and its rows; the trace says why each decision was made |
+
+A human stays in the loop where it matters: the gate turns an `ask` into an allow only on the owner's approval, echoed back with its request id and action digest, it never overrides a deny, and it fails closed.
 
 ## What it does
 
@@ -46,6 +100,11 @@ An engineering lead pays for a team's coding agents, on seats and on tokens. The
 | Why did it change? | An answer from typed, read-only steps that an Auditor checks; engines can be switched off | `desk ask` |
 | Is the reasoning architecture better than calling the model? | A pre-registered 60-question head-to-head, with its first losing run and its misses | `desk bench report` |
 | Can it stop a runaway? | A local gate that Claude Code calls before each tool use; it fails closed | `desk gate serve` |
+| Would a cheaper model have done the same work? | The recorded tasks replayed on two routes, with a screen for which kinds of task held up on both halves | `desk route` |
+| Which seats earn their price? | Seats a team holds beyond the people who landed work, from the Zetaris roster | `desk seats` |
+| Does its stated confidence mean what it says? | Link confidence against planted truth, the wind tunnel's range and probability against what happened | `desk calibrate` |
+| Was the Desk's own judgement right? | What it expected of each option when it proposed, scored on the month that followed, with regret | `desk regret` |
+| Does it learn from its mistakes? | Wrong answers become lessons; held-out error is measured per round and a worse round is reverted | `desk lessons learn` |
 
 ## The evidence
 
@@ -75,6 +134,58 @@ Zetaris ──► invoices · CI · roster ────────────�
 - **Reproducible.** Offline runs replay recorded model and Zetaris replies; a request with no recording is an error, never a guess.
 
 Code map: `src/desk/` (ledger, ingest, autopsy, outcomes, policy, replay, agents, ask, engines, silo, canary, bench, gate, dossier, verify, card, ui, propose, prove), `src/sponsors/zetaris/` (the Zetaris port), `src/engines/` (Meterless engines), `vendor/meterless/` (their conformance suites, unchanged), `infra/silos/` (three synthetic silos), `policies/`, `tests/`.
+
+## Stack and dependencies
+
+| Layer | What | Why |
+|---|---|---|
+| Language and runtime | TypeScript on Node 22.19 or later; `node:sqlite` for the ledger | One runtime, no database server, nothing to install beyond `npm install` |
+| Runtime dependencies | `yaml` (policy files), `@resvg/resvg-js` (renders the SVG charts to PNG) | These are the only two packages the product needs at run time |
+| Development | `tsx`, `typescript`, `vitest`, `@types/node` | Tests and the type check |
+| Model | NVIDIA Nemotron through an OpenAI-compatible API (`src/desk/agents/model.ts`) | The Power rule; tool calling verified |
+| Organisational data | Zetaris, a local instance in Docker, three synthetic silos | One statement over an S3-style file, Postgres and REST |
+| Memory and reasoning engines | Meterless World Model, H-MEM, Markovian, with their own conformance suites in `vendor/meterless/` | Run from our code; conformance 8/8, 13/13, 8/8 |
+| Signing | Ed25519 from `node:crypto`; the verifier is a single file on plain Node | A stranger can check a dossier with the network off |
+| Editor | Cursor is the required IDE; see the sponsor table for what the log does and does not show | |
+
+No GPU, no training, no package installed at run time, no download at run time. Model replies and Zetaris answers are recorded, so the sample needs no key and no network.
+
+## How long a run takes
+
+| | Bound | Measured |
+|---|---|---|
+| The card on the sample | Wall clock, model calls and tool calls are budgets enforced in code | About 20 seconds, offline |
+| The whole demo | The same | Under a minute, offline |
+| One live `desk ask` | At most one plan, one revision, and two explainer revisions | Two model calls on the questions in the benchmark; the NVIDIA free API took from about 8 to 80 seconds per run on 2026-10-23 |
+
+The organizers' target is 5 to 10 minutes for a full agent run; every path here is inside it, and none runs without a bound.
+
+## Against the organizers' red flags
+
+| Red flag in the Approach Guide | Here |
+|---|---|
+| A private API key you do not have | None needed for the sample; live mode is optional |
+| A dataset you cannot access quickly | The sample is generated from a seed on your machine |
+| Raw data of many GB with no sample strategy | The 590 MB sample is generated, not shipped; what is shipped is described in `data/README.md` |
+| GPU training | None |
+| Agents run once in a fixed sequence | Plans that fail a check are revised; the path depends on the question and on what the critic finds (see the trace below) |
+| Zetaris or Meterless with no real role | Each has a call site and a switch-off test that changes the output |
+| Cannot explain the value | The problem sentence at the top |
+| Output mostly generic text | Every figure is computed by code from the ledger and carries its rows |
+| Cannot run without internet; fails if an API is down | The sample runs offline; every language role has a rule-based fallback |
+| Demo needs manual steps not in the README | `npm run desk -- demo` is the whole demo |
+| No sample inputs and outputs | `input_examples/`, `output_examples/`, `data/sample/` |
+| Cannot show how the agent reached its output | A JSONL trace per run; a cleaned sample is below |
+
+## One real trace
+
+From `output_examples/traces/propose-sample.jsonl`, the Drafter proposing a policy. The first draft is checked on the training month, the check finds it would pause 81 of 311 sessions whose work landed, the Drafter revises, and the second draft passes:
+
+```
+{"seq":3,"event":"desk.policy.check","role":"policy_drafter","detail":{"attempt":1,"narrows":true,"landedBlocked":81,"landedTotal":311,"pausedSessions":138}}
+{"seq":4,"event":"revision.applied","role":"policy_drafter","detail":{"attempt":1,"because":"on the training window it would pause 81 of 311 sessions whose work landed; raise the threshold so they are not paused"}}
+{"seq":6,"event":"desk.policy.check","role":"policy_drafter","detail":{"attempt":2,"narrows":true,"landedBlocked":0,"landedTotal":311,"pausedSessions":0}}
+```
 
 ## Sponsor technology
 
@@ -106,7 +217,7 @@ Copy `.env.example` to `.env` and fill in what you have; nothing is required for
 
 ## Provenance
 
-The runtime starter `src/runtime/`, the design documents under `docs/` and the guard scripts were written before 22 October 2026; everything else was written on or after it, and the git history starts after the window opened (`docs/submission/pre-existing-components.md`). Code and prose were written with AI assistants (`docs/sponsors/ai-use-provenance-log.md`). Meterless's reference engines and suites are used under Apache-2.0 (`vendor/meterless/NOTICE.md`); LiteLLM's MIT price file is a dated snapshot (`data/prices/`); fonts are Outfit and JetBrains Mono under the SIL OFL.
+The design documents under `docs/`, the sponsor notes and the two guard scripts were written before 22 October 2026. No application code was: a small runtime helper from 13 October was replaced on 23 October by code written in the window, with its own tests. Everything else was written on or after 22 October, and the git history starts after the window opened (`docs/submission/pre-existing-components.md`). Code and prose were written with AI assistants (`docs/sponsors/ai-use-provenance-log.md`). Meterless's reference engines and suites are used under Apache-2.0 (`vendor/meterless/NOTICE.md`); LiteLLM's MIT price file is a dated snapshot (`data/prices/`); fonts are Outfit and JetBrains Mono under the SIL OFL.
 
 ## More
 

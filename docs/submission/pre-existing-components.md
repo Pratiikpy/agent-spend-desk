@@ -10,16 +10,15 @@ The git history starts on 2026-10-22 at 15:06 UTC (the first commit is `e994d41`
 
 | Item | Where | What it is | Written |
 |---|---|---|---|
-| Runtime starter | `src/runtime/` (`canonical.ts`, `errors.ts`, `json.ts`, `schema.ts`, 505 lines) | Canonical JSON and hashing, typed errors, JSON helpers and a small schema library. Used by `src/desk/` (for example the Ask program schema and the dossier hashes) | 2026-10-13, with an AI assistant |
 | Design documents | `docs/design/`, `docs/plan/`, `docs/DECISIONS.md`, `docs/00-INDEX.md` | The architecture, module blueprints, research profiles of open-source repositories, and the decision log. The Desk's own specification (`docs/design/desk/`) was written 2026-10-20 to 2026-10-22 | 2026-10-13 to 2026-10-22 |
 | Sponsor notes and templates | `docs/sponsors/`, `docs/submission/*.template.md`, `docs/templates/` | Notes on Zetaris, Meterless, NVIDIA and Cursor and the submission templates | 2026-10-13 to 2026-10-16 |
 | Guard scripts and assistant configuration | `scripts/secret_scan.py`, `scripts/repo_size_check.py`, `.cursor/` | Secret scan, repository size check, rules for the editor | 2026-10-13 to 2026-10-16 |
 
-No application code other than the runtime starter existed before the window. There were no data sets and no trained models.
+No application code survives from before the window. A small runtime starter (canonical JSON, errors, a schema helper, 505 lines, written 2026-10-13) was replaced on 2026-10-23 by code written inside the window with the same behaviour and its own tests (`tests/runtime/`); the old files are not in the tree. There were no data sets and no trained models.
 
 ## Written in the window (2026-10-22 onward)
 
-Everything else: `src/desk/` (ledger, log reader, price book, autopsy, landing, policy language and replay, agents, Ask, engine adapters, Zetaris silo port, gate, dossiers and the offline verifier, canary, card, UI, propose, prove, demo), `src/sponsors/zetaris/`, `tests/`, `infra/silos/`, `policies/`, `scripts/` other than the two guard scripts, the sample generator, the recorded replies in `data/sample/`, `input_examples/`, `output_examples/`, the README, the deck and the video script. Prose and code were written with AI assistants and are logged in `docs/sponsors/ai-use-provenance-log.md`.
+Everything else: `src/runtime/` (rewritten 2026-10-23), `src/desk/` (ledger, log reader, price book, autopsy, landing, policy language and replay, agents, Ask, engine adapters, Zetaris silo port, gate, dossiers and the offline verifier, canary, card, UI, propose, prove, demo), `src/sponsors/zetaris/`, `tests/`, `infra/silos/`, `policies/`, `scripts/` other than the two guard scripts, the sample generator, the recorded replies in `data/sample/`, `input_examples/`, `output_examples/`, the README, the deck and the video script. Prose and code were written with AI assistants and are logged in `docs/sponsors/ai-use-provenance-log.md`.
 
 ## Third-party
 
@@ -33,4 +32,4 @@ Everything else: `src/desk/` (ledger, log reader, price book, autopsy, landing, 
 
 ## Open
 
-The organisers' written answer on whether preparation before the window is eligible was not received. If it is not, the runtime starter and the design documents are the two items that matter, and the Desk can be built without either: nothing in `src/desk/` depends on the design documents, and the starter is 505 lines.
+The organisers' written answer on whether preparation before the window is eligible was not received. What remains from before the window is documentation (design documents, sponsor notes, templates) and two guard scripts; no application code does. Nothing in `src/` depends on the design documents.

@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { analyseCalls, buildAutopsy, CAUSES, type Autopsy, type AutopsyCall, type Cause, type PerCall } from "../autopsy/engine.ts";
@@ -160,7 +160,8 @@ export const SCREENS = [
   { id: "ask", title: "Ask", number: "08" },
   { id: "organisation", title: "Org data", number: "09" },
   { id: "dossiers", title: "Dossiers", number: "10" },
-  { id: "sources", title: "Doctor", number: "11" },
+  { id: "evidence", title: "Evidence", number: "11" },
+  { id: "sources", title: "Doctor", number: "12" },
 ] as const;
 
 // ---------------------------------------------------------------------------------------------- bill
@@ -526,6 +527,18 @@ function ledgerIsEmpty(ctx: UiContext): boolean {
   return emptyState(ctx) !== null;
 }
 
+/** How the wind tunnel did against what happened, from the recorded coverage study; null when none is recorded. */
+function measuredCoverage(): object | null {
+  const file = "docs/verification/calibration/windtunnel.json";
+  if (!existsSync(file)) return null;
+  try {
+    const c = JSON.parse(readFileSync(file, "utf8")) as { trials: unknown[]; inside: number; coverage: number; low: number; high: number; probability?: { raw: { ece: number } } };
+    return { trials: c.trials.length, inside: c.inside, coverage: c.coverage, low: c.low, high: c.high, eceRaw: c.probability?.raw.ece ?? null };
+  } catch {
+    return null;
+  }
+}
+
 export function tunnel(ctx: UiContext, span: Span, name: string): object {
   const files = policyFiles(ctx.policiesDir);
   const l = loadPolicy(ctx.policiesDir, name, files);
@@ -533,7 +546,7 @@ export function tunnel(ctx: UiContext, span: Span, name: string): object {
   if (ledgerIsEmpty(ctx)) return emptyState(ctx)!;
   const sessions = replaySessionsFromLedger(ctx.db, ctx.snapshot, span.sinceIso, span.untilIso);
   const t = windTunnel(l.policy, sessions);
-  return { state: "ok", policy: name, ...t };
+  return { state: "ok", policy: name, ...t, measured: measuredCoverage() };
 }
 
 // ---------------------------------------------------------------------------------------------- sources

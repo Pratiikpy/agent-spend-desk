@@ -110,7 +110,7 @@ describe("the server's doors", () => {
 describe("the screens' data", () => {
   it("lists the screens, the ledger span and the price snapshot", async () => {
     const m = await json(full, "/api/meta");
-    expect(m.screens.map((s: { id: string }) => s.id)).toEqual(["brief", "bill", "autopsy", "sessions", "outcomes", "policy", "canary", "ask", "organisation", "dossiers", "sources"]);
+    expect(m.screens.map((s: { id: string }) => s.id)).toEqual(["brief", "bill", "autopsy", "sessions", "outcomes", "policy", "canary", "ask", "organisation", "dossiers", "evidence", "sources"]);
     expect(m.calls).toBeGreaterThan(100);
     expect(m.mode).toBe("sample");
   });
@@ -127,6 +127,13 @@ describe("the screens' data", () => {
     expect(autopsy.card.causes.reduce((s: number, c: { micros: number }) => s + c.micros, 0)).toBe(autopsy.card.totals.estimatedMicros);
     expect(brief.state).toBe("ok");
     expect(brief.causes.length).toBeGreaterThan(0);
+  });
+
+  it("gives the evidence screen a state for every block, and says plainly which are not recorded", async () => {
+    const e = await json(full, "/api/evidence");
+    expect(e.state).toBe("ok");
+    for (const k of ["benchmark", "route", "seats", "links", "tunnel", "regret", "learning"]) expect(["ok", "missing"], k).toContain(e[k].state);
+    for (const k of ["benchmark", "route", "seats", "links", "tunnel", "regret", "learning"]) if (e[k].state === "missing") expect(String(e[k].hint).length, k).toBeGreaterThan(10);
   });
 
   it("lists sessions and opens one with its calls and commits", async () => {

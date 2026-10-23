@@ -294,6 +294,12 @@ ${t.pass} PASS, ${t.fail} FAIL, ${t.notRun} NOT RUN. NOT RUN is not a pass: it n
       console.log(`${file}: ${t.simulatedMonths} simulated months from ${t.sessions} sessions`);
       console.log(`  upper bound on spend avoided ${formatUsd(t.savedMicros.mid)} a month (90% interval ${formatUsd(t.savedMicros.low)} to ${formatUsd(t.savedMicros.high)}); blocks landed work in ${pct(t.pBlockedLanded.mid)} of months (${pct(t.pBlockedLanded.low)} to ${pct(t.pBlockedLanded.high)})`);
       if (t.historyMayNotPredict) console.log("  warning: the last four weeks differ from the earlier history; this month may not look like the past");
+      console.log(`  with a zero count not taken for zero, the chance a month blocks landed work is ${pct(t.pBlockedLandedSmoothed)}`);
+      const covFile = "docs/verification/calibration/windtunnel.json";
+      if (existsSync(covFile)) {
+        const c = JSON.parse(readFileSync(covFile, "utf8")) as { trials: unknown[]; inside: number; coverage: number; low: number; high: number };
+        console.log(`  measured on constructed samples with a change planted: the 90% range held the realized month in ${c.inside} of ${c.trials.length} (${pct(c.coverage)}, 95% interval ${pct(c.low)} to ${pct(c.high)}); read it as a screen, not a promise`);
+      }
     }
   }
 } else if (command === "sample") {

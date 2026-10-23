@@ -23,6 +23,10 @@ export interface ExtraPaths {
   memoryDir: string;
   dossiersDir: string;
   pendingDir: string;
+  /** Where the constructed sample keeps its planted truth, for the checks that compare the Desk with it. */
+  sampleDir: string;
+  /** The decision regret ledger. */
+  regretPath: string;
 }
 
 function modelFor(ctx: UiContext, paths: ExtraPaths): { port: ModelPort | null; label: string } {

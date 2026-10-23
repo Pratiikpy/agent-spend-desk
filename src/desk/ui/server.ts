@@ -11,6 +11,7 @@ import { openLedger, type Ledger } from "../ledger/db.ts";
 import { loadSnapshot } from "../pricing/pricebook.ts";
 import * as q from "./queries.ts";
 import { askScreen, canaryScreen, dossiersScreen, silosScreen, type ExtraPaths } from "./extra.ts";
+import { evidenceScreen } from "./evidence.ts";
 
 const HERE = fileURLToPath(new URL(".", import.meta.url));
 const CLIENT_DIR = join(HERE, "client");
@@ -144,7 +145,7 @@ export async function startUiServer(opts: UiOptions): Promise<UiServer> {
 
   const allowedHosts = (): Set<string> => new Set([`127.0.0.1:${port}`, `localhost:${port}`]);
 
-  const extra: ExtraPaths = { cassetteDir: "data/sample/cassettes", memoryDir: "data/desk/memory", dossiersDir: "data/desk/dossiers", pendingDir: "data/desk/pending", ...opts.extra };
+  const extra: ExtraPaths = { cassetteDir: "data/sample/cassettes", memoryDir: "data/desk/memory", dossiersDir: "data/desk/dossiers", pendingDir: "data/desk/pending", sampleDir: "data/desk/sample", regretPath: opts.mode === "sample" ? "data/desk/sample/regret.db" : "data/desk/regret.db", ...opts.extra };
 
   const route = (path: string, p: URLSearchParams): unknown => {
     switch (path) {
@@ -174,6 +175,8 @@ export async function startUiServer(opts: UiOptions): Promise<UiServer> {
         return silosScreen(ctx, extra);
       case "/api/dossiers":
         return dossiersScreen(extra);
+      case "/api/evidence":
+        return evidenceScreen(ctx, extra);
       case "/api/sources":
         return withProblem(q.sources(ctx));
       default:

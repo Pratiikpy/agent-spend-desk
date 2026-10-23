@@ -11,12 +11,15 @@ import { loadAutopsyCalls } from "../autopsy/load.ts";
 import { ask } from "../ask/ask.ts";
 import { buildCard } from "../card/build.ts";
 import { createRedactor } from "../card/redact.ts";
-import { filesFor } from "../bench/command.ts";
+import { filesFor, setARows } from "../bench/command.ts";
+import { learningInputs, LEARNING_CASSETTES, LEARNING_REPORT, type StoredReport } from "../lessons/command.ts";
+import { DEFAULT_LEARN, runLearning } from "../lessons/learn.ts";
+import { allLessons, openLessons } from "../lessons/store.ts";
 import { buildQuestions, questionSetHash, type QuestionSet } from "../bench/questions.ts";
 import { ARMS, passK, readResults, runBench, tally } from "../bench/run.ts";
-import { COVERAGE_FILE } from "../calibrate/command.ts";
+import { CONTROL_FILE, COVERAGE_FILE } from "../calibrate/command.ts";
 import { attributionReliability } from "../calibrate/attribution.ts";
-import { summarise as summariseTunnel, type TunnelCoverage } from "../calibrate/windtunnel.ts";
+import { calibrationOf, summarise as summariseTunnel, type TunnelCoverage } from "../calibrate/windtunnel.ts";
 import { canaryCommand, SAMPLE_RUNS } from "../canary/command.ts";
 import { readRows } from "../canary/store.ts";
 import { renderRoute, routeReplay } from "../route/replay.ts";
@@ -103,7 +106,8 @@ function benchCheck(id: string, set: QuestionSet): Check {
     seed: files.seed,
     async run(e) {
       if (!existsSync(files.results) || !existsSync(files.cassettes) || !existsSync(files.questions)) return notRun(`no recorded benchmark at ${files.results}; run it with: desk bench run --set ${set} --record`);
-      const recorded = readResults(files.results);
+      // The first version of the Desk (A2 in results.jsonl) ran before the plan critic and cannot be replayed by today's code; its rows are history.
+      const recorded = set === "A" ? setARows().rows : readResults(files.results);
       if (recorded.length === 0) return notRun("the recorded benchmark has no rows");
       const registered = (JSON.parse(readFileSync(files.questions, "utf8")) as { hash: string }).hash;
       const hash = questionSetHash(buildQuestions(e.db, files.seed, set));
@@ -435,14 +439,37 @@ const CHECKS: Check[] = [
   },
   {
     id: "wind-tunnel-coverage-recorded",
-    command: "the recorded wind-tunnel coverage study, summarised again from its stored trials",
+    command: "the recorded wind-tunnel studies (a planted regime change, and a control with none), summarised again from their stored trials",
     seed: null,
     async run() {
       if (!existsSync(COVERAGE_FILE)) return notRun(`no recorded study at ${COVERAGE_FILE}; run scripts/calibrate-windtunnel.ts`);
+      const read = (file: string): TunnelCoverage => JSON.parse(readFileSync(file, "utf8")) as TunnelCoverage;
+      const check = (stored: TunnelCoverage): boolean => {
+        const again = summariseTunnel(stored.policy, stored.trials);
+        return again.inside === stored.inside && Math.abs(again.coverage - stored.coverage) < 1e-9 && again.driftFlagged === stored.driftFlagged && Math.abs((again.probability?.raw.ece ?? 0) - (stored.probability?.raw.ece ?? 0)) < 1e-9 && Math.abs((again.probability?.smoothed.ece ?? 0) - (stored.probability?.smoothed.ece ?? 0)) < 1e-9;
+      };
+      const planted = read(COVERAGE_FILE);
+      const control = existsSync(CONTROL_FILE) ? read(CONTROL_FILE) : null;
+      const same = check(planted) && (control === null || check(control));
+      const range = (c: TunnelCoverage): string => `${c.inside} of ${c.trials.length} (${Math.round(c.coverage * 100)}%, 95% interval ${Math.round(c.low * 100)}% to ${Math.round(c.high * 100)}%)`;
+      const ece = (c: TunnelCoverage): string => (c.probability ? `expected calibration error ${c.probability.raw.ece.toFixed(2)} as resampled and ${c.probability.smoothed.ece.toFixed(2)} with a zero count not taken for zero` : "no probability recorded");
+      return (same ? pass : fail)(`the 90% one-month range held the realized month in ${range(planted)} constructed samples with a regime change planted${control ? `, and in ${range(control)} with none planted` : ""}; flagged drift in ${planted.driftFlagged}; the chance of blocking landed work: ${ece(planted)}`);
+    },
+  },
+  {
+    id: "calibration-ece",
+    command: "expected calibration error of the wind tunnel's stated chance of blocking landed work, recomputed from the stored trials",
+    seed: null,
+    async run() {
+      if (!existsSync(COVERAGE_FILE)) return notRun(`no recorded study at ${COVERAGE_FILE}`);
       const stored = JSON.parse(readFileSync(COVERAGE_FILE, "utf8")) as TunnelCoverage;
-      const again = summariseTunnel(stored.policy, stored.trials);
-      const same = again.inside === stored.inside && Math.abs(again.coverage - stored.coverage) < 1e-9 && again.driftFlagged === stored.driftFlagged;
-      return (same ? pass : fail)(`the 90% one-month range held the realized month in ${stored.inside} of ${stored.trials.length} constructed samples (${Math.round(stored.coverage * 100)}%, 95% interval ${Math.round(stored.low * 100)}% to ${Math.round(stored.high * 100)}%); flagged drift in ${stored.driftFlagged}; the scenario plants a regime change the tunnel was not promised to see`);
+      if (!stored.probability) return notRun("the recorded study predates the probability fields; run scripts/calibrate-windtunnel.ts again");
+      const happened = stored.trials.map((t) => t.blockedLandedRealized > 0);
+      const raw = calibrationOf(stored.trials.map((t) => t.pBlockedRaw), happened);
+      const smooth = calibrationOf(stored.trials.map((t) => t.pBlockedSmoothed), happened);
+      const ok = Math.abs(raw.ece - stored.probability.raw.ece) < 1e-9 && Math.abs(smooth.ece - stored.probability.smoothed.ece) < 1e-9;
+      const better = smooth.ece <= raw.ece && smooth.brier <= raw.brier;
+      return (ok ? pass : fail)(`across ${raw.n} constructed samples the month blocked landed work in ${Math.round(raw.baseRate * 100)}%; the tunnel's resampled chance had expected calibration error ${raw.ece.toFixed(3)} and Brier ${raw.brier.toFixed(3)}; with a zero count not taken for zero, ${smooth.ece.toFixed(3)} and ${smooth.brier.toFixed(3)}${better ? "" : " (not better)"}; ${raw.bins.filter((b) => b.n > 0).map((b) => `[${b.low.toFixed(1)}-${b.high.toFixed(1)}] n=${b.n} said ${b.meanPredicted.toFixed(2)} saw ${b.observed.toFixed(2)}`).join("; ")}`);
     },
   },
   {
@@ -474,6 +501,24 @@ const CHECKS: Check[] = [
       const synthetic = seatReturn(sessions.filter((s) => teamOfProject(s.project) !== "payments"), facts.roster, { asOfMs, windowDays: 21 }).find((l) => l.team === "payments");
       const ok = lines.length === facts.roster.length && synthetic !== undefined && synthetic.idleSeats === synthetic.seats;
       return (ok ? pass : fail)(`${lines.map((l) => `${l.team} ${l.seats} seats, ${l.idleSeats} beyond the people who landed work`).join("; ")}; with a team's sessions removed every one of its ${synthetic?.seats ?? 0} seats is reported`);
+    },
+  },
+  {
+    id: "learning-curve-from-mistakes",
+    command: "the recorded learning run replayed from its recordings: the same lessons, in the same rounds, with the same held-out counts",
+    seed: DEFAULT_LEARN.seed,
+    async run(e) {
+      if (!existsSync(LEARNING_REPORT) || !existsSync(LEARNING_CASSETTES)) return notRun(`no recorded learning run at ${LEARNING_REPORT}; record one with: desk lessons learn --record`);
+      const stored = JSON.parse(readFileSync(LEARNING_REPORT, "utf8")) as StoredReport;
+      const inputs = learningInputs(e.db);
+      if (inputs.missing) return notRun(`the learning run needs ${inputs.missing}`);
+      const lessons = openLessons(":memory:");
+      const again = await runLearning({ db: e.db, lessons, port: new CassettePort(LEARNING_CASSETTES), training: inputs.training, heldout: inputs.heldout, baseline: inputs.baseline, config: stored.config, now: () => "replay" });
+      const exact = (r: { rounds: { exact: number; reverted: boolean }[] }): string => r.rounds.map((x) => `${x.exact}${x.reverted ? "r" : ""}`).join(",");
+      const ids = (xs: { id: string }[]): string => xs.map((x) => x.id).sort().join(",");
+      const same = exact(again) === exact(stored) && ids(allLessons(lessons)) === ids(stored.lessons) && again.regression.exact === stored.regression.exact;
+      const last = stored.rounds.filter((r) => !r.reverted).at(-1)!;
+      return (same ? pass : fail)(`${stored.mistakes} mistakes on ${inputs.training.questions.length} training questions, ${stored.resolved} with a verified plan; held-out exact by round ${exact(stored)} of ${last.n}; the change since round 0 is ${(last.change.change * 100).toFixed(1)} points (95% interval ${(last.change.low * 100).toFixed(1)} to ${(last.change.high * 100).toFixed(1)}); ${stored.regression.exact} of ${stored.regression.n} lessons pass as tests; replayed from recordings${same ? "" : ", and the replay differs"}`);
     },
   },
   {
@@ -536,10 +581,7 @@ const CHECKS: Check[] = [
 ];
 
 /** Checks that are written down in the spec and are not built. They are listed so that a gap is never mistaken for a pass. */
-const NOT_BUILT: { id: string; reason: string }[] = [
-  { id: "calibration-ece", reason: "an expected calibration error needs numeric confidences; the Desk's link confidence is a level and has a reliability table instead, and no other surface carries a probability" },
-  { id: "learning-curve-from-mistakes", reason: "learning from rejected answers as regression tests (DF-127) is not built" },
-];
+const NOT_BUILT: { id: string; reason: string }[] = [];
 
 export async function prove(opts: { dir: string; only?: string; log?: (line: ProveLine) => void }): Promise<ProveLine[]> {
   mkdirSync(opts.dir, { recursive: true });
