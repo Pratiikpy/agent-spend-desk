@@ -47,7 +47,8 @@ describe("parsing silo answers", () => {
   });
 
   it("parses the roster and the headline, keeping a missing billed figure as null", () => {
-    expect(parseRoster(rows(["team", "seats", "seat_plan"], [["payments", "4", "max"], ["growth", "-1", "x"], ["", "2", "y"]])).facts).toEqual([{ team: "payments", seats: 4, seatPlan: "max" }]);
+    expect(parseRoster(rows(["team", "seats", "seat_plan"], [["payments", "4", "max"], ["growth", "-1", "x"], ["", "2", "y"]])).facts).toEqual([{ team: "payments", seats: 4, seatPlan: "max", seatPriceUsd: null }]);
+    expect(parseRoster(rows(["team", "seats", "seat_plan", "seat_price_usd"], [["payments", "4", "max", "100"]])).facts).toEqual([{ team: "payments", seats: 4, seatPlan: "max", seatPriceUsd: 100 }]);
     const h = parseHeadline(rows(["team", "seats", "seat_plan", "landed_prs", "billed_usd", "usd_per_landed_pr"], [["payments", "4", "max", "3", "", ""], ["growth", "2", "x", "n", "1", "1"]]));
     expect(h.facts).toEqual([{ team: "payments", seats: 4, seatPlan: "max", landedPrs: 3, billedUsd: null, usdPerLandedPr: null }]);
     expect(h.skipped).toBe(1);
