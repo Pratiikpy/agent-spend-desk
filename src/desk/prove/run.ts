@@ -13,8 +13,15 @@ import { buildCard } from "../card/build.ts";
 import { createRedactor } from "../card/redact.ts";
 import { BENCH_CASSETTES, filesFor } from "../bench/command.ts";
 import { buildQuestions, questionSetHash, type QuestionSet } from "../bench/questions.ts";
-import { ARMS, readResults, runBench, tally } from "../bench/run.ts";
+import { ARMS, passK, readResults, runBench, tally } from "../bench/run.ts";
+import { COVERAGE_FILE } from "../calibrate/command.ts";
+import { attributionReliability } from "../calibrate/attribution.ts";
+import { summarise as summariseTunnel, type TunnelCoverage } from "../calibrate/windtunnel.ts";
 import { canaryCommand, SAMPLE_RUNS } from "../canary/command.ts";
+import { readRows } from "../canary/store.ts";
+import { renderRoute, routeReplay } from "../route/replay.ts";
+import { seatReturn } from "../seats/seats.ts";
+import { configFromEnv } from "../../sponsors/zetaris/silo-port.ts";
 import { falseAlarmStudy } from "../canary/simulate.ts";
 import { approve, issueApproval, type DossierPaths } from "../dossier/command.ts";
 import { buildPolicyChangePack } from "../dossier/policy-change.ts";
@@ -32,7 +39,7 @@ import { loadSnapshot } from "../pricing/pricebook.ts";
 import { propose } from "../propose/run.ts";
 import { replaySessionsFromLedger } from "../replay/from-ledger.ts";
 import { buildSample, DEFAULT_SAMPLE, readTruth, sampleLogsDir, sampleReposDir, type Truth } from "../sample/gen.ts";
-import { ciSummary, fetchSiloFacts, reconcile } from "../silo/facts.ts";
+import { ciSummary, fetchSiloFacts, reconcile, teamOfProject } from "../silo/facts.ts";
 import { TEAM_OF_REPO } from "../silo/seed.ts";
 import { readBundleDir } from "../verify/read-dir.ts";
 import { verifyBundle } from "../verify/verify.ts";
@@ -401,6 +408,72 @@ const CHECKS: Check[] = [
   benchCheck("benchmark-reproduces-from-recordings", "A"),
   benchCheck("benchmark-set-b-reproduces-from-recordings", "B"),
   {
+    id: "pass-k-reliability",
+    command: "pass^k over the recorded repeat trials of benchmark set B (temperature 0.7, one recording per trial)",
+    seed: filesFor("B").seed,
+    async run() {
+      const files = filesFor("B");
+      if (!existsSync(files.results)) return notRun(`no recorded set B at ${files.results}`);
+      const rows = readResults(files.results).filter((r) => r.trial > 0);
+      const cells = ARMS.map((a) => ({ a, p1: passK(rows, a, 1), p2: passK(rows, a, 2), p3: passK(rows, a, 3) }));
+      if (cells.some((c) => c.p3 === null)) return notRun("set B has fewer than three recorded trials for some arm");
+      return pass(cells.map((c) => `${c.a} pass^1 ${Math.round(c.p1!.value * 100)}% pass^2 ${Math.round(c.p2!.value * 100)}% pass^3 ${Math.round(c.p3!.value * 100)}% over ${c.p3!.questions} questions`).join("; ") + "; recomputed from the recorded rows, which the set B replay check also replays");
+    },
+  },
+  {
+    id: "calibration-link-confidence",
+    command: "link confidence against the planted fate of every session, with Wilson intervals",
+    seed: SEED,
+    async run(e) {
+      const r = attributionReliability(e.db, e.truth.sessions.map((x) => ({ id: x.id, fate: x.fate })));
+      const rate = (l: string): string => { const x = r.levels.find((y) => y.level === l)!; return `${l} ${x.n === 0 ? "none" : `${(x.rate * 100).toFixed(1)}% of ${x.n}`}`; };
+      return (r.ordered ? pass : fail)(`${["high", "medium", "low", "unlinked"].map(rate).join(", ")}; levels ordered as named: ${r.ordered}; landing state right for ${r.stateRight} of ${r.stateTotal} links`);
+    },
+  },
+  {
+    id: "wind-tunnel-coverage-recorded",
+    command: "the recorded wind-tunnel coverage study, summarised again from its stored trials",
+    seed: null,
+    async run() {
+      if (!existsSync(COVERAGE_FILE)) return notRun(`no recorded study at ${COVERAGE_FILE}; run scripts/calibrate-windtunnel.ts`);
+      const stored = JSON.parse(readFileSync(COVERAGE_FILE, "utf8")) as TunnelCoverage;
+      const again = summariseTunnel(stored.policy, stored.trials);
+      const same = again.inside === stored.inside && Math.abs(again.coverage - stored.coverage) < 1e-9 && again.driftFlagged === stored.driftFlagged;
+      return (same ? pass : fail)(`the 90% one-month range held the realized month in ${stored.inside} of ${stored.trials.length} constructed samples (${Math.round(stored.coverage * 100)}%, 95% interval ${Math.round(stored.low * 100)}% to ${Math.round(stored.high * 100)}%); flagged drift in ${stored.driftFlagged}; the scenario plants a regime change the tunnel was not promised to see`);
+    },
+  },
+  {
+    id: "route-replay-on-recorded-tasks",
+    command: "route replay over the recorded canary tasks, twice, with a held-back half to confirm",
+    seed: null,
+    async run() {
+      if (!existsSync(SAMPLE_RUNS)) return notRun(`no recorded canary at ${SAMPLE_RUNS}`);
+      const rows = readRows(SAMPLE_RUNS).rows;
+      const a = routeReplay(rows, { tolerance: 0.1 });
+      const b = routeReplay(rows, { tolerance: 0.1 });
+      if (!a || !b) return fail("the recorded tasks were served by fewer than two models");
+      const stable = renderRoute(a) === renderRoute(b);
+      const inside = a.interval.low <= a.delta && a.delta <= a.interval.high;
+      const routable = a.clusters.filter((c) => c.routable).length;
+      return (stable && inside ? pass : fail)(`${a.tasks.filter((t) => t.strong !== null && t.cheap !== null).length} tasks on two routes: the cheaper route moves the pass rate ${(a.delta * 100).toFixed(0)} points (95% interval ${(a.interval.low * 100).toFixed(0)} to ${(a.interval.high * 100).toFixed(0)}); ${routable} of ${a.clusters.length} kinds of task held up on both halves; dollars need a price you supply`);
+    },
+  },
+  {
+    id: "seat-return",
+    command: "seats beyond the people who landed work, from the recorded Zetaris roster and the sample ledger",
+    seed: SEED,
+    async run(e) {
+      const facts = await fetchSiloFacts({ sample: true, cassetteDir: "data/sample/cassettes", record: false, config: configFromEnv({}), disabled: false });
+      if (facts.roster.length === 0) return notRun(`the recorded roster is missing (${facts.reasons.join("; ")})`);
+      const sessions = replaySessionsFromLedger(e.db, loadSnapshot(PRICES), "0000", "9999", { personFromBranch: true });
+      const asOfMs = Math.max(...sessions.map((s) => s.startMs));
+      const lines = seatReturn(sessions, facts.roster, { asOfMs, windowDays: 21 });
+      const synthetic = seatReturn(sessions.filter((s) => teamOfProject(s.project) !== "payments"), facts.roster, { asOfMs, windowDays: 21 }).find((l) => l.team === "payments");
+      const ok = lines.length === facts.roster.length && synthetic !== undefined && synthetic.idleSeats === synthetic.seats;
+      return (ok ? pass : fail)(`${lines.map((l) => `${l.team} ${l.seats} seats, ${l.idleSeats} beyond the people who landed work`).join("; ")}; with a team's sessions removed every one of its ${synthetic?.seats ?? 0} seats is reported`);
+    },
+  },
+  {
     id: "canary-statistic-false-alarms",
     command: "falseAlarmStudy({histories: 100}) with no injected change",
     seed: SEED,
@@ -434,10 +507,9 @@ const CHECKS: Check[] = [
 
 /** Checks that are written down in the spec and are not built. They are listed so that a gap is never mistaken for a pass. */
 const NOT_BUILT: { id: string; reason: string }[] = [
-  { id: "pass-k-reliability", reason: "repeated-run reliability (DF-104) is not built" },
-  { id: "calibration-ece", reason: "multi-surface calibration (DF-106) is not built" },
-  { id: "route-replay-on-recorded-tasks", reason: "replay of tasks on a cheaper route (DK7) is not built; the policy replay and the wind tunnel are" },
-  { id: "wind-tunnel-calibration", reason: "the wind-tunnel coverage study (spec 26.1) is not run here" },
+  { id: "calibration-ece", reason: "an expected calibration error needs numeric confidences; the Desk's link confidence is a level and has a reliability table instead, and no other surface carries a probability" },
+  { id: "learning-curve-from-mistakes", reason: "learning from rejected answers as regression tests (DF-127) is not built" },
+  { id: "decision-regret-ledger", reason: "scoring approved and rejected policies against the month that actually followed (DF-129) is not built" },
 ];
 
 export async function prove(opts: { dir: string; only?: string; log?: (line: ProveLine) => void }): Promise<ProveLine[]> {

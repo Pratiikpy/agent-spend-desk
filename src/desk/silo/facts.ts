@@ -27,6 +27,8 @@ export interface RosterFact {
   team: string;
   seats: number;
   seatPlan: string;
+  /** What one seat costs a month, when the roster says. */
+  seatPriceUsd: number | null;
 }
 
 export interface HeadlineRow {
@@ -93,6 +95,7 @@ export function parsePrs(rows: SiloRows): { facts: PrFact[]; skipped: number } {
 
 export function parseRoster(rows: SiloRows): { facts: RosterFact[]; skipped: number } {
   const [team, seats, plan] = ["team", "seats", "seat_plan"].map((n) => col(rows, n)) as [number, number, number];
+  const price = rows.headers.indexOf("seat_price_usd");
   const facts: RosterFact[] = [];
   let skipped = 0;
   for (const r of rows.rows) {
@@ -101,7 +104,7 @@ export function parseRoster(rows: SiloRows): { facts: RosterFact[]; skipped: num
       skipped += 1;
       continue;
     }
-    facts.push({ team: r[team]!, seats: n, seatPlan: r[plan]! });
+    facts.push({ team: r[team]!, seats: n, seatPlan: r[plan]!, seatPriceUsd: price < 0 ? null : num(r[price]!) });
   }
   return { facts, skipped };
 }

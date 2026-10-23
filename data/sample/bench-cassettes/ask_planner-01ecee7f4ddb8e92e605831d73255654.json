@@ -1,0 +1,32 @@
+{
+  "key": "01ecee7f4ddb8e92e605831d73255654",
+  "recordedAt": "2026-10-23T05:57:44.036Z",
+  "role": "ask_planner",
+  "response": {
+    "content": "",
+    "toolCalls": [
+      {
+        "id": "call-b4b40ce4-a1cf-404e-9b8e-db584ae012ea",
+        "name": "plan_answer",
+        "arguments": {
+          "steps": [
+            {
+              "id": "spend_range",
+              "op": "spend",
+              "from": "2026-09-25",
+              "to": "2026-10-12",
+              "group": "none"
+            }
+          ]
+        }
+      }
+    ],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 2406,
+      "outputTokens": 76,
+      "reasoningTokens": 0
+    }
+  }
+}
