@@ -2,7 +2,10 @@
 .env
 .env.*
 !.env.example
-.claude/settings.local.json
+# Local assistant configuration and instructions: personal working rules, not part of the project
+CLAUDE.md
+AGENTS.md
+.claude/
 
 # Organizer material and internal working notes (decision D-004)
 docs/event/

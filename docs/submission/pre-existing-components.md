@@ -13,7 +13,7 @@ The git history starts on 2026-10-22 at 15:06 UTC (the first commit is `e994d41`
 | Runtime starter | `src/runtime/` (`canonical.ts`, `errors.ts`, `json.ts`, `schema.ts`, 505 lines) | Canonical JSON and hashing, typed errors, JSON helpers and a small schema library. Used by `src/desk/` (for example the Ask program schema and the dossier hashes) | 2026-10-13, with an AI assistant |
 | Design documents | `docs/design/`, `docs/plan/`, `docs/DECISIONS.md`, `docs/00-INDEX.md` | The architecture, module blueprints, research profiles of open-source repositories, and the decision log. The Desk's own specification (`docs/design/desk/`) was written 2026-10-20 to 2026-10-22 | 2026-10-13 to 2026-10-22 |
 | Sponsor notes and templates | `docs/sponsors/`, `docs/submission/*.template.md`, `docs/templates/` | Notes on Zetaris, Meterless, NVIDIA and Cursor and the submission templates | 2026-10-13 to 2026-10-16 |
-| Guard scripts and assistant configuration | `scripts/secret_scan.py`, `scripts/repo_size_check.py`, `.claude/`, `.cursor/`, `AGENTS.md`, `CLAUDE.md` | Secret scan, repository size check, hooks, subagent and skill definitions, rules for the editor and assistants | 2026-10-13 to 2026-10-16 |
+| Guard scripts and assistant configuration | `scripts/secret_scan.py`, `scripts/repo_size_check.py`, `.cursor/` | Secret scan, repository size check, rules for the editor | 2026-10-13 to 2026-10-16 |
 
 No application code other than the runtime starter existed before the window. There were no data sets and no trained models.
 

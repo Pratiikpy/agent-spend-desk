@@ -10,7 +10,7 @@ Claude Code or any other assistant may also be used (generated code is allowed),
 |---|---|---|
 | Cursor installed and version | | |
 | Space XAI access, if any, and how obtained | | |
-| Cursor rules in use | `.cursor/rules/*.mdc` (mirrors `CLAUDE.md`) | |
+| Cursor rules in use | `.cursor/rules/*.mdc` | |
 | Help Cursor channel read | | |
 
 ## Session log

@@ -16,7 +16,7 @@ Append-only. One entry per decision that would be expensive to rediscover. Newes
 
 **Consequences.** `git init` happens on or after 22 Oct. Organizer material under `docs/event/` is gitignored regardless (it is the organizer's, not ours).
 
-**Evidence.** FAQ §5; hook `.claude/hooks/window_guard.py`.
+**Evidence.** FAQ §5; a local hook that blocked commits before the window.
 
 ---
 
@@ -56,7 +56,7 @@ Append-only. One entry per decision that would be expensive to rediscover. Newes
 
 **Decision.** Plans, designs and recommendations are for the best product, never trimmed for a deadline, effort or size. Every other hackathon rule still applies in full. The only date that binds us is the commit gate in D-001.
 
-**Consequences.** `CLAUDE.md`, `AGENTS.md`, `.cursor/rules/`, the skills and the plan carry no deadlines or countdowns. The milestone plan (`docs/plan/01-milestone-plan.md`) is gated by quality evidence, not dates. The organizers' schedule survives only as a labelled record in `docs/intel/`.
+**Consequences.** The instruction files, `.cursor/rules/`, the skills and the plan carry no deadlines or countdowns. The milestone plan (`docs/plan/01-milestone-plan.md`) is gated by quality evidence, not dates. The organizers' schedule survives only as a labelled record in `docs/intel/`.
 
 ---
 

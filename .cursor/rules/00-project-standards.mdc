@@ -5,7 +5,7 @@ alwaysApply: true
 
 # Project standards
 
-- This is a hackathon entry judged on Impact (30), Technical (20), Innovation (15), Demo (15), Product & UX (10) and Sponsor Tech (10). Read `CLAUDE.md` and `docs/00-INDEX.md` first.
+- This is a hackathon entry judged on Impact (30), Technical (20), Innovation (15), Demo (15), Product & UX (10) and Sponsor Tech (10). Read `docs/00-INDEX.md` first.
 - There is no time limit and no build limit. Always design and build for the best possible product; never reduce scope or quality because of a deadline. Every other hackathon rule still applies.
 - Build locally, but do not commit or push before 22 Oct 2026 00:00 UTC (earlier-committed work is ineligible).
 - Zetaris and Meterless are required integrations. Never guess their APIs, package names or environment variables; use only sourced facts in `docs/sponsors/`.

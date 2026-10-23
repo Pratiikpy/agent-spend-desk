@@ -14,8 +14,8 @@ Not done, and only Prateek can do it:
 - Upload the video and put its link in the HackOS form; create the submission (it locks the team); choose Track 3.
 - Cursor: the required IDE. No Cursor session is logged in `docs/sponsors/cursor-usage-log.md`; the explanation claims none. Work in Cursor and log real sessions, or accept a weaker sponsor score.
 - Zetaris and Meterless "running on your machine" as an eligibility condition is unconfirmed by the organisers.
-- Decide whether `CLAUDE.md`, `AGENTS.md` and `.claude/` (instruction files that name Prateek and carry personal working rules) stay in the public repository; they were committed with the project.
-- Push to GitHub and check the link while logged out. There is no remote yet.
+- Instruction files (`CLAUDE.md`, `AGENTS.md`, `.claude/`) are kept local and ignored by git; they are not in the repository or its history.
+- Check the repository link while logged out, and the video link in a private window.
 
 ## A. Required components
 
