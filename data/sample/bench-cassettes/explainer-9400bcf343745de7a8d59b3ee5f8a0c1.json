@@ -1,0 +1,16 @@
+{
+  "key": "9400bcf343745de7a8d59b3ee5f8a0c1",
+  "recordedAt": "2026-10-23T03:45:44.987Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"The average spend per day between 2026-10-03 and 2026-10-30, counting every day in the range, was $86.67.\", \"cites\": [\"avg_per_day.1\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 409,
+      "outputTokens": 68,
+      "reasoningTokens": 0
+    }
+  }
+}

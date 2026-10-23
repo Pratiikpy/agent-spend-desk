@@ -1,0 +1,16 @@
+{
+  "key": "9b122f3191416e503e0a11b195d3a123",
+  "recordedAt": "2026-10-23T03:45:25.547Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Spend did not triple; it decreased by $453.25 from the first period to the second period.\", \"cites\": [\"c1.1\"]}, {\"text\": \"The first period was estimated at $1,131.47 and the second period was estimated at $678.22.\", \"cites\": [\"p1.1\", \"p2.1\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 973,
+      "outputTokens": 98,
+      "reasoningTokens": 0
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "key": "91fd1e2373c69f8588de3880c096c060",
+  "recordedAt": "2026-10-23T03:43:17.223Z",
+  "role": "ask_planner",
+  "response": {
+    "content": "",
+    "toolCalls": [
+      {
+        "id": "call-952058e0-6458-4794-b174-c0b7dc615200",
+        "name": "cannot_answer",
+        "arguments": {
+          "reason": "The ledger only records models that were used; it cannot compute savings for a model that was never used here."
+        }
+      }
+    ],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 2266,
+      "outputTokens": 46,
+      "reasoningTokens": 0
+    }
+  }
+}

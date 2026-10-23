@@ -1,0 +1,16 @@
+{
+  "key": "d290f1d174d6728a4d5568ab51b75d9d",
+  "recordedAt": "2026-10-23T03:48:31.313Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"The number of days with spend above the threshold was 6.\", \"cites\": [\"days_above_100.1\"]}, {\"text\": \"The threshold was $100.00.\", \"cites\": [\"days_above_100.2\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 305,
+      "outputTokens": 71,
+      "reasoningTokens": 0
+    }
+  }
+}

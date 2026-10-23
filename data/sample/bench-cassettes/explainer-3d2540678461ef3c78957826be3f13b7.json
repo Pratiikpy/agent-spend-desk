@@ -1,0 +1,16 @@
+{
+  "key": "3d2540678461ef3c78957826be3f13b7",
+  "recordedAt": "2026-10-23T03:34:33.895Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"The most expensive single session between 2026-09-08 and 2026-10-01 cost $73.51.\", \"cites\": [\"top1.1\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 299,
+      "outputTokens": 59,
+      "reasoningTokens": 0
+    }
+  }
+}

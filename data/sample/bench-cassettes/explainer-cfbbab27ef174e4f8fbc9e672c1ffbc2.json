@@ -1,0 +1,16 @@
+{
+  "key": "cfbbab27ef174e4f8fbc9e672c1ffbc2",
+  "recordedAt": "2026-10-23T03:41:13.193Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"The estimated list-price spend on model `claude-opus-5` between 2026-09-30 and 2026-10-29 was $1,737.61.\", \"cites\": [\"opus_spend.1\"]}, {\"text\": \"The percentage asked about was 10%.\", \"cites\": [\"savings.1\"]}, {\"text\": \"That percentage of the spend comes to $173.76, an estimate from logged tokens.\", \"cites\": [\"savings.2\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 524,
+      "outputTokens": 136,
+      "reasoningTokens": 0
+    }
+  }
+}

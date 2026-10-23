@@ -31,3 +31,18 @@ The pass rate fell from 93% to 58% and the canary refused to call it. The refusa
 2. The pack was too small. It is now 52 tasks in 13 clusters of 4 (money, logic, records, code, units, calendar, text, tables, probability, sql, formats, algorithms, reading). Each new task's right answer was computed independently, and its checker accepts the right answer and rejects the slips a weaker model makes (`tests/desk/canary/canary.test.ts`).
 3. The statistic, its thresholds, the two-window rule and the control-arm rule were NOT changed. The expanded pack is a design change made because of the first result, so the second recording is reported as a second recording and this first one stays in the repository.
 4. One display line was wrong: the card said "control arm: none in this data" when a control arm existed but the rule had stopped before reading it. It now says so.
+
+## The second recording
+
+The 52-task pack, the same 30 assigned dates, the same switch on day 15 (`nvidia/nemotron-3.5-super-vl-120b-a12b` to `nvidia/nemotron-3.5-lightning-30b-a3b`), the same statistic. The control arm is the unchanged strong model on every second task. The rows are `data/sample/canary/runs.jsonl`.
+
+```
+Canary, day 30 (2026-10-29): Regressed
+  change against the baseline: -40.0 points (99% interval -56.2 points to -23.8 points) on 52 tasks
+  smallest change one window can detect (80% power): 20.7 points; for a two-window call: 22.9 points
+  control arm: flat (-2.2 points, 95% interval -6.7 to +2.3, 26 tasks)
+  harness: unchanged; error rate 2%
+  pass rate   baseline 92%   latest window 52%   (control 88% to 86%)
+```
+
+The call is consistent with, and not proof of, the served-model switch. The recording was not done in one pass: the control arm was re-recorded on the strong model after the first attempt used the weaker model, and the endpoint's rate limits cost several restarts; rows with no score are errors (2% of attempts) and are not counted as zeros.

@@ -1,0 +1,16 @@
+{
+  "key": "51d3db085de6bf33035a233f7836fd33",
+  "recordedAt": "2026-10-23T03:47:04.489Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"There were 8,681 model calls between 2026-10-20 and 2026-10-26.\", \"cites\": [\"spend_range.2\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 332,
+      "outputTokens": 58,
+      "reasoningTokens": 0
+    }
+  }
+}

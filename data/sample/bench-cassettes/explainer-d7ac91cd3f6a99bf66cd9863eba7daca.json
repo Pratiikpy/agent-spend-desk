@@ -1,0 +1,16 @@
+{
+  "key": "d7ac91cd3f6a99bf66cd9863eba7daca",
+  "recordedAt": "2026-10-23T03:41:28.274Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"The estimated savings would be $580.76.\", \"cites\": [\"savings.2\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 442,
+      "outputTokens": 36,
+      "reasoningTokens": 0
+    }
+  }
+}

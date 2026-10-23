@@ -1,0 +1,16 @@
+{
+  "key": "ab681af6599b22b0b044c47f6f660604",
+  "recordedAt": "2026-10-23T03:52:21.254Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"The estimated spend on claude-opus-5 in October 2026 was $1,711.30.\", \"cites\": [\"opus_oct.1\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 340,
+      "outputTokens": 51,
+      "reasoningTokens": 0
+    }
+  }
+}

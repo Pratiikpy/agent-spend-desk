@@ -1,0 +1,16 @@
+{
+  "key": "48517cbd2d816548d47f428cb7e759b0",
+  "recordedAt": "2026-10-23T03:44:37.772Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Estimated list-price spend between 2026-10-09 and 2026-10-26 was $1,375.29.\", \"cites\": [\"total_spend.1\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 350,
+      "outputTokens": 63,
+      "reasoningTokens": 0
+    }
+  }
+}
