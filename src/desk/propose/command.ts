@@ -32,10 +32,10 @@ export interface ProposeCommandOptions {
 }
 
 /** Choose the model route: cassettes in SAMPLE_MODE, the live model otherwise, no model (the rule brain) when none is configured. */
-export function choosePort(o: Pick<ProposeCommandOptions, "sampleMode" | "record" | "cassetteDir" | "env">): { port: ModelPort | null; label: string } {
+export function choosePort(o: Pick<ProposeCommandOptions, "sampleMode" | "record" | "cassetteDir" | "env"> & { backoffMs?: readonly number[] }): { port: ModelPort | null; label: string } {
   if (o.sampleMode) return { port: new CassettePort(o.cassetteDir), label: "recorded replies (SAMPLE_MODE)" };
   try {
-    const live = portFromEnv({ ...o.env, SAMPLE_MODE: "false" }, o.cassetteDir);
+    const live = portFromEnv({ ...o.env, SAMPLE_MODE: "false" }, o.cassetteDir, o.backoffMs ? { backoffMs: o.backoffMs } : {});
     return o.record ? { port: new RecordingPort(live, o.cassetteDir), label: "live model, recording cassettes" } : { port: live, label: "live model" };
   } catch (e) {
     return { port: null, label: `no model (${(e as Error).message.split(":")[0]}): the rule brain drafts` };

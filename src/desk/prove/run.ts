@@ -4,13 +4,16 @@ import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 
 import { Budget, ASK_LIVE } from "../agents/budget.ts";
-import type { ModelPort, ModelRequest, ModelResponse } from "../agents/model.ts";
+import { CassettePort, type ModelPort, type ModelRequest, type ModelResponse } from "../agents/model.ts";
 import { MemoryTrace } from "../agents/trace.ts";
 import { analyseCalls } from "../autopsy/engine.ts";
 import { loadAutopsyCalls } from "../autopsy/load.ts";
 import { ask } from "../ask/ask.ts";
 import { buildCard } from "../card/build.ts";
 import { createRedactor } from "../card/redact.ts";
+import { BENCH_CASSETTES, QUESTIONS_FILE, RESULTS_FILE } from "../bench/command.ts";
+import { buildQuestions, BENCH_SEED, questionSetHash } from "../bench/questions.ts";
+import { ARMS, readResults, runBench, tally } from "../bench/run.ts";
 import { canaryCommand, SAMPLE_RUNS } from "../canary/command.ts";
 import { falseAlarmStudy } from "../canary/simulate.ts";
 import { approve, issueApproval, type DossierPaths } from "../dossier/command.ts";
@@ -363,6 +366,32 @@ const CHECKS: Check[] = [
     },
   },
   {
+    id: "benchmark-reproduces-from-recordings",
+    command: "replay every recorded benchmark run from the recorded replies and score it again",
+    seed: BENCH_SEED,
+    async run(e) {
+      if (!existsSync(RESULTS_FILE) || !existsSync(BENCH_CASSETTES) || !existsSync(QUESTIONS_FILE)) return notRun(`no recorded benchmark at ${RESULTS_FILE}; run it with: desk bench run --record`);
+      const recorded = readResults(RESULTS_FILE);
+      if (recorded.length === 0) return notRun("the recorded benchmark has no rows");
+      const registered = (JSON.parse(readFileSync(QUESTIONS_FILE, "utf8")) as { hash: string }).hash;
+      const hash = questionSetHash(buildQuestions(e.db));
+      if (hash !== registered) return fail(`the question set built from this ledger is ${hash.slice(0, 19)}, not the pre-registered ${registered.slice(0, 19)}`);
+      const dir = mkdtempSync(join(tmpdir(), "desk-bench-"));
+      try {
+        const out = join(dir, "replay.jsonl");
+        await runBench({ db: e.db, port: new CassettePort(BENCH_CASSETTES), arms: ARMS, split: "all", out });
+        const again = new Map(readResults(out).map((x) => [`${x.qid}|${x.arm}`, x]));
+        const answered = recorded.filter((x) => !x.error);
+        const differs = answered.filter((x) => { const y = again.get(`${x.qid}|${x.arm}`); return !y || y.answer !== x.answer || y.exact !== x.exact || y.close !== x.close; });
+        const line = ARMS.map((a) => { const c = tally(answered.filter((x) => x.arm === a)); return `${a} ${c.exact}/${c.n}`; }).join(", ");
+        const errors = recorded.length - answered.length;
+        return (differs.length === 0 ? pass : fail)(`${answered.length} recorded runs replayed from recordings, ${differs.length} differ; exact answers ${line}${errors > 0 ? `; ${errors} recorded runs ended in an error and are not replayed` : ""}; this reproduces the table, it does not say the Desk wins`);
+      } finally {
+        rmSync(dir, { recursive: true, force: true });
+      }
+    },
+  },
+  {
     id: "canary-statistic-false-alarms",
     command: "falseAlarmStudy({histories: 100}) with no injected change",
     seed: SEED,
@@ -396,7 +425,6 @@ const CHECKS: Check[] = [
 
 /** Checks that are written down in the spec and are not built. They are listed so that a gap is never mistaken for a pass. */
 const NOT_BUILT: { id: string; reason: string }[] = [
-  { id: "reasoning-benchmark-vs-baselines", reason: "the head-to-head benchmark (DF-125) is not built" },
   { id: "pass-k-reliability", reason: "repeated-run reliability (DF-104) is not built" },
   { id: "calibration-ece", reason: "multi-surface calibration (DF-106) is not built" },
   { id: "route-replay-on-recorded-tasks", reason: "replay of tasks on a cheaper route (DK7) is not built; the policy replay and the wind tunnel are" },

@@ -43,7 +43,8 @@ export async function benchCommand(o: BenchCommandOptions): Promise<string> {
       for (const a of arms) if (!ARMS.includes(a)) return `Unknown arm ${a}. The arms are ${ARMS.join(", ")}.`;
       const split = (o.split ?? "all") as "dev" | "held_out" | "all";
       if (!["dev", "held_out", "all"].includes(split)) return `--split is dev, held_out or all, not ${split}.`;
-      const { port, label } = choosePort({ sampleMode: o.sampleMode, record: o.record, cassetteDir: BENCH_CASSETTES, env: o.env });
+      // A rate-limited reply is retried for minutes, so a busy endpoint costs time and never a wrong or missing answer.
+      const { port, label } = choosePort({ sampleMode: o.sampleMode, record: o.record, cassetteDir: BENCH_CASSETTES, env: o.env, backoffMs: [4_000, 8_000, 15_000, 30_000, 60_000, 60_000, 60_000] });
       if (!port) return `No model to run the arms on: ${label}. Set the model settings in .env, or run with --sample to replay the recorded replies.`;
       const only = o.only ? o.only.split(",").map((s) => s.trim()) : undefined;
       const r = await runBench({ db, port, arms, split, ...(only ? { only } : {}), out: results, concurrency: Number(o.concurrency ?? "1"), log: o.log });

@@ -275,7 +275,7 @@ export async function callModel(port: ModelPort, request: ModelRequest, ctx: Cal
 }
 
 /** Build the port from environment settings. SAMPLE_MODE=true replays cassettes from `cassetteDir`; no key or network is needed. */
-export function portFromEnv(env: Record<string, string | undefined>, cassetteDir: string): ModelPort {
+export function portFromEnv(env: Record<string, string | undefined>, cassetteDir: string, opts: { backoffMs?: readonly number[] } = {}): ModelPort {
   if (env["SAMPLE_MODE"] === "true") return new CassettePort(cassetteDir);
   const baseUrl = env["MODEL_BASE_URL"] ?? env["NVIDIA_BASE_URL"];
   const apiKey = env["MODEL_API_KEY"] ?? env["NVIDIA_API_KEY"];
@@ -283,5 +283,5 @@ export function portFromEnv(env: Record<string, string | undefined>, cassetteDir
   if (!baseUrl || !apiKey || !model) {
     throw new ModelError("non_transient", "model not configured: set MODEL_BASE_URL, MODEL_API_KEY and NEMOTRON_MODEL (or the NVIDIA_ names), or run with SAMPLE_MODE=true");
   }
-  return new OpenAiPort({ baseUrl, apiKey, model });
+  return new OpenAiPort({ baseUrl, apiKey, model, ...(opts.backoffMs ? { backoffMs: opts.backoffMs } : {}) });
 }

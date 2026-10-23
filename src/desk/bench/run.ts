@@ -33,10 +33,14 @@ export interface BenchRow {
 
 export function readResults(path: string): BenchRow[] {
   if (!existsSync(path)) return [];
-  return readFileSync(path, "utf8")
-    .split("\n")
-    .filter((l) => l.trim() !== "")
-    .map((l) => JSON.parse(l) as BenchRow);
+  // A question and arm can appear more than once: a run that errored is run again, and the later row is the one that counts.
+  const last = new Map<string, BenchRow>();
+  for (const l of readFileSync(path, "utf8").split("\n")) {
+    if (l.trim() === "") continue;
+    const r = JSON.parse(l) as BenchRow;
+    last.set(`${r.qid}|${r.arm}`, r);
+  }
+  return [...last.values()];
 }
 
 export interface RunOptions {
@@ -55,7 +59,8 @@ export interface RunOptions {
 /** Run each question on each arm, score it, append the row. A (question, arm) already in the file is not run again. */
 export async function runBench(o: RunOptions): Promise<{ ran: number; skipped: number }> {
   const questions = buildQuestions(o.db).filter((q) => (o.split === "all" || q.split === o.split) && (!o.only || o.only.includes(q.id)));
-  const have = new Set(readResults(o.out).map((r) => `${r.qid}|${r.arm}`));
+  // A run that ended in an error is run again; only a run that produced an answer counts as done.
+  const have = new Set(readResults(o.out).filter((r) => !r.error).map((r) => `${r.qid}|${r.arm}`));
   mkdirSync(dirname(o.out), { recursive: true });
   const todo: { q: Question; arm: ArmId }[] = [];
   for (const q of questions) for (const arm of o.arms) if (!have.has(`${q.id}|${arm}`)) todo.push({ q, arm });

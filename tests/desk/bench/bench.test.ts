@@ -204,6 +204,25 @@ describe("running the benchmark", () => {
     expect(row).toMatchObject({ exact: false, error: expect.stringMatching(/transient/) });
   });
 
+  it("runs a question again after an error, and the later row is the one that counts", async () => {
+    const out = join(dir, "again.jsonl");
+    await runBench({ db, port: new Scripted({ bench_a0: () => new ModelError("transient", "HTTP 429", 429) }), arms: ["A0"], split: "all", only: ["Q31"], out });
+    expect(readResults(out)[0]).toMatchObject({ error: expect.stringMatching(/429/), exact: false });
+    const second = await runBench({ db, port: new Scripted({ bench_a0: () => ({ content: "I cannot tell." }) }), arms: ["A0"], split: "all", only: ["Q31"], out });
+    expect(second).toEqual({ ran: 1, skipped: 0 });
+    const rows = readResults(out);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ error: null, exact: true });
+    expect(readFileSync(out, "utf8").split("\n").filter(Boolean)).toHaveLength(2);
+  });
+
+  it("treats a Desk run whose model failed and fell back to rules as an error to run again, not as an answer", async () => {
+    const out = join(dir, "outage.jsonl");
+    const down = new Scripted({ ask_planner: () => new ModelError("transient", "HTTP 429", 429), explainer: () => new ModelError("transient", "HTTP 429", 429) });
+    await runBench({ db, port: down, arms: ["A2"], split: "all", only: ["Q01"], out });
+    expect(readResults(out)[0]).toMatchObject({ error: expect.stringMatching(/model unavailable/), exact: false });
+  });
+
   it("prints a table with every category and every metric it publishes", async () => {
     const out = join(dir, "table.jsonl");
     await runBench({ db, port: new Scripted({ bench_a0: () => ({ content: "I cannot tell." }) }), arms: ["A0", "A2"], split: "dev", only: ["Q01", "Q02", "Q31"], out });
