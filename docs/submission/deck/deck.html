@@ -46,7 +46,7 @@ th, td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--li
 th { font-family: "JetBrains Mono", monospace; font-size: 18px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--graphite); font-weight: 500; background: var(--veil); }
 td.r, th.r { text-align: right; font-family: "JetBrains Mono", monospace; }
 img.shot { width: 100%; border: 1px solid var(--line); border-radius: 16px; display: block; }
-.shots { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 22px; }
+.shots { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
 .shots figure { margin: 0; min-width: 0; }
 .shots figcaption { font-family: "JetBrains Mono", monospace; font-size: 18px; color: var(--graphite); margin-top: 8px; }
 
@@ -73,7 +73,7 @@ svg.arch { width: 100%; height: auto; display: block; }
     <div class="mark"><svg width="64" height="64" viewBox="0 0 32 32"><rect x="2" y="11" width="15" height="6" fill="#0a0a0a"/><circle cx="24" cy="20" r="5" fill="#0a0a0a"/></svg>desk.</div>
     <h1>Every dollar your agents spend,<br>tied to work that landed.</h1>
     <p class="lead" style="margin-top:40px">A local desk for the person who pays for AI coding agents. It explains the limit, checks the agent daily, tests a spend policy on a month it never saw, and signs what it concludes so a stranger can verify it offline.</p>
-    <p class="small mono" style="margin-top:24px">Open Agent Hackathon 2026 &nbsp;/&nbsp; Track 3, Reasoning Architecture &nbsp;/&nbsp; Zetaris &nbsp;·&nbsp; Meterless &nbsp;·&nbsp; NVIDIA Nemotron &nbsp;·&nbsp; Cursor</p>
+    <p class="small mono" style="margin-top:24px">Open Agent Hackathon 2026 &nbsp;/&nbsp; Track 3, Reasoning Architecture<br>Zetaris &nbsp;·&nbsp; Meterless &nbsp;·&nbsp; NVIDIA Nemotron &nbsp;·&nbsp; Cursor</p>
   </div>
 </section>
 
@@ -412,7 +412,7 @@ svg.arch { width: 100%; height: auto; display: block; }
       <tr><td>Interface</td><td>Twelve screens on a local read-only server; light and dark; stacked cards on a phone</td><td>The UI is the product</td></tr>
       <tr><td>Verification</td><td>vitest, a pre-registered benchmark, <span class="mono">desk prove</span></td><td>Each claim runs; NOT RUN is never a pass</td></tr>
     </table>
-    <p class="small" style="margin-top:14px">No GPU, no training, no package installed at run time, no download at run time. The development environment is Cursor, with Claude Code as an assistant; the Cursor log records what was done in Cursor.</p>
+    <p class="small" style="margin-top:14px">No GPU, no training, no package installed at run time, no download at run time. Cursor is the required IDE and its session log records only what was done in it (nothing yet); most of this was written with Claude Code as the assistant.</p>
   </div>
   <div class="foot"><span>desk.</span><span>package.json · README.md</span></div>
 </section>
@@ -443,6 +443,8 @@ svg.arch { width: 100%; height: auto; display: block; }
       <figure><img class="shot" src="img/policy.png" alt="Policy screen"><figcaption>policy</figcaption></figure>
       <figure><img class="shot" src="img/ask.png" alt="Ask screen"><figcaption>ask</figcaption></figure>
       <figure><img class="shot" src="img/dossiers.png" alt="Dossiers screen"><figcaption>dossiers</figcaption></figure>
+      <figure><img class="shot" src="img/evidence.png" alt="Evidence screen"><figcaption>evidence</figcaption></figure>
+      <figure><img class="shot" src="img/organisation.png" alt="Org data screen"><figcaption>org data</figcaption></figure>
     </div>
   </div>
   <div class="foot"><span>desk.</span><span>npm run desk -- ui --sample</span></div>
