@@ -29,7 +29,7 @@ npm test                      # the unit and integration tests
 
 **On your own logs:** `npm run desk` reads `~/.claude/projects` read-only and prints your own limit autopsy in under three minutes: where your last heavy window went, which fix is worth making, and what the Desk could not know. Add `--repo <path>` to tie sessions to commits. Nothing is written outside `data/desk/`.
 
-Verified from a fresh clone: Windows 11 on Node 22.19 and 24.20, and Ubuntu 22.04 (WSL) on Node 22.23, each with the card, the demo and the 407 tests. macOS is NOT VERIFIED. On PowerShell, `$env:SAMPLE_MODE="true"` does the same as `--sample`.
+Verified from a fresh clone of the final commit: Windows 11 on Node 24.20, with the card (same figures hash), `desk prove` (26 PASS, 0 FAIL, 0 NOT RUN) and 468 tests. An earlier commit was also cloned and run on Windows with Node 22.19 and on Ubuntu 22.04 (WSL) with Node 22.23; those were not repeated at the final commit, so they are NOT VERIFIED there. macOS is NOT VERIFIED. On PowerShell, `$env:SAMPLE_MODE="true"` does the same as `--sample`.
 
 ## The problem
 
