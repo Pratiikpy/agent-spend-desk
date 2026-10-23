@@ -40,3 +40,13 @@ Every metric, for every arm, whatever it shows: exact and close by category and 
 ## Limits, stated now
 
 One model, one constructed ledger, one run per question and arm (k = 1), so no reliability over repeated runs is claimed and the pass^k check stays NOT RUN. Sixty questions give wide intervals; a difference of a few questions is not a finding. The questions and the Desk's tools were built by the same people, so the Desk's tools cover the lookup, multi-hop and numeric templates by design; the unanswerable, counterfactual and adversarial categories are where it is not tailored. The scoring rules are ours.
+
+## Addendum, written after the first dev run and before any held-out question was run
+
+The first run on the 40 dev questions (`results-dev-run-1.jsonl`) gave, exact: A0 8 of 40, A1 31 of 40, A2 (the Desk) 20 of 40. Predictions 1 to 3 failed on the dev split and prediction 4 held. The Desk lost to the tool-using agent for three reasons visible in the answers:
+
+1. It stated the ingredients but never the derived figure (a share, an average per day, a percentage of a spend, a count of days above a figure), because its Explainer may only restate figures a claim carries and no step computed them.
+2. On questions the ledger cannot answer (invoices, headcount, the code in a session, a model never used) the Planner had no way to decline and mapped them to the nearest spend step; in one case the Explainer then said moving to a model never used "would have saved" the whole spend, a sentence whose figure is in a claim and whose meaning is not.
+3. Two runs ended with the model unavailable and are not counted.
+
+What changed in the Desk, using only the dev questions: four typed steps worked out by code (`share`, `per_day`, `percent_of`, `days_above`) and a `cannot_answer` tool for the Planner with a list of what the ledger cannot hold. A0 and A1 are unchanged. The Desk's dev run is repeated (`results.jsonl`) and reported beside the first. The 20 held-out questions have not been run and the Desk and the baselines are frozen from this commit. Whatever the held-out run shows is published.

@@ -1,0 +1,16 @@
+{
+  "key": "1fff1282bf206508e8ff2a82da53ebc4",
+  "recordedAt": "2026-10-23T03:09:50.735Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "The ledger does not show a doubling. Spend was $1,034.26 from 2026-09-11 to 2026-09-18 and $868.16 from 2026-09-19 to 2026-09-26—a decrease of $166.10. No model, tool-version, or plan-setting changes were recorded between 2026-09-09 and 2026-09-19, so the ledger cannot identify a cause for any increase.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 1635,
+      "outputTokens": 138,
+      "reasoningTokens": 0
+    }
+  }
+}

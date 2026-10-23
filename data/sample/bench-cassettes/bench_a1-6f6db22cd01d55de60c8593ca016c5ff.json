@@ -1,0 +1,27 @@
+{
+  "key": "6f6db22cd01d55de60c8593ca016c5ff",
+  "recordedAt": "2026-10-23T02:44:41.504Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "",
+    "toolCalls": [
+      {
+        "id": "call-5e9812ab-4610-4987-aa0f-c546f5245f26",
+        "name": "spend",
+        "arguments": {
+          "from": "2026-09-29",
+          "to": "2026-10-14",
+          "group": "none",
+          "model": "claude-sonnet-5-5"
+        }
+      }
+    ],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 1165,
+      "outputTokens": 81,
+      "reasoningTokens": 0
+    }
+  }
+}

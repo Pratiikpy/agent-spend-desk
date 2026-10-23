@@ -1,0 +1,16 @@
+{
+  "key": "4af1333b271a71598fdc8743f6f106b1",
+  "recordedAt": "2026-10-23T03:10:56.054Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "$2426.85 ÷ 28 days = $86.67 per day",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 1293,
+      "outputTokens": 24,
+      "reasoningTokens": 0
+    }
+  }
+}

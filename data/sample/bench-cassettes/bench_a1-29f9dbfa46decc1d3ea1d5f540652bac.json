@@ -1,0 +1,16 @@
+{
+  "key": "29f9dbfa46decc1d3ea1d5f540652bac",
+  "recordedAt": "2026-10-23T03:11:37.918Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "The ledger does not show spend tripling. Spend was $1,135.23 from 2026-09-30 to 2026-10-08 and $742.31 from 2026-10-09 to 2026-10-17—a decrease of $392.92. The ledger cannot explain a tripling because it did not occur.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 1778,
+      "outputTokens": 103,
+      "reasoningTokens": 0
+    }
+  }
+}

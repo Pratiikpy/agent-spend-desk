@@ -22,8 +22,13 @@ const changesBefore = object({ id: stepId, op: literal("changes_before"), date: 
 const rangeDigest = object({ id: stepId, op: literal("range_digest"), from: day, to: day });
 const recall = object({ id: stepId, op: literal("recall"), query: string({ minLength: 1, maxLength: 200 }) });
 const compare = object({ id: stepId, op: literal("compare"), a: stepId, b: stepId });
+/** A figure derived by code from earlier spend steps, so a model never has to do the arithmetic itself. */
+const share = object({ id: stepId, op: literal("share"), part: stepId, whole: stepId });
+const perDay = object({ id: stepId, op: literal("per_day"), of: stepId });
+const percentOf = object({ id: stepId, op: literal("percent_of"), of: stepId, percent: integer({ min: 1, max: 100 }) });
+const daysAbove = object({ id: stepId, op: literal("days_above"), from: day, to: day, usd: integer({ min: 1, max: 1_000_000 }) });
 
-const step = variants("op", { spend, top_sessions: topSessions, landing, changes_before: changesBefore, range_digest: rangeDigest, recall, compare });
+const step = variants("op", { spend, top_sessions: topSessions, landing, changes_before: changesBefore, range_digest: rangeDigest, recall, compare, share, per_day: perDay, percent_of: percentOf, days_above: daysAbove });
 
 export type Step = Infer<typeof step>;
 export type StepOp = Step["op"];
@@ -32,7 +37,7 @@ function check(program: { steps: Step[] }): string | null {
   const seen = new Map<string, Step>();
   for (const s of program.steps) {
     if (seen.has(s.id)) return `step id ${s.id} is used twice`;
-    if (s.op === "spend" || s.op === "top_sessions" || s.op === "landing" || s.op === "range_digest") {
+    if (s.op === "spend" || s.op === "top_sessions" || s.op === "landing" || s.op === "range_digest" || s.op === "days_above") {
       if (s.from > s.to) return `step ${s.id}: from is after to`;
       if (daysBetween(s.from, s.to) + 1 > MAX_SPAN_DAYS) return `step ${s.id}: the range is longer than ${MAX_SPAN_DAYS} days`;
     }
@@ -43,6 +48,19 @@ function check(program: { steps: Step[] }): string | null {
         if (target.op !== "spend" || target.group !== "none") return `step ${s.id}: ${ref} must be a spend step with group none`;
       }
       if (s.a === s.b) return `step ${s.id}: compares a step with itself`;
+    }
+    if (s.op === "share") {
+      for (const ref of [s.part, s.whole]) {
+        const target = seen.get(ref);
+        if (!target) return `step ${s.id}: ${ref} is not an earlier step`;
+        if (target.op !== "spend" || target.group !== "none") return `step ${s.id}: ${ref} must be a spend step with group none`;
+      }
+      if (s.part === s.whole) return `step ${s.id}: takes a share of a step in itself`;
+    }
+    if (s.op === "per_day" || s.op === "percent_of") {
+      const target = seen.get(s.of);
+      if (!target) return `step ${s.id}: ${s.of} is not an earlier step`;
+      if (target.op !== "spend" || target.group !== "none") return `step ${s.id}: ${s.of} must be a spend step with group none`;
     }
     seen.set(s.id, s);
   }

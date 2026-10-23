@@ -172,6 +172,61 @@ describe("the model planner", () => {
   });
 });
 
+describe("figures derived by code, and the way out when the ledger cannot hold the answer", () => {
+  const micros = (from: string, to: string, model?: string): number =>
+    (db.prepare(`SELECT COALESCE(SUM(c.total_micros), 0) AS s FROM model_call m JOIN cost_event c ON c.call_id = m.call_id WHERE c.class = 'estimated' AND m.ts >= ? AND m.ts < ?${model ? " AND m.model = ?" : ""}`).get(...(model ? [from, `${to}~`, model] : [from, `${to}~`])) as { s: number }).s;
+  const usdText = (m: number): string => (Math.round(m / 10_000) / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const topModel = (): string => (db.prepare("SELECT m.model AS k FROM model_call m JOIN cost_event c ON c.call_id = m.call_id WHERE m.model NOT LIKE '<%' GROUP BY m.model ORDER BY SUM(c.total_micros) DESC").get() as { k: string }).k;
+
+  it("states a share as a percentage worked out by code, from two spend steps", async () => {
+    const model = topModel();
+    const program = { steps: [{ id: "a", op: "spend", from: first, to: last, group: "none", model }, { id: "b", op: "spend", from: first, to: last, group: "none" }, { id: "c", op: "share", part: "a", whole: "b" }] };
+    const r = await run("What share was on the top model?", { port: new Scripted({ ask_planner: plan(program) }) });
+    const want = ((100 * micros(first, last, model)) / micros(first, last)).toFixed(1);
+    expect(r.steps.find((x) => x.id === "c")?.claims[0]?.text).toBe(`The part was ${want}% of the whole.`);
+  });
+
+  it("works out an average per day, a percentage of a spend and a count of days above a figure", async () => {
+    const days = (Date.parse(`${last}T00:00:00Z`) - Date.parse(`${first}T00:00:00Z`)) / 86_400_000 + 1;
+    const total = micros(first, last);
+    const program = {
+      steps: [
+        { id: "a", op: "spend", from: first, to: last, group: "none" },
+        { id: "b", op: "per_day", of: "a" },
+        { id: "c", op: "percent_of", of: "a", percent: 15 },
+        { id: "d", op: "days_above", from: first, to: last, usd: 100 },
+      ],
+    };
+    const r = await run("what-ifs", { port: new Scripted({ ask_planner: plan(program) }) });
+    expect(r.steps.find((x) => x.id === "b")?.claims[0]?.text).toContain(`$${usdText(total / days)}`);
+    expect(r.steps.find((x) => x.id === "c")?.claims.map((c) => c.text).join(" ")).toContain(`$${usdText(total * 0.15)}`);
+    const above = (db.prepare("SELECT COUNT(*) AS n FROM (SELECT substr(m.ts, 1, 10) AS d, SUM(c.total_micros) AS s FROM model_call m JOIN cost_event c ON c.call_id = m.call_id WHERE c.class = 'estimated' GROUP BY d) WHERE s > 100000000").get() as { n: number }).n;
+    expect(r.steps.find((x) => x.id === "d")?.claims[0]?.text).toContain(`threshold was ${above}.`);
+  });
+
+  it("refuses a derived step that points at a step that is not an earlier spend step with no grouping", () => {
+    const bad = (steps: unknown[]) => parseProgram({ steps }).ok;
+    expect(bad([{ id: "a", op: "per_day", of: "zz" }])).toBe(false);
+    expect(bad([{ id: "a", op: "spend", from: "2026-10-01", to: "2026-10-02", group: "day" }, { id: "b", op: "per_day", of: "a" }])).toBe(false);
+    expect(bad([{ id: "a", op: "spend", from: "2026-10-01", to: "2026-10-02", group: "none" }, { id: "b", op: "share", part: "a", whole: "a" }])).toBe(false);
+    expect(bad([{ id: "a", op: "spend", from: "2026-10-01", to: "2026-10-02", group: "none" }, { id: "b", op: "percent_of", of: "a", percent: 0 }])).toBe(false);
+    expect(bad([{ id: "a", op: "spend", from: "2026-10-01", to: "2026-10-02", group: "none" }, { id: "b", op: "percent_of", of: "a", percent: 20 }])).toBe(true);
+  });
+
+  it("lets the planner say the ledger cannot hold the answer, and answers nothing else", async () => {
+    const port = new Scripted({ ask_planner: () => ({ toolCalls: [{ id: "t1", name: "cannot_answer", arguments: { reason: "The ledger holds no invoices, only logged tokens priced at list." } }] }) });
+    const r = await run("What was the provider's invoice total?", { port });
+    expect(r).toMatchObject({ status: "unknowable", planner: "model", explainer: "none", steps: [], sentences: [] });
+    expect(r.note).toBe("The ledger holds no invoices, only logged tokens priced at list.");
+  });
+
+  it("does not let a cannot_answer reply cancel a real program in the same reply", async () => {
+    const port = new Scripted({ ask_planner: () => ({ toolCalls: [{ id: "t1", name: "cannot_answer", arguments: { reason: "no" } }, { id: "t2", name: "plan_answer", arguments: { steps: [{ id: "s1", op: "landing", from: first, to: last }] } }] }) });
+    const r = await run("How much landed?", { port });
+    expect(r.status).toBe("answered");
+  });
+});
+
 describe("the Auditor loop on the answer", () => {
   it("rejects a sentence with a number that is not in a claim, then accepts the revision", async () => {
     let call = 0;

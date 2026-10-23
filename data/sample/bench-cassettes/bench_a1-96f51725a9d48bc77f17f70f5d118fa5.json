@@ -1,12 +1,12 @@
 {
   "key": "96f51725a9d48bc77f17f70f5d118fa5",
-  "recordedAt": "2026-10-23T00:49:03.048Z",
+  "recordedAt": "2026-10-23T01:25:12.995Z",
   "role": "bench_a1",
   "response": {
     "content": "",
     "toolCalls": [
       {
-        "id": "call-1836629d-d91c-40c7-8c6e-f8b725311a73",
+        "id": "call-5397e758-cbcb-4b99-96bf-a759667fedcd",
         "name": "spend",
         "arguments": {
           "from": "2026-10-16",

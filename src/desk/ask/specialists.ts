@@ -76,6 +76,10 @@ const SPECIALIST: Record<StepOp, Specialist> = {
   top_sessions: "accountant",
   landing: "accountant",
   compare: "accountant",
+  share: "accountant",
+  per_day: "accountant",
+  percent_of: "accountant",
+  days_above: "accountant",
   changes_before: "historian",
   recall: "memory",
   range_digest: "range_reader",
@@ -86,6 +90,10 @@ const ENGINE_OF: Record<StepOp, EngineName | null> = {
   top_sessions: null,
   landing: null,
   compare: null,
+  share: null,
+  per_day: null,
+  percent_of: null,
+  days_above: null,
   changes_before: "world_model",
   recall: "hmem",
   range_digest: "markovian",
@@ -142,6 +150,14 @@ async function execute(step: Step, ctx: RunContext): Promise<Outcome> {
       return landing(step, ctx);
     case "compare":
       return compare(step, ctx);
+    case "share":
+      return shareOf(step, ctx);
+    case "per_day":
+      return perDay(step, ctx);
+    case "percent_of":
+      return percentOf(step, ctx);
+    case "days_above":
+      return daysAbove(step, ctx);
     case "changes_before":
       return changesBefore(step, ctx);
     case "range_digest":
@@ -347,6 +363,64 @@ function compare(step: Extract<Step, { op: "compare" }>, ctx: RunContext): Outco
     meta.push(num(pct(p), "computed"));
   }
   return { data, rowCount: 1, claims, meta };
+}
+
+/** The total of an earlier spend step, or null when that step has nothing to give. */
+function spendOf(ctx: RunContext, id: string): { micros: number; from: string; to: string } | null {
+  const r = ctx.results.get(id);
+  const d = r?.data as { totalMicros?: number; from?: string; to?: string } | null | undefined;
+  if (!r || r.unknowable || r.error || !d || typeof d.totalMicros !== "number" || typeof d.from !== "string" || typeof d.to !== "string") return null;
+  return { micros: d.totalMicros, from: d.from, to: d.to };
+}
+
+function notDerivable(what: string): Outcome {
+  const r = say`That figure cannot be worked out because the step it rests on has no priced calls.`;
+  return { data: { op: what, derivable: false }, rowCount: 0, claims: [r], meta: [fact], unknowable: r.text };
+}
+
+function shareOf(step: Extract<Step, { op: "share" }>, ctx: RunContext): Outcome {
+  const part = spendOf(ctx, step.part);
+  const whole = spendOf(ctx, step.whole);
+  if (!part || !whole || whole.micros <= 0) return notDerivable("share");
+  const p = (100 * part.micros) / whole.micros;
+  const data: Json = { part: step.part, whole: step.whole, partMicros: part.micros, wholeMicros: whole.micros, sharePct: Math.round(p * 1000) / 1000 };
+  const r = say`The part was ${pct(p)} of the whole.`;
+  return { data, rowCount: 1, claims: [r], meta: [num(pct(p), "computed")] };
+}
+
+function perDay(step: Extract<Step, { op: "per_day" }>, ctx: RunContext): Outcome {
+  const s = spendOf(ctx, step.of);
+  if (!s) return notDerivable("per_day");
+  const days = daysBetween(s.from, s.to) + 1;
+  const avg = Math.round(s.micros / days);
+  const data: Json = { of: step.of, totalMicros: s.micros, days, averageMicros: avg };
+  const r = say`The average spend per day, counting every day in the range, was ${usd(avg)}, an estimate from logged tokens.`;
+  return { data, rowCount: 1, claims: [r], meta: [num(usd(avg), "estimated")] };
+}
+
+function percentOf(step: Extract<Step, { op: "percent_of" }>, ctx: RunContext): Outcome {
+  const s = spendOf(ctx, step.of);
+  if (!s) return notDerivable("percent_of");
+  const result = Math.round((s.micros * step.percent) / 100);
+  const data: Json = { of: step.of, totalMicros: s.micros, percent: step.percent, resultMicros: result };
+  const claims = [say`The percentage asked about was ${pct(step.percent, 0)}.`, say`That percentage of the spend comes to ${usd(result)}, an estimate from logged tokens.`];
+  return { data, rowCount: 1, claims, meta: [num(pct(step.percent, 0), "computed"), num(usd(result), "estimated")] };
+}
+
+function daysAbove(step: Extract<Step, { op: "days_above" }>, ctx: RunContext): Outcome {
+  const { since, until } = rangeBounds(step.from, step.to);
+  const rows = ctx.db
+    .prepare(
+      `SELECT substr(m.ts, 1, 10) AS d, SUM(c.total_micros) AS s FROM model_call m JOIN cost_event c ON c.call_id = m.call_id
+       WHERE c.class = 'estimated' AND m.ts >= ? AND m.ts < ? GROUP BY d`,
+    )
+    .all(since, until) as unknown as { d: string; s: number }[];
+  if (rows.length === 0) return emptyRange(ctx, step.from, step.to, "priced model calls");
+  const threshold = step.usd * 1_000_000;
+  const n = rows.filter((r) => r.s > threshold).length;
+  const data: Json = { from: step.from, to: step.to, thresholdMicros: threshold, daysWithSpend: rows.length, daysAbove: n };
+  const claims = [say`The number of days with spend above the threshold was ${count(n)}.`, say`The threshold was ${usd(threshold)}.`];
+  return { data, rowCount: rows.length, claims, meta: [num(count(n), "computed"), num(usd(threshold), "computed")] };
 }
 
 /* ------------------------------------------------------------------ historian (World Model) */
