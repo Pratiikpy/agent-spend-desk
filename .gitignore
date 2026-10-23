@@ -59,3 +59,4 @@ data/desk/
 
 # Sponsor-provided documents, local reference only (decision D-004)
 meterless/
+!docs/verification/**/*.jsonl

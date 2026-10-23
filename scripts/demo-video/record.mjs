@@ -41,7 +41,7 @@ const beats = {};
   }
 }
 const canaryText = run(["canary", "--sample"]).replace(/\n+$/, "").split("\n");
-const benchOut = existsSync(join(repo, "docs/verification/benchmark/results.jsonl")) ? run(["bench", "report", "--sample"]).replace(/\n+$/, "").split("\n") : null;
+const benchOut = existsSync(join(repo, "docs/verification/benchmark/set-b/results.jsonl")) ? run(["bench", "report", "--sample", "--set", "B"]).replace(/\n+$/, "").split("\n") : null;
 
 // 2. Static files for the player and a real UI server.
 const staticServer = createServer((req, res) => {
@@ -100,59 +100,168 @@ async function uiScene(hash, captions, hold, act) {
 
 const startedAt = Date.now();
 const scenes = [];
-const term = (spec) => scenes.push(() => player("play", spec));
+
+// Captions are timed from their length, so each one stays up long enough to be read (about 2.7 words a second, plus a second).
+const dur = (text) => Math.max(3.4, text.trim().split(/\s+/).length / 2.7 + 1.0);
+const timed = (texts) => {
+  let t = 0;
+  const caps = texts.map((text) => { const c = { t: Number(t.toFixed(2)), text }; t += dur(text); return c; });
+  return { caps, total: t };
+};
+
+const term = (spec) => {
+  const { caps, total } = timed(spec.captions);
+  const printed = spec.command.length / 38 + 0.35 + (spec.lines.length * (spec.lineMs ?? 70)) / 1000;
+  scenes.push(() => player("play", { ...spec, captions: caps, hold: Math.max(2, total - printed + 0.6) }));
+};
 const card = (spec) => scenes.push(() => player("titleCard", spec));
+const sponsors = (spec) => {
+  const { caps, total } = timed(spec.captions);
+  scenes.push(() => player("sponsors", { ...spec, captions: caps, hold: total + 0.6 }));
+};
+const uiShot = (hash, texts, act) => {
+  const { caps, total } = timed(texts);
+  scenes.push(() => uiScene(hash, caps, total + 0.6, act));
+};
+const scrollToSection = (label) => page.evaluate((l) => {
+  const el = [...document.querySelectorAll(".sec")].find((e) => e.innerText.trim().toLowerCase().startsWith(l));
+  if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 120, behavior: "smooth" });
+}, label);
 
-card({ h1: "Every dollar your agents spend, tied to work that landed.", lines: ["desk. is a local desk for the person who pays for AI coding agents: it explains the limit, checks the agent daily, tests a spend policy on a month it never saw, and signs what it concludes.", "Organisational data through Zetaris. History, memory and long-range engines from Meterless. Language roles on NVIDIA Nemotron. Built in Cursor and Claude Code.", "Open Agent Hackathon 2026 · Track 3, Reasoning Architecture"], small: true, hold: 8, caption: "Constructed scenario. Every figure on screen is computed from it by the same code that reads your logs." });
-
-term({ beat: "1/8", title: "Where did my limit go?", command: "npm run desk -- --sample", lines: beats["1/8"].slice(1), keys: ["Sub-agents", "could not know"], lineMs: 55, hold: 17, captions: [{ t: 0, text: "Two hours in, the limit appears and I do not know why." }, { t: 6, text: "The card splits one heavy window by cause. Sub-agents are 59% of it." }, { t: 12, text: "It ranks the fixes, and says what it could not know." }] });
-
-term({ beat: "2/8", title: "The bill, through Zetaris", command: "npm run desk -- silos --sample", lines: beats["2/8"].filter((l) => !l.startsWith("  {") && l.trim() !== "trace"), keys: ["Bill classes", "CI facts"], lineMs: 90, hold: 17, captions: [{ t: 0, text: "The bill is not in the logs: invoices in a bucket, CI in Postgres, a roster behind a service." }, { t: 6, text: "One Zetaris statement joins the three. Invoices sit 1.2% under my list-price estimate." }, { t: 12, text: "And 60 landed sessions merged although the checks were red." }] });
-
-scenes.push(async () => {
-  await uiScene("/canary", [
-    { t: 0, text: "The canary: one real run of a 52-task pack, a day, on each arm. Constructed: the primary arm's model was switched on day 15." },
-    { t: 14, text: "The call comes with its interval, a flat control arm, and what it cannot say." },
-  ], 30, async (tick) => {
-    const t0 = Date.now();
-    while (Date.now() - t0 < 9000) { await tick(); await sleep(250); }
-    await page.evaluate(() => window.scrollTo({ top: 640, behavior: "smooth" }));
-  });
+card({
+  h1: "Every dollar your agents spend, tied to work that landed.",
+  lines: [
+    "desk. is a local desk for the person who pays for AI coding agents: it explains the limit, checks the agent daily, tests a spend policy on a month it never saw, and signs what it concludes.",
+    "Organisational data through Zetaris. Memory and history from Meterless engines. Every language role on NVIDIA Nemotron. Cursor is the required IDE.",
+    "Open Agent Hackathon 2026 · Track 3, Reasoning Architecture",
+  ],
+  small: true,
+  hold: 9,
+  caption: "A constructed scenario. Every figure on screen comes from it, through the same code that reads your own logs.",
 });
 
-term({ beat: "3/8", title: "The canary verdict", command: "npm run desk -- canary --sample", lines: canaryText, keys: ["Regressed", "regressed", "control arm", "consistent with"], lineMs: 80, hold: 13, captions: [{ t: 0, text: "The statistic calls a regression only when every condition holds in two consecutive windows." }, { t: 7, text: "Consistent with a switch of the served model; never claimed as the cause." }] });
-
-term({ beat: "4/8", title: "Propose, check, attack, then replay", command: "npm run desk -- propose --sample --dossier", lines: beats["4/8"], keys: ["HELD OUT", "narrows only", "attacker", "drafter"], lineMs: 75, hold: 19, captions: [{ t: 0, text: "Nemotron drafts rules from September. Code checks they only narrow the policy, over every cell." }, { t: 9, text: "The Attacker looks for requests that step around them." }, { t: 17, text: "Then the policy meets October, a month it never saw. Landed work it would block is the headline." }] });
-
-scenes.push(async () => {
-  await uiScene("/ask", [{ t: 0, text: "I ask a question. The Planner proposes a typed program, code runs it read-only, the Auditor checks every figure." }, { t: 18, text: "Switch the History engine off, ask again: the answer changes. That is the proof it does something." }], 42, async (tick) => {
-    await page.fill("input[type=text], input:not([type])", "What changed before 2026-10-15?");
-    await tick();
-    await page.keyboard.press("Enter");
-    await sleep(5000);
-    await toAnswer();
-    await sleep(5000);
-    await tick();
-    await page.evaluate(() => window.scrollTo({ top: 0, behavior: "smooth" }));
-    await sleep(1200);
-    const boxes = page.locator("input[type=checkbox]");
-    if ((await boxes.count()) > 0) await boxes.first().check();
-    await page.keyboard.press("Enter");
-    await page.locator("input[type=text], input:not([type])").first().press("Enter");
-    await sleep(5000);
-    await toAnswer();
-    await sleep(3000);
-    await tick();
-  });
+term({
+  beat: "1/8", title: "Where did my limit go?", command: "npm run desk -- --sample", lines: beats["1/8"].slice(1), keys: ["Sub-agents", "could not know"], lineMs: 55,
+  captions: [
+    "Two hours in, the limit appears and I do not know why.",
+    "desk. splits the heaviest window by cause and ranks the fixes worth making.",
+    "It also says what it could not know. Unlinked work is unknowable, not waste.",
+  ],
 });
 
-if (benchOut) term({ beat: "5/8", title: "Same model, three ways", command: "npm run desk -- bench report --sample", lines: benchOut, keys: ["exact \\(all", "correct abstention", "held-out"], lineMs: 70, hold: 20, captions: [{ t: 0, text: "60 pre-registered questions, computed answers, the same Nemotron model in three arms." }, { t: 9, text: "A single call, a tool-using agent, and the Desk's architecture. Every metric is published, including where the Desk loses." }, { t: 17, text: "Level with the tool agent, not better: four questions in sixty is noise." }] });
+term({
+  beat: "2/8", title: "The bill, through Zetaris", command: "npm run desk -- silos --sample", lines: beats["2/8"].filter((l) => !l.startsWith("  {") && l.trim() !== "trace"), keys: ["Bill classes", "CI facts"], lineMs: 90,
+  captions: [
+    "The bill is not in the logs: invoices in a bucket, CI in Postgres, a roster behind a service.",
+    "One Zetaris statement joins the three. Invoices land 1.2% under my list-price estimate.",
+    "And 60 landed sessions merged although the checks were red.",
+  ],
+});
 
-term({ beat: "6/8", title: "Approve, then verify offline", command: "npm run desk -- approve <request> <digest>", lines: beats["6/8"], keys: ["RESULT", "row_hash_mismatch"], lineMs: 70, hold: 15, captions: [{ t: 0, text: "To apply it I echo the action digest. A signed dossier is written." }, { t: 8, text: "Anyone can verify it on plain Node with the network off. Change one byte and the verifier names the row." }] });
+uiShot("/canary", [
+  "The canary runs a 52-task pack once a day on each arm. Here the primary arm's model was switched on day 15.",
+  "The call comes with its interval, a flat control arm, and what it cannot say.",
+], async (tick) => {
+  const t1 = Date.now();
+  while (Date.now() - t1 < 8000) { await tick(); await sleep(250); }
+  await page.evaluate(() => window.scrollTo({ top: 640, behavior: "smooth" }));
+});
 
-term({ beat: "7/8", title: "The gate blocks a call", command: "claude  # PreToolUse hook: desk gate", lines: beats["7/8"].slice(0, 6), keys: ["exit code", "default deny"], lineMs: 120, hold: 12, captions: [{ t: 0, text: "The same hook Claude Code calls blocked a real Bash call under a policy that permits nothing." }, { t: 6, text: "If the gate is down, it blocks. Recorded runs against the real Claude Code are in docs/verification." }] });
+term({
+  beat: "4/8", title: "Propose, check, attack, then replay", command: "npm run desk -- propose --sample --dossier", lines: beats["4/8"], keys: ["HELD OUT", "narrows only", "attacker", "drafter"], lineMs: 75,
+  captions: [
+    "Nemotron drafts a cap policy. Code checks that it only narrows the one in force.",
+    "An Attacker looks for requests that step around it. Then it meets a month it never saw.",
+    "Five of 333 landed sessions would have been blocked. That is the headline, not the savings.",
+  ],
+});
 
-card({ h1: "Run it on your own logs.", lines: ["npm run desk", "Under three minutes. Entirely local. Your autopsy, your ranked fixes, and what it could not know.", "No logs? npm run desk -- --sample"], small: true, hold: 9, caption: "A new regression cannot be called before day 28, and the card says so." });
+uiShot("/ask", [
+  "I ask a question. The Planner writes a typed program, code runs it read-only, the Auditor checks every figure.",
+  "Switch the History engine off and ask again: the answer changes. That is proof it does something.",
+], async (tick) => {
+  await page.fill("input[type=text], input:not([type])", "What changed before 2026-10-15?");
+  await tick();
+  await page.keyboard.press("Enter");
+  await sleep(5000);
+  await toAnswer();
+  await sleep(5000);
+  await tick();
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: "smooth" }));
+  await sleep(1200);
+  const boxes = page.locator("input[type=checkbox]");
+  if ((await boxes.count()) > 0) await boxes.first().check();
+  await page.locator("input[type=text], input:not([type])").first().press("Enter");
+  await sleep(5000);
+  await toAnswer();
+  await sleep(3000);
+  await tick();
+});
+
+if (benchOut) {
+  term({
+    beat: "5/8", title: "Same model, three ways", command: "npm run desk -- bench report --sample --set B", lines: benchOut, keys: ["all  ", "exact \\(all", "pass\\^3", "correct abstention"], lineMs: 70,
+    captions: [
+      "Sixty questions it never saw, pre-registered: one call, a tool agent, and the Desk, all on the same Nemotron model.",
+      "The Desk answered 49 exactly. The tool agent, 41. One call, 12. Eight questions in sixty is at the edge of what that shows.",
+      "A fix found by reading the misses lifts the Desk to 54. It is shown as post hoc, beside the first figure.",
+    ],
+  });
+}
+
+uiShot("/evidence", [
+  "The Desk also scores itself. Its 90% one-month range held the real month only 73% of the time.",
+  "That is printed beside the range. So are link confidence, the regret ledger and what learning from mistakes moved.",
+  "Two of sixty questions. The interval touches zero, so no improvement is claimed.",
+], async (tick) => {
+  await sleep(2500);
+  await scrollToSection("calibration");
+  await sleep(6500);
+  await scrollToSection("decisions");
+  await sleep(5000);
+  await scrollToSection("learning");
+});
+
+term({
+  beat: "6/8", title: "Approve, then verify offline", command: "npm run desk -- approve <request> <digest>", lines: beats["6/8"], keys: ["RESULT", "row_hash_mismatch"], lineMs: 70,
+  captions: [
+    "To apply the policy I echo the action digest. A dossier is signed with the rows its figures come from.",
+    "A stranger verifies it on plain Node with the network off. Change one byte and it names the row.",
+  ],
+});
+
+term({
+  beat: "7/8", title: "The gate blocks a call", command: "claude  # PreToolUse hook: desk gate", lines: beats["7/8"].slice(0, 6), keys: ["exit code", "default deny"], lineMs: 120,
+  captions: [
+    "The same hook Claude Code calls blocked a real Bash call under a policy that permits nothing.",
+    "It fails closed: with no matching permit, the answer is no.",
+  ],
+});
+
+sponsors({
+  title: "Where each sponsor sits",
+  flow: ["agent logs", "Zetaris", "ledger + Meterless engines", "Nemotron agents", "gate + signed dossier"],
+  cards: [
+    { k: "Data layer", h: "Zetaris", p: "One statement over a file silo, a SQL silo and a REST silo: invoices, CI, roster.", off: "Switched off: billed spend falls from $6,123 to $0." },
+    { k: "Memory and history", h: "Meterless", p: "World Model, H-MEM and Markovian engines, run in our process. Conformance 8/8, 13/13, 8/8.", off: "Switched off: \"what changed before 15 October?\" becomes unknowable." },
+    { k: "Language roles", h: "NVIDIA Nemotron", p: "Drafter, Attacker, Planner, Explainer, the canary and all three benchmark arms.", off: "Switched off: a rule brain answers and the trace says so." },
+    { k: "Development", h: "Cursor", p: "The required IDE. Its session log is in the repository, and nothing is claimed beyond what it records.", soft: true },
+  ],
+  captions: [
+    "Where each sponsor sits. Zetaris is the data layer: three silos, one statement.",
+    "Meterless holds memory and history. Each of its engines changes an answer when it is switched off.",
+    "Nemotron runs every language role, and the same model sits behind all three benchmark arms.",
+    "Cursor is the required IDE. Its log claims only what was done in it.",
+  ],
+});
+
+card({
+  h1: "Run it on your own logs.",
+  lines: ["npm run desk", "Under three minutes. Entirely local. Your autopsy, your ranked fixes, and what it could not know.", "No logs? npm run desk -- --sample"],
+  small: true,
+  hold: 9,
+  caption: "Everything here is in the repository: the code, the recordings, the pre-registration, and what failed.",
+});
 
 const firstScene = Date.now() - t0;
 for (const s of scenes) await s();
