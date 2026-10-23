@@ -1,0 +1,24 @@
+{
+  "key": "4553de33e0262befd950fbc7dae60d66",
+  "recordedAt": "2026-10-23T06:51:18.410Z",
+  "role": "ask_planner",
+  "response": {
+    "content": "",
+    "toolCalls": [
+      {
+        "id": "call-f0033146-3d5d-46f9-9d61-6799fb6886cb",
+        "name": "cannot_answer",
+        "arguments": {
+          "reason": "The ledger records tokens, spend, sessions, models, landing, and changes only; it does not contain engineers or any attribution of spend to people."
+        }
+      }
+    ],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 2385,
+      "outputTokens": 54,
+      "reasoningTokens": 0
+    }
+  }
+}

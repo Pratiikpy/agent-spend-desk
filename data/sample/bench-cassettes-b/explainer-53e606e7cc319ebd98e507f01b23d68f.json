@@ -1,0 +1,16 @@
+{
+  "key": "53e606e7cc319ebd98e507f01b23d68f",
+  "recordedAt": "2026-10-23T13:12:53.652Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Session `sess-00195` in `infra` cost $73.51; its work is not tied to any commit.\", \"cites\": [\"sessions_range.1\"]}, {\"text\": \"Session `sess-00284` in `payments-api` cost $48.15; its work is merged and kept.\", \"cites\": [\"sessions_range.2\"]}, {\"text\": \"Session `sess-00211` in `mobile-client` cost $43.76; its work is merged and kept.\", \"cites\": [\"sessions_range.3\"]}, {\"text\": \"Session `sess-00275` in `data-pipeline` cost $32.97; its work is not tied to any commit.\", \"cites\": [\"sessions_range.4\"]}, {\"text\": \"Session `sess-00258` in `data-pipeline` cost $30.22; its work is merged and kept.\", \"cites\": [\"sessions_range.5\"]}, {\"text\": \"Session `sess-00165` in `data-pipeline` cost $29.59; its work is not tied to any commit.\", \"cites\": [\"sessions_range.6\"]}, {\"text\": \"Session `sess-00160` in `payments-api` cost $28.56; its work is merged and kept.\", \"cites\": [\"sessions_range.7\"]}, {\"text\": \"Session `sess-00163` in `infra` cost $26.73; its work is merged and kept.\", \"cites\": [\"sessions_range.8\"]}, {\"text\": \"Session `sess-00092` in `mobile-client` cost $25.44; its work is merged and kept.\", \"cites\": [\"sessions_range.9\"]}, {\"text\": \"Session `sess-00117` in `infra` cost $22.51; its work is merged and kept.\", \"cites\": [\"sessions_range.10\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 819,
+      "outputTokens": 489,
+      "reasoningTokens": 0
+    }
+  }
+}

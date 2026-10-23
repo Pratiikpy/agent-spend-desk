@@ -1,0 +1,16 @@
+{
+  "key": "a0650c911dca6682879ebcf93e677a75",
+  "recordedAt": "2026-10-23T11:56:05.812Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "The ledger cannot answer this question: it tracks spend and model calls, not session counts or session start dates.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 1275,
+      "outputTokens": 24,
+      "reasoningTokens": 0
+    }
+  }
+}

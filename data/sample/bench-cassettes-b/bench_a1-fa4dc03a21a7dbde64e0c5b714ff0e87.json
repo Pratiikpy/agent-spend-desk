@@ -1,0 +1,16 @@
+{
+  "key": "fa4dc03a21a7dbde64e0c5b714ff0e87",
+  "recordedAt": "2026-10-23T10:26:27.353Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "Spend did not double.\n\n- 2026-09-18 to 2026-10-01: $1,611.52\n- 2026-10-02 to 2026-10-15: $1,485.13\n- Difference: $126.39 lower in the second period\n\nThe ledger shows no doubling and no cause for one. No model, tool-version, or plan-setting changes explain a doubling between those windows.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 1676,
+      "outputTokens": 123,
+      "reasoningTokens": 0
+    }
+  }
+}

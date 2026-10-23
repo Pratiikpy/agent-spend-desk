@@ -1,0 +1,16 @@
+{
+  "key": "b8b61d6f65a7d5532de9426b45699840",
+  "recordedAt": "2026-10-23T10:21:43.018Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Estimated list-price spend between 2026-10-11 and 2026-10-17 was $584.38.\", \"cites\": [\"p1.1\"]}, {\"text\": \"Estimated list-price spend between 2026-10-18 and 2026-10-24 was $538.12.\", \"cites\": [\"p2.1\"]}, {\"text\": \"The second period cost $46.26 less than the first.\", \"cites\": [\"diff.1\"]}, {\"text\": \"The second period was 92.1% of the first.\", \"cites\": [\"diff.2\"]}, {\"text\": \"Session `sess-00799` in `payments-api` cost $26.09; its work is merged.\", \"cites\": [\"top2.1\"]}, {\"text\": \"Session `sess-00786` in `mobile-client` cost $23.23; its work is merged.\", \"cites\": [\"top2.2\"]}, {\"text\": \"Session `sess-00778` in `data-pipeline` cost $22.80; its work is merged.\", \"cites\": [\"top2.3\"]}, {\"text\": \"Session `sess-00841` in `data-pipeline` cost $22.67; its work is not tied to any commit.\", \"cites\": [\"top2.4\"]}, {\"text\": \"Session `sess-00789` in `mobile-client` cost $18.11; its work is merged.\", \"cites\": [\"top2.5\"]}, {\"text\": \"Session `sess-00842` in `web-app` cost $17.43; its work is not tied to any commit.\", \"cites\": [\"top2.6\"]}, {\"text\": \"Session `sess-00848` in `infra` cost $17.05; its work is merged.\", \"cites\": [\"top2.7\"]}, {\"text\": \"Session `sess-00864` in `infra` cost $17.04; its work is merged.\", \"cites\": [\"top2.8\"]}, {\"text\": \"Session `sess-00877` in `data-pipeline` cost $13.50; its work is merged.\", \"cites\": [\"top2.9\"]}, {\"text\": \"Session `sess-00818` in `mobile-client` cost $13.48; its work is committed but not merged.\", \"cites\": [\"top2.10\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 1169,
+      "outputTokens": 626,
+      "reasoningTokens": 0
+    }
+  }
+}

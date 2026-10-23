@@ -1,0 +1,24 @@
+{
+  "key": "c5ea79fb0659e39bf05fa01dd3f53819",
+  "recordedAt": "2026-10-23T10:13:26.793Z",
+  "role": "ask_planner",
+  "response": {
+    "content": "",
+    "toolCalls": [
+      {
+        "id": "call-4482579b-0eb2-487a-8108-2b94d41d6514",
+        "name": "cannot_answer",
+        "arguments": {
+          "reason": "The question asks about a model that was never used, which the ledger cannot provide savings for."
+        }
+      }
+    ],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 2395,
+      "outputTokens": 43,
+      "reasoningTokens": 0
+    }
+  }
+}

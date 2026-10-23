@@ -1,0 +1,16 @@
+{
+  "key": "198f7cbd78c684efc4d8277470958a52",
+  "recordedAt": "2026-10-23T10:50:56.317Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Estimated spend on claude-sonnet-5-5 from 2026-09-01 to 2026-09-30 was $564.38.\", \"cites\": [\"sep_sonnet.1\"]}, {\"text\": \"That covers 11,356 model calls.\", \"cites\": [\"sep_sonnet.2\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 358,
+      "outputTokens": 99,
+      "reasoningTokens": 0
+    }
+  }
+}

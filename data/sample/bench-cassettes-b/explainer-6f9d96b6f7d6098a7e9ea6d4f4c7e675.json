@@ -1,0 +1,16 @@
+{
+  "key": "6f9d96b6f7d6098a7e9ea6d4f4c7e675",
+  "recordedAt": "2026-10-23T09:14:04.674Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Estimated spend on model `claude-sonnet-5-5` between 2026-10-01 and 2026-10-31 was $1,042.51.\", \"cites\": [\"oct_sonnet_spend.1\"]}, {\"text\": \"Model `claude-sonnet-5-5` cost $1,042.51.\", \"cites\": [\"oct_sonnet_spend.3\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 425,
+      "outputTokens": 119,
+      "reasoningTokens": 0
+    }
+  }
+}

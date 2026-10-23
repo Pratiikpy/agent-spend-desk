@@ -1,0 +1,25 @@
+{
+  "key": "f6c28af44afd9c716d815d00f19291fc",
+  "recordedAt": "2026-10-23T11:51:58.702Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "I need the daily breakdown to compute the median. The response only gave five days and an aggregate for everything else. Let me try a range digest for more detail.\n\n",
+    "toolCalls": [
+      {
+        "id": "call-44014148-f8f1-48ea-9f9c-15afaf3df75b",
+        "name": "range_digest",
+        "arguments": {
+          "from": "2026-09-18",
+          "to": "2026-10-01"
+        }
+      }
+    ],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 1417,
+      "outputTokens": 86,
+      "reasoningTokens": 0
+    }
+  }
+}

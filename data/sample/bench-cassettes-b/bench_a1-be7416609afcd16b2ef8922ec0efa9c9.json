@@ -1,0 +1,16 @@
+{
+  "key": "be7416609afcd16b2ef8922ec0efa9c9",
+  "recordedAt": "2026-10-23T11:21:38.548Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "$2,757.30 (estimated list price, not an invoice).",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 1261,
+      "outputTokens": 19,
+      "reasoningTokens": 0
+    }
+  }
+}

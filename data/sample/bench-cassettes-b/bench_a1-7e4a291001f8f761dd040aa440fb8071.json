@@ -1,0 +1,16 @@
+{
+  "key": "7e4a291001f8f761dd040aa440fb8071",
+  "recordedAt": "2026-10-23T13:14:37.540Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "The ledger does not record engineer names or per-engineer spend, so it cannot identify which engineer wasted the most money.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 1663,
+      "outputTokens": 26,
+      "reasoningTokens": 0
+    }
+  }
+}

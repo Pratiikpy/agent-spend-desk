@@ -1,0 +1,16 @@
+{
+  "key": "a845ed32930436de2d152acbc51d460a",
+  "recordedAt": "2026-10-23T14:09:20.679Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Estimated spend on claude-sonnet-5-5 from 2026-09-01 to 2026-10-09 was $748.17.\", \"cites\": [\"sonnet.1\"]}, {\"text\": \"Estimated spend from 2026-09-01 to 2026-10-09 was $4,576.29.\", \"cites\": [\"total.1\"]}, {\"text\": \"The share was 16.3%.\", \"cites\": [\"share.1\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 543,
+      "outputTokens": 144,
+      "reasoningTokens": 0
+    }
+  }
+}

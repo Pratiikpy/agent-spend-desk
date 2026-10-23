@@ -1,0 +1,16 @@
+{
+  "key": "483504823a4011791476af3bc5a14c3b",
+  "recordedAt": "2026-10-23T14:31:19.617Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Estimated list-price spend between 2026-09-18 and 2026-10-01 was $1,611.52.\", \"cites\": [\"first.1\"]}, {\"text\": \"Estimated list-price spend between 2026-10-02 and 2026-10-16 was $1,571.70.\", \"cites\": [\"second.1\"]}, {\"text\": \"The second period cost $39.81 less than the first.\", \"cites\": [\"cmp.1\"]}, {\"text\": \"The second period was 97.5% of the first.\", \"cites\": [\"cmp.2\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 565,
+      "outputTokens": 172,
+      "reasoningTokens": 0
+    }
+  }
+}

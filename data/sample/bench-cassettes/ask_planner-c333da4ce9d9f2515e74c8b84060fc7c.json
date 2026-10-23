@@ -1,0 +1,24 @@
+{
+  "key": "c333da4ce9d9f2515e74c8b84060fc7c",
+  "recordedAt": "2026-10-23T09:42:28.784Z",
+  "role": "ask_planner",
+  "response": {
+    "content": "",
+    "toolCalls": [
+      {
+        "id": "call-3bcbe640-d8f9-469e-8d35-142355d94230",
+        "name": "cannot_answer",
+        "arguments": {
+          "reason": "The ledger only covers September–October 2026 and cannot forecast November 2026 spend."
+        }
+      }
+    ],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 2388,
+      "outputTokens": 47,
+      "reasoningTokens": 0
+    }
+  }
+}

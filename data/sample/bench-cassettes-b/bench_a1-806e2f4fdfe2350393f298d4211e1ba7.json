@@ -1,0 +1,16 @@
+{
+  "key": "806e2f4fdfe2350393f298d4211e1ba7",
+  "recordedAt": "2026-10-23T07:21:21.209Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "The ledger only returns the top five days and an aggregate for the rest; it does not provide every daily amount needed to compute the median. It cannot answer the question.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 1687,
+      "outputTokens": 36,
+      "reasoningTokens": 0
+    }
+  }
+}

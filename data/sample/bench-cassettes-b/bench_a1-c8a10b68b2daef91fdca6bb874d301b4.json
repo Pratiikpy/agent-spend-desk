@@ -1,0 +1,16 @@
+{
+  "key": "c8a10b68b2daef91fdca6bb874d301b4",
+  "recordedAt": "2026-10-23T07:24:17.869Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "The ledger does not record session counts, only model calls and spend. Between 2026-09-05 and 2026-09-21 there were 16,759 model calls, but I cannot tell how many sessions started.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 1275,
+      "outputTokens": 61,
+      "reasoningTokens": 0
+    }
+  }
+}

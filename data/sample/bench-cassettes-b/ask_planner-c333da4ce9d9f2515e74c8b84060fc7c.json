@@ -1,0 +1,24 @@
+{
+  "key": "c333da4ce9d9f2515e74c8b84060fc7c",
+  "recordedAt": "2026-10-23T06:44:46.073Z",
+  "role": "ask_planner",
+  "response": {
+    "content": "",
+    "toolCalls": [
+      {
+        "id": "call-f11c2336-fcb5-46f8-991b-a44f198acf46",
+        "name": "cannot_answer",
+        "arguments": {
+          "reason": "The question asks for a forecast of November 2026 spend, which is outside the ledger's coverage of 2026-09-01 to 2026-10-31."
+        }
+      }
+    ],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 2388,
+      "outputTokens": 71,
+      "reasoningTokens": 0
+    }
+  }
+}

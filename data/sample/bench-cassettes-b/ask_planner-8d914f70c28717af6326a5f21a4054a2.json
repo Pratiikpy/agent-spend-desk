@@ -1,0 +1,38 @@
+{
+  "key": "8d914f70c28717af6326a5f21a4054a2",
+  "recordedAt": "2026-10-23T14:08:23.654Z",
+  "role": "ask_planner",
+  "response": {
+    "content": "",
+    "toolCalls": [
+      {
+        "id": "call-0199e718-1287-4c8d-bc72-8c0d2fe74b37",
+        "name": "plan_answer",
+        "arguments": {
+          "steps": [
+            {
+              "id": "daily",
+              "op": "spend",
+              "from": "2026-09-21",
+              "to": "2026-10-08",
+              "group": "day"
+            },
+            {
+              "id": "median",
+              "op": "percent_of",
+              "of": "daily",
+              "percent": 50
+            }
+          ]
+        }
+      }
+    ],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 2417,
+      "outputTokens": 101,
+      "reasoningTokens": 0
+    }
+  }
+}

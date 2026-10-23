@@ -1,0 +1,16 @@
+{
+  "key": "b568f6de8b1431969517efc46fd55b07",
+  "recordedAt": "2026-10-23T07:08:05.777Z",
+  "role": "bench_a0",
+  "response": {
+    "content": "Spend did not quadruple; it decreased. The period 2026-10-07 to 2026-10-14 totaled $673.25, while 2026-10-15 to 2026-10-22 totaled $540.55, a difference of $132.70. The ledger does not provide a cause for spend changes.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 7667,
+      "outputTokens": 103,
+      "reasoningTokens": 0
+    }
+  }
+}

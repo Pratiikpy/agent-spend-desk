@@ -1,0 +1,16 @@
+{
+  "key": "707062b2d05e281bc654bb31bca41e02",
+  "recordedAt": "2026-10-23T10:23:10.578Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "The ledger does not show a quadrupling. Spend fell from $967.73 (2026-10-07 to 2026-10-14) to $600.95 (2026-10-15 to 2026-10-22), a difference of -$366.78. The model mix shifted from claude-opus-5-heavy to claude-sonnet-5-5-heavy around 2026-10-13, and tool version vsample-2 first appeared on 2026-10-14, but the ledger does not state why spend changed.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 1859,
+      "outputTokens": 160,
+      "reasoningTokens": 0
+    }
+  }
+}

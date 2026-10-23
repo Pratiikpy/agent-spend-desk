@@ -1,0 +1,16 @@
+{
+  "key": "15d8a4b218cf95d9498d7f98d1c26288",
+  "recordedAt": "2026-10-23T10:23:11.158Z",
+  "role": "bench_a0",
+  "response": {
+    "content": "The ledger does not support that claim. Spend from 2026-10-07 to 2026-10-14 was $563.25, while spend from 2026-10-15 to 2026-10-22 was $599.02, an increase of $35.77, not a quadrupling. The ledger does not record causes for spend changes.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 7667,
+      "outputTokens": 105,
+      "reasoningTokens": 0
+    }
+  }
+}

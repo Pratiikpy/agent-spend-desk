@@ -1,0 +1,16 @@
+{
+  "key": "c6e1d675f4f3648b2b6593584eeb2e3e",
+  "recordedAt": "2026-10-23T10:31:00.147Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Estimated spend from 2026-10-20 to 2026-10-28 was $709.12.\", \"cites\": [\"total_spend.1\"]}, {\"text\": \"The average spend per day was $78.79.\", \"cites\": [\"avg_per_day.1\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 395,
+      "outputTokens": 88,
+      "reasoningTokens": 0
+    }
+  }
+}

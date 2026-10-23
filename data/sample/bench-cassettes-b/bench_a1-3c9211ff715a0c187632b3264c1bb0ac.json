@@ -1,0 +1,16 @@
+{
+  "key": "3c9211ff715a0c187632b3264c1bb0ac",
+  "recordedAt": "2026-10-23T11:20:03.707Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "The ledger cannot answer that question; it covers 2026-09-01 to 2026-10-31, not March 2019.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 1260,
+      "outputTokens": 43,
+      "reasoningTokens": 0
+    }
+  }
+}

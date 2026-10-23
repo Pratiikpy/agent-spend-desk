@@ -1,0 +1,24 @@
+{
+  "key": "e450e6f6ac6b365a0266a5f718f459aa",
+  "recordedAt": "2026-10-23T12:43:05.398Z",
+  "role": "ask_planner",
+  "response": {
+    "content": "",
+    "toolCalls": [
+      {
+        "id": "call-5e72b8bf-9760-40cf-acd2-88d1d96762e4",
+        "name": "cannot_answer",
+        "arguments": {
+          "reason": "The ledger cannot answer what-if savings involving a model that was never used, since there is no pricing or spend data for such a model."
+        }
+      }
+    ],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 2395,
+      "outputTokens": 52,
+      "reasoningTokens": 0
+    }
+  }
+}

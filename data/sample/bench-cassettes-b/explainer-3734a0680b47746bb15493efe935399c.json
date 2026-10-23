@@ -1,0 +1,16 @@
+{
+  "key": "3734a0680b47746bb15493efe935399c",
+  "recordedAt": "2026-10-23T10:24:14.101Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Estimated list-price spend between 2026-09-18 and 2026-10-01 was $1,611.52.\", \"cites\": [\"spend_a.1\"]}, {\"text\": \"Estimated list-price spend between 2026-10-02 and 2026-10-15 was $1,485.13.\", \"cites\": [\"spend_b.1\"]}, {\"text\": \"1 changes were recorded between 2026-09-18 and 2026-10-02.\", \"cites\": [\"changes_b.1\"]}, {\"text\": \"Estimated list-price spend between 2026-09-18 and 2026-10-15 was $3,096.65.\", \"cites\": [\"landing_b.1\"]}, {\"text\": \"Spend on sessions whose work counts as landed (merged or kept) was $2,123.65.\", \"cites\": [\"landing_b.2\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 1208,
+      "outputTokens": 258,
+      "reasoningTokens": 0
+    }
+  }
+}

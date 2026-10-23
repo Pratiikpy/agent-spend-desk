@@ -1,0 +1,16 @@
+{
+  "key": "6d31e5511337c638d6a6ef955c67482c",
+  "recordedAt": "2026-10-23T07:03:49.698Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Estimated list-price spend between 2026-10-11 and 2026-10-17 was $584.38.\", \"cites\": [\"spend1.1\"]}, {\"text\": \"Estimated list-price spend between 2026-10-18 and 2026-10-24 was $538.12.\", \"cites\": [\"spend2.1\"]}, {\"text\": \"The second period cost $46.26 less than the first.\", \"cites\": [\"compare.1\"]}, {\"text\": \"The second period was 92.1% of the first.\", \"cites\": [\"compare.2\"]}, {\"text\": \"3 changes were recorded between 2026-10-11 and 2026-10-18.\", \"cites\": [\"changes.1\"]}, {\"text\": \"Model `claude-opus-5` made up 24.0% of calls in the week starting 2026-10-13.\", \"cites\": [\"changes.2\"]}, {\"text\": \"In the week before that, model `claude-opus-5` made up 74.9% of calls.\", \"cites\": [\"changes.3\"]}, {\"text\": \"Model `claude-sonnet-5-5` made up 70.8% of calls in the week starting 2026-10-13.\", \"cites\": [\"changes.4\"]}, {\"text\": \"In the week before that, model `claude-sonnet-5-5` made up 23.2% of calls.\", \"cites\": [\"changes.5\"]}, {\"text\": \"Tool version `vsample-2` first appeared on 2026-10-14.\", \"cites\": [\"changes.6\"]}, {\"text\": \"Model `claude-haiku-5-5` was in use throughout the window and stayed as it was.\", \"cites\": [\"changes.7\"]}, {\"text\": \"Plan setting `tier standard speed standard` was in use throughout the window and stayed as it was.\", \"cites\": [\"changes.8\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 969,
+      "outputTokens": 508,
+      "reasoningTokens": 0
+    }
+  }
+}

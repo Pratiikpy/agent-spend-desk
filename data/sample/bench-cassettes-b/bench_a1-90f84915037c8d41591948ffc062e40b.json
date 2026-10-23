@@ -1,0 +1,16 @@
+{
+  "key": "90f84915037c8d41591948ffc062e40b",
+  "recordedAt": "2026-10-23T11:36:10.710Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "The ledger cannot support the premise: spend did not quadruple from 2026-10-07 to 2026-10-14 to 2026-10-15 to 2026-10-22. Spend was $967.73 in the first period and $600.95 in the second period, a decrease of $366.78.\n\nThe only notable change around the boundary was the first appearance of tool version `vsample-2` on 2026-10-14, but the ledger does not link that change to spend.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 1859,
+      "outputTokens": 145,
+      "reasoningTokens": 0
+    }
+  }
+}

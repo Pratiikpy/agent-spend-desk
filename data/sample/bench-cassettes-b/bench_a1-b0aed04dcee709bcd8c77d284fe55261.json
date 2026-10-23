@@ -1,0 +1,16 @@
+{
+  "key": "b0aed04dcee709bcd8c77d284fe55261",
+  "recordedAt": "2026-10-23T10:59:00.578Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "Week starting Monday 2026-09-21: $868.16.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 1444,
+      "outputTokens": 24,
+      "reasoningTokens": 0
+    }
+  }
+}

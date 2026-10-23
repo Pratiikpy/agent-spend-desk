@@ -1,0 +1,16 @@
+{
+  "key": "7cffc94b4c3a31c87cd45bf0971a6491",
+  "recordedAt": "2026-10-23T07:05:13.036Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "Spend did not quadruple. It fell from $967.73 (2026-10-07 to 2026-10-14) to $600.95 (2026-10-15 to 2026-10-22), a decrease of $366.78. The ledger cannot explain a quadrupling because it did not occur.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 1859,
+      "outputTokens": 99,
+      "reasoningTokens": 0
+    }
+  }
+}

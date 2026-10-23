@@ -1,0 +1,16 @@
+{
+  "key": "a914b6970591d677d7d13acecb32518f",
+  "recordedAt": "2026-10-23T07:07:42.905Z",
+  "role": "bench_a0",
+  "response": {
+    "content": "The ledger does not record causes for spend changes, so it cannot say why spend changed.\n\nPeriod 1 (2026-09-18 to 2026-10-01): $1,000.40\nPeriod 2 (2026-10-02 to 2026-10-15): $1,430.24\nDifference: $429.84",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 7666,
+      "outputTokens": 103,
+      "reasoningTokens": 0
+    }
+  }
+}

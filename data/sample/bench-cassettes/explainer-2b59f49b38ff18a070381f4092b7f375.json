@@ -1,0 +1,16 @@
+{
+  "key": "2b59f49b38ff18a070381f4092b7f375",
+  "recordedAt": "2026-10-23T08:31:39.643Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Estimated list-price spend between 2026-09-16 and 2026-09-26 was $1,259.02.\", \"cites\": [\"spend1.1\"]}, {\"text\": \"Estimated list-price spend between 2026-09-27 and 2026-10-07 was $1,274.28.\", \"cites\": [\"spend2.1\"]}, {\"text\": \"The second period cost $15.27 more than the first.\", \"cites\": [\"compare1.1\"]}, {\"text\": \"The second period was 101.2% of the first.\", \"cites\": [\"compare1.2\"]}, {\"text\": \"No change to models, tool versions or plan settings was recorded between 2026-09-16 and 2026-09-27.\", \"cites\": [\"changes1.1\"]}, {\"text\": \"Estimated list-price spend between 2026-09-16 and 2026-10-07 was $2,533.30.\", \"cites\": [\"landing1.1\"]}, {\"text\": \"Spend on sessions whose work counts as landed (merged or kept) was $1,657.76.\", \"cites\": [\"landing1.2\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 1209,
+      "outputTokens": 326,
+      "reasoningTokens": 0
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "key": "7cbde2ddc8aa8484ed5d8b5cdbcb2f00",
+  "recordedAt": "2026-10-23T08:22:44.117Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Estimated list-price spend between 2026-10-07 and 2026-10-30 was $2,137.11.\", \"cites\": [\"spend_range.1\"]}, {\"text\": \"That covers 28,116 model calls.\", \"cites\": [\"spend_range.2\"]}, {\"text\": \"The percentage asked about was 5%.\", \"cites\": [\"saved.1\"]}, {\"text\": \"That percentage of the spend comes to $106.86, an estimate from logged tokens.\", \"cites\": [\"saved.2\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 424,
+      "outputTokens": 149,
+      "reasoningTokens": 0
+    }
+  }
+}

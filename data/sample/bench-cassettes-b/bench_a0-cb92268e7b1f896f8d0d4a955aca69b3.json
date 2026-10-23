@@ -1,0 +1,16 @@
+{
+  "key": "cb92268e7b1f896f8d0d4a955aca69b3",
+  "recordedAt": "2026-10-23T12:42:40.549Z",
+  "role": "bench_a0",
+  "response": {
+    "content": "Cannot be determined. The ledger does not list models that were never used, nor does it provide pricing for unused models.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 7618,
+      "outputTokens": 26,
+      "reasoningTokens": 0
+    }
+  }
+}

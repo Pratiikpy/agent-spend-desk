@@ -15,7 +15,7 @@ function bench(b) {
   const blocks = [];
   if (b.setA) {
     blocks.push(
-      table("Set A, 60 questions, one run each (pre-registered)", [{ label: "Arm", render: (r) => row(r.arm) }, { label: "Exact", num: true, render: (r) => `${r.exact} of ${r.n}` }], b.setA),
+      table("Set A, 60 questions, one run each (the Desk is the current version; the first version is in the results folder)", [{ label: "Arm", render: (r) => row(r.arm) }, { label: "Exact", num: true, render: (r) => `${r.exact} of ${r.n}` }], b.setA),
     );
   }
   if (b.setB) {
@@ -90,7 +90,7 @@ export async function render(ctx) {
             "div",
             null,
             h("p", { class: "note" }, `${d.learning.mistakes} mistakes on the training questions; a verified plan was found for ${d.learning.resolved}. As tests: ${d.learning.regression.exact} of ${d.learning.regression.n} pass.`),
-            table("Held-out questions answered exactly, by round", [{ label: "Round", num: true, render: (r) => r.round }, { label: "Lessons added", num: true, render: (r) => r.lessons }, { label: "Exact", num: true, render: (r) => `${r.exact} of ${r.n}` }, { label: "Change since round 0", num: true, render: (r) => (r.round === 0 ? "" : `${pts(-r.change.change)} (${pts(-r.change.high)} to ${pts(-r.change.low)})`) }, { label: "", render: (r) => (r.reverted ? pill("reverted", "risk") : "") }], d.learning.rounds),
+            table("Held-out questions answered exactly, by round", [{ label: "Round", num: true, render: (r) => r.round }, { label: "Lessons added", num: true, render: (r) => r.lessons }, { label: "Exact", num: true, render: (r) => `${r.exact} of ${r.n}` }, { label: "Change in exact answers since round 0", num: true, render: (r) => (r.round === 0 ? "" : `${pts(-r.change.change)} (${pts(-r.change.high)} to ${pts(-r.change.low)})`) }, { label: "", render: (r) => (r.reverted ? pill("reverted", "risk") : "") }], d.learning.rounds),
             h("p", { class: "note" }, "No model weights change. A lesson changes only which earlier plans the Planner is shown."),
           ),
     ),

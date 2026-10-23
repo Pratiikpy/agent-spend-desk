@@ -1,0 +1,24 @@
+{
+  "key": "46081cdb153fbe215315168934acf86f",
+  "recordedAt": "2026-10-23T11:23:49.852Z",
+  "role": "ask_planner",
+  "response": {
+    "content": "",
+    "toolCalls": [
+      {
+        "id": "call-08336c19-215b-4b37-973b-808da25940f8",
+        "name": "cannot_answer",
+        "arguments": {
+          "reason": "The ledger records agent spend, not provider invoices, so it cannot answer for the provider's invoice total."
+        }
+      }
+    ],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 2386,
+      "outputTokens": 46,
+      "reasoningTokens": 0
+    }
+  }
+}

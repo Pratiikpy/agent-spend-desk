@@ -29,3 +29,7 @@ No horizontal page scroll at 390 px on any screen (document width equals window 
 ## Not covered
 
 The dark mobile captures of seven screens were looked at only at reduced size. The Ask screen before a question, with an engine switched off, a session detail, the "More" button, the policy "Run the wind tunnel" button and the dropdowns were not photographed.
+
+## Evidence screen (the twelfth), 2026-10-23
+
+The Evidence screen was added after the sweep above. It was photographed in light and dark at 1440x900 and in light at 390x844 and read the same way. Found and fixed: the first-set heading called the Desk's rows "pre-registered" although the table shows the current version; the learning table's change column did not say what it counted; the routing table's signs read as gains (they are drops). On a phone every table becomes stacked cards with no horizontal scroll. No console errors in any capture. Not done: dark mode on a phone for this screen.

@@ -1,0 +1,16 @@
+{
+  "key": "0a0d98afb18f5f6b2e33e8db5be0b5d8",
+  "recordedAt": "2026-10-23T13:00:25.875Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "The spend did not triple: it was $1,562.25 from 2026-09-12 to 2026-09-24 and $1,431.19 from 2026-09-25 to 2026-10-07, a decrease of $131.06. Therefore, there is no tripling to explain.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 1446,
+      "outputTokens": 98,
+      "reasoningTokens": 0
+    }
+  }
+}

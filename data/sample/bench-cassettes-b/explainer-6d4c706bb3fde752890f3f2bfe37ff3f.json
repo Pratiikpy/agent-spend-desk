@@ -1,0 +1,16 @@
+{
+  "key": "6d4c706bb3fde752890f3f2bfe37ff3f",
+  "recordedAt": "2026-10-23T11:45:52.879Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Estimated spend from 2026-09-01 to 2026-09-30 was 3.4 thousand dollars.\", \"cites\": [\"sep_thousands.1\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 387,
+      "outputTokens": 58,
+      "reasoningTokens": 0
+    }
+  }
+}

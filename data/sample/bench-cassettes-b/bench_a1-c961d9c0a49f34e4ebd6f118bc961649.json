@@ -1,0 +1,16 @@
+{
+  "key": "c961d9c0a49f34e4ebd6f118bc961649",
+  "recordedAt": "2026-10-23T11:20:09.410Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "The ledger tracks estimated list-price spend, not provider invoice totals, so it cannot answer that question.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 1120,
+      "outputTokens": 22,
+      "reasoningTokens": 0
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "key": "b2f4058927ac997d2ebbf74773a5200b",
+  "recordedAt": "2026-10-23T07:08:39.435Z",
+  "role": "bench_a0",
+  "response": {
+    "content": "The ledger does not show that spend tripled between those periods.\n\nPeriod 1 (2026-09-12 to 2026-09-24): $1,832.40\nPeriod 2 (2026-09-25 to 2026-10-07): $1,432.24\n\nSpend actually decreased by $400.16. The ledger does not record causes for spend changes.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 7667,
+      "outputTokens": 113,
+      "reasoningTokens": 0
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "key": "47f08779ba3f671521a4b3736ed957db",
+  "recordedAt": "2026-10-23T07:12:55.468Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Estimated list-price spend between 2026-10-02 and 2026-10-31 was $2,605.23.\", \"cites\": [\"spend_model.1\"]}, {\"text\": \"Model `claude-opus-5` cost $1,613.68.\", \"cites\": [\"spend_model.3\"]}, {\"text\": \"Model `claude-sonnet-5-5` cost $988.15.\", \"cites\": [\"spend_model.4\"]}, {\"text\": \"Model `claude-haiku-5-5` cost $3.41.\", \"cites\": [\"spend_model.5\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 487,
+      "outputTokens": 170,
+      "reasoningTokens": 0
+    }
+  }
+}

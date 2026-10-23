@@ -1,0 +1,746 @@
+{
+ "config": {
+  "roundSize": 6,
+  "maxRounds": 4,
+  "attempts": 4,
+  "neighbours": 2,
+  "seed": 20261026,
+  "concurrency": 3
+ },
+ "mistakes": 9,
+ "resolved": 6,
+ "unresolved": 3,
+ "rounds": [
+  {
+   "round": 0,
+   "lessons": [],
+   "exact": 54,
+   "n": 60,
+   "heldoutError": 0.09999999999999998,
+   "change": {
+    "change": 0,
+    "low": 0,
+    "high": 0
+   },
+   "reverted": false,
+   "novel": {
+    "exact": 4,
+    "n": 7
+   },
+   "rows": []
+  },
+  {
+   "round": 1,
+   "lessons": [
+    "L-05b451a69983",
+    "L-4dce94c27390",
+    "L-1d578244d589",
+    "L-a65ce98b3405",
+    "L-bf6c501db222",
+    "L-1054db46e481"
+   ],
+   "exact": 56,
+   "n": 60,
+   "heldoutError": 0.06666666666666665,
+   "change": {
+    "change": -0.03333333333333333,
+    "low": -0.08333333333333333,
+    "high": 0
+   },
+   "reverted": false,
+   "novel": {
+    "exact": 4,
+    "n": 7
+   },
+   "rows": [
+    {
+     "qid": "Q01",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q02",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q03",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q04",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q05",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q06",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q07",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q08",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q09",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q10",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q11",
+     "exact": true,
+     "error": null,
+     "precedents": [
+      "L-05b451a69983",
+      "L-1054db46e481"
+     ]
+    },
+    {
+     "qid": "Q12",
+     "exact": true,
+     "error": null,
+     "precedents": [
+      "L-05b451a69983",
+      "L-1054db46e481"
+     ]
+    },
+    {
+     "qid": "Q13",
+     "exact": true,
+     "error": null,
+     "precedents": [
+      "L-05b451a69983",
+      "L-1054db46e481"
+     ]
+    },
+    {
+     "qid": "Q14",
+     "exact": true,
+     "error": null,
+     "precedents": [
+      "L-05b451a69983",
+      "L-1054db46e481"
+     ]
+    },
+    {
+     "qid": "Q15",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q16",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q17",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q18",
+     "exact": false,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q19",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q20",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q21",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q22",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q23",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q24",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q25",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q26",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q27",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q28",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q29",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q30",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q31",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q32",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q33",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q34",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q35",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q36",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q37",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q38",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q39",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q40",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q41",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q42",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q43",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q44",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q45",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q46",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q47",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q48",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q49",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q50",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q51",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q52",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q53",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q54",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q55",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q56",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q57",
+     "exact": false,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q58",
+     "exact": false,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q59",
+     "exact": true,
+     "error": null,
+     "precedents": []
+    },
+    {
+     "qid": "Q60",
+     "exact": false,
+     "error": null,
+     "precedents": []
+    }
+   ]
+  }
+ ],
+ "regression": {
+  "exact": 6,
+  "n": 6
+ },
+ "lessons": [
+  {
+   "id": "L-05b451a69983",
+   "question": "What share of spend between 2026-09-23 and 2026-10-22 was on claude-sonnet-5-5? Answer as a percentage to one decimal.",
+   "expected": {
+    "required": [
+     {
+      "label": "share",
+      "value": 27.3
+     }
+    ]
+   },
+   "changeKind": "precedent",
+   "program": {
+    "steps": [
+     {
+      "id": "total",
+      "op": "spend",
+      "from": "2026-09-23",
+      "to": "2026-10-22",
+      "group": "none"
+     },
+     {
+      "id": "sonnet",
+      "op": "spend",
+      "from": "2026-09-23",
+      "to": "2026-10-22",
+      "group": "none",
+      "model": "claude-sonnet-5-5"
+     },
+     {
+      "id": "share",
+      "op": "share",
+      "part": "sonnet",
+      "whole": "total"
+     }
+    ]
+   },
+   "attempts": 2,
+   "round": 1,
+   "status": "accepted"
+  },
+  {
+   "id": "L-1054db46e481",
+   "question": "What share of spend between 2026-09-20 and 2026-10-23 was on claude-opus-5? Answer as a percentage to one decimal.",
+   "expected": {
+    "required": [
+     {
+      "label": "share",
+      "value": 72.9
+     }
+    ]
+   },
+   "changeKind": "precedent",
+   "program": {
+    "steps": [
+     {
+      "id": "total_spend",
+      "op": "spend",
+      "from": "2026-09-20",
+      "to": "2026-10-23",
+      "group": "none"
+     },
+     {
+      "id": "opus_spend",
+      "op": "spend",
+      "from": "2026-09-20",
+      "to": "2026-10-23",
+      "group": "none",
+      "model": "claude-opus-5"
+     },
+     {
+      "id": "share_opus",
+      "op": "share",
+      "part": "opus_spend",
+      "whole": "total_spend"
+     }
+    ]
+   },
+   "attempts": 1,
+   "round": 1,
+   "status": "accepted"
+  },
+  {
+   "id": "L-1d578244d589",
+   "question": "What share of spend between 2026-09-21 and 2026-10-18 was on claude-opus-5? Answer as a percentage to one decimal.",
+   "expected": {
+    "required": [
+     {
+      "label": "share",
+      "value": 79.3
+     }
+    ]
+   },
+   "changeKind": "precedent",
+   "program": {
+    "steps": [
+     {
+      "id": "total_spend",
+      "op": "spend",
+      "from": "2026-09-21",
+      "to": "2026-10-18",
+      "group": "none"
+     },
+     {
+      "id": "opus_spend",
+      "op": "spend",
+      "from": "2026-09-21",
+      "to": "2026-10-18",
+      "group": "none",
+      "model": "claude-opus-5"
+     },
+     {
+      "id": "share_opus",
+      "op": "share",
+      "part": "opus_spend",
+      "whole": "total_spend"
+     }
+    ]
+   },
+   "attempts": 2,
+   "round": 1,
+   "status": "accepted"
+  },
+  {
+   "id": "L-363b9653aa1c",
+   "question": "Between 2026-09-13 and 2026-10-19, the first half is the first 18 days and the second half is the rest. Was spend higher in the first half or the second half, and by how much? Start your answer with the word first or second, then give the difference in dollars.",
+   "expected": {
+    "required": [
+     {
+      "label": "half",
+      "value": "first"
+     },
+     {
+      "label": "difference",
+      "value": 309.22
+     }
+    ]
+   },
+   "changeKind": "none",
+   "program": null,
+   "attempts": 4,
+   "round": null,
+   "status": "unresolved"
+  },
+  {
+   "id": "L-4dce94c27390",
+   "question": "What share of spend between 2026-10-11 and 2026-10-29 was on claude-sonnet-5-5? Answer as a percentage to one decimal.",
+   "expected": {
+    "required": [
+     {
+      "label": "share",
+      "value": 55
+     }
+    ]
+   },
+   "changeKind": "precedent",
+   "program": {
+    "steps": [
+     {
+      "id": "total",
+      "op": "spend",
+      "from": "2026-10-11",
+      "to": "2026-10-29",
+      "group": "none"
+     },
+     {
+      "id": "sonnet",
+      "op": "spend",
+      "from": "2026-10-11",
+      "to": "2026-10-29",
+      "group": "none",
+      "model": "claude-sonnet-5-5"
+     },
+     {
+      "id": "share",
+      "op": "share",
+      "part": "sonnet",
+      "whole": "total"
+     }
+    ]
+   },
+   "attempts": 2,
+   "round": 1,
+   "status": "accepted"
+  },
+  {
+   "id": "L-a65ce98b3405",
+   "question": "What share of spend between 2026-09-18 and 2026-10-03 was on claude-sonnet-5-5? Answer as a percentage to one decimal.",
+   "expected": {
+    "required": [
+     {
+      "label": "share",
+      "value": 16.6
+     }
+    ]
+   },
+   "changeKind": "precedent",
+   "program": {
+    "steps": [
+     {
+      "id": "total",
+      "op": "spend",
+      "from": "2026-09-18",
+      "to": "2026-10-03",
+      "group": "none"
+     },
+     {
+      "id": "sonnet",
+      "op": "spend",
+      "from": "2026-09-18",
+      "to": "2026-10-03",
+      "group": "none",
+      "model": "claude-sonnet-5-5"
+     },
+     {
+      "id": "share",
+      "op": "share",
+      "part": "sonnet",
+      "whole": "total"
+     }
+    ]
+   },
+   "attempts": 2,
+   "round": 1,
+   "status": "accepted"
+  },
+  {
+   "id": "L-bf6c501db222",
+   "question": "What share of spend between 2026-10-01 and 2026-10-27 was on claude-opus-5? Answer as a percentage to one decimal.",
+   "expected": {
+    "required": [
+     {
+      "label": "share",
+      "value": 64.2
+     }
+    ]
+   },
+   "changeKind": "precedent",
+   "program": {
+    "steps": [
+     {
+      "id": "total_spend",
+      "op": "spend",
+      "from": "2026-10-01",
+      "to": "2026-10-27",
+      "group": "none"
+     },
+     {
+      "id": "opus_spend",
+      "op": "spend",
+      "from": "2026-10-01",
+      "to": "2026-10-27",
+      "group": "none",
+      "model": "claude-opus-5"
+     },
+     {
+      "id": "share_calc",
+      "op": "share",
+      "part": "opus_spend",
+      "whole": "total_spend"
+     }
+    ]
+   },
+   "attempts": 3,
+   "round": 1,
+   "status": "accepted"
+  },
+  {
+   "id": "L-ec7bd3d378e7",
+   "question": "Between 2026-09-18 and 2026-10-16, the first half is the first 14 days and the second half is the rest. Was spend higher in the first half or the second half, and by how much? Start your answer with the word first or second, then give the difference in dollars.",
+   "expected": {
+    "required": [
+     {
+      "label": "half",
+      "value": "first"
+     },
+     {
+      "label": "difference",
+      "value": 39.81
+     }
+    ]
+   },
+   "changeKind": "none",
+   "program": null,
+   "attempts": 4,
+   "round": null,
+   "status": "unresolved"
+  },
+  {
+   "id": "L-761e9d9a8fbf",
+   "question": "Between 2026-09-30 and 2026-10-16, the first half is the first 8 days and the second half is the rest. Was spend higher in the first half or the second half, and by how much? Start your answer with the word first or second, then give the difference in dollars.",
+   "expected": {
+    "required": [
+     {
+      "label": "half",
+      "value": "first"
+     },
+     {
+      "label": "difference",
+      "value": 88.53
+     }
+    ]
+   },
+   "changeKind": "none",
+   "program": null,
+   "attempts": 4,
+   "round": null,
+   "status": "unresolved"
+  }
+ ]
+}

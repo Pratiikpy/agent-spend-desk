@@ -1,0 +1,16 @@
+{
+  "key": "c2c7efe04a299e45a41614ae0a6f0f9c",
+  "recordedAt": "2026-10-23T14:13:18.634Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Estimated list-price spend between 2026-09-02 and 2026-09-10 was $1,017.47.\", \"cites\": [\"p1.1\"]}, {\"text\": \"Estimated list-price spend between 2026-09-11 and 2026-09-19 was $1,034.26.\", \"cites\": [\"p2.1\"]}, {\"text\": \"The second period cost $16.80 more than the first.\", \"cites\": [\"comp.1\"]}, {\"text\": \"The second period was 101.7% of the first.\", \"cites\": [\"comp.2\"]}, {\"text\": \"Estimated list-price spend between 2026-09-02 and 2026-09-19 was $2,051.73.\", \"cites\": [\"digest.1\"]}, {\"text\": \"The whole range was read in 18 periods.\", \"cites\": [\"digest.2\"]}, {\"text\": \"Each period covered 1 days.\", \"cites\": [\"digest.3\"]}, {\"text\": \"The costliest period started on 2026-09-04 and cost $241.99.\", \"cites\": [\"digest.4\"]}, {\"text\": \"Model `claude-opus-5` cost $1,697.20 in the range.\", \"cites\": [\"digest.5\"]}, {\"text\": \"Model `claude-sonnet-5-5` cost $351.01 in the range.\", \"cites\": [\"digest.6\"]}, {\"text\": \"Model `claude-haiku-5-5` cost $3.51 in the range.\", \"cites\": [\"digest.7\"]}, {\"text\": \"Spending in the last third of the range was 124.0% of the first third.\", \"cites\": [\"digest.8\"]}, {\"text\": \"Session `sess-00195` in `infra` cost $73.51.\", \"cites\": [\"sessions.1\"]}, {\"text\": \"Session `sess-00031` in `web-app` cost $61.68.\", \"cites\": [\"sessions.2\"]}, {\"text\": \"Session `sess-00067` in `mobile-client` cost $60.92.\", \"cites\": [\"sessions.3\"]}, {\"text\": \"Session `sess-00284` in `payments-api` cost $48.15.\", \"cites\": [\"sessions.4\"]}, {\"text\": \"Session `sess-00211` in `mobile-client` cost $43.76.\", \"cites\": [\"sessions.5\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 1321,
+      "outputTokens": 666,
+      "reasoningTokens": 0
+    }
+  }
+}

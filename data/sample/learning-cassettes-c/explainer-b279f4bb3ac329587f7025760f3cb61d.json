@@ -1,0 +1,16 @@
+{
+  "key": "b279f4bb3ac329587f7025760f3cb61d",
+  "recordedAt": "2026-10-23T08:42:02.431Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Estimated list-price spend between 2026-09-08 and 2026-10-21 was $4,751.86.\", \"cites\": [\"weekly_spend.1\"]}, {\"text\": \"The week starting 2026-09-14 cost $837.47.\", \"cites\": [\"weekly_spend.4\"]}, {\"text\": \"The week starting 2026-09-21 cost $868.16.\", \"cites\": [\"weekly_spend.3\"]}, {\"text\": \"The week starting 2026-09-28 cost $772.15.\", \"cites\": [\"weekly_spend.6\"]}, {\"text\": \"The week starting 2026-10-05 cost $812.26.\", \"cites\": [\"weekly_spend.5\"]}, {\"text\": \"The week starting 2026-10-12 cost $584.38.\", \"cites\": [\"weekly_spend.7\"]}, {\"text\": \"Everything outside those five cost $877.44 in total.\", \"cites\": [\"weekly_spend.8\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 657,
+      "outputTokens": 296,
+      "reasoningTokens": 0
+    }
+  }
+}

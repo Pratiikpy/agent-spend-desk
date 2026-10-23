@@ -1,0 +1,16 @@
+{
+  "key": "cbb82ea10e2df27d70d10108a463e783",
+  "recordedAt": "2026-10-23T09:10:37.886Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "The ledger does not provide daily spend for every day in the range, only the five most expensive days and a combined total for the rest. I cannot compute the median daily spend without the full per-day breakdown.\n\nCannot answer.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 1417,
+      "outputTokens": 47,
+      "reasoningTokens": 0
+    }
+  }
+}

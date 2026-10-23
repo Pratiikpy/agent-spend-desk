@@ -1,0 +1,16 @@
+{
+  "key": "4d90ec3a0b683ad287e553f0454074e9",
+  "recordedAt": "2026-10-23T14:25:51.790Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"The estimated spend on model `claude-opus-5` between 2026-09-21 and 2026-10-18 was $2,406.79.\", \"cites\": [\"s1.1\"]}, {\"text\": \"That covers 16,509 model calls.\", \"cites\": [\"s1.2\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 349,
+      "outputTokens": 97,
+      "reasoningTokens": 0
+    }
+  }
+}

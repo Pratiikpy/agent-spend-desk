@@ -1,0 +1,16 @@
+{
+  "key": "7af1e6e6d576c002a0d836b398d52fd1",
+  "recordedAt": "2026-10-23T13:08:42.726Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "The ledger cannot answer how many sessions started between 2026-09-05 and 2026-09-21; it only provides cost-based session data, not session counts.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 1536,
+      "outputTokens": 47,
+      "reasoningTokens": 0
+    }
+  }
+}

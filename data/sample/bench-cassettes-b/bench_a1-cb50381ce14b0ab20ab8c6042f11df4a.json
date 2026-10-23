@@ -1,0 +1,16 @@
+{
+  "key": "cb50381ce14b0ab20ab8c6042f11df4a",
+  "recordedAt": "2026-10-23T12:36:54.608Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "The ledger shows an estimated list-price spend of $3,439.35 for September 2026. It is not a provider invoice total.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 1261,
+      "outputTokens": 36,
+      "reasoningTokens": 0
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "key": "2dbf78d889b529a1b15e707dccfeecba",
+  "recordedAt": "2026-10-23T06:52:11.182Z",
+  "role": "bench_a0",
+  "response": {
+    "content": "The ledger does not contain information about code written by the agent.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 7606,
+      "outputTokens": 15,
+      "reasoningTokens": 0
+    }
+  }
+}

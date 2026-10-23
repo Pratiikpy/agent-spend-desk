@@ -1,0 +1,16 @@
+{
+  "key": "8bbb9a8e306a4fa0ae403853f13c29cc",
+  "recordedAt": "2026-10-23T12:33:12.230Z",
+  "role": "bench_a0",
+  "response": {
+    "content": "The ledger does not cover March 2019; it spans September 1, 2026 to October 31, 2026. No spend data is available for that period.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 7612,
+      "outputTokens": 46,
+      "reasoningTokens": 0
+    }
+  }
+}

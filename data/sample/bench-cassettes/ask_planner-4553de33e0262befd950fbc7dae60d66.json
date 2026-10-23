@@ -1,0 +1,24 @@
+{
+  "key": "4553de33e0262befd950fbc7dae60d66",
+  "recordedAt": "2026-10-23T08:27:18.106Z",
+  "role": "ask_planner",
+  "response": {
+    "content": "",
+    "toolCalls": [
+      {
+        "id": "call-bfa1a55d-a1db-4900-a00d-cba0f136ba25",
+        "name": "cannot_answer",
+        "arguments": {
+          "reason": "The ledger does not record engineers or people, so it cannot identify who spent money."
+        }
+      }
+    ],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 2385,
+      "outputTokens": 41,
+      "reasoningTokens": 0
+    }
+  }
+}

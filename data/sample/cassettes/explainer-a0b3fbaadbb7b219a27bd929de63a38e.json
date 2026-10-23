@@ -1,0 +1,16 @@
+{
+  "key": "a0b3fbaadbb7b219a27bd929de63a38e",
+  "recordedAt": "2026-10-23T06:57:51.388Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Estimated list-price spend between 2026-09-01 and 2026-10-31 was $6,196.64.\", \"cites\": [\"s1.1\"]}, {\"text\": \"Spend on sessions whose work counts as landed (merged or kept) was $3,911.84.\", \"cites\": [\"s1.2\"]}, {\"text\": \"Landed work was 63.1% of the spend in this period.\", \"cites\": [\"s1.3\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 635,
+      "outputTokens": 134,
+      "reasoningTokens": 0
+    }
+  }
+}

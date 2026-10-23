@@ -1,0 +1,16 @@
+{
+  "key": "2630c4a50b59500f7eba78c0abcb8aef",
+  "recordedAt": "2026-10-23T09:00:28.474Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Estimated list-price spend between 2026-10-22 and 2026-10-30 was $690.94, an estimate from logged tokens and not a bill.\", \"cites\": [\"calls.1\"]}, {\"text\": \"That covers 11,098 model calls.\", \"cites\": [\"calls.2\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 329,
+      "outputTokens": 97,
+      "reasoningTokens": 0
+    }
+  }
+}

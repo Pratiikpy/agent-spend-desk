@@ -1,0 +1,24 @@
+{
+  "key": "74d030aaf25c7dd59db422796da40b69",
+  "recordedAt": "2026-10-23T12:35:51.038Z",
+  "role": "ask_planner",
+  "response": {
+    "content": "",
+    "toolCalls": [
+      {
+        "id": "call-b5e9d67e-050a-4685-bfc3-789cd504664d",
+        "name": "cannot_answer",
+        "arguments": {
+          "reason": "The ledger records token spend, not provider invoices; invoice totals are outside its coverage."
+        }
+      }
+    ],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 2386,
+      "outputTokens": 42,
+      "reasoningTokens": 0
+    }
+  }
+}

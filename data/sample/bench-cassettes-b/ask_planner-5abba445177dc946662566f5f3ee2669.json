@@ -1,0 +1,24 @@
+{
+  "key": "5abba445177dc946662566f5f3ee2669",
+  "recordedAt": "2026-10-23T10:11:46.712Z",
+  "role": "ask_planner",
+  "response": {
+    "content": "",
+    "toolCalls": [
+      {
+        "id": "call-d34be2c1-19de-4962-9a26-5604a11bf2ac",
+        "name": "cannot_answer",
+        "arguments": {
+          "reason": "The ledger records agent-token spend only, not provider invoices or billed amounts."
+        }
+      }
+    ],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 2386,
+      "outputTokens": 41,
+      "reasoningTokens": 0
+    }
+  }
+}

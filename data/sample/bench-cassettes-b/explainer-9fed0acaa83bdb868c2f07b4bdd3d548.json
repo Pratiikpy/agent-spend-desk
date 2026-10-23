@@ -1,0 +1,16 @@
+{
+  "key": "9fed0acaa83bdb868c2f07b4bdd3d548",
+  "recordedAt": "2026-10-23T10:45:07.344Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Estimated list-price spend on model `claude-haiku-5-5` between 2026-10-01 and 2026-10-31 was $3.49.\", \"cites\": [\"oct_haiku.1\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 350,
+      "outputTokens": 72,
+      "reasoningTokens": 0
+    }
+  }
+}

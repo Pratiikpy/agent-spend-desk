@@ -1,0 +1,16 @@
+{
+  "key": "2967263bc34f39959ab482748d6792fd",
+  "recordedAt": "2026-10-23T10:25:27.523Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "The ledger cannot confirm that spend tripled: it was $1,562.25 for 2026-09-12 to 2026-09-24 and $1,431.19 for 2026-09-25 to 2026-10-07, a decrease of $131.06. The ledger also does not record a cause for any change.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 1634,
+      "outputTokens": 105,
+      "reasoningTokens": 0
+    }
+  }
+}

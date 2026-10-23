@@ -1,0 +1,16 @@
+{
+  "key": "6ac61e7c955ae72ebc0a5daaa6dac73c",
+  "recordedAt": "2026-10-23T08:16:42.311Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Session `sess-00195` in `infra` cost $73.51; its work is not tied to any commit.\", \"cites\": [\"top.1\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 277,
+      "outputTokens": 54,
+      "reasoningTokens": 0
+    }
+  }
+}

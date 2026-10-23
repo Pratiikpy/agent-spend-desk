@@ -1,0 +1,43 @@
+{
+  "key": "63c72df0a073b5273c88133fc52abfab",
+  "recordedAt": "2026-10-23T13:14:48.341Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "",
+    "toolCalls": [
+      {
+        "id": "call-8be9612a-1491-40c4-b5ac-57095b007493",
+        "name": "spend",
+        "arguments": {
+          "from": "2026-09-02",
+          "to": "2026-09-10",
+          "group": "none"
+        }
+      },
+      {
+        "id": "call-083029d7-b134-4e6a-a375-bd802cfa3b99",
+        "name": "spend",
+        "arguments": {
+          "from": "2026-09-11",
+          "to": "2026-09-19",
+          "group": "none"
+        }
+      },
+      {
+        "id": "call-6a34f089-17a0-4b26-bdb8-14a6d91773c2",
+        "name": "changes_before",
+        "arguments": {
+          "date": "2026-09-11",
+          "days": 10
+        }
+      }
+    ],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 1178,
+      "outputTokens": 167,
+      "reasoningTokens": 0
+    }
+  }
+}

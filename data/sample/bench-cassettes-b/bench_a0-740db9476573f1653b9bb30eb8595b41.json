@@ -1,0 +1,16 @@
+{
+  "key": "740db9476573f1653b9bb30eb8595b41",
+  "recordedAt": "2026-10-23T12:05:27.292Z",
+  "role": "bench_a0",
+  "response": {
+    "content": "2026-10-07, $213.33",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 7640,
+      "outputTokens": 19,
+      "reasoningTokens": 0
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "key": "10235e98a19b278f5017d4f81fcc028a",
+  "recordedAt": "2026-10-23T10:20:59.657Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "The spend did not double. It decreased from $584.38 (2026-10-11 to 2026-10-17) to $538.12 (2026-10-18 to 2026-10-24), a difference of −$46.26. The ledger cannot explain a doubling because no doubling occurred.\n\nThe shift in model mix around 2026-10-13 (claude-opus-5 dropping from 74.9% to 24.0% of calls, claude-sonnet-5-5 rising from 23.2% to 70.8%) likely contributed to the lower spend in the second period, but the ledger does not attribute spend changes to specific causes.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 2210,
+      "outputTokens": 186,
+      "reasoningTokens": 0
+    }
+  }
+}

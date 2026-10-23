@@ -1,0 +1,16 @@
+{
+  "key": "76b33fc1d604cbbc6ae23c405cd80c9d",
+  "recordedAt": "2026-10-23T11:52:00.495Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "The spend tool does not return every daily value (it groups low-spend days into “everything outside those five”), so I cannot reconstruct all daily spends needed to compute the median. I cannot answer from the ledger without per-day amounts.\n\nThe ledger cannot answer this question.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 1704,
+      "outputTokens": 57,
+      "reasoningTokens": 0
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "key": "fa920f875388a0b066b822164a87ed65",
+  "recordedAt": "2026-10-23T10:11:18.290Z",
+  "role": "ask_planner",
+  "response": {
+    "content": "",
+    "toolCalls": [
+      {
+        "id": "call-ef2c0bee-2e48-4252-afc1-92aadafd53bc",
+        "name": "cannot_answer",
+        "arguments": {
+          "reason": "The ledger records agent spend, sessions, models, landing, and changes only; it does not contain team or people information."
+        }
+      }
+    ],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 2379,
+      "outputTokens": 49,
+      "reasoningTokens": 0
+    }
+  }
+}

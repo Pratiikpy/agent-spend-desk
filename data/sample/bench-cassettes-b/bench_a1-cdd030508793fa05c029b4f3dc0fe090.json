@@ -1,0 +1,16 @@
+{
+  "key": "cdd030508793fa05c029b4f3dc0fe090",
+  "recordedAt": "2026-10-23T09:26:03.622Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "The week starting 2026-09-21 had the highest spend, at $868.16.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 1444,
+      "outputTokens": 29,
+      "reasoningTokens": 0
+    }
+  }
+}

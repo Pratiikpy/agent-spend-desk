@@ -1,0 +1,16 @@
+{
+  "key": "a321f3303030d85d0aa916a243320e04",
+  "recordedAt": "2026-10-23T07:31:02.158Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Session `sess-00576` in `infra` cost $50.63; its work is merged and kept.\", \"cites\": [\"top.1\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 275,
+      "outputTokens": 52,
+      "reasoningTokens": 0
+    }
+  }
+}

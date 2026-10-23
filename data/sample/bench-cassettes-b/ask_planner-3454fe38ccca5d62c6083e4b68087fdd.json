@@ -1,0 +1,24 @@
+{
+  "key": "3454fe38ccca5d62c6083e4b68087fdd",
+  "recordedAt": "2026-10-23T12:37:10.805Z",
+  "role": "ask_planner",
+  "response": {
+    "content": "",
+    "toolCalls": [
+      {
+        "id": "call-f828092f-6fb8-44c3-ab87-7b8841b3c204",
+        "name": "cannot_answer",
+        "arguments": {
+          "reason": "The ledger does not record people, engineers, or who caused any spend, so it cannot identify an engineer or attribute waste to one."
+        }
+      }
+    ],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 2385,
+      "outputTokens": 51,
+      "reasoningTokens": 0
+    }
+  }
+}

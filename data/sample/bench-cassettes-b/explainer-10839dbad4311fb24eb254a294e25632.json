@@ -1,0 +1,16 @@
+{
+  "key": "10839dbad4311fb24eb254a294e25632",
+  "recordedAt": "2026-10-23T11:53:07.332Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"The number of days with spend above $160.00 from 2026-09-20 to 2026-10-08 was 7.\", \"cites\": [\"above.1\", \"above.2\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 292,
+      "outputTokens": 68,
+      "reasoningTokens": 0
+    }
+  }
+}

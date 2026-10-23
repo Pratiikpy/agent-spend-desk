@@ -1,0 +1,16 @@
+{
+  "key": "fac8dd2380d875d3bee631412a73677c",
+  "recordedAt": "2026-10-23T11:33:11.716Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Estimated list-price spend between 2026-10-11 and 2026-10-17 was $584.38.\", \"cites\": [\"spend1.1\"]}, {\"text\": \"Estimated list-price spend between 2026-10-18 and 2026-10-24 was $538.12.\", \"cites\": [\"spend2.1\"]}, {\"text\": \"The second period cost $46.26 less than the first.\", \"cites\": [\"diff.1\"]}, {\"text\": \"The second period was 92.1% of the first.\", \"cites\": [\"diff.2\"]}, {\"text\": \"Estimated list-price spend between 2026-10-11 and 2026-10-17 was $584.38.\", \"cites\": [\"digest1.1\"]}, {\"text\": \"The whole range was read in 7 periods.\", \"cites\": [\"digest1.2\"]}, {\"text\": \"Each period covered 1 days.\", \"cites\": [\"digest1.3\"]}, {\"text\": \"The costliest period started on 2026-10-13 and cost $166.22.\", \"cites\": [\"digest1.4\"]}, {\"text\": \"Model `claude-opus-5` cost $338.23 in the range.\", \"cites\": [\"digest1.5\"]}, {\"text\": \"Model `claude-sonnet-5-5` cost $245.06 in the range.\", \"cites\": [\"digest1.6\"]}, {\"text\": \"Model `claude-haiku-5-5` cost $1.10 in the range.\", \"cites\": [\"digest1.7\"]}, {\"text\": \"Spending in the last third of the range was 66.1% of the first third.\", \"cites\": [\"digest1.8\"]}, {\"text\": \"Estimated list-price spend between 2026-10-18 and 2026-10-24 was $538.12.\", \"cites\": [\"digest2.1\"]}, {\"text\": \"The whole range was read in 7 periods.\", \"cites\": [\"digest2.2\"]}, {\"text\": \"Each period covered 1 days.\", \"cites\": [\"digest2.3\"]}, {\"text\": \"The costliest period started on 2026-10-20 and cost $141.00.\", \"cites\": [\"digest2.4\"]}, {\"text\": \"Model `claude-sonnet-5-5` cost $337.41 in the range.\", \"cites\": [\"digest2.5\"]}, {\"text\": \"Model `claude-opus-5` cost $199.75 in the range.\", \"cites\": [\"digest2.6\"]}, {\"text\": \"Model `claude-haiku-5-5` cost $0.96 in the range.\", \"cites\": [\"digest2.7\"]}, {\"text\": \"Spending in the last third of the range was 65.7% of the first third.\", \"cites\": [\"digest2.8\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 1426,
+      "outputTokens": 766,
+      "reasoningTokens": 0
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "key": "5cb62d0fdcbf2921a8fefb5b22f9bc81",
+  "recordedAt": "2026-10-23T08:50:10.849Z",
+  "role": "ask_planner",
+  "response": {
+    "content": "",
+    "toolCalls": [
+      {
+        "id": "call-d1b986c0-16aa-4f1f-abea-17c90ef2c06e",
+        "name": "cannot_answer",
+        "arguments": {
+          "reason": "The ledger covers 2026-09-01 to 2026-10-31, so it has no data for March 2019."
+        }
+      }
+    ],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 2389,
+      "outputTokens": 64,
+      "reasoningTokens": 0
+    }
+  }
+}

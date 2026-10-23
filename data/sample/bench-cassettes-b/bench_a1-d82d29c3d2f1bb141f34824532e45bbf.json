@@ -1,0 +1,16 @@
+{
+  "key": "d82d29c3d2f1bb141f34824532e45bbf",
+  "recordedAt": "2026-10-23T12:50:58.536Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "The spend did not triple: it rose from $1,017.47 to $1,034.26, a difference of $16.79. The ledger records only a model introduction (`claude-haiku-5-5` first used on 2026-09-02); it does not contain a cause for any spending change.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 1633,
+      "outputTokens": 84,
+      "reasoningTokens": 0
+    }
+  }
+}

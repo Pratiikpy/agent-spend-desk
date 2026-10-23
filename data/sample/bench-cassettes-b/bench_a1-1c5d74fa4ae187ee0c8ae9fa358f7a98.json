@@ -1,0 +1,16 @@
+{
+  "key": "1c5d74fa4ae187ee0c8ae9fa358f7a98",
+  "recordedAt": "2026-10-23T10:36:21.075Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "The spend tool does not return daily amounts for every day, only the top five days plus an aggregate for the rest, so I cannot compute the median from the ledger.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 1683,
+      "outputTokens": 36,
+      "reasoningTokens": 0
+    }
+  }
+}

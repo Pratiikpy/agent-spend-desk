@@ -1,0 +1,16 @@
+{
+  "key": "5c35a9c49151d0b562be9ba31fdef897",
+  "recordedAt": "2026-10-23T10:08:35.834Z",
+  "role": "bench_a0",
+  "response": {
+    "content": "The ledger cannot answer that. It records spend by date and model, not by engineer.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 7608,
+      "outputTokens": 20,
+      "reasoningTokens": 0
+    }
+  }
+}

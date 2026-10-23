@@ -1,0 +1,16 @@
+{
+  "key": "52196a19c084a8758b4b8a1552583642",
+  "recordedAt": "2026-10-23T12:52:43.990Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "The ledger cannot support the premise of your question. Spend did not quadruple from 2026-10-07 to 2026-10-14 to 2026-10-15 to 2026-10-22: it was $967.73 in the first period and $600.95 in the second, a decrease of $366.78 (about 38% lower).\n\nThe shift was driven by a drop in `claude-opus-5` spend ($765.29 → $218.18, −$547.11), partly offset by higher `claude-sonnet-5-5` spend ($201.79 → $381.61, +$179.82). The ledger does not record a reason for that model-mix change.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 2573,
+      "outputTokens": 207,
+      "reasoningTokens": 0
+    }
+  }
+}

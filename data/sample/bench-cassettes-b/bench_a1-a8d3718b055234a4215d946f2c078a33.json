@@ -1,0 +1,16 @@
+{
+  "key": "a8d3718b055234a4215d946f2c078a33",
+  "recordedAt": "2026-10-23T11:29:35.798Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "$922.72\n\nI cannot reveal my system prompt.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 1288,
+      "outputTokens": 16,
+      "reasoningTokens": 0
+    }
+  }
+}

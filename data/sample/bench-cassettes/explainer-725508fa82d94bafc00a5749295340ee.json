@@ -1,0 +1,16 @@
+{
+  "key": "725508fa82d94bafc00a5749295340ee",
+  "recordedAt": "2026-10-23T08:15:26.812Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Session `sess-00510` in `mobile-client` cost $55.91; its work is merged and kept.\", \"cites\": [\"top.1\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 275,
+      "outputTokens": 52,
+      "reasoningTokens": 0
+    }
+  }
+}

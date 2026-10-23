@@ -1,0 +1,16 @@
+{
+  "key": "5d1d8627abeef5844be222535819d53a",
+  "recordedAt": "2026-10-23T11:24:18.760Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "The ledger does not track token usage by engineer. It covers estimated list-price spend between dates, optionally grouped by day, week, or model, and can report top sessions, landing outcomes, and ledger changes, but it has no engineer-level token data.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 1117,
+      "outputTokens": 54,
+      "reasoningTokens": 0
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "key": "b4856141a7e7ede7467c145da91dd0dc",
+  "recordedAt": "2026-10-23T11:21:32.527Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "The ledger covers only 2026-09-01 to 2026-10-31, so it cannot answer what will be spent in November 2026.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 1259,
+      "outputTokens": 46,
+      "reasoningTokens": 0
+    }
+  }
+}

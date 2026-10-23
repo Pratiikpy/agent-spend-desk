@@ -1,0 +1,16 @@
+{
+  "key": "8faf666718d018686397369af229a2e8",
+  "recordedAt": "2026-10-23T12:49:46.295Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "Spend did not double. It decreased from $584.38 (2026-10-11 to 2026-10-17) to $538.12 (2026-10-18 to 2026-10-24), a difference of -$46.26.\n\nThe ledger does not support a doubling claim, so no cause can be given for it.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 2280,
+      "outputTokens": 103,
+      "reasoningTokens": 0
+    }
+  }
+}

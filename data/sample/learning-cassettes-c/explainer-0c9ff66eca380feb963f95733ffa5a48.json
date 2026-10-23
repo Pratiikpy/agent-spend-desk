@@ -1,0 +1,16 @@
+{
+  "key": "0c9ff66eca380feb963f95733ffa5a48",
+  "recordedAt": "2026-10-23T08:11:06.199Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Estimated list-price spend between 2026-09-26 and 2026-10-19 was $2,288.44.\", \"cites\": [\"s1.1\"]}, {\"text\": \"The day 2026-10-07 cost $213.33.\", \"cites\": [\"s1.3\"]}, {\"text\": \"The day 2026-09-29 cost $183.45.\", \"cites\": [\"s1.4\"]}, {\"text\": \"The day 2026-10-02 cost $174.13.\", \"cites\": [\"s1.5\"]}, {\"text\": \"The day 2026-10-13 cost $166.22.\", \"cites\": [\"s1.6\"]}, {\"text\": \"The day 2026-10-06 cost $163.74.\", \"cites\": [\"s1.7\"]}, {\"text\": \"Everything outside those five cost $1,387.57 in total.\", \"cites\": [\"s1.8\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 631,
+      "outputTokens": 279,
+      "reasoningTokens": 0
+    }
+  }
+}

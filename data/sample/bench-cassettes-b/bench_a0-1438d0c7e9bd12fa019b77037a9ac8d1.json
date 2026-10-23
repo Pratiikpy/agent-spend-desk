@@ -1,0 +1,16 @@
+{
+  "key": "1438d0c7e9bd12fa019b77037a9ac8d1",
+  "recordedAt": "2026-10-23T06:55:48.520Z",
+  "role": "bench_a0",
+  "response": {
+    "content": "Cannot determine. The ledger does not include pricing for any model that was never used, so savings cannot be calculated.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 7618,
+      "outputTokens": 25,
+      "reasoningTokens": 0
+    }
+  }
+}

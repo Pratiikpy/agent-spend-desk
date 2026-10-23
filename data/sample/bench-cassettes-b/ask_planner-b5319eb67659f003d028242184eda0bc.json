@@ -1,0 +1,24 @@
+{
+  "key": "b5319eb67659f003d028242184eda0bc",
+  "recordedAt": "2026-10-23T11:24:20.107Z",
+  "role": "ask_planner",
+  "response": {
+    "content": "",
+    "toolCalls": [
+      {
+        "id": "call-e17cb4ee-a161-4689-ae63-8c22d400bf1e",
+        "name": "cannot_answer",
+        "arguments": {
+          "reason": "The ledger records tokens, spend, sessions, models, landing, and changes only; it does not record engineers or people, so eng07's token use cannot be determined."
+        }
+      }
+    ],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 2383,
+      "outputTokens": 60,
+      "reasoningTokens": 0
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "key": "e603536d114829585d712f63b79a9332",
+  "recordedAt": "2026-10-23T14:13:24.093Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Estimated list-price spend between 2026-09-12 and 2026-09-24 was $1,562.25.\", \"cites\": [\"s1.1\"]}, {\"text\": \"Estimated list-price spend between 2026-09-25 and 2026-10-07 was $1,431.19.\", \"cites\": [\"s2.1\"]}, {\"text\": \"Estimated list-price spend between 2026-09-12 and 2026-09-24 by model: claude-opus-5 cost $1,336.24, claude-sonnet-5-5 cost $223.45, claude-haiku-5-5 cost $2.56.\", \"cites\": [\"s3.3\", \"s3.4\", \"s3.5\"]}, {\"text\": \"Estimated list-price spend between 2026-09-25 and 2026-10-07 by model: claude-opus-5 cost $1,187.20, claude-sonnet-5-5 cost $243.08, claude-haiku-5-5 cost $0.91.\", \"cites\": [\"s4.3\", \"s4.4\", \"s4.5\"]}, {\"text\": \"Estimated list-price spend between 2026-09-12 and 2026-10-07 was $2,993.44.\", \"cites\": [\"s5.1\"]}, {\"text\": \"Spend on sessions whose work counts as landed was $1,878.72.\", \"cites\": [\"s5.2\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 1443,
+      "outputTokens": 425,
+      "reasoningTokens": 0
+    }
+  }
+}

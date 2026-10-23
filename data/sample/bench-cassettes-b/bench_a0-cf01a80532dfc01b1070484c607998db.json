@@ -1,0 +1,16 @@
+{
+  "key": "cf01a80532dfc01b1070484c607998db",
+  "recordedAt": "2026-10-23T11:33:26.459Z",
+  "role": "bench_a0",
+  "response": {
+    "content": "Period 2026-10-11 to 2026-10-17: $270.03. Period 2026-10-18 to 2026-10-24: $466.05. Difference: $196.02. Spend did not double; it increased by about 73%. The ledger does not record causes, so the reason cannot be determined from the data.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 7666,
+      "outputTokens": 108,
+      "reasoningTokens": 0
+    }
+  }
+}

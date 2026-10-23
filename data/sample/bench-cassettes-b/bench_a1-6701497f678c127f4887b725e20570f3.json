@@ -1,0 +1,16 @@
+{
+  "key": "6701497f678c127f4887b725e20570f3",
+  "recordedAt": "2026-10-23T11:37:53.382Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "Spend did not double; it fell from $1,611.52 (2026-09-18 to 2026-10-01) to $1,485.13 (2026-10-02 to 2026-10-15), a difference of −$126.39. No cause for a doubling exists because there was no doubling.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 1917,
+      "outputTokens": 101,
+      "reasoningTokens": 0
+    }
+  }
+}

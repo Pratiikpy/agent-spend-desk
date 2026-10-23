@@ -1,0 +1,24 @@
+{
+  "key": "b1adf793d29e201ca472906aac708967",
+  "recordedAt": "2026-10-23T11:25:25.129Z",
+  "role": "ask_planner",
+  "response": {
+    "content": "",
+    "toolCalls": [
+      {
+        "id": "call-58875745-bf5c-4932-b53f-eb747c03c18d",
+        "name": "cannot_answer",
+        "arguments": {
+          "reason": "A model never used here has no recorded spend, so savings cannot be computed from the ledger."
+        }
+      }
+    ],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 2395,
+      "outputTokens": 43,
+      "reasoningTokens": 0
+    }
+  }
+}

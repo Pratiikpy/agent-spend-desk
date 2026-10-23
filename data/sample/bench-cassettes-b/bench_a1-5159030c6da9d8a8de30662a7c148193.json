@@ -1,0 +1,16 @@
+{
+  "key": "5159030c6da9d8a8de30662a7c148193",
+  "recordedAt": "2026-10-23T10:14:54.402Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "The ledger does not contain information about the number of engineers on the team.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 1113,
+      "outputTokens": 17,
+      "reasoningTokens": 0
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "key": "2155b2e575f5a1c5583dfe48bba58561",
+  "recordedAt": "2026-10-23T10:34:23.951Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "The ledger cannot compute the median daily spend because it does not provide spend values for every day in the range; it only reports five specific days and an aggregate total for the rest.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 1419,
+      "outputTokens": 38,
+      "reasoningTokens": 0
+    }
+  }
+}

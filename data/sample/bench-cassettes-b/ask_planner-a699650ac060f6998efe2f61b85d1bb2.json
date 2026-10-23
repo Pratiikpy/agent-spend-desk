@@ -1,0 +1,24 @@
+{
+  "key": "a699650ac060f6998efe2f61b85d1bb2",
+  "recordedAt": "2026-10-23T11:18:07.197Z",
+  "role": "ask_planner",
+  "response": {
+    "content": "",
+    "toolCalls": [
+      {
+        "id": "call-a51dd12d-ecb8-47d5-b865-6dd0e45eaeca",
+        "name": "cannot_answer",
+        "arguments": {
+          "reason": "The ledger covers 2026-09-01 to 2026-10-31, so January 2027 spend is outside its coverage."
+        }
+      }
+    ],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 2389,
+      "outputTokens": 64,
+      "reasoningTokens": 0
+    }
+  }
+}

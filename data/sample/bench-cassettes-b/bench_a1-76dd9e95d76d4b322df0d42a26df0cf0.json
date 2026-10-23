@@ -1,0 +1,16 @@
+{
+  "key": "76dd9e95d76d4b322df0d42a26df0cf0",
+  "recordedAt": "2026-10-23T10:13:24.323Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "I cannot answer that from the ledger. The available tools report estimated dollar spend, session costs, landing outcomes, and ledger changes, but they do not track token usage by engineer.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 1117,
+      "outputTokens": 39,
+      "reasoningTokens": 0
+    }
+  }
+}

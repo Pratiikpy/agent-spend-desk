@@ -1,0 +1,16 @@
+{
+  "key": "976b48d419d35412148ac8ac1905c3c6",
+  "recordedAt": "2026-10-23T11:24:15.103Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "The ledger does not contain information about team size or headcount.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 1113,
+      "outputTokens": 15,
+      "reasoningTokens": 0
+    }
+  }
+}

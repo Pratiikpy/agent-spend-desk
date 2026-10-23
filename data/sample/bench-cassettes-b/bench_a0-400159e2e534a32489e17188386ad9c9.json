@@ -1,0 +1,16 @@
+{
+  "key": "400159e2e534a32489e17188386ad9c9",
+  "recordedAt": "2026-10-23T13:23:08.103Z",
+  "role": "bench_a0",
+  "response": {
+    "content": "The ledger does not contain data for January 2027.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 7612,
+      "outputTokens": 16,
+      "reasoningTokens": 0
+    }
+  }
+}
