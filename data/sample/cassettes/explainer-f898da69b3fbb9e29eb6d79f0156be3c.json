@@ -1,0 +1,16 @@
+{
+  "key": "f898da69b3fbb9e29eb6d79f0156be3c",
+  "recordedAt": "2026-10-23T04:29:37.331Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Session `sess-00195` in `infra` cost $73.51; its work is not tied to any commit.\", \"cites\": [\"top_sep.1\"]}, {\"text\": \"Session `sess-00031` in `web-app` cost $61.68; its work is not tied to any commit.\", \"cites\": [\"top_sep.2\"]}, {\"text\": \"Session `sess-00067` in `mobile-client` cost $60.92; its work is merged and kept.\", \"cites\": [\"top_sep.3\"]}, {\"text\": \"Session `sess-00284` in `payments-api` cost $48.15; its work is merged and kept.\", \"cites\": [\"top_sep.4\"]}, {\"text\": \"Session `sess-00334` in `data-pipeline` cost $44.45; its work is committed but not merged.\", \"cites\": [\"top_sep.5\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 501,
+      "outputTokens": 249,
+      "reasoningTokens": 0
+    }
+  }
+}

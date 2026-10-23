@@ -1,0 +1,16 @@
+{
+  "key": "f14b38d463d14c5d790174cc5f2e2b5a",
+  "recordedAt": "2026-10-23T04:05:56.927Z",
+  "role": "bench_a0",
+  "response": {
+    "content": "The ledger does not contain token usage or engineer information.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 7606,
+      "outputTokens": 13,
+      "reasoningTokens": 0
+    }
+  }
+}

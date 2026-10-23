@@ -43,7 +43,7 @@ One model, one constructed ledger, one run per question and arm (k = 1), so no r
 
 ## Addendum, written after the first dev run and before any held-out question was run
 
-The first run on the 40 dev questions (`results-dev-run-1.jsonl`) gave, exact: A0 8 of 40, A1 31 of 40, A2 (the Desk) 20 of 40. Predictions 1 to 3 failed on the dev split and prediction 4 held. The Desk lost to the tool-using agent for three reasons visible in the answers:
+The first run on the 40 dev questions (`results-dev-run-1.jsonl`) gave, exact: A0 8 of 40, A1 31 of 40, A2 (the Desk) 20 of 40. Predictions 1 and 2 failed on the dev split, 3 held as a tie, and 4 held. The Desk lost to the tool-using agent for three reasons visible in the answers:
 
 1. It stated the ingredients but never the derived figure (a share, an average per day, a percentage of a spend, a count of days above a figure), because its Explainer may only restate figures a claim carries and no step computed them.
 2. On questions the ledger cannot answer (invoices, headcount, the code in a session, a model never used) the Planner had no way to decline and mapped them to the nearest spend step; in one case the Explainer then said moving to a model never used "would have saved" the whole spend, a sentence whose figure is in a claim and whose meaning is not.

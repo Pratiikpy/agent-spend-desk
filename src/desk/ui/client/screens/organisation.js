@@ -13,14 +13,14 @@ export async function render(ctx) {
   const d = await ctx.api("/api/silos");
   const served = h(
     "div",
-    { class: "cards" },
+    { class: "cards pairs" },
     ...Object.entries(d.served).map(([k, v]) => h("div", { class: "card s" }, h("h3", null, NAMES[k]), h("p", null, pill(KIND[v] || v, v === "live" ? "live" : v === "fallback" ? "risk" : "ink")))),
   );
   if (!d.available) {
     return h(
       "div",
       null,
-      head("Organisation", "Local sources only", "Zetaris is not answering and no recording exists, so the bill is estimated from logs and landing stops at what git shows."),
+      head("Org data", "Local sources only", "Zetaris is not answering and no recording exists, so the bill is estimated from logs and landing stops at what git shows."),
       section("Sources", "status", served, h("ul", { class: "list" }, ...d.reasons.map((r) => h("li", null, r)))),
       section("Without Zetaris", "what changes", h("ul", { class: "list" }, h("li", null, `Every dollar is an estimate: ${usd(d.classes.estimatedOnlyMicros)}. Nothing is billed.`), h("li", null, "Landing stops at committed, merged and kept: whether the checks passed is not known."), h("li", null, "No spend per landed pull request by team."))),
       footnote("Start the three silos and set ZETARIS_REST_URL, ZETARIS_API_KEY and ZETARIS_ORG_ID, or open the sample."),
@@ -30,7 +30,7 @@ export async function render(ctx) {
   return h(
     "div",
     null,
-    head("Organisation", "One statement, three sources", d.sample ? "Recorded from a live run on the local Zetaris instance; replayed byte for byte." : "Read live from the local Zetaris instance."),
+    head("Org data", "One statement, three sources", d.sample ? "Recorded from a live run on the local Zetaris instance; replayed byte for byte." : "Read live from the local Zetaris instance."),
     section("Sources", "how each was read", served, d.reasons.length ? h("ul", { class: "list" }, ...d.reasons.map((r) => h("li", null, r))) : null, h("p", { class: "note" }, "All silo data is synthetic, derived from the constructed sample.")),
     section(
       "Spend per landed pull request",

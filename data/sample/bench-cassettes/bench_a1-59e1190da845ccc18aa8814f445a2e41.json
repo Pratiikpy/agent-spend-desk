@@ -1,0 +1,16 @@
+{
+  "key": "59e1190da845ccc18aa8814f445a2e41",
+  "recordedAt": "2026-10-23T04:05:01.563Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "The ledger cannot answer that question. It covers 2026-09-01 to 2026-10-31 only, so there is no data for January 2027.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 1260,
+      "outputTokens": 49,
+      "reasoningTokens": 0
+    }
+  }
+}

@@ -52,7 +52,7 @@ export async function render(ctx) {
                 "What the verifier checked",
                 [
                   { label: "Level", id: true, render: (l) => l.id },
-                  { label: "Result", render: (l) => pill(l.status, l.status === "PASS" ? "live" : l.status === "FAIL" ? "risk" : "") },
+                  { label: "Result", render: (l) => pill(l.status === "NOT_APPLICABLE" ? "not applicable" : l.status, l.status === "PASS" ? "live" : l.status === "FAIL" ? "risk" : "") },
                   { label: "Check", render: (l) => h("span", null, l.name, ...l.findings.map((f) => h("div", { class: "muted" }, `${f.code}: ${f.detail}`)), ...l.notes.map((n) => h("div", { class: "muted" }, n))) },
                 ],
                 b.levels,

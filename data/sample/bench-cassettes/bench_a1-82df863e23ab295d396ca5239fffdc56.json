@@ -1,12 +1,12 @@
 {
   "key": "82df863e23ab295d396ca5239fffdc56",
-  "recordedAt": "2026-10-23T03:53:02.485Z",
+  "recordedAt": "2026-10-23T04:26:33.552Z",
   "role": "bench_a1",
   "response": {
     "content": "",
     "toolCalls": [
       {
-        "id": "call-6bdb8f11-41ae-4b42-b826-2177468db590",
+        "id": "call-4bb39b62-6011-410e-8547-74611e1aaecf",
         "name": "top_sessions",
         "arguments": {
           "from": "2026-09-25",

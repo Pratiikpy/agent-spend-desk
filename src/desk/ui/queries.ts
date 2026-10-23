@@ -201,7 +201,7 @@ export function bill(ctx: UiContext, span: Span): object {
     span: { since: span.sinceIso, until: span.untilIso, days: span.days },
     totals: { ...t, pricedShare: t.pricedCalls + t.unpricedCalls === 0 ? 0 : t.pricedCalls / (t.pricedCalls + t.unpricedCalls) },
     classes: [
-      { cls: "billed", calls: 0, note: "No invoice has been imported, so nothing is billed." },
+      { cls: "billed", calls: 0, note: "Invoices are not read on this screen. When Zetaris is connected the invoice figures are on Org data." },
       { cls: "reported", calls: 0, note: "No tool reported its own cost." },
       { cls: "estimated", calls: t.pricedCalls, micros: t.estimatedMicros, note: "List price times logged tokens." },
       { cls: "unpriced", calls: t.unpricedCalls, note: "Models with no price row: tokens counted, no dollars invented." },

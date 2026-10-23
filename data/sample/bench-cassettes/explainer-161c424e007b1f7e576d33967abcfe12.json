@@ -1,0 +1,16 @@
+{
+  "key": "161c424e007b1f7e576d33967abcfe12",
+  "recordedAt": "2026-10-23T04:02:02.778Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"The savings would be $106.86, an estimate from logged tokens.\", \"cites\": [\"saved.2\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 433,
+      "outputTokens": 39,
+      "reasoningTokens": 0
+    }
+  }
+}

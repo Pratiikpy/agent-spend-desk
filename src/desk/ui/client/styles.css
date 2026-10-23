@@ -296,3 +296,19 @@ pre.src { margin: 0; padding: 14px 16px; background: var(--surface); border: 1px
 .chart .rule-risk { stroke: var(--redline); stroke-width: 1.5; stroke-dasharray: 3 3; }
 .keyline { display: inline-block; width: 28px; height: 0; border-top: 2.4px solid var(--seg-solid); vertical-align: middle; margin-right: 8px; }
 .keyline.dash { border-top: 1.6px dashed var(--seg-mid); }
+th.num { font-size: 11.5px; }
+body { font-variant-ligatures: none; font-feature-settings: "liga" 0, "calt" 0; }
+.note { margin-top: 12px; }
+.note:first-child, .head .note { margin-top: 0; }
+input[type="checkbox"] { accent-color: var(--text); width: 15px; height: 15px; margin: 0; }
+.controls label { line-height: 1.5; }
+.legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.legend .keyline { margin-right: 0; }
+.legend .keyline.dash { margin-left: 14px; }
+.legend span:last-child { margin-left: 14px; }
+.chart text.rl { paint-order: stroke; stroke: var(--bg); stroke-width: 4px; stroke-linejoin: round; }
+@media (max-width: 720px) {
+  .nav { flex-wrap: wrap; overflow: visible; }
+  .tablewrap::after { content: "Scroll sideways for more columns."; display: block; padding: 8px 16px; border-top: 1px solid var(--border); font: 11.5px var(--mono); color: var(--muted); }
+}
+@media (min-width: 720px) { .cards.pairs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

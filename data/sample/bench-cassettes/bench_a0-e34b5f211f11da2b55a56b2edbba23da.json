@@ -1,0 +1,16 @@
+{
+  "key": "e34b5f211f11da2b55a56b2edbba23da",
+  "recordedAt": "2026-10-23T04:11:08.645Z",
+  "role": "bench_a0",
+  "response": {
+    "content": "The ledger cannot answer why spend quadrupled; it only records estimated list-price spend per model call and does not include causes or explanations for changes.\n\nDollar difference:\n- Period 2026-09-16 to 2026-09-26: $1,090.40\n- Period 2026-09-27 to 2026-10-07: $1,090.40\n\nThe spend did not quadruple; it was identical between the two periods ($0.00 difference).",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 7667,
+      "outputTokens": 128,
+      "reasoningTokens": 0
+    }
+  }
+}

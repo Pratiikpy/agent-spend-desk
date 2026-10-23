@@ -17,7 +17,13 @@ function eventLine(e) {
   if (e.event === "desk.step") return `step ${d.id} ${d.op}: ${d.rows} rows, query ${String(d.query_hash).slice(0, 19)}`;
   if (e.event === "desk.audit") return `Auditor, attempt ${d.attempt}: ${d.accepted} accepted, ${d.rejected.length} rejected${d.rejected.length ? ` (${d.rejected.map((x) => x.reason).join(", ")})` : ""}`;
   if (e.event === "revision.applied") return "the Explainer revised after a rejection";
-  if (e.event === "fallback.used") return `fallback: ${d.reason}`;
+  if (e.event === "fallback.used") {
+    const why = String(d.reason || "");
+    const who = e.role === "explainer" ? "the Explainer" : "the Planner";
+    if (/^cassette_miss/.test(why)) return `no recorded model reply for ${who === "the Planner" ? "this question" : "this answer"} in sample mode, so rules were used instead`;
+    if (/^(transient|aborted)/.test(why)) return `the model did not answer in time, so rules were used instead`;
+    return `${who} fell back to rules: ${why.slice(0, 120)}`;
+  }
   if (e.event === "desk.route") return `route ${d.route}${d.flags && d.flags.length ? `, flags ${d.flags.join(", ")}` : ""}`;
   if (e.event === "desk.plan") return `plan: ${d.intent ? `rules (${d.intent})` : "from the model"}, ops ${(d.ops || []).join(", ")}`;
   return e.event;
@@ -68,7 +74,7 @@ export async function render(ctx) {
     out.append(
       section(
         "Answer",
-        a.status,
+        "checked by code",
         h("p", { class: "controls" }, verdict, a.ablated.length ? pill(`off: ${a.ablated.join(", ")}`, "risk") : null),
         a.sentences.length > 0 ? h("ul", { class: "list" }, ...a.sentences.map((s) => h("li", null, s.text))) : null,
         a.note ? h("p", { class: "note" }, a.status === "answered" ? `Note: ${a.note}` : a.note) : null,
@@ -78,7 +84,7 @@ export async function render(ctx) {
         "the trace",
         h("p", { class: "note" }, `Route ${a.route}. Planner: ${a.planner}. Explainer: ${a.explainer}.${a.servedModel ? ` Model ${a.servedModel}.` : ""} ${a.modelRoute}.`),
         h("ul", { class: "list" }, ...a.events.map((e) => h("li", { class: "traceline" }, eventLine(e)))),
-        h("p", { class: "note" }, "Every figure above comes from a typed step run read-only against the ledger. Check an answer again with `desk verify-answer`."),
+        h("p", { class: "note" }, "Every figure above comes from a typed step run read-only against the ledger. Check an answer again with desk verify-answer."),
       ),
     );
   } catch (e) {

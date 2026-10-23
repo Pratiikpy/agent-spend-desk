@@ -385,7 +385,7 @@ const CHECKS: Check[] = [
         const differs = answered.filter((x) => { const y = again.get(`${x.qid}|${x.arm}`); return !y || y.answer !== x.answer || y.exact !== x.exact || y.close !== x.close; });
         const line = ARMS.map((a) => { const c = tally(answered.filter((x) => x.arm === a)); return `${a} ${c.exact}/${c.n}`; }).join(", ");
         const errors = recorded.length - answered.length;
-        return (differs.length === 0 ? pass : fail)(`${answered.length} recorded runs replayed from recordings, ${differs.length} differ; exact answers ${line}${errors > 0 ? `; ${errors} recorded runs ended in an error and are not replayed` : ""}; this reproduces the table, it does not say the Desk wins`);
+        return (differs.length === 0 ? pass : fail)(`${answered.length} recorded runs replayed from recordings, ${differs.length} differ${differs.length > 0 ? ` (${differs.slice(0, 4).map((x) => `${x.qid} ${x.arm}`).join(", ")})` : ""}; exact answers ${line}${errors > 0 ? `; ${errors} recorded runs ended in an error and are not replayed` : ""}; this reproduces the table, it does not say the Desk wins`);
       } finally {
         rmSync(dir, { recursive: true, force: true });
       }

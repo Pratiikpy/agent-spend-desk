@@ -1,0 +1,16 @@
+{
+  "key": "02fcc61490ead6dcb6f285fec49a98e3",
+  "recordedAt": "2026-10-23T04:11:18.175Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Spend did not quadruple; it increased by $15.27, from $1,259.02 to $1,274.28.\", \"cites\": [\"p1.1\", \"p2.1\", \"c1.1\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 975,
+      "outputTokens": 72,
+      "reasoningTokens": 0
+    }
+  }
+}

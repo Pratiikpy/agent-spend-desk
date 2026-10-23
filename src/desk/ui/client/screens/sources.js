@@ -13,12 +13,12 @@ function bytes(n) {
 
 export async function render(ctx) {
   const d = await ctx.api("/api/sources");
-  if (d.state !== "ok") return h("div", null, head("Sources", "Not available"), emptyState(d));
+  if (d.state !== "ok") return h("div", null, head("Doctor", "Not available"), emptyState(d));
   const stale = d.price.ageDays !== null && d.price.ageDays > 60;
   return h(
     "div",
     null,
-    head("Sources", "What the Desk read", "Where the numbers come from, what is missing, and which services are reachable."),
+    head("Doctor", "What the Desk read", "Where the numbers come from, what is missing, and which services are reachable."),
     section(
       "Agent logs",
       "read-only",

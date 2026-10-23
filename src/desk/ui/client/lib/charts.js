@@ -116,11 +116,11 @@ export function passLines(primary, control, opts) {
   svg.append(s("path", { class: "ln-primary", d: path(primary) }));
   for (const sw of opts.switches || []) {
     svg.append(s("line", { class: "rule-risk", x1: x(sw.day), x2: x(sw.day), y1: padT, y2: H - padB }));
-    svg.append(s("text", { x: x(sw.day) + 6, y: padT + 10 }, `served model changed, day ${sw.day}`));
+    svg.append(s("text", { class: "rl", x: x(sw.day) + 6, y: padT + 12 }, `served model changed, day ${sw.day}`));
   }
   const step = Math.max(1, Math.round(n / 8));
   for (let d = 1; d <= n; d += step) svg.append(s("text", { x: x(d), y: H - 14, "text-anchor": "middle" }, String(d)));
-  svg.append(s("text", { x: padL, y: H - 2 }, "day"));
+  svg.append(s("text", { x: W - padR, y: H - 2, "text-anchor": "end" }, "day"));
   svg.append(s("text", { x: x(1) + 4, y: H - padB - 6 }, "baseline"));
   return svg;
 }

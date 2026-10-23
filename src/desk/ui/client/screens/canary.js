@@ -48,7 +48,6 @@ export async function render(ctx) {
     section(
       "The call",
       REASON[d.reason] || d.reason,
-      h("div", { class: kind === "fail" ? "bigverdict fail" : kind === "pass" ? "bigverdict pass" : "bigverdict" }, word),
       d.delta !== null && d.ci
         ? h(
             "div",
@@ -64,7 +63,7 @@ export async function render(ctx) {
     section(
       "Pass rate by day",
       "the data behind the call",
-      h("p", { class: "note" }, h("span", { class: "keyline" }), "primary arm ", h("span", { class: "keyline dash" }), "control arm. Shaded: the frozen baseline. Dotted rule: the served model changed."),
+      h("p", { class: "note legend" }, h("span", { class: "keyline" }), "primary arm", h("span", { class: "keyline dash" }), "control arm", h("span", null, "Shaded: the frozen baseline. Dotted rule: the served model changed.")),
       passLines(d.primary, d.controlArm, { baselineDays: d.baselineDays, switches: d.served, label: `Baseline ${pct(d.baselineMean.primary ?? 0)}, latest window ${pct(d.latestMean.primary ?? 0)}.` }),
       h("p", { class: "note" }, `Primary: ${pct(d.baselineMean.primary ?? 0)} in the baseline, ${pct(d.latestMean.primary ?? 0)} in the latest window.${d.controlArm ? ` Control: ${pct(d.baselineMean.control ?? 0)} and ${pct(d.latestMean.control ?? 0)}.` : ""}`),
     ),

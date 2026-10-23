@@ -319,6 +319,16 @@ describe("the Meterless engines change the answer", () => {
   });
 });
 
+describe("folder names", () => {
+  it("keep the last folder of a Windows or Unix path and never show a home directory", async () => {
+    const { folderName } = await import("../../src/desk/engines/label.ts");
+    const bs = String.fromCharCode(92);
+    expect(folderName(["C:", "Users", "someone", "work", "payments-api"].join(bs))).toBe("payments-api");
+    expect(folderName(["", "home", "someone", "work", "web-app", ""].join("/"))).toBe("web-app");
+    expect(folderName(null)).toBe("unknown");
+  });
+});
+
 describe("memory and labels", () => {
   it("reads the strictest stage the owner names, and refuses a definition that names none", () => {
     expect(parseLandedStates("landed means kept")).toEqual(["kept"]);

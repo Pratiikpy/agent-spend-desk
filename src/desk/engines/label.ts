@@ -19,6 +19,6 @@ export function sanitizeLabel(raw: unknown, max = MAX): string {
 /** The last path segment, for showing where a session ran without showing a home directory. */
 export function folderName(path: string | null | undefined): string {
   if (!path) return "unknown";
-  const parts = path.split(/[\/]+/).filter(Boolean);
+  const parts = path.split(/[\\/]+/).filter(Boolean);
   return sanitizeLabel(parts[parts.length - 1] ?? "unknown");
 }
