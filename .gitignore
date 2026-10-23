@@ -16,6 +16,10 @@ logs/
 *.log
 *.jsonl
 !output_examples/traces/*.jsonl
+!input_examples/*.jsonl
+!data/sample/canary/*.jsonl
+!docs/verification/benchmark/*.jsonl
+!docs/verification/canary-first-run/*.jsonl
 
 # Python
 __pycache__/
