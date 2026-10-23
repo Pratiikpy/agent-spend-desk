@@ -18,7 +18,7 @@ Built for the Open Agent Hackathon 2026, Track 3 (Reasoning Architecture), with 
 Needs Node 22.19 or later. Nothing else for the sample.
 
 ```
-git clone <this repository> && cd <folder>
+git clone https://github.com/Pratiikpy/agent-spend-desk.git && cd agent-spend-desk
 npm install
 npm run desk -- --sample      # the limit autopsy card, on a constructed sample, offline (about 20 seconds)
 npm run desk -- demo          # the whole demo in eight beats, offline (under a minute)

@@ -33,3 +33,7 @@ The dark mobile captures of seven screens were looked at only at reduced size. T
 ## Evidence screen (the twelfth), 2026-10-23
 
 The Evidence screen was added after the sweep above. It was photographed in light and dark at 1440x900 and in light at 390x844 and read the same way. Found and fixed: the first-set heading called the Desk's rows "pre-registered" although the table shows the current version; the learning table's change column did not say what it counted; the routing table's signs read as gains (they are drops). On a phone every table becomes stacked cards with no horizontal scroll. No console errors in any capture. Not done: dark mode on a phone for this screen.
+
+## Automated pass over all twelve screens, 2026-10-23
+
+A script visited each of the twelve screens in four views (1440 px and 390 px, light and dark) with console, page-error and failed-request listeners attached from the start. Result: no console error, no page error, no failed request, no horizontal overflow, and every screen rendered its heading. The Dossiers screen verifies each bundle when it opens, so it needs a few seconds before its heading appears; a first pass that waited under two seconds reported it empty, and a second pass that waited seven seconds did not. Not covered by the script: reading each screen as a designer (done by eye for the first eleven on the 23rd and for Evidence in light and dark on desktop and in light on a phone).
