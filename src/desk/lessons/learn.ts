@@ -75,9 +75,11 @@ async function pool<T, R>(items: readonly T[], width: number, f: (x: T) => Promi
 }
 
 /** The Desk on every held-out question with the given precedents in force, greedy. */
-export async function evaluateHeldout(o: { db: Ledger; port: ModelPort; questions: readonly Question[]; precedents: readonly Precedent[]; neighbours: number; concurrency: number }): Promise<HeldoutRow[]> {
+export async function evaluateHeldout(o: { db: Ledger; port: ModelPort; questions: readonly Question[]; precedents: readonly Precedent[]; neighbours: number; concurrency: number; /** Round 0's result per question. A question shown no precedent sends the Planner the very request it sent in round 0, so its result stands and nothing is asked again: the model is not deterministic, and asking again would measure that noise instead of the lessons. */ unchanged?: ReadonlyMap<string, boolean> }): Promise<HeldoutRow[]> {
   return pool(o.questions, o.concurrency, async (q) => {
     const shown = nearest(q.text, o.precedents, o.neighbours);
+    const same = o.unchanged?.get(q.id);
+    if (shown.length === 0 && same !== undefined) return { qid: q.id, exact: same, error: null, precedents: [] };
     const out = await runA2({ db: o.db, port: o.port, question: q.text, ...(shown.length > 0 ? { precedents: shown } : {}) });
     return { qid: q.id, exact: out.error ? false : score(q, out.answer).exact, error: out.error, precedents: shown.map((p) => p.id) };
   });
@@ -192,7 +194,7 @@ export async function runLearning(o: {
     const batch = resolved.slice((r - 1) * cfg.roundSize, r * cfg.roundSize);
     if (batch.length === 0) break;
     const inForce: Precedent[] = [...accepted, ...batch].map((l) => ({ id: l.id, question: l.question, program: l.program! }));
-    const rows = await evaluateHeldout({ db: o.db, port: o.port, questions: o.heldout, precedents: inForce, neighbours: cfg.neighbours, concurrency: cfg.concurrency });
+    const rows = await evaluateHeldout({ db: o.db, port: o.port, questions: o.heldout, precedents: inForce, neighbours: cfg.neighbours, concurrency: cfg.concurrency, unchanged: new Map(o.heldout.map((q, i) => [q.id, base.exact[i]!])) });
     const t = toRows(rows, o.heldout);
     const exact = t.exact.filter(Boolean).length;
     const reverted = exact < previousExact;

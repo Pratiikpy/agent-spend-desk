@@ -250,6 +250,43 @@ describe("the plan critic and the Explainer that never reads the question", () =
     expect(critiquePlan("What share of spend was on m?", p.value)).toEqual([]);
   });
 
+  it("tells the Planner what was wrong with a program that failed its schema, and runs the corrected one", async () => {
+    const model = topModel();
+    // The share names a step that is not a spend step with group none: the schema refuses it.
+    const broken = { steps: [spend("a", { model }), { id: "c", op: "share", part: "a", whole: "a" }] };
+    const fixed = { steps: [spend("a", { model }), spend("b"), { id: "c", op: "share", part: "a", whole: "b" }] };
+    let calls = 0;
+    const port = new Scripted({
+      ask_planner: (r) => {
+        calls += 1;
+        if (calls === 1) return { toolCalls: [{ id: "t1", name: "plan_answer", arguments: broken }] };
+        const last = r.messages.at(-1)!;
+        expect(last.role).toBe("tool");
+        expect(last.content).toMatch(/was rejected/);
+        expect(r.messages.at(-2)).toMatchObject({ role: "assistant", tool_calls: [{ id: "t1" }] });
+        return { toolCalls: [{ id: "t2", name: "plan_answer", arguments: fixed }] };
+      },
+    });
+    const trace = new MemoryTrace();
+    const r = await run(`What share of spend was on ${model}?`, { port, trace });
+    expect(calls).toBe(2);
+    expect(r.planner).toBe("model");
+    expect(r.program?.steps.map((x) => x.op)).toEqual(["spend", "spend", "share"]);
+    expect(trace.events.map((e) => e.event)).toEqual(expect.arrayContaining(["desk.plan.schema_error", "revision.applied"]));
+  });
+
+  it("falls back to the rule planner when the revised program is also refused, and says so", async () => {
+    const model = topModel();
+    const broken = { steps: [spend("a", { model }), { id: "c", op: "share", part: "a", whole: "a" }] };
+    let calls = 0;
+    const port = new Scripted({ ask_planner: () => { calls += 1; return { toolCalls: [{ id: `t${calls}`, name: "plan_answer", arguments: broken }] }; } });
+    const trace = new MemoryTrace();
+    const r = await run(`What share of spend was on ${model}?`, { port, trace });
+    expect(calls).toBe(2);
+    expect(r.planner).toBe("rules");
+    expect(trace.events.some((e) => e.event === "fallback.used")).toBe(true);
+  });
+
   it("sends the objection back to the Planner, which revises once, and runs the revised program", async () => {
     const model = topModel();
     const first = { steps: [spend("a", { model })] };

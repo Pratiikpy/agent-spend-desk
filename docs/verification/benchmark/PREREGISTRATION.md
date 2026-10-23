@@ -103,3 +103,11 @@ What this does to the evidence, stated before it is gathered:
 2. The 33 affected rows are removed from the live results files and run again on the changed Desk (v2.1). Everything else is untouched.
 3. After this change set B is no longer held out for the Desk: it was read to find the defect. The v2.1 figures are reported as post-hoc, beside the preregistered ones, and never in place of them.
 4. Prediction: most of the 33 become exact, because the defect was in the hand-off, not in the questions. If fewer than half do, the explanation here was wrong and that is reported.
+
+## Addendum 5: what a round re-runs, written after the first learning run and before its repeat
+
+The first learning run (`docs/verification/learning/report-first-run.json`) made 6 lessons from 9 mistakes (a verified plan was found for 6, none for 3) and measured held-out set B at 50 of 60 against 54 in round 0, so it reverted the round. Reading the rows shows why that number means little: only 2 of the 60 held-out questions were shown a precedent (Q12 and Q13, both share questions, both went from wrong to right). The other 58 were shown none, so the Planner received exactly the request it had received in round 0, and 6 of them still changed from right to wrong. The model does not give the same answer twice to the same request, and the round was measuring that.
+
+The change: a held-out question that is shown no precedent keeps its round-0 result and is not asked again; only questions that receive a precedent are run. The comparison then isolates what the lessons did. This is a change to the measurement, made after seeing a result, so the first run's report stays in the repository beside the repeat, and the table says that the repeat differs by this rule.
+
+Predictions for the repeat, written now: the held-out count rises by two (Q12 and Q13) and by no more than four; the paired interval for the change includes zero; nothing changes on the 7 new-template questions.

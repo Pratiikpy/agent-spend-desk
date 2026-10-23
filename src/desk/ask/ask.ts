@@ -82,7 +82,11 @@ function coveragePrompt(question: string, cov: Coverage, models: readonly string
   return `${base}\n\nEarlier questions of the same shape, each with a plan that gave a verified answer. Use them for the shape of the plan only; the dates, models and figures in the question above are its own.\n\n${shown}`;
 }
 
-type Planned = { program: AnswerProgram; servedModel: string; callId: string } | { cannot: string; servedModel: string } | { error: string };
+type Planned =
+  | { program: AnswerProgram; servedModel: string; callId: string }
+  | { cannot: string; servedModel: string }
+  /** `rejected` is set when the model did call plan_answer but its program failed the schema, so the Planner can be told what was wrong. */
+  | { error: string; rejected?: { callId: string; args: Record<string, unknown>; issues: string } };
 
 const PLAN_TOOLS = [
   { name: "plan_answer", description: "Submit the answer program.", parameters: programJsonSchema() },
@@ -103,7 +107,10 @@ async function planWithModel(o: { port: ModelPort; budget: Budget; trace: Trace;
     const call = r.toolCalls.find((t) => t.name === "plan_answer");
     if (!call) return { error: "the model did not call plan_answer" };
     const parsed = parseProgram(call.arguments);
-    if (!parsed.ok) return { error: `the program did not pass its schema: ${parsed.issues.map((e) => `${e.path} ${e.message}`).join("; ")}` };
+    if (!parsed.ok) {
+      const issues = parsed.issues.map((e) => `${e.path} ${e.message}`).join("; ");
+      return { error: `the program did not pass its schema: ${issues}`, rejected: { callId: call.id, args: call.arguments, issues } };
+    }
     return { program: parsed.value, servedModel: r.servedModel, callId: call.id };
   } catch (e) {
     if (e instanceof BudgetError || e instanceof ModelError) return { error: `${e instanceof ModelError ? e.kind : "budget"}: ${e.message}` };
@@ -184,6 +191,30 @@ export async function ask(o: AskOptions): Promise<AskResult> {
     const precedents = o.precedents ?? [];
     if (precedents.length > 0) trace.emit({ event: "desk.precedent.used", why: "computed", role: "ask_planner", detail: { lessons: precedents.map((p) => p.id) } });
     let planned = await planWithModel({ port: o.port, budget, trace, question: o.question, cov, models, precedents });
+    // A program that fails its schema used to send the question to the rule planner, which cannot compute a share or a daily average.
+    // The Planner is told what was wrong and revises once; only if that fails too does the rule planner answer.
+    if ("error" in planned && planned.rejected) {
+      const rejected = planned.rejected;
+      trace.emit({ event: "desk.plan.schema_error", why: "computed", role: "plan_validator", detail: { issues: rejected.issues.slice(0, 300) } });
+      const retried = await planWithModel({
+        port: o.port,
+        budget,
+        trace,
+        question: o.question,
+        cov,
+        models,
+        messages: [
+          { role: "system", content: PLAN_SYSTEM },
+          { role: "user", content: coveragePrompt(o.question, cov, models, precedents) },
+          { role: "assistant", content: "", tool_calls: [{ id: rejected.callId, type: "function", function: { name: "plan_answer", arguments: JSON.stringify(rejected.args) } }] },
+          { role: "tool", tool_call_id: rejected.callId, content: `Plan check: the program was rejected. ${rejected.issues}. Submit a corrected program with plan_answer.` },
+        ],
+      });
+      if ("program" in retried) {
+        planned = retried;
+        trace.emit({ event: "revision.applied", why: "computed", role: "ask_planner", detail: { because: "schema", program_hash: programHash(retried.program) } });
+      }
+    }
     // The plan critic: code that names a figure the question asks for and the program has no step to compute. The Planner revises once.
     if ("program" in planned) {
       const missing = critiquePlan(o.question, planned.program);

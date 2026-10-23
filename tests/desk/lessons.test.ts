@@ -179,6 +179,24 @@ describe("learning from mistakes, end to end on a constructed case", () => {
     expect(allRounds(lessons)).toHaveLength(2);
   }, 120_000);
 
+  it("keeps the round-0 result of a held-out question that is shown no precedent, and asks nothing again for it", async () => {
+    const right: AnswerProgram = program(first, last);
+    const probe = await ask({ db, question: "Total?", record: false, port: new Scripted({ ask_planner: () => ({ toolCalls: [{ id: "t", name: "plan_answer", arguments: right as unknown as Record<string, unknown> }] }), explainer: () => ({ content: "" }) }) });
+    const value = Number(/\$([\d,]+\.\d\d)/.exec(probe.sentences.map((s) => s.text).join(" "))![1]!.replace(/,/g, ""));
+    const q = (id: string, text: string): Question => ({ id, category: "lookup", split: "dev", text, expect: { kind: "answer", required: [{ type: "usd", value, label: "total spend" }], allowed: [] } });
+    const train = [q("T1", "How much did we spend in total? Give the dollar amount.")];
+    const unrelated = q("H9", "Which model cost the most last week?");
+    let asked = 0;
+    const port = new Scripted({ ask_planner: () => { asked += 1; return { toolCalls: [{ id: "t", name: "plan_answer", arguments: right as unknown as Record<string, unknown> }] }; }, explainer: () => ({ content: "" }) });
+    const lessons = openLessons(":memory:");
+    // The unrelated question is wrong in round 0. If it were asked again it would be right; the rule says it is not asked.
+    const report = await runLearning({ db, lessons, port, training: { questions: train, rows: [{ qid: "T1", arm: "A2", trial: 0, exact: false, error: null }] as unknown as BenchRow[] }, heldout: [unrelated], baseline: [{ qid: "H9", arm: "A2", trial: 0, exact: false, error: null }] as unknown as BenchRow[], config: { roundSize: 1, maxRounds: 1, attempts: 1, concurrency: 1 }, now: () => "t" });
+    expect(report.rounds[1]!.rows[0]).toMatchObject({ qid: "H9", exact: false, precedents: [] });
+    expect(report.rounds[1]!.exact).toBe(0);
+    // One planner call to find the lesson's plan; none for the held-out question.
+    expect(asked).toBeLessThanOrEqual(2);
+  }, 120_000);
+
   it("reverts a round that makes the held-out answers worse", async () => {
     const right: AnswerProgram = program(first, last);
     const wrongPlan: AnswerProgram = program(first, first);
