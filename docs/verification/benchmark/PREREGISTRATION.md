@@ -90,3 +90,16 @@ Predictions, written now:
 4. At least one round is flat or worse, and is reverted.
 
 What would change this plan: nothing, once the first lesson is made. If the procedure turns out to be wrong, the change is written here as a new addendum, with the reason, before the run it affects.
+
+## Addendum 4: a schema-error revision, written after set B was run and before any row was re-run
+
+Set B was run on the Desk v2 as written in Addendum 2: 49 of 60 exact, against 41 for the tool agent. Reading the misses showed a defect that belongs to the Desk, not to the model: in 33 of its 360 recorded runs (4 on set A, 5 on set C, 24 on set B) the Planner's program failed the schema (for example a `share` step whose numerator was not a spend step with group none), the Desk silently handed the question to its rule planner, and the rule planner cannot compute a share, an average per day or a percentage. None of those 33 runs was exact. The first plan was refused and the Planner was never told why.
+
+The change: when the Planner's program fails the schema, the refusal and its reasons go back to the Planner, which revises once, as it already does after the plan critic. Only if that also fails does the rule planner answer. The trace carries `desk.plan.schema_error` and `revision.applied`.
+
+What this does to the evidence, stated before it is gathered:
+
+1. The first runs are kept as they were, in `docs/verification/benchmark/pre-schema-fix/`. They are the Desk v2 as preregistered, and set B's held-out result for it is 49 of 60.
+2. The 33 affected rows are removed from the live results files and run again on the changed Desk (v2.1). Everything else is untouched.
+3. After this change set B is no longer held out for the Desk: it was read to find the defect. The v2.1 figures are reported as post-hoc, beside the preregistered ones, and never in place of them.
+4. Prediction: most of the 33 become exact, because the defect was in the hand-off, not in the questions. If fewer than half do, the explanation here was wrong and that is reported.
