@@ -4,7 +4,7 @@ import { dirname } from "node:path";
 import type { ModelPort, ModelRequest } from "../agents/model.ts";
 import type { Ledger } from "../ledger/db.ts";
 import { runArm, type ArmId } from "./arms.ts";
-import { BENCH_SEED, BENCH_SEED_B, buildQuestions, questionSetHash, type Category, type Question, type QuestionSet } from "./questions.ts";
+import { BENCH_SEED, buildQuestions, seedOf, questionSetHash, type Category, type Question, type QuestionSet } from "./questions.ts";
 import { score } from "./score.ts";
 
 export const ARMS: readonly ArmId[] = ["A0", "A1", "A2"];
@@ -73,7 +73,7 @@ export interface RunOptions {
 
 /** Run each question on each arm, score it, append the row. A (question, arm) already in the file is not run again. */
 export async function runBench(o: RunOptions): Promise<{ ran: number; skipped: number }> {
-  const questions = buildQuestions(o.db, o.set === "B" ? BENCH_SEED_B : BENCH_SEED, o.set ?? "A").filter((q) => (o.split === "all" || q.split === o.split) && (!o.only || o.only.includes(q.id)));
+  const questions = buildQuestions(o.db, seedOf(o.set ?? "A"), o.set ?? "A").filter((q) => (o.split === "all" || q.split === o.split) && (!o.only || o.only.includes(q.id)));
   // A run that ended in an error is run again; only a run that produced an answer counts as done.
   const have = new Set(readResults(o.out).filter((r) => !r.error).map((r) => `${r.qid}|${r.arm}|${r.trial}`));
   mkdirSync(dirname(o.out), { recursive: true });

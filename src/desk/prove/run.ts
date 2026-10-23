@@ -11,7 +11,7 @@ import { loadAutopsyCalls } from "../autopsy/load.ts";
 import { ask } from "../ask/ask.ts";
 import { buildCard } from "../card/build.ts";
 import { createRedactor } from "../card/redact.ts";
-import { BENCH_CASSETTES, filesFor } from "../bench/command.ts";
+import { filesFor } from "../bench/command.ts";
 import { buildQuestions, questionSetHash, type QuestionSet } from "../bench/questions.ts";
 import { ARMS, passK, readResults, runBench, tally } from "../bench/run.ts";
 import { COVERAGE_FILE } from "../calibrate/command.ts";
@@ -21,6 +21,9 @@ import { canaryCommand, SAMPLE_RUNS } from "../canary/command.ts";
 import { readRows } from "../canary/store.ts";
 import { renderRoute, routeReplay } from "../route/replay.ts";
 import { seatReturn } from "../seats/seats.ts";
+import { optionsOf } from "../regret/command.ts";
+import { replayPolicy } from "../replay/policy-replay.ts";
+import { coverage, openRegret, recordDecision, scoreDecisions } from "../regret/regret.ts";
 import { configFromEnv } from "../../sponsors/zetaris/silo-port.ts";
 import { falseAlarmStudy } from "../canary/simulate.ts";
 import { approve, issueApproval, type DossierPaths } from "../dossier/command.ts";
@@ -99,7 +102,7 @@ function benchCheck(id: string, set: QuestionSet): Check {
     command: `replay every recorded run of benchmark set ${set} from the recorded replies and score it again`,
     seed: files.seed,
     async run(e) {
-      if (!existsSync(files.results) || !existsSync(BENCH_CASSETTES) || !existsSync(files.questions)) return notRun(`no recorded benchmark at ${files.results}; run it with: desk bench run --set ${set} --record`);
+      if (!existsSync(files.results) || !existsSync(files.cassettes) || !existsSync(files.questions)) return notRun(`no recorded benchmark at ${files.results}; run it with: desk bench run --set ${set} --record`);
       const recorded = readResults(files.results);
       if (recorded.length === 0) return notRun("the recorded benchmark has no rows");
       const registered = (JSON.parse(readFileSync(files.questions, "utf8")) as { hash: string }).hash;
@@ -109,7 +112,7 @@ function benchCheck(id: string, set: QuestionSet): Check {
       try {
         const out = join(dir, "replay.jsonl");
         const trials = [...new Set(recorded.map((r) => r.trial))].sort((a, b) => a - b);
-        await runBench({ db: e.db, port: new CassettePort(BENCH_CASSETTES), arms: ARMS, split: "all", set, trials, out });
+        await runBench({ db: e.db, port: new CassettePort(files.cassettes), arms: ARMS, split: "all", set, trials, out });
         const again = new Map(readResults(out).map((x) => [`${x.qid}|${x.arm}|${x.trial}`, x]));
         const answered = recorded.filter((x) => !x.error);
         const differs = answered.filter((x) => { const y = again.get(`${x.qid}|${x.arm}|${x.trial}`); return !y || y.answer !== x.answer || y.exact !== x.exact || y.close !== x.close; });
@@ -474,6 +477,33 @@ const CHECKS: Check[] = [
     },
   },
   {
+    id: "decision-regret-ledger",
+    command: "a decision made on September, held pending on ten later days, then scored on October and recomputed from the options' own replay",
+    seed: SEED,
+    async run(e) {
+      const sessions = replaySessionsFromLedger(e.db, loadSnapshot(PRICES), "0000", "9999", { personFromBranch: true });
+      const current = parsePolicyYaml(readFileSync("policies/daily-cap.yaml", "utf8"));
+      const split = Date.UTC(2026, 9, 1);
+      const history = sessions.filter((s) => s.startMs < split);
+      const result = await propose({ current, sessions: history, splitMs: split, targetMinMicros: 2_000_000, port: null });
+      const options = optionsOf(current, result);
+      const db = openRegret(":memory:");
+      recordDecision(db, { decisionId: "prove", requestId: null, decidedAtMs: split, decision: "proposed", history, options });
+      const early = scoreDecisions(db, sessions.filter((s) => s.startMs < split + 10 * 86_400_000));
+      if (!early[0]!.options.every((o) => o.status === "pending")) return fail("a decision with ten later days was scored; it must stay pending until 21 days are in");
+      const scored = scoreDecisions(db, sessions)[0]!;
+      const month = sessions.filter((s) => s.startMs >= split && s.startMs < split + 30 * 86_400_000);
+      const mismatch = options.filter((o) => {
+        const r = replayPolicy(o.policy, month);
+        const line = scored.options.find((x) => x.label === o.label)!;
+        return line.realised !== Math.round(r.savedMicros) || line.blockedLanded !== r.landedBlocked.length;
+      });
+      if (mismatch.length > 0) return fail(`the stored month differs from a fresh replay for: ${mismatch.map((m) => m.label).join(", ")}`);
+      const c = coverage([scored]);
+      return pass(`${scored.options.length} options recorded on ${history.length} September sessions and scored on October (${month.length} sessions): ${scored.options.map((o) => `${o.label} ${o.inside ? "inside" : "outside"} its range`).join(", ")}; regret summed over chosen options ${(c.totalRegretMicros / 1e6).toFixed(2)} dollars; each option's month equals a fresh replay; a decision with ten later days stays pending`);
+    },
+  },
+  {
     id: "canary-statistic-false-alarms",
     command: "falseAlarmStudy({histories: 100}) with no injected change",
     seed: SEED,
@@ -509,7 +539,6 @@ const CHECKS: Check[] = [
 const NOT_BUILT: { id: string; reason: string }[] = [
   { id: "calibration-ece", reason: "an expected calibration error needs numeric confidences; the Desk's link confidence is a level and has a reliability table instead, and no other surface carries a probability" },
   { id: "learning-curve-from-mistakes", reason: "learning from rejected answers as regression tests (DF-127) is not built" },
-  { id: "decision-regret-ledger", reason: "scoring approved and rejected policies against the month that actually followed (DF-129) is not built" },
 ];
 
 export async function prove(opts: { dir: string; only?: string; log?: (line: ProveLine) => void }): Promise<ProveLine[]> {

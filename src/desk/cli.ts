@@ -26,6 +26,8 @@ import { silosCommand, silosSeed } from "./silo/command.ts";
 import { askCommand, rememberCommand, verifyAnswerCommand } from "./ask/command.ts";
 import { runGateCli } from "./gate/cli.ts";
 import { approve } from "./dossier/command.ts";
+import { recordApproval, regretCommand } from "./regret/command.ts";
+import { lessonsCommand } from "./lessons/command.ts";
 import { startUiServer } from "./ui/server.ts";
 import { formatLine, prove, summarise } from "./prove/run.ts";
 import { demo } from "./demo.ts";
@@ -35,6 +37,7 @@ import { seatsCommand } from "./seats/command.ts";
 import { routeCommand } from "./route/command.ts";
 import { calibrateCommand } from "./calibrate/command.ts";
 
+const regretPath = (): string => (sampleMode ? join(values.out, "regret.db") : "data/desk/regret.db");
 const DOSSIER_PATHS = { dbPath: "data/desk/dossier.db", pendingDir: "data/desk/pending", outDir: "data/desk/dossiers" };
 const DEFAULT_SNAPSHOT = "data/prices/anthropic-litellm-2026-10-22.json";
 
@@ -74,6 +77,10 @@ const { values, positionals } = parseArgs({
     outcome: { type: "boolean", default: false },
     arm: { type: "string" },
     window: { type: "string", default: "21" },
+    backtest: { type: "string" },
+    "round-size": { type: "string" },
+    rounds: { type: "string" },
+    attempts: { type: "string" },
     "as-of": { type: "string" },
     tolerance: { type: "string", default: "0.1" },
     "price-strong": { type: "string" },
@@ -90,7 +97,7 @@ const command = positionals[0] ?? "card";
 const sampleMode = values.sample || process.env.SAMPLE_MODE === "true";
 const ledgerPath = sampleMode && !process.argv.includes("--db") && command !== "card" ? join(values.out, "ledger.db") : values.db;
 // Commands that read the sample ledger build it first when it is not there, so `--sample` works from a fresh clone.
-if (sampleMode && ["propose", "silos", "ask", "ui", "verify-answer", "bench", "seats", "calibrate"].includes(command) && !existsSync(ledgerPath)) {
+if (sampleMode && ["propose", "silos", "ask", "ui", "verify-answer", "bench", "seats", "calibrate", "regret", "lessons"].includes(command) && !existsSync(ledgerPath)) {
   await runCard({ mode: "sample", claudeDir: "", dbPath: "", pricesPath: values.prices, outDir: values["card-dir"], sampleDir: values.out, days: 14, hours: 5, repos: [], color: false });
 }
 const db = command === "card" ? openLedger(":memory:") : openLedger(ledgerPath);
@@ -135,7 +142,7 @@ written: ${r.files.join(", ")}`);
       sampleMode,
       personFromBranch: values["person-from-branch"],
       outDir: "data/desk/proposals",
-      ...(values.dossier ? { dossier: DOSSIER_PATHS } : {}),
+      ...(values.dossier ? { dossier: DOSSIER_PATHS, regretPath: regretPath() } : {}),
       env: process.env,
     }),
   );
@@ -159,6 +166,7 @@ written: ${r.files.join(", ")}`);
   console.log(await verifyAnswerCommand(ledgerPath, positionals[1] ?? "", values["memory-dir"]));
 } else if (command === "approve") {
   const r = approve(positionals[1] ?? "", positionals[2] ?? "", DOSSIER_PATHS);
+  if (r.ok) recordApproval(regretPath(), positionals[1] ?? "");
   console.log(r.text);
   if (!r.ok) process.exitCode = 1;
 } else if (command === "ui") {
@@ -189,6 +197,22 @@ ${t.pass} PASS, ${t.fail} FAIL, ${t.notRun} NOT RUN. NOT RUN is not a pass: it n
 } else if (command === "seats") {
   loadDotenv(".env");
   console.log(await seatsCommand({ dbPath: ledgerPath, pricesPath: values.prices, cassetteDir: values.cassettes, sampleMode, record: values.record, env: process.env, windowDays: Number(values.window), ...(values["as-of"] ? { asOf: values["as-of"] } : {}) }));
+} else if (command === "regret") {
+  loadDotenv(".env");
+  console.log(await regretCommand({ dbPath: ledgerPath, pricesPath: values.prices, policyPath: values.policy?.[0] ?? "policies/daily-cap.yaml", cassetteDir: values.cassettes, sampleMode, record: values.record, env: process.env, personFromBranch: values["person-from-branch"], regretPath: regretPath(), minUsd: values["min-usd"], ...(values.backtest ? { backtest: values.backtest } : {}) }));
+} else if (command === "lessons") {
+  loadDotenv(".env");
+  console.log(
+    await lessonsCommand({
+      sub: positionals[1] ?? "",
+      dbPath: ledgerPath,
+      sampleMode,
+      record: values.record,
+      env: process.env,
+      log: (line) => console.error(line),
+      config: { ...(values["round-size"] ? { roundSize: Number(values["round-size"]) } : {}), ...(values.rounds ? { maxRounds: Number(values.rounds) } : {}), ...(values.attempts ? { attempts: Number(values.attempts) } : {}), ...(values.concurrency ? { concurrency: Number(values.concurrency) } : {}) },
+    }),
+  );
 } else if (command === "route") {
   console.log(routeCommand({ runsPath: sampleMode ? SAMPLE_RUNS : OWN_RUNS, tolerance: Number(values.tolerance), ...(values["price-strong"] ? { priceStrong: values["price-strong"] } : {}), ...(values["price-cheap"] ? { priceCheap: values["price-cheap"] } : {}) }));
 } else if (command === "calibrate") {
@@ -283,7 +307,7 @@ ${t.pass} PASS, ${t.fail} FAIL, ${t.notRun} NOT RUN. NOT RUN is not a pass: it n
   console.log(`logs: ${sampleLogsDir(values.out)}`);
   console.log(`repos: ${sampleReposDir(values.out)}`);
 } else {
-  console.error(`unknown command "${command}". Use: card | propose | silos | ask | remember | verify-answer | gate | approve | ui | canary | bench | seats | route | calibrate | prove | demo | ingest | bill | autopsy | landing | replay | tunnel | sample build`);
+  console.error(`unknown command "${command}". Use: card | propose | silos | ask | remember | verify-answer | gate | approve | ui | canary | bench | seats | route | calibrate | regret | lessons | prove | demo | ingest | bill | autopsy | landing | replay | tunnel | sample build`);
   process.exitCode = 2;
 }
 db.close();

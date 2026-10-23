@@ -250,6 +250,28 @@ export class RecordingPort implements ModelPort {
   }
 }
 
+/**
+ * Replays a recording when there is one and calls the live port, recording the reply, when there is not. A run that was
+ * interrupted can be started again and pays only for what it had not yet asked.
+ */
+export class ReplayOrRecordPort implements ModelPort {
+  private readonly replay: CassettePort;
+  private readonly record: RecordingPort;
+  constructor(live: ModelPort, dir: string) {
+    this.replay = new CassettePort(dir);
+    this.record = new RecordingPort(live, dir);
+  }
+
+  async complete(request: ModelRequest, deadlineMs: number): Promise<ModelResponse> {
+    try {
+      return await this.replay.complete(request);
+    } catch (e) {
+      if (!(e instanceof ModelError) || e.kind !== "cassette_miss") throw e;
+      return this.record.complete(request, deadlineMs);
+    }
+  }
+}
+
 export interface CallContext {
   budget: Budget;
   trace?: Trace;

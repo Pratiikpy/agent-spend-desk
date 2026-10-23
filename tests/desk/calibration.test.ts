@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { attributionReliability, renderAttribution, wilson } from "../../src/desk/calibrate/attribution.ts";
-import { summarise, type TunnelTrial } from "../../src/desk/calibrate/windtunnel.ts";
+import { calibrationOf, summarise, type TunnelTrial } from "../../src/desk/calibrate/windtunnel.ts";
+import { smoothedBlockChance } from "../../src/desk/replay/wind-tunnel.ts";
 import { openLedger } from "../../src/desk/ledger/db.ts";
 import type { RunRow } from "../../src/desk/canary/runner.ts";
 import { TASKS } from "../../src/desk/canary/tasks.ts";
@@ -148,10 +149,39 @@ describe("calibration", () => {
   });
 
   it("summarises wind-tunnel trials into a coverage with an interval, and separates the history the tunnel flagged", () => {
-    const trial = (seed: number, inside: boolean, flagged = false): TunnelTrial => ({ seed, historySessions: 100, predictedLowMicros: 0, predictedHighMicros: 1, predictedMeanMicros: 0.5, realizedMicros: inside ? 0.5 : 2, inside, driftFlagged: flagged });
+    const trial = (seed: number, inside: boolean, flagged = false): TunnelTrial => ({ seed, historySessions: 100, predictedLowMicros: 0, predictedHighMicros: 1, predictedMeanMicros: 0.5, realizedMicros: inside ? 0.5 : 2, inside, driftFlagged: flagged, pBlockedRaw: 0, pBlockedSmoothed: 0.4, blockedLandedRealized: inside ? 0 : 3 });
     const c = summarise("p.yaml", [trial(1, true), trial(2, true), trial(3, false, true), trial(4, true)]);
     expect(c).toMatchObject({ inside: 3, coverage: 0.75, driftFlagged: 1, insideWhenUnflagged: { inside: 3, n: 3 } });
     expect(c.low).toBeLessThan(0.75);
     expect(c.high).toBeGreaterThan(0.75);
+  });
+
+  it("computes the expected calibration error and the Brier score of a stated probability", () => {
+    // Always says 0.9 and is right 9 times in 10: calibrated. Always says 0 and the event happens half the time: not.
+    const good = calibrationOf(Array(10).fill(0.9), [true, true, true, true, true, true, true, true, true, false]);
+    expect(good.ece).toBeCloseTo(0, 10);
+    expect(good.brier).toBeCloseTo(0.9 * 0.01 + 0.1 * 0.81, 10);
+    const bad = calibrationOf(Array(10).fill(0), [true, true, true, true, true, false, false, false, false, false]);
+    expect(bad.ece).toBeCloseTo(0.5, 10);
+    expect(bad.baseRate).toBe(0.5);
+    expect(calibrationOf([], []).ece).toBe(0);
+  });
+
+  it("does not take a zero count for a zero probability, and lets a seen rate speak", () => {
+    const landed = (id: string): ReplaySession => ({ id, person: "p", project: "r", agent: "a", taskType: "t", startMs: 0, landed: true, calls: [] });
+    const history = Array.from({ length: 100 }, (_, i) => landed(`s${i}`));
+    const none = smoothedBlockChance(history, 0, 100);
+    expect(none).toBeGreaterThan(0.3);
+    expect(none).toBeLessThan(0.5);
+    expect(smoothedBlockChance(history, 0.05, 100)).toBeGreaterThan(0.99);
+    expect(smoothedBlockChance([], 0, 100)).toBeGreaterThan(0.9);
+  });
+
+  it("carries the calibration of the stated probability in the coverage summary", () => {
+    const trial = (seed: number, raw: number, smooth: number, blocked: number): TunnelTrial => ({ seed, historySessions: 100, predictedLowMicros: 0, predictedHighMicros: 1, predictedMeanMicros: 0.5, realizedMicros: 0.5, inside: true, driftFlagged: false, pBlockedRaw: raw, pBlockedSmoothed: smooth, blockedLandedRealized: blocked });
+    const c = summarise("p.yaml", [trial(1, 0, 0.4, 3), trial(2, 0, 0.4, 0), trial(3, 0, 0.4, 2), trial(4, 0, 0.4, 1)]);
+    expect(c.probability!.raw.ece).toBeCloseTo(0.75, 10);
+    expect(c.probability!.smoothed.ece).toBeCloseTo(0.35, 10);
+    expect(c.probability!.smoothed.brier).toBeLessThan(c.probability!.raw.brier);
   });
 });

@@ -1,6 +1,6 @@
 import { openLedger } from "../ledger/db.ts";
 import { choosePort } from "../propose/command.ts";
-import { BENCH_SEED, BENCH_SEED_B, buildQuestions, questionSetHash, type QuestionSet } from "./questions.ts";
+import { BENCH_SEED, BENCH_SEED_B, BENCH_SEED_C, buildQuestions, questionSetHash, type QuestionSet } from "./questions.ts";
 import { ARMS, CATEGORIES, formatReport, readResults, runBench, writeQuestionSet } from "./run.ts";
 import type { ArmId } from "./arms.ts";
 
@@ -9,9 +9,20 @@ export const RESULTS_FILE = "docs/verification/benchmark/results.jsonl";
 export const QUESTIONS_FILE = "docs/verification/benchmark/questions.json";
 export const RESULTS_FILE_B = "docs/verification/benchmark/set-b/results.jsonl";
 export const QUESTIONS_FILE_B = "docs/verification/benchmark/set-b/questions.json";
+export const RESULTS_FILE_C = "docs/verification/learning/train-c/results.jsonl";
+export const QUESTIONS_FILE_C = "docs/verification/learning/train-c/questions.json";
 
-export const filesFor = (set: QuestionSet): { results: string; questions: string; seed: number } => (set === "B" ? { results: RESULTS_FILE_B, questions: QUESTIONS_FILE_B, seed: BENCH_SEED_B } : { results: RESULTS_FILE, questions: QUESTIONS_FILE, seed: BENCH_SEED });
-export const BENCH_CASSETTES = "data/sample/bench-cassettes";
+/** Each set records into its own folder: a reply recorded for one set must never overwrite what the other set replays. */
+export const CASSETTES_A = "data/sample/bench-cassettes";
+export const CASSETTES_B = "data/sample/bench-cassettes-b";
+export const CASSETTES_C = "data/sample/learning-cassettes-c";
+
+export const filesFor = (set: QuestionSet): { results: string; questions: string; seed: number; cassettes: string } =>
+  set === "B"
+    ? { results: RESULTS_FILE_B, questions: QUESTIONS_FILE_B, seed: BENCH_SEED_B, cassettes: CASSETTES_B }
+    : set === "C"
+      ? { results: RESULTS_FILE_C, questions: QUESTIONS_FILE_C, seed: BENCH_SEED_C, cassettes: CASSETTES_C }
+      : { results: RESULTS_FILE, questions: QUESTIONS_FILE, seed: BENCH_SEED, cassettes: CASSETTES_A };
 
 export interface BenchCommandOptions {
   sub: string;
@@ -32,8 +43,8 @@ export interface BenchCommandOptions {
 export async function benchCommand(o: BenchCommandOptions): Promise<string> {
   const db = openLedger(o.dbPath);
   try {
-    const set: QuestionSet = o.set === "B" ? "B" : "A";
-    if (o.set !== undefined && o.set !== "A" && o.set !== "B") return `--set is A or B, not ${o.set}.`;
+    const set: QuestionSet = o.set === "B" ? "B" : o.set === "C" ? "C" : "A";
+    if (o.set !== undefined && o.set !== "A" && o.set !== "B" && o.set !== "C") return `--set is A, B or C, not ${o.set}.`;
     const files = filesFor(set);
     const questions = buildQuestions(db, files.seed, set);
     const results = o.results ?? files.results;
@@ -53,7 +64,7 @@ export async function benchCommand(o: BenchCommandOptions): Promise<string> {
       const split = (o.split ?? "all") as "dev" | "held_out" | "all";
       if (!["dev", "held_out", "all"].includes(split)) return `--split is dev, held_out or all, not ${split}.`;
       // A rate-limited reply is retried for minutes, so a busy endpoint costs time and never a wrong or missing answer.
-      const { port, label } = choosePort({ sampleMode: o.sampleMode, record: o.record, cassetteDir: BENCH_CASSETTES, env: o.env, backoffMs: [4_000, 8_000, 15_000, 30_000, 60_000, 60_000, 60_000] });
+      const { port, label } = choosePort({ sampleMode: o.sampleMode, record: o.record, cassetteDir: files.cassettes, env: o.env, backoffMs: [4_000, 8_000, 15_000, 30_000, 60_000, 60_000, 60_000] });
       if (!port) return `No model to run the arms on: ${label}. Set the model settings in .env, or run with --sample to replay the recorded replies.`;
       const only = o.only ? o.only.split(",").map((s) => s.trim()) : undefined;
       const trials = (o.trials ?? "0").split(",").map((t) => Number(t.trim()));

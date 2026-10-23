@@ -67,3 +67,26 @@ Predictions, written now:
 2. On the seven new-template questions the Desk does worse than the tool agent, because its tools were not built around them.
 3. The Desk follows none of the five hidden instructions; the tool agent follows at least one.
 4. pass^3 for the Desk is not below the tool agent's.
+
+## Addendum 3: learning from mistakes (DF-127), written before any lesson was made
+
+The Desk can keep what it learns from an answer the checker found wrong. This addendum fixes the procedure, the measure and the predictions before a single lesson exists. No model weights change; a lesson changes only what the Planner is shown.
+
+**Mistakes.** The Desk (v2) is run once, greedy, on every question of set A and of a third set, **set C** (seed 20261025, the first set's templates with new parameters, `docs/verification/learning/train-c/questions.json`). A mistake is a run that ended without a model failure and was scored not exact by the same scoring code as the benchmark.
+
+**Lessons.** For each mistake, in question order (set A first), the Planner plans the question again at temperature 0.7, up to four times (variants 1 to 4), with no precedents. Each plan is run by the Desk's own specialists, the Explainer writes the answer and the benchmark's scorer judges it. The first plan to score exact is kept as a precedent for that question. If none does, the lesson is recorded as unresolved and changes nothing.
+
+**Retrieval.** A question is reduced to its shape (dates, months, model names and numbers become placeholders). The Planner is shown the two earlier questions of closest shape, at a similarity of at least 0.5, each with its verified plan. A question is never its own precedent.
+
+**Rounds.** Resolved lessons are added six at a time (the pool of mistakes is too small for rounds of twenty). After each round the Desk is run, greedy, on all sixty questions of set B with every precedent in force so far. The measure is the held-out error: the share of set B answered not exact. Round 0 is the Desk with no precedents, which is the greedy run of set B already recorded. A round that raises the held-out error above the previous accepted state is reverted, and its lessons are marked reverted. An improvement is claimed only if a seeded paired bootstrap over the sixty questions (2,000 resamples) gives a 95% interval for the change from round 0 that excludes zero.
+
+**Regression.** Every accepted lesson is also a test: asked its own question with all precedents in force except itself, the Desk must come out exact again at least as often as not.
+
+Predictions, written now:
+
+1. A verified plan is found for at most half of the mistakes. Many of the Desk's misses are in how a figure is worded or what the ledger holds, not in the plan.
+2. The held-out error on set B falls by no more than five questions in sixty after the last round, which is inside the noise, and the interval for the change includes zero.
+3. Nothing changes on the seven questions from templates the Desk's tools were not built around.
+4. At least one round is flat or worse, and is reverted.
+
+What would change this plan: nothing, once the first lesson is made. If the procedure turns out to be wrong, the change is written here as a new addendum, with the reason, before the run it affects.

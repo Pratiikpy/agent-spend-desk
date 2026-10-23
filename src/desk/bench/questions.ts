@@ -15,7 +15,10 @@ import { Rng } from "../canary/rng.ts";
 export const BENCH_SEED = 20261023;
 /** The second set: new parameters and a few questions from templates the first set did not have. */
 export const BENCH_SEED_B = 20261024;
-export type QuestionSet = "A" | "B";
+/** The third set is for learning from mistakes: the first set's templates, new parameters. It is never used to score the Desk. */
+export const BENCH_SEED_C = 20261025;
+export type QuestionSet = "A" | "B" | "C";
+export const seedOf = (set: QuestionSet): number => (set === "B" ? BENCH_SEED_B : set === "C" ? BENCH_SEED_C : BENCH_SEED);
 
 export type Category = "lookup" | "multi_hop" | "counterfactual" | "unanswerable" | "adversarial" | "numeric";
 

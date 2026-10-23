@@ -1,7 +1,7 @@
 {
-  "name": "plumbline",
+  "name": "agent-spend-desk",
   "version": "0.0.0",
-  "description": "Counterparty-release decision system: reconcile conflicting sources, explain with verified evidence, decide under rules and precedent.",
+  "description": "desk. ties what AI coding agents cost to the work that landed, and tests a spend policy on a month it never saw.",
   "private": true,
   "type": "module",
   "license": "Apache-2.0",

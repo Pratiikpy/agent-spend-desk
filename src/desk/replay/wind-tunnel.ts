@@ -31,6 +31,14 @@ export interface TunnelResult {
   simulatedMonths: number;
   /** Chance that a month blocks at least one landed task, with a 90% interval across resampled histories. */
   pBlockedLanded: Range;
+  /**
+   * The same chance with a zero count not taken for a zero probability. A policy that blocked no landed session in the
+   * history can still block one next month, and the resampled figure above can only draw what the history holds. This one
+   * puts a Jeffreys prior (one half) on the rate at which a landed session is blocked, using the landed sessions of the
+   * history, and asks for at least one block among the landed sessions a month holds. It is shown beside the resampled
+   * figure and never replaces it in a ranking.
+   */
+  pBlockedLandedSmoothed: number;
   /** Dollars not spent per month: the mean, with a 90% interval across histories, and the 5th/95th percentile month. */
   savedMicros: Range;
   savedMonthSpread: { p05: number; p95: number };
@@ -129,16 +137,31 @@ function sessionCost(s: ReplaySession): number {
  * reflect how little history there is, not just simulation noise. The method assumes the future
  * resembles the past; a two-sample test of the last four weeks against the rest flags when it does not.
  */
+/**
+ * The chance of at least one blocked landed session in a month, with a Jeffreys prior on the per-session rate. `rate` is
+ * the share of landed sessions the policy blocked across the simulated months; `perMonth` is how many landed sessions a
+ * simulated month holds. The prior counts only the distinct landed sessions of the history, because the resampled months
+ * repeat them and are not new evidence.
+ */
+export function smoothedBlockChance(history: readonly ReplaySession[], rate: number, perMonth: number): number {
+  const n = history.filter((s) => s.landed).length;
+  const perSession = (rate * n + 0.5) / (n + 1);
+  return 1 - Math.pow(1 - perSession, perMonth);
+}
+
 export function windTunnel(policy: Policy, history: readonly ReplaySession[], options: Partial<TunnelOptions> = {}): TunnelResult {
   const o = { ...DEFAULT_TUNNEL, ...options };
   if (history.length < o.minSessions) {
-    return { status: "too_little_history", sessions: history.length, simulatedMonths: 0, pBlockedLanded: { low: 0, mid: 0, high: 0 }, savedMicros: { low: 0, mid: 0, high: 0 }, savedMonthSpread: { p05: 0, p95: 0 }, drift: null, historyMayNotPredict: true };
+    return { status: "too_little_history", sessions: history.length, simulatedMonths: 0, pBlockedLanded: { low: 0, mid: 0, high: 0 }, pBlockedLandedSmoothed: 0, savedMicros: { low: 0, mid: 0, high: 0 }, savedMonthSpread: { p05: 0, p95: 0 }, drift: null, historyMayNotPredict: true };
   }
   const blocks = toBlocks(history);
   const rand = seeded(o.seed);
   const pByRep: number[] = [];
   const savedByRep: number[] = [];
   const allSaved: number[] = [];
+  let landedSeen = 0;
+  let landedBlocked = 0;
+  let simulated = 0;
   for (let rep = 0; rep < o.outerReps; rep += 1) {
     const resampled: Block[] = Array.from({ length: blocks.length }, () => blocks[Math.floor(rand() * blocks.length)]!);
     let blocked = 0;
@@ -147,6 +170,9 @@ export function windTunnel(policy: Policy, history: readonly ReplaySession[], op
       const month = simulateMonth(resampled, rand);
       const r = replayPolicy(policy, month);
       if (r.landedBlocked.length > 0) blocked += 1;
+      landedSeen += r.landedTotal;
+      landedBlocked += r.landedBlocked.length;
+      simulated += 1;
       savedSum += r.savedMicros;
       allSaved.push(r.savedMicros);
     }
@@ -165,6 +191,7 @@ export function windTunnel(policy: Policy, history: readonly ReplaySession[], op
     sessions: history.length,
     simulatedMonths: o.outerReps * o.innerSims,
     pBlockedLanded: range(pByRep),
+    pBlockedLandedSmoothed: smoothedBlockChance(history, landedSeen === 0 ? 0 : landedBlocked / landedSeen, landedSeen / Math.max(1, simulated)),
     savedMicros: range(savedByRep),
     savedMonthSpread: { p05: quantile(allSaved, 0.05), p95: quantile(allSaved, 0.95) },
     drift,

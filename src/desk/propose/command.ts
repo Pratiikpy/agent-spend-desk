@@ -10,6 +10,7 @@ import { replaySessionsFromLedger } from "../replay/from-ledger.ts";
 import { propose, renderProposal, writeProposal } from "./run.ts";
 import { buildPolicyChangePack } from "../dossier/policy-change.ts";
 import { issueApproval, type DossierPaths } from "../dossier/command.ts";
+import { recordProposal } from "../regret/command.ts";
 
 export interface ProposeCommandOptions {
   dbPath: string;
@@ -28,6 +29,8 @@ export interface ProposeCommandOptions {
   outDir: string;
   /** Issue an approval request and prepare the signed dossier. */
   dossier?: DossierPaths;
+  /** Where the decision regret ledger keeps what was expected of each option. Written only when an approval request is issued. */
+  regretPath?: string;
   env: Record<string, string | undefined>;
 }
 
@@ -79,7 +82,9 @@ export async function proposeCommand(o: ProposeCommandOptions): Promise<string> 
           period: { from: day(sessions[0]!.startMs), to: day(sessions[sessions.length - 1]!.startMs) },
           createdAt: new Date().toISOString(),
         });
-        tail = "\n" + "\n" + issueApproval(pack, o.dossier).text;
+        const issued = issueApproval(pack, o.dossier);
+        if (o.regretPath) recordProposal(o.regretPath, { requestId: issued.requestId, current, result, sessions });
+        tail = "\n" + "\n" + issued.text;
       }
     }
     return `${renderProposal(result, { sessions, splitMs })}\nmodel route: ${label}\nwritten: ${files.policyPath}, ${files.tracePath}${tail}`;

@@ -1,8 +1,8 @@
 import { Budget, BudgetError, type BudgetLimits } from "../agents/budget.ts";
 import { callModel, ModelError, type ChatMessage, type ModelPort, type ModelResponse, type ToolSpec } from "../agents/model.ts";
 import { MemoryTrace, NULL_TRACE } from "../agents/trace.ts";
-import { ask } from "../ask/ask.ts";
-import { parseProgram } from "../ask/program.ts";
+import { ask, type Precedent } from "../ask/ask.ts";
+import { parseProgram, type AnswerProgram } from "../ask/program.ts";
 import { DEFAULT_CLAIM_TOKENS, ledgerCoverage, runStep, type Engines, type StepResult } from "../ask/specialists.ts";
 import { buildWorldModel } from "../engines/world.ts";
 import type { Ledger } from "../ledger/db.ts";
@@ -28,6 +28,8 @@ export interface ArmOutcome {
   error: string | null;
   /** A short account of what the arm did, for the results file. */
   detail: string;
+  /** The Desk's plan, when the arm is the Desk and it made one. */
+  program?: AnswerProgram | null;
 }
 
 const SYSTEM = `You answer questions about an agent-spend ledger. Dollar amounts are estimates at list price, not invoices.
@@ -146,19 +148,19 @@ export async function runA1(o: { db: Ledger; port: ModelPort; question: string }
 }
 
 /** The Desk's own answer as text: its sentences, or the reason it gave for not answering. */
-export async function runA2(o: { db: Ledger; port: ModelPort; question: string }): Promise<ArmOutcome> {
+export async function runA2(o: { db: Ledger; port: ModelPort; question: string; precedents?: readonly Precedent[] }): Promise<ArmOutcome> {
   const started = Date.now();
   const counting = countingPort(o.port);
   const trace = new MemoryTrace();
   try {
-    const r = await ask({ db: o.db, question: o.question, port: counting.port, record: false, budget: new Budget(LIMITS), trace });
+    const r = await ask({ db: o.db, question: o.question, port: counting.port, record: false, budget: new Budget(LIMITS), trace, ...(o.precedents ? { precedents: o.precedents } : {}) });
     // The Desk falls back to its rule brain when the model fails, which is right for a user and wrong for a comparison of
     // the same model on three arms: a run whose model call failed is an error to be run again, not an answer.
     const outage = trace.events.find((e) => e.event === "fallback.used" && /^(transient|aborted|cassette_miss|budget)/.test(String((e.detail as { reason?: unknown } | undefined)?.reason ?? "")));
     if (outage) return { answer: "", modelCalls: counting.totals.calls, tokensIn: counting.totals.inTok, tokensOut: counting.totals.outTok, servedModel: r.servedModel, ms: Date.now() - started, error: `model unavailable: ${String((outage.detail as { reason?: unknown }).reason).slice(0, 120)}`, detail: `${r.status}; the Desk fell back to rules` };
     const body = r.sentences.map((s) => s.text).join(" ");
     const answer = r.status === "answered" ? [body, r.note ?? ""].join(" ").trim() : `${r.status === "refused" ? "Not answered." : "Unknowable."} ${r.note ?? ""}`.trim();
-    return { answer, modelCalls: counting.totals.calls, tokensIn: counting.totals.inTok, tokensOut: counting.totals.outTok, servedModel: r.servedModel, ms: Date.now() - started, error: null, detail: `${r.status}; planner ${r.planner}; explainer ${r.explainer}; ${r.steps.length} steps` };
+    return { answer, modelCalls: counting.totals.calls, tokensIn: counting.totals.inTok, tokensOut: counting.totals.outTok, servedModel: r.servedModel, ms: Date.now() - started, error: null, detail: `${r.status}; planner ${r.planner}; explainer ${r.explainer}; ${r.steps.length} steps`, program: r.program };
   } catch (e) {
     return { answer: "", modelCalls: counting.totals.calls, tokensIn: counting.totals.inTok, tokensOut: counting.totals.outTok, servedModel: counting.totals.served, ms: Date.now() - started, error: fail(e), detail: "" };
   }

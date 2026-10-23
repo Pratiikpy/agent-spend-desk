@@ -19,6 +19,11 @@ export interface SampleOptions {
   /** Number of 30-day-ish months to generate (calendar days: months * 30). */
   months: number;
   engineers: number;
+  /**
+   * When the tool version and the model mix change. Default: the planted change of 14 October 2026. `null` plants none,
+   * which gives the calibration study a control month in which nothing shifts (the truth file still names the default).
+   */
+  changeAtMs?: number | null;
 }
 
 export const DEFAULT_SAMPLE: Omit<SampleOptions, "outDir"> = { seed: 20261022, start: "2026-09-01", months: 2, engineers: 14 };
@@ -61,6 +66,8 @@ const MODEL_MIX: [string, number][] = [["claude-opus-5", 0.6], ["claude-sonnet-5
  * model behind the endpoint had been switched. Wednesday 14 October 2026, 09:12 UTC, as in the demo script.
  */
 export const PLANTED_CHANGE_AT = Date.UTC(2026, 9, 14, 9, 12);
+/** The change in force for the sample being built; set by buildSample, which is synchronous. */
+let changeAt = PLANTED_CHANGE_AT;
 const MODEL_MIX_AFTER: [string, number][] = [["claude-opus-5", 0.2], ["claude-sonnet-5-5", 0.75], ["claude-haiku-5-5", 0.05]];
 const TOOL_VERSION_BEFORE = "sample-1";
 const TOOL_VERSION_AFTER = "sample-2";
@@ -172,7 +179,7 @@ function genThread(r: Rng, p: Planned, spec: ThreadSpec, repoPath: string, start
     const output = int(r, 120, 2600);
     lines.push(JSON.stringify({
       parentUuid: null, isSidechain: spec.sidechain, type: "assistant", uuid: `${id}-0`, timestamp: iso(t), sessionId: p.id, requestId: `req_${id}`, apiBlockIndex: 0,
-      cwd: repoPath, gitBranch: `${p.engineer}/${p.repo}-work`, version: p.startMs >= PLANTED_CHANGE_AT ? TOOL_VERSION_AFTER : TOOL_VERSION_BEFORE,
+      cwd: repoPath, gitBranch: `${p.engineer}/${p.repo}-work`, version: p.startMs >= changeAt ? TOOL_VERSION_AFTER : TOOL_VERSION_BEFORE,
       message: {
         id, type: "message", role: "assistant", model, stop_reason: "tool_use",
         content: [{ type: "tool_use", id: `tu_${id}`, name: tool.name, input: tool.input }],
@@ -250,6 +257,7 @@ function commitBlock(ref: string, c: { mark: number; engineer: string; atMs: num
 
 export function buildSample(partial: Partial<SampleOptions> & { outDir: string }): Truth {
   const opts: SampleOptions = { ...DEFAULT_SAMPLE, ...partial };
+  changeAt = opts.changeAtMs === undefined ? PLANTED_CHANGE_AT : opts.changeAtMs === null ? Number.POSITIVE_INFINITY : opts.changeAtMs;
   const r = seeded(opts.seed);
   const out = resolve(opts.outDir);
   rmSync(out, { recursive: true, force: true });
@@ -271,7 +279,7 @@ export function buildSample(partial: Partial<SampleOptions> & { outDir: string }
     const slug = repoPath.replace(/[^A-Za-z0-9]/g, "-");
     const dir = join(claudeRoot, slug);
     mkdirSync(dir, { recursive: true });
-    const model = weighted(r, p.startMs >= PLANTED_CHANGE_AT ? MODEL_MIX_AFTER : MODEL_MIX);
+    const model = weighted(r, p.startMs >= changeAt ? MODEL_MIX_AFTER : MODEL_MIX);
     const baseCalls = p.archetype === "docs" ? int(r, 5, 15) : p.archetype === "bugfix" ? int(r, 10, 30) : int(r, 18, 55);
     const loopRepeats = p.archetype === "loop_stuck" ? int(r, 14, 40) : p.archetype === "loop_brief" ? int(r, 3, 5) : 0;
     const main = genThread(r, p, { calls: baseCalls + loopRepeats, loopAt: loopRepeats > 0 ? int(r, 4, Math.max(5, baseCalls - 2)) : null, loopRepeats, sidechain: false, model, switchModelAt: r() < 0.03 ? int(r, 3, 8) : null }, repoPath, p.startMs, counter, int(r, 9, 22));
