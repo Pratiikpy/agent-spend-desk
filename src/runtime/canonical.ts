@@ -4,82 +4,73 @@ import { SchemaError } from "./errors.ts";
 import { isPlainObject, type Json } from "./json.ts";
 
 /**
- * Canonical JSON: object keys sorted by UTF-16 code unit, no insignificant
- * whitespace, numbers in their shortest round-trip form with -0 normalised to 0.
- * State, cassette keys and hashes depend on this exact form, so it is owned here
- * and never delegated to a library whose output could change in an upgrade.
+ * Canonical JSON: keys sorted by UTF-16 code unit, no whitespace, numbers in their shortest round-trip form, and
+ * -0 written as 0. Hashes, signatures and recorded keys depend on this exact text, so it is written here and not
+ * borrowed from a library whose output could change with a version.
  *
- * Only plain JSON is accepted. `undefined`, functions, symbols, bigint, NaN,
- * infinities, class instances and cycles are rejected rather than silently dropped.
+ * Only plain JSON is accepted. `undefined`, functions, symbols, bigint, NaN, infinities, class instances and cycles
+ * are errors rather than being dropped without a word.
  */
 export function canonicalJson(value: unknown): string {
-  return serialise(value, "$", new Set());
+  const out: string[] = [];
+  write(value, "$", [], out);
+  return out.join("");
 }
 
-function serialise(value: unknown, path: string, seen: Set<object>): string {
-  if (value === null) return "null";
-  switch (typeof value) {
-    case "boolean":
-      return value ? "true" : "false";
-    case "string":
-      return JSON.stringify(value);
-    case "number": {
-      if (!Number.isFinite(value)) {
-        throw new SchemaError([{ path, message: `non-finite number ${String(value)} is not JSON` }]);
-      }
-      return Object.is(value, -0) ? "0" : JSON.stringify(value);
-    }
-    case "object":
-      break;
-    default:
-      throw new SchemaError([{ path, message: `${typeof value} is not JSON` }]);
-  }
+function reject(path: string, message: string): never {
+  throw new SchemaError([{ path, message }]);
+}
 
-  const obj = value as object;
-  if (seen.has(obj)) {
-    throw new SchemaError([{ path, message: "cyclic structure" }]);
+function write(value: unknown, path: string, stack: object[], out: string[]): void {
+  if (value === null) return void out.push("null");
+  if (typeof value === "boolean") return void out.push(value ? "true" : "false");
+  if (typeof value === "string") return void out.push(JSON.stringify(value));
+  if (typeof value === "number") {
+    if (!Number.isFinite(value)) reject(path, `non-finite number ${String(value)} is not JSON`);
+    return void out.push(Object.is(value, -0) ? "0" : JSON.stringify(value));
   }
-  seen.add(obj);
-  try {
-    if (Array.isArray(obj)) {
-      const parts = obj.map((item, i) => serialise(item, `${path}[${i}]`, seen));
-      return `[${parts.join(",")}]`;
-    }
-    if (!isPlainObject(obj)) {
-      throw new SchemaError([{ path, message: "only plain objects are JSON" }]);
-    }
-    const keys = Object.keys(obj).sort();
-    const parts = keys.map((key) => {
-      const child = obj[key];
-      if (child === undefined) {
-        throw new SchemaError([{ path: `${path}.${key}`, message: "undefined is not JSON; omit the key" }]);
-      }
-      return `${JSON.stringify(key)}:${serialise(child, `${path}.${key}`, seen)}`;
+  if (typeof value !== "object") reject(path, `${typeof value} is not JSON`);
+  if (stack.includes(value)) reject(path, "cyclic structure");
+  stack.push(value);
+  if (Array.isArray(value)) {
+    out.push("[");
+    value.forEach((item, i) => {
+      if (i > 0) out.push(",");
+      write(item, `${path}[${i}]`, stack, out);
     });
-    return `{${parts.join(",")}}`;
-  } finally {
-    seen.delete(obj);
+    out.push("]");
+  } else if (isPlainObject(value)) {
+    out.push("{");
+    Object.keys(value)
+      .sort()
+      .forEach((key, i) => {
+        const item = value[key];
+        if (item === undefined) reject(`${path}.${key}`, "undefined is not JSON; omit the key");
+        if (i > 0) out.push(",");
+        out.push(JSON.stringify(key), ":");
+        write(item, `${path}.${key}`, stack, out);
+      });
+    out.push("}");
+  } else {
+    reject(path, "only plain objects are JSON");
   }
+  stack.pop();
 }
 
 export function sha256Hex(data: string | Uint8Array): string {
   return createHash("sha256").update(data).digest("hex");
 }
 
-/** Hash of the canonical JSON form, prefixed so a bare hex string is never mistaken for one. */
+/** The hash of a value's canonical text, with a prefix so a bare hex string is never taken for one. */
 export function hashJson(value: unknown): string {
   return `sha256:${sha256Hex(canonicalJson(value))}`;
 }
 
-/** Normalise any value already known to be JSON-compatible into a deep, frozen copy. */
+/** Freeze a JSON value and everything inside it. */
 export function deepFreeze<T extends Json>(value: T): T {
-  if (value !== null && typeof value === "object") {
+  if (typeof value === "object" && value !== null && !Object.isFrozen(value)) {
     Object.freeze(value);
-    for (const child of Object.values(value)) {
-      if (child !== null && typeof child === "object" && !Object.isFrozen(child)) {
-        deepFreeze(child as Json);
-      }
-    }
+    for (const inner of Object.values(value)) deepFreeze(inner as Json);
   }
   return value;
 }

@@ -38,7 +38,7 @@ export function table(caption, cols, rows, opts = {}) {
     null,
     h("caption", { class: "kicker" }, caption),
     h("thead", null, h("tr", null, ...cols.map((c) => h("th", { scope: "col", class: c.num ? "num" : "" }, c.label)))),
-    h("tbody", null, ...rows.map((r) => h("tr", null, ...cols.map((c) => h("td", { class: `${c.num ? "num" : ""}${c.id ? " id" : ""}`.trim() }, c.render(r)))))),
+    h("tbody", null, ...rows.map((r) => h("tr", null, ...cols.map((c) => h("td", { class: `${c.num ? "num" : ""}${c.id ? " id" : ""}`.trim(), "data-label": c.label }, c.render(r)))))),
   );
   return h("div", { class: `tablewrap${opts.maxh ? " maxh" : ""}`, tabindex: "0", role: "region", "aria-label": caption }, t);
 }
