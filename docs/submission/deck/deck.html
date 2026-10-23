@@ -63,6 +63,7 @@ img.shot { width: 100%; border: 1px solid var(--line); border-radius: 16px; disp
 .title { grid-template-columns: 1fr; align-content: center; background: var(--paper); }
 .title .mark { display: flex; align-items: center; gap: 24px; font-size: 48px; font-weight: 700; letter-spacing: -0.04em; margin-bottom: 70px; }
 svg text { font-family: "JetBrains Mono", monospace; }
+svg.arch { width: 100%; height: auto; display: block; }
 </style>
 </head>
 <body>
@@ -127,7 +128,7 @@ svg text { font-family: "JetBrains Mono", monospace; }
   <div class="meta"><b>04</b>Architecture</div>
   <div>
     <h2>Agents propose. Code checks. A stranger can verify.</h2>
-    <svg viewBox="0 0 1500 640" width="1300" height="555" role="img" aria-label="Architecture diagram: sources feed the ledger; the Ask loop and the Propose loop sit on the ledger; the gate, the approval echo and the signed dossier sit under them">
+    <svg class="arch" viewBox="0 0 1500 450" role="img" aria-label="Architecture diagram: sources feed the ledger; the Ask loop and the Propose loop sit on the ledger; the gate, the approval echo and the signed dossier sit under them">
       <g font-size="19" fill="#0a0a0a">
         <rect x="0" y="20" width="270" height="86" rx="14" fill="#f8fafc" stroke="#e5e7eb"/><text x="20" y="56">agent logs</text><text x="20" y="84" fill="#6b7280" font-size="16">Claude Code, read-only</text>
         <rect x="0" y="130" width="270" height="86" rx="14" fill="#f8fafc" stroke="#0a0a0a" stroke-width="2"/><text x="20" y="166">Zetaris</text><text x="20" y="194" fill="#6b7280" font-size="16">invoices · CI · roster</text>
@@ -152,10 +153,11 @@ svg text { font-family: "JetBrains Mono", monospace; }
         <text x="742" y="166" font-size="16" fill="#6b7280">rule fallback on any model failure</text>
         <rect x="720" y="230" width="400" height="190" rx="18" fill="#f8fafc" stroke="#e5e7eb"/>
         <text x="742" y="268" font-size="21" font-weight="600">Propose</text>
-        <text x="742" y="298" font-size="16" fill="#6b7280">Drafter ⇄ restrict-only check</text>
-        <text x="742" y="324" font-size="16" fill="#6b7280">Attacker finds evasions · hardener closes</text>
-        <text x="742" y="350" font-size="16" fill="#6b7280">replay on a month it never saw</text>
-        <text x="742" y="376" font-size="16" fill="#6b7280">canary: tasks, control arm, statistic</text>
+        <text x="742" y="294" font-size="16" fill="#6b7280">Drafter ⇄ restrict-only check</text>
+        <text x="742" y="318" font-size="16" fill="#6b7280">Attacker finds evasions</text>
+        <text x="742" y="342" font-size="16" fill="#6b7280">hardener closes what it can</text>
+        <text x="742" y="366" font-size="16" fill="#6b7280">replay on a month it never saw</text>
+        <text x="742" y="390" font-size="16" fill="#6b7280">canary: tasks, control arm</text>
         <path d="M1120 120 H1190 M1120 330 H1190" stroke="#0a0a0a" stroke-width="2" fill="none"/>
         <rect x="1190" y="20" width="310" height="190" rx="18" fill="#fff" stroke="#059669" stroke-width="2"/>
         <text x="1212" y="58" font-size="21" font-weight="600">gate</text>
@@ -166,10 +168,11 @@ svg text { font-family: "JetBrains Mono", monospace; }
         <text x="1212" y="268" font-size="21" font-weight="600">signed dossier</text>
         <text x="1212" y="298" font-size="16" fill="#6b7280">approval echo of the digest</text>
         <text x="1212" y="324" font-size="16" fill="#6b7280">figures recomputed from rows</text>
-        <text x="1212" y="350" font-size="16" fill="#6b7280">desk-verify: plain Node, no network</text>
-        <text x="0" y="500" font-size="17" fill="#6b7280">Black borders: sponsor technology with a call site, a trace line and a switch-off test. Green borders: what a stranger can check.</text>
+        <text x="1212" y="350" font-size="16" fill="#6b7280">desk-verify: plain Node,</text>
+        <text x="1212" y="374" font-size="16" fill="#6b7280">no network</text>
       </g>
     </svg>
+    <p class="small mono" style="margin-top:18px">Black borders: sponsor technology with a call site, a trace line and a switch-off test. Green borders: what a stranger can check.</p>
   </div>
   <div class="foot"><span>desk.</span><span>src/desk/ · src/sponsors/ · src/engines/</span></div>
 </section>
@@ -200,7 +203,7 @@ svg text { font-family: "JetBrains Mono", monospace; }
     </div>
     <ul style="margin-top:24px">
       <li>A dossier carries the rows its figures come from; the verifier recomputes them with the same interpreter the gate uses.</li>
-      <li>Change one byte of a row: <span class="mono">row_hash_mismatch: replay_heldout#2</span>, exit 1. Untouched: PASS, exit 0, on plain Node with the network off.</li>
+      <li>Change one byte of a row: <span class="mono">row_hash_mismatch: replay_heldout#252</span>, exit 1. Untouched: PASS, exit 0, on plain Node with the network off.</li>
       <li>PASS prints what it does not mean: that the logs were truthful, that estimates equal the invoice.</li>
     </ul>
   </div>
@@ -338,7 +341,7 @@ async function fit() {
       });
       return b;
     };
-    let lo = 0.5, hi = 1.3;
+    let lo = 0.5, hi = 1.2;
     for (let i = 0; i < 14; i += 1) {
       const mid = (lo + hi) / 2;
       body.style.zoom = String(mid);

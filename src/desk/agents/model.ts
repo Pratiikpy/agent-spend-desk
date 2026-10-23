@@ -9,6 +9,8 @@ export interface ChatMessage {
   role: "system" | "user" | "assistant" | "tool";
   content: string;
   tool_call_id?: string;
+  /** On an assistant turn that called tools: the calls, in the form the chat API expects them back. */
+  tool_calls?: { id: string; type: "function"; function: { name: string; arguments: string } }[];
 }
 
 export interface ToolSpec {
@@ -62,7 +64,7 @@ export interface ModelPort {
 export function requestKey(request: ModelRequest): string {
   const stable = {
     role: request.role,
-    messages: request.messages.map((m) => ({ role: m.role, content: m.content, tool_call_id: m.tool_call_id ?? null })),
+    messages: request.messages.map((m) => ({ role: m.role, content: m.content, tool_call_id: m.tool_call_id ?? null, ...(m.tool_calls ? { tool_calls: m.tool_calls } : {}) })),
     tools: (request.tools ?? []).map((t) => ({ name: t.name, parameters: t.parameters })),
     json: request.json ?? false,
   };

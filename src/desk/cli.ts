@@ -30,6 +30,7 @@ import { startUiServer } from "./ui/server.ts";
 import { formatLine, prove, summarise } from "./prove/run.ts";
 import { demo } from "./demo.ts";
 import { canaryCommand, canaryRunCommand, OWN_RUNS, SAMPLE_RUNS } from "./canary/command.ts";
+import { benchCommand } from "./bench/command.ts";
 
 const DOSSIER_PATHS = { dbPath: "data/desk/dossier.db", pendingDir: "data/desk/pending", outDir: "data/desk/dossiers" };
 const DEFAULT_SNAPSHOT = "data/prices/anthropic-litellm-2026-10-22.json";
@@ -68,6 +69,10 @@ const { values, positionals } = parseArgs({
     "no-model": { type: "boolean", default: false },
     "memory-dir": { type: "string", default: "data/desk/memory" },
     outcome: { type: "boolean", default: false },
+    arm: { type: "string" },
+    only: { type: "string" },
+    results: { type: "string" },
+    concurrency: { type: "string" },
   },
 });
 
@@ -75,7 +80,7 @@ const command = positionals[0] ?? "card";
 const sampleMode = values.sample || process.env.SAMPLE_MODE === "true";
 const ledgerPath = sampleMode && !process.argv.includes("--db") && command !== "card" ? join(values.out, "ledger.db") : values.db;
 // Commands that read the sample ledger build it first when it is not there, so `--sample` works from a fresh clone.
-if (sampleMode && ["propose", "silos", "ask", "ui", "verify-answer"].includes(command) && !existsSync(ledgerPath)) {
+if (sampleMode && ["propose", "silos", "ask", "ui", "verify-answer", "bench"].includes(command) && !existsSync(ledgerPath)) {
   await runCard({ mode: "sample", claudeDir: "", dbPath: "", pricesPath: values.prices, outDir: values["card-dir"], sampleDir: values.out, days: 14, hours: 5, repos: [], color: false });
 }
 const db = command === "card" ? openLedger(":memory:") : openLedger(ledgerPath);
@@ -171,6 +176,9 @@ ${t.pass} PASS, ${t.fail} FAIL, ${t.notRun} NOT RUN. NOT RUN is not a pass: it n
   process.exitCode = t.exit;
 } else if (command === "demo") {
   await demo({ sampleDir: values.out, prices: values.prices, cassetteDir: values.cassettes, out: (t) => console.log(t) });
+} else if (command === "bench") {
+  loadDotenv(".env");
+  console.log(await benchCommand({ sub: positionals[1] ?? "", dbPath: ledgerPath, sampleMode, record: values.record, arms: values.arm, split: values.split, only: values.only, results: values.results, concurrency: values.concurrency, env: process.env, log: (l) => console.error(l) }));
 } else if (command === "bill") {
   const since = values.since ?? "0000-00-00";
   const until = values.until ?? "9999-99-99";
@@ -258,7 +266,7 @@ ${t.pass} PASS, ${t.fail} FAIL, ${t.notRun} NOT RUN. NOT RUN is not a pass: it n
   console.log(`logs: ${sampleLogsDir(values.out)}`);
   console.log(`repos: ${sampleReposDir(values.out)}`);
 } else {
-  console.error(`unknown command "${command}". Use: card | propose | silos | ask | remember | verify-answer | gate | approve | ui | canary | prove | demo | ingest | bill | autopsy | landing | replay | tunnel | sample build`);
+  console.error(`unknown command "${command}". Use: card | propose | silos | ask | remember | verify-answer | gate | approve | ui | canary | bench | prove | demo | ingest | bill | autopsy | landing | replay | tunnel | sample build`);
   process.exitCode = 2;
 }
 db.close();
