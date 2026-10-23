@@ -221,3 +221,18 @@ Surfaces and cases read: the 34 profiles 57 to 90 and the format of profile 99. 
 | UT-5 | Learning from mistakes | Reflexion (desk-papers 10) | paper | storing reflections for later use | trusting a reflection with no test; measure on held-out cases |
 | UT-6 | One-command proof | the Desk scorecard (DF-109) and clean-room verification (DF-086) | ours | PASS, FAIL or NOT RUN with command and seed | showing NOT RUN as PASS |
 | UT-7 | Regret ledger | shadow-decision scoring seen as an idea in other agent projects (NOT VERIFIED where) | idea only | score the options not chosen | guessing an outcome that is still pending |
+
+## Ideas adopted while building the measurements (2026-10-23)
+
+Each row says where the idea came from, its licence or kind, and whether any code was taken. None was: every mechanism below was rebuilt from its description, with tests, in this repository.
+
+| Idea | Used in | Source | Licence or kind | Code taken |
+|---|---|---|---|---|
+| pass^k: the chance that k repeated trials of one question all succeed | `src/desk/bench/run.ts` (`passK`), `desk prove` check `pass-k-reliability` | tau-bench, arXiv:2406.12045 | A paper; the formula only | None |
+| Learning from mistakes without changing weights: keep a verified plan and show it again for a question of the same shape | `src/desk/lessons/` | The idea of verbal and example-based self-improvement (for example Reflexion, Shinn et al. 2023); a retrieval of plans checked by a code scorer is our own design | A paper; the idea only | None |
+| Wilson score interval for a proportion | `src/desk/calibrate/attribution.ts` | E. B. Wilson, 1927 | Public statistics | None |
+| Expected calibration error, reliability bins and the Brier score | `src/desk/calibrate/windtunnel.ts` | Brier 1950; Naeini et al. 2015; Guo et al. 2017 | Public statistics | None |
+| A Jeffreys prior so that a zero count is not taken for a zero probability | `src/desk/replay/wind-tunnel.ts` (`smoothedBlockChance`) | Jeffreys, 1946 | Public statistics | None |
+| A seeded paired bootstrap for a change in an error rate | `src/desk/lessons/learn.ts` (`pairedChange`) | B. Efron, 1979 | Public statistics | None |
+
+What each one is checked against is in `docs/verification/`. Weaknesses we know of: pass^k over three trials is a wide estimate; the precedent retrieval is lexical and will not generalise to a question of a new shape (the 7 new-template questions in set B measure that); the Jeffreys smoothing did not improve the wind tunnel's Brier score in every study, which is reported as it came out.
