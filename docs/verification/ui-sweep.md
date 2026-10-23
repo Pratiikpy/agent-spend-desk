@@ -1,0 +1,31 @@
+# UI sweep, 2026-10-23
+
+Every one of the eleven screens was photographed in light and dark at 1440x900 and at 390x844 (44 captures) and read as a designer would, and the browser console was read on each. The reader was an independent assistant given the screens and a checklist, not the author. The captures are not kept in the repository (7.7 MB); the deck's `img/` holds the ones that are used.
+
+## Facts checked and clean
+
+No horizontal page scroll at 390 px on any screen (document width equals window width on all 22 mobile captures). No `NaN`, `undefined` or `null` text. Zero console errors from the app. Only Outfit and JetBrains Mono are used. No shadow except an inset underline, no gradient. Green appears only for pass, landed and live; orange-red only for risk and fail.
+
+## Found and fixed
+
+- The Ask trace showed a raw recording error (`E_CASSETTE_MISS ... Record it live with: desk record`). The reason was also real: the Planner's prompt had changed, so its recordings were stale. The prompt's recordings were re-made, and the trace now says "no recorded model reply for this question in sample mode, so rules were used instead".
+- The Canary screen said "Regressed" twice, its legend ran together, a chart label was crossed by the control line and the axis label sat under the first tick.
+- The Bill screen said "No invoice has been imported, so nothing is billed" while Org data showed $6,123 billed. It now says invoices are read on Org data when Zetaris is connected.
+- Headings did not match the navigation ("Organisation" against "Org data", "Sources" against "Doctor").
+- Dossiers showed the raw enum `NOT_APPLICABLE`; `--pins` rendered as a long dash in the prose font (ligatures are now off).
+- Numeric column headers were larger than the others; captions sat flush under the table above; the engine checkboxes were unstyled; backticks showed around session names in Ask answers; the Ask answer panel repeated the word "answered".
+- On a phone the navigation was clipped with no cue ("Po"); it now wraps. Wide tables on a phone now say "Scroll sideways for more columns."
+- Four source cards sat in a three-column grid and left one alone.
+
+## Found and left as it is, on purpose
+
+- Headline tracking is tight, as the brand kit specifies.
+- Rule ids and actions such as `C-LOOP-1` and `pause_with_checkpoint` are shown as written because they are what a policy file contains.
+- Some tables on a phone hide their last columns behind a sideways scroll; a mobile summary of each table is not built.
+- Chart text is small at 390 px.
+- Different screens cover different periods, so the share of landed spend differs between the Bill (30 days) and an Ask answer (the whole ledger).
+- The model id and file paths appear in the Canary text as written.
+
+## Not covered
+
+The dark mobile captures of seven screens were looked at only at reduced size. The Ask screen before a question, with an engine switched off, a session detail, the "More" button, the policy "Run the wind tunnel" button and the dropdowns were not photographed.

@@ -14,6 +14,7 @@ desk. is an agent spend and worth desk. It is for the person who pays for AI cod
 | What did the money buy? | Spend by landing state (kept, merged, committed, reverted, unlinked) | `desk landing`, the `Bill` screen |
 | What do my invoices, CI and roster say? | One Zetaris statement over three sources; billed against estimated | `desk silos` |
 | Did the agent get worse? | A canary verdict with its interval, its control arm and what it cannot say | `desk canary` |
+| Is the reasoning architecture better than calling the model? | A pre-registered 60-question head-to-head, with the first run and the misses published | `desk bench report` |
 | What should the caps be? | A drafted policy, checked, attacked, then replayed on a month it never saw | `desk propose --dossier` |
 | Can I trust that? | A signed dossier a stranger verifies offline; one changed byte names the row | `desk approve`, `npm run desk-verify` |
 | Why did it change? | An answer from typed, read-only steps the Auditor checks; engines switchable | `desk ask` |
@@ -77,12 +78,18 @@ Each claim below has a call site, a trace line and a test that switches the comp
 | **NVIDIA Nemotron** | `src/desk/agents/model.ts`, through NVIDIA's OpenAI-compatible API (tool calling verified); roles: drafter, attacker, planner, explainer, canary | Recorded replies in `data/sample/cassettes/` replay the same answers offline; without them the rule brain answers and the trace says so |
 | **Cursor** | The required IDE | See `docs/sponsors/cursor-usage-log.md` |
 
+## The evidence for the reasoning architecture
+
+`docs/verification/benchmark/` holds a pre-registered comparison of three arms on the same model: one call with the ledger summary, a tool-using agent, and the Desk. On 60 questions computed from the ledger the exact answers were 12, 47 and 51; on the 20 held-out questions run once at the end, 4, 15 and 16. That is far better than one call and level with a tool agent, not better: four questions in sixty is noise. The Desk's first run on the dev questions was 20 of 40 against the agent's 31, and what changed it is in the repository, as are its nine remaining misses (one of them a hidden instruction it followed). `desk prove` replays all 180 recorded runs from the recorded replies.
+
+The canary (`docs/verification/canary-first-run/`) shows the same habit: a first recording on 16 tasks measured a 35 point drop and correctly refused to call it; the pack was grown to 52 tasks and re-recorded, and the statistic then called the switch of model (-40.0 points, 99% interval -56.2 to -23.8) with the control arm flat.
+
 ## What is not built, and what is not verified
 
-- Not built: route replay of recorded tasks on a cheaper model (DK7), the reasoning benchmark against baselines, repeated-run reliability, calibration, team mode and seat return. `desk prove` lists them as NOT RUN, never as PASS.
+- Not built: route replay of recorded tasks on a cheaper model (DK7), repeated-run reliability (pass^k), calibration, team mode and seat return. `desk prove` lists them as NOT RUN, never as PASS. The benchmark is one run of each question and arm.
 - The enforcement of the gate is proven for Claude Code with the hook installed (`docs/verification/gate-enforcement.md`). A tool with no hook, or a hook removed from settings, is not stopped.
 - Dollar figures are list-price estimates from logged tokens. How a plan's limit maps to tokens is NOT VERIFIED.
-- The sample is constructed. The canary series is real model runs on assigned dates, with a model switch made on purpose; the statistic's false-alarm rate and power are measured on simulated data (`docs/verification/canary-simulation.md`) and its smallest detectable change under those assumptions is large.
+- The sample is constructed. The canary series is 2,340 rows, one per real model call (2% got no reply), on assigned dates, with a model switch made on purpose; the statistic's false-alarm rate and power are measured on simulated data (`docs/verification/canary-simulation.md`), and its smallest detectable change on the recorded design is about 21 points.
 - Zetaris features beyond SQL (semantic layer, data steward) are NOT VERIFIED. Zetaris and Meterless "running on your machine" as an eligibility condition is unconfirmed by the organisers.
 - Nemotron latency through the free API is variable and some calls fail; the code retries, falls back, and says so.
 

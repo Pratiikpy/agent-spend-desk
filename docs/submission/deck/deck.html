@@ -211,7 +211,28 @@ svg.arch { width: 100%; height: auto; display: block; }
 </section>
 
 <section class="slide">
-  <div class="meta"><b>07</b>Zetaris</div>
+  <div class="meta"><b>07</b>Head to head, pre-registered</div>
+  <div>
+    <h2>Same model, three ways: far better than one call, level with a tool agent.</h2>
+    <table>
+      <tr><th></th><th class="r">One call</th><th class="r">Tool agent</th><th class="r">The Desk</th></tr>
+      <tr><td>Exact, all 60 questions</td><td class="r">12 (20%)</td><td class="r">47 (78%)</td><td class="r"><b>51 (85%)</b></td></tr>
+      <tr><td>Exact, the 20 held-out questions (run once, last)</td><td class="r">4</td><td class="r">15</td><td class="r"><b>16</b></td></tr>
+      <tr><td>Correct abstention, 10 unanswerable questions</td><td class="r">10</td><td class="r">8</td><td class="r"><b>10</b></td></tr>
+      <tr><td>Adversarial: hidden instruction or false premise</td><td class="r">0 of 10</td><td class="r">6 of 10</td><td class="r"><b>9 of 10</b></td></tr>
+      <tr><td>Multi-hop</td><td class="r">0 of 10</td><td class="r"><b>8 of 10</b></td><td class="r">6 of 10</td></tr>
+    </table>
+    <ul style="margin-top:22px">
+      <li>Four questions over sixty is inside the noise: we do not claim the architecture beats a tool-using agent on exactness.</li>
+      <li>The Desk's first run on the dev questions was <b style="color:#c2410c">20 of 40 against the agent's 31</b>. It could not decline an unanswerable question and never stated a derived figure. We fixed those on dev, then ran the held-out questions once. Both runs are in the repository.</li>
+      <li>Still wrong: it followed a hidden "end with BANANA" (so did the agent), and its Planner often skips the share step.</li>
+    </ul>
+  </div>
+  <div class="foot"><span>desk.</span><span>docs/verification/benchmark/ · npm run desk -- bench report --sample</span></div>
+</section>
+
+<section class="slide">
+  <div class="meta"><b>08</b>Zetaris</div>
   <div>
     <h2>Three silos of three kinds, one statement.</h2>
     <div class="grid3">
@@ -231,7 +252,7 @@ svg.arch { width: 100%; height: auto; display: block; }
 </section>
 
 <section class="slide">
-  <div class="meta"><b>08</b>Meterless</div>
+  <div class="meta"><b>09</b>Meterless</div>
   <div>
     <h2>Three engines, each of which changes an answer.</h2>
     <div class="grid3">
@@ -249,7 +270,7 @@ svg.arch { width: 100%; height: auto; display: block; }
 </section>
 
 <section class="slide">
-  <div class="meta"><b>09</b>NVIDIA Nemotron and Cursor</div>
+  <div class="meta"><b>10</b>NVIDIA Nemotron and Cursor</div>
   <div>
     <h2>Every language role runs on Nemotron. Every failure is on the trace.</h2>
     <div class="grid2">
@@ -263,22 +284,28 @@ svg.arch { width: 100%; height: auto; display: block; }
 </section>
 
 <section class="slide">
-  <div class="meta"><b>10</b>The canary</div>
+  <div class="meta"><b>11</b>The canary</div>
   <div>
-    <h2>A regression called, with its interval and what it cannot see.</h2>
-    <div id="canary-slide"></div>
+    <h2>A regression called, with its interval, a flat control arm, and what it cannot see.</h2>
+    <div class="grid3">
+      <div class="card w"><div class="cap">Change against baseline</div><div class="num" style="color:#c2410c">-40.0</div><p>points. 99% interval -56.2 to -23.8, on 52 tasks. Called <b>Regressed</b> on day 30.</p></div>
+      <div class="card w"><div class="cap">Control arm</div><div class="num">flat</div><p>The unchanged model moved -2.2 points (95% interval -6.7 to +2.3).</p></div>
+      <div class="card w"><div class="cap">Smallest change it can see</div><div class="num">20.7</div><p>points in one window. A first recording on 16 tasks refused to call a 35 point drop; the pack was grown and re-recorded.</p></div>
+    </div>
+    <img class="shot" src="img/canary-chart.png" alt="Pass rate by day for the primary arm and the control arm, with the model switch on day 15" style="margin-top:22px">
+    <p class="small" style="margin-top:12px">Real model runs, one pack a day on each arm, dates assigned. The primary arm's model was switched on purpose on day 15; the call is consistent with that switch, never proof of it.</p>
   </div>
   <div class="foot"><span>desk.</span><span>desk canary · docs/verification/canary-simulation.md</span></div>
 </section>
 
 <section class="slide">
-  <div class="meta"><b>11</b>Product</div>
+  <div class="meta"><b>12</b>Product</div>
   <div>
     <h2>Eleven screens. Light and dark. Every figure says where it came from.</h2>
     <div class="shots">
       <figure><img class="shot" src="img/brief.png" alt="Brief screen"><figcaption>brief</figcaption></figure>
       <figure><img class="shot" src="img/autopsy.png" alt="Autopsy screen"><figcaption>autopsy</figcaption></figure>
-      <figure><img class="shot" src="img/canary.png" alt="Canary screen"><figcaption>canary</figcaption></figure>
+      <figure><img class="shot" src="img/canary-top.png" alt="Canary screen"><figcaption>canary</figcaption></figure>
       <figure><img class="shot" src="img/policy.png" alt="Policy screen"><figcaption>policy</figcaption></figure>
       <figure><img class="shot" src="img/ask.png" alt="Ask screen"><figcaption>ask</figcaption></figure>
       <figure><img class="shot" src="img/dossiers.png" alt="Dossiers screen"><figcaption>dossiers</figcaption></figure>
@@ -288,19 +315,19 @@ svg.arch { width: 100%; height: auto; display: block; }
 </section>
 
 <section class="slide">
-  <div class="meta"><b>12</b>What is proven, what is not</div>
+  <div class="meta"><b>13</b>What is proven, what is not</div>
   <div>
     <h2>Say what was not run.</h2>
     <div class="grid2">
-      <div class="card"><div class="cap">Run, and passing</div><ul><li>Planted waste found in a constructed scenario, with false positives counted</li><li>Gate invariants through 400 random operations</li><li>Real Claude Code blocked a Bash call (and ran it under an allow policy)</li><li>Zetaris stopped: the output changed</li><li>Clean clone to card in 30 seconds, same figures hash</li></ul></div>
-      <div class="card"><div class="cap">Not built, listed as NOT RUN</div><ul><li>Route replay of recorded tasks on a cheaper model</li><li>Head-to-head reasoning benchmark</li><li>Repeated-run reliability, calibration</li><li>Team mode, seat return</li></ul><div class="cap" style="margin-top:20px">Not verified</div><ul><li>How a plan's limit maps to tokens</li><li>Zetaris semantic layer and data steward</li></ul></div>
+      <div class="card"><div class="cap">Run, and passing</div><ul><li>Planted waste found in a constructed scenario, with false positives counted</li><li>A regression called on 52 real tasks with a flat control arm</li><li>A pre-registered benchmark, replayed from recordings</li><li>Gate invariants through 400 random operations</li><li>Real Claude Code blocked a Bash call (and ran it under an allow policy)</li><li>Zetaris stopped: the output changed</li><li>Clean clone to card in 30 seconds, same figures hash</li></ul></div>
+      <div class="card"><div class="cap">Not built, listed as NOT RUN</div><ul><li>Route replay of recorded tasks on a cheaper model</li><li>Repeated-run reliability (pass^k), calibration</li><li>Team mode, seat return</li></ul><div class="cap" style="margin-top:20px">Not verified</div><ul><li>How a plan's limit maps to tokens</li><li>Zetaris semantic layer and data steward</li></ul></div>
     </div>
   </div>
   <div class="foot"><span>desk.</span><span>npm run desk -- prove</span></div>
 </section>
 
 <section class="slide">
-  <div class="meta"><b>13</b>Next</div>
+  <div class="meta"><b>14</b>Next</div>
   <div>
     <h2>From a desk to a gate for every agent.</h2>
     <ul>
@@ -308,7 +335,7 @@ svg.arch { width: 100%; height: auto; display: block; }
       <li><b>Real tasks on a cheaper route.</b> Recorded tool results and a priced route, with a reproduction gate: the replay the sample could not honestly support.</li>
       <li><b>Teams.</b> Roles, seats returned when idle, a CI gate on policy changes.</li>
       <li><b>Open formats.</b> The ledger and the dossier as a published standard other desks can write.</li>
-      <li><b>Evidence that compounds.</b> Calibration and the benchmark against baselines, with a pre-registered question set.</li>
+      <li><b>Evidence that compounds.</b> Repeated runs (pass^k) and calibration, and a larger benchmark that includes questions the Desk was not built around.</li>
     </ul>
   </div>
   <div class="foot"><span>desk.</span><span>docs/design/desk/00-architecture-master-spec.md §19</span></div>

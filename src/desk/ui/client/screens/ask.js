@@ -76,7 +76,7 @@ export async function render(ctx) {
         "Answer",
         "checked by code",
         h("p", { class: "controls" }, verdict, a.ablated.length ? pill(`off: ${a.ablated.join(", ")}`, "risk") : null),
-        a.sentences.length > 0 ? h("ul", { class: "list" }, ...a.sentences.map((s) => h("li", null, s.text))) : null,
+        a.sentences.length > 0 ? h("ul", { class: "list" }, ...a.sentences.map((s) => h("li", null, s.text.replaceAll("`", "")))) : null,
         a.note ? h("p", { class: "note" }, a.status === "answered" ? `Note: ${a.note}` : a.note) : null,
       ),
       section(
