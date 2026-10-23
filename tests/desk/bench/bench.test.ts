@@ -4,8 +4,8 @@ import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { ledgerSummary, runA0, runA1, runA2 } from "../../../src/desk/bench/arms.ts";
-import { buildQuestions, questionSetHash, truthFrom, type Question } from "../../../src/desk/bench/questions.ts";
-import { formatReport, readResults, runBench } from "../../../src/desk/bench/run.ts";
+import { BENCH_SEED_B, buildQuestions, questionSetHash, truthFrom, type Question } from "../../../src/desk/bench/questions.ts";
+import { formatReport, passK, readResults, runBench, TRIAL_TEMPERATURE, type BenchRow } from "../../../src/desk/bench/run.ts";
 import { figuresIn, score } from "../../../src/desk/bench/score.ts";
 import { ModelError, type ModelPort, type ModelRequest, type ModelResponse } from "../../../src/desk/agents/model.ts";
 import { findJsonlLogs } from "../../../src/desk/ingest/discover.ts";
@@ -69,6 +69,56 @@ describe("the question set", () => {
   it("only asks a false premise the ledger contradicts, and an unanswerable question has no figure to find", () => {
     for (const q of questions.filter((x) => x.category === "adversarial" && x.expect.kind === "answer" && x.expect.falsePremise)) expect(q.text).toMatch(/Spend (doubled|tripled|quadrupled) from the period/);
     for (const q of questions.filter((x) => x.category === "unanswerable")) expect(q.expect.kind).toBe("abstain");
+  });
+});
+
+describe("the second question set and repeated trials", () => {
+  it("is a different set with seven questions from templates the first did not have, the same every time", () => {
+    const b = buildQuestions(db, BENCH_SEED_B, "B");
+    expect(b).toHaveLength(60);
+    expect(b.filter((q) => q.novel)).toHaveLength(7);
+    expect(questionSetHash(b)).not.toBe(questionSetHash(questions));
+    expect(questionSetHash(buildQuestions(db, BENCH_SEED_B, "B"))).toBe(questionSetHash(b));
+    expect(new Set(b.filter((q) => q.novel).map((q) => q.category))).toEqual(new Set(["lookup", "multi_hop", "numeric"]));
+  });
+
+  it("computes the busiest day, the gap between two models and the median day from the ledger", () => {
+    const b = buildQuestions(db, BENCH_SEED_B, "B");
+    const day = b.find((q) => q.novel && /highest spend/.test(q.text))!;
+    const [, from, to] = /between (\d{4}-\d{2}-\d{2}) and (\d{4}-\d{2}-\d{2})/.exec(day.text)!;
+    const t = truthFrom(db);
+    const days = t.daily({ from: from!, to: to! });
+    const top = days.reduce((x, y) => (y.micros > x.micros ? y : x));
+    expect(day.expect.kind === "answer" && day.expect.required[0]).toMatchObject({ type: "word", value: top.day });
+    const med = b.find((q) => q.novel && /median daily spend/.test(q.text))!;
+    const [, mf, mt] = /between (\d{4}-\d{2}-\d{2}) and (\d{4}-\d{2}-\d{2})/.exec(med.text)!;
+    const sorted = t.daily({ from: mf!, to: mt! }).map((d) => d.micros).sort((x, y) => x - y);
+    const mid = sorted.length % 2 ? sorted[(sorted.length - 1) / 2]! : (sorted[sorted.length / 2 - 1]! + sorted[sorted.length / 2]!) / 2;
+    expect(med.expect.kind === "answer" && (med.expect.required[0] as { value: number }).value).toBeCloseTo(mid / 1_000_000, 2);
+  });
+
+  it("runs each trial as a sampled draw with its own recording, and keeps trials apart", async () => {
+    const out = join(dir, "trials.jsonl");
+    const port = new Scripted({ bench_a0: () => ({ content: "I cannot tell." }) });
+    await runBench({ db, port, arms: ["A0"], split: "all", only: ["Q31"], out, trials: [0, 1, 2] });
+    const first = port.requests[0]!;
+    const later = port.requests.slice(1);
+    expect(first.temperature).toBeUndefined();
+    expect(later.map((r) => [r.temperature, r.variant])).toEqual([[TRIAL_TEMPERATURE, 1], [TRIAL_TEMPERATURE, 2]]);
+    expect(readResults(out).map((r) => r.trial).sort()).toEqual([0, 1, 2]);
+    const again = await runBench({ db, port, arms: ["A0"], split: "all", only: ["Q31"], out, trials: [0, 1, 2] });
+    expect(again).toEqual({ ran: 0, skipped: 3 });
+  });
+
+  it("computes pass^k as the chance that k trials of a question all succeed", () => {
+    const row = (qid: string, trial: number, exact: boolean): BenchRow => ({ qid, trial, arm: "A2", category: "lookup", split: "dev", answer: "", error: null, exact, close: exact, abstained: false, resisted: null, rejectedPremise: null, extraFigures: 0, modelCalls: 1, tokensIn: 0, tokensOut: 0, servedModel: null, ms: 0, detail: "" });
+    // Q1 passes 3 of 3, Q2 passes 1 of 3, Q3 passes 0 of 3
+    const rows = [row("Q1", 1, true), row("Q1", 2, true), row("Q1", 3, true), row("Q2", 1, true), row("Q2", 2, false), row("Q2", 3, false), row("Q3", 1, false), row("Q3", 2, false), row("Q3", 3, false)];
+    expect(passK(rows, "A2", 1)!.value).toBeCloseTo((1 + 1 / 3 + 0) / 3, 6);
+    expect(passK(rows, "A2", 2)!.value).toBeCloseTo((1 + 0 + 0) / 3, 6);
+    expect(passK(rows, "A2", 3)!.value).toBeCloseTo(1 / 3, 6);
+    expect(passK(rows, "A2", 4)).toBeNull();
+    expect(passK(rows, "A0", 1)).toBeNull();
   });
 });
 

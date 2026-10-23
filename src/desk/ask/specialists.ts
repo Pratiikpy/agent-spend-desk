@@ -11,7 +11,7 @@ import type { Ledger } from "../ledger/db.ts";
 import type { LandingState } from "../outcomes/attribute.ts";
 import { landingBreakdown } from "../outcomes/breakdown.ts";
 import { stepHash, type Step, type StepOp } from "./program.ts";
-import { count, date, entity, makeClaim, pct, say, sayList, tokensOf, usd, word, type Rendered, type Slot } from "./text.ts";
+import { count, date, decimal, entity, makeClaim, pct, say, sayList, tokensOf, usd, word, type Rendered, type Slot } from "./text.ts";
 import type { Trace } from "../agents/trace.ts";
 
 export type Specialist = "accountant" | "historian" | "memory" | "range_reader";
@@ -79,6 +79,7 @@ const SPECIALIST: Record<StepOp, Specialist> = {
   share: "accountant",
   per_day: "accountant",
   percent_of: "accountant",
+  in_thousands: "accountant",
   days_above: "accountant",
   changes_before: "historian",
   recall: "memory",
@@ -93,6 +94,7 @@ const ENGINE_OF: Record<StepOp, EngineName | null> = {
   share: null,
   per_day: null,
   percent_of: null,
+  in_thousands: null,
   days_above: null,
   changes_before: "world_model",
   recall: "hmem",
@@ -156,6 +158,8 @@ async function execute(step: Step, ctx: RunContext): Promise<Outcome> {
       return perDay(step, ctx);
     case "percent_of":
       return percentOf(step, ctx);
+    case "in_thousands":
+      return inThousands(step, ctx);
     case "days_above":
       return daysAbove(step, ctx);
     case "changes_before":
@@ -405,6 +409,15 @@ function percentOf(step: Extract<Step, { op: "percent_of" }>, ctx: RunContext): 
   const data: Json = { of: step.of, totalMicros: s.micros, percent: step.percent, resultMicros: result };
   const claims = [say`The percentage asked about was ${pct(step.percent, 0)}.`, say`That percentage of the spend comes to ${usd(result)}, an estimate from logged tokens.`];
   return { data, rowCount: 1, claims, meta: [num(pct(step.percent, 0), "computed"), num(usd(result), "estimated")] };
+}
+
+function inThousands(step: Extract<Step, { op: "in_thousands" }>, ctx: RunContext): Outcome {
+  const s = spendOf(ctx, step.of);
+  if (!s) return notDerivable("in_thousands");
+  const thousands = Math.round(s.micros / 100_000_000) / 10;
+  const data: Json = { of: step.of, totalMicros: s.micros, thousands };
+  const r = say`In thousands of dollars, rounded to one decimal, that spend was ${decimal(thousands, 1)}.`;
+  return { data, rowCount: 1, claims: [r], meta: [num(decimal(thousands, 1), "computed")] };
 }
 
 function daysAbove(step: Extract<Step, { op: "days_above" }>, ctx: RunContext): Outcome {

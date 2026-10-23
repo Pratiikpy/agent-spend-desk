@@ -50,3 +50,20 @@ The first run on the 40 dev questions (`results-dev-run-1.jsonl`) gave, exact: A
 3. Two runs ended with the model unavailable and are not counted.
 
 What changed in the Desk, using only the dev questions: four typed steps worked out by code (`share`, `per_day`, `percent_of`, `days_above`) and a `cannot_answer` tool for the Planner with a list of what the ledger cannot hold. A0 and A1 are unchanged. The Desk's dev run is repeated (`results.jsonl`) and reported beside the first. The 20 held-out questions have not been run and the Desk and the baselines are frozen from this commit. Whatever the held-out run shows is published.
+
+## Addendum 2: the Desk v2 and a second question set, written before either was run
+
+The first set's held-out questions have been seen, so they cannot test a Desk that was changed because of them. This addendum is committed before anything is run on the changed Desk. The changes, each in answer to a miss in `RESULTS.md`:
+
+1. **A plan critic.** Code reads the question and the Planner's program and names a figure the question asks for that no step computes (a share, an average per day, a percentage of a spend, a count of days above a figure, an amount in thousands). The objection goes back to the Planner, which revises once; if the revision fails the first plan runs and the trace says so. A new `in_thousands` step does the unit conversion in code.
+2. **The Explainer never reads the question.** The Planner reads it (and can only answer with a typed program); the Explainer is given a description of what was asked about, written by code from the program. An instruction hidden in a question can no longer reach the model that writes the sentences.
+3. The Planner is told that a spend step also reports how many model calls it covers, because it had declined "how many calls" as untracked.
+
+**Set B** is generated from seed 20261024 (`set-b/questions.json`, hash `sha256:67c9b7130edae3c95afe541dc59c46e8ff518f2012fd37b5a38c03055e9fb667`). It uses the same templates with new parameters, and seven of its sixty questions come from templates set A did not have and the Desk's tools were not built around: the busiest day (2), the gap between two models (2), the median day (2) and a count of sessions (1). They are reported separately. The arms A0 and A1 are unchanged. Each arm is run once greedily on all sixty (the headline), then three more times at temperature 0.7 for pass^k.
+
+Predictions, written now:
+
+1. The Desk's exact count on set B is within a few questions of the tool agent's: a difference of eight or fewer in sixty is noise, and we will say so whichever way it falls.
+2. On the seven new-template questions the Desk does worse than the tool agent, because its tools were not built around them.
+3. The Desk follows none of the five hidden instructions; the tool agent follows at least one.
+4. pass^3 for the Desk is not below the tool agent's.

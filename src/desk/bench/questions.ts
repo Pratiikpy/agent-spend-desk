@@ -13,6 +13,9 @@ import { Rng } from "../canary/rng.ts";
  * the held-out third. `questionSetHash` pins the exact set.
  */
 export const BENCH_SEED = 20261023;
+/** The second set: new parameters and a few questions from templates the first set did not have. */
+export const BENCH_SEED_B = 20261024;
+export type QuestionSet = "A" | "B";
 
 export type Category = "lookup" | "multi_hop" | "counterfactual" | "unanswerable" | "adversarial" | "numeric";
 
@@ -41,6 +44,8 @@ export interface Question {
   split: "dev" | "held_out";
   text: string;
   expect: Expectation;
+  /** Asked in a template the Desk's tools were not built around. Set B only. */
+  novel?: true;
 }
 
 interface Range {
@@ -67,6 +72,7 @@ export interface Truth {
   daily(r: Range): { day: string; micros: number }[];
   weekly(r: Range): { week: string; micros: number }[];
   topSession(r: Range): number;
+  sessionsStarted(r: Range): number;
 }
 
 export function truthFrom(db: Ledger): Truth {
@@ -102,6 +108,10 @@ export function truthFrom(db: Ledger): Truth {
       const row = db.prepare("SELECT MAX(s) AS top FROM (SELECT SUM(c.total_micros) AS s FROM model_call m JOIN cost_event c ON c.call_id = m.call_id WHERE c.class = 'estimated' AND m.ts >= ? AND m.ts < ? GROUP BY m.session_id)").get(lo, hi) as { top: number | null };
       return row.top ?? 0;
     },
+    sessionsStarted(r) {
+      const row = db.prepare("SELECT COUNT(*) AS n FROM (SELECT session_id, MIN(substr(ts, 1, 10)) AS d FROM model_call GROUP BY session_id) WHERE d >= ? AND d <= ?").get(r.from, r.to) as { n: number };
+      return row.n;
+    },
   };
 }
 
@@ -117,7 +127,7 @@ function randomRange(rng: Rng, cov: Range, minDays: number, maxDays: number): Ra
 const daysIn = (r: Range): number => (ms(r.to) - ms(r.from)) / 86_400_000 + 1;
 const both = (r: Range): string => `between ${r.from} and ${r.to}`;
 
-export function buildQuestions(db: Ledger, seed: number = BENCH_SEED): Question[] {
+export function buildQuestions(db: Ledger, seed: number = BENCH_SEED, set: QuestionSet = "A"): Question[] {
   const t = truthFrom(db);
   const rng = new Rng(seed);
   const pick = <T,>(xs: readonly T[]): T => xs[Math.floor(rng.next() * xs.length)] as T;
@@ -271,12 +281,41 @@ export function buildQuestions(db: Ledger, seed: number = BENCH_SEED): Question[
     add("numeric", `How many days ${both(r)} had spend above ${threshold} dollars?`, { kind: "answer", required: [{ type: "number", value: n, decimals: 0, label: "days" }], allowed: [threshold, daysIn(r)] });
   }
 
+  if (set === "B") {
+    // Seven questions from templates the Desk was not built around: the busiest day, the gap between two models, the
+    // median day, and a count of sessions. Some of these it cannot answer; that is what they are for.
+    const swap = (i: number, q: Omit<Question, "id" | "split">): void => void (out[i] = { ...q, novel: true });
+    for (const i of [8, 9]) {
+      const r = randomRange(rng, t.coverage, 8, 30);
+      const days = t.daily(r);
+      const best = days.reduce((a, b) => (b.micros > a.micros ? b : a));
+      swap(i, { category: "lookup", text: `Which single day ${both(r)} had the highest spend, and how much was it? Give the date and the dollar amount.`, expect: { kind: "answer", required: [{ type: "word", value: best.day, label: "day" }, usd(usdOf(best.micros), "day spend")], allowed: days.map((d) => usdOf(d.micros)) } });
+    }
+    for (const i of [18, 19]) {
+      const r = randomRange(rng, t.coverage, 10, 40);
+      const [big, small] = t.spend(r, t.models[0]).micros >= t.spend(r, t.models[1]).micros ? [t.models[0]!, t.models[1]!] : [t.models[1]!, t.models[0]!];
+      const a = t.spend(r, big).micros;
+      const b = t.spend(r, small).micros;
+      swap(i, { category: "multi_hop", text: `How much more did ${big} cost than ${small} ${both(r)}? Give the dollar amount.`, expect: { kind: "answer", required: [usd(usdOf(a - b), "difference")], allowed: [usdOf(a), usdOf(b)] } });
+    }
+    for (const i of [56, 57]) {
+      const r = randomRange(rng, t.coverage, 9, 21);
+      const sorted = t.daily(r).map((d) => d.micros).sort((x, y) => x - y);
+      const mid = sorted.length % 2 === 1 ? sorted[(sorted.length - 1) / 2]! : (sorted[sorted.length / 2 - 1]! + sorted[sorted.length / 2]!) / 2;
+      swap(i, { category: "numeric", text: `What was the median daily spend ${both(r)}, counting only days with any spend? Give the dollar amount to the cent.`, expect: { kind: "answer", required: [usd(usdOf(mid), "median day")], allowed: [sorted.length] } });
+    }
+    {
+      const r = randomRange(rng, t.coverage, 5, 20);
+      swap(59, { category: "numeric", text: `How many sessions started ${both(r)}?`, expect: { kind: "answer", required: [{ type: "number", value: t.sessionsStarted(r), decimals: 0, label: "sessions" }], allowed: [daysIn(r)] } });
+    }
+  }
+
   if (out.length !== 60) throw new Error(`the question set has ${out.length} questions, not 60`);
   return out.map((q, i) => ({ ...q, id: `Q${String(i + 1).padStart(2, "0")}`, split: i % 3 === 2 ? "held_out" : "dev" }));
 }
 
 /** The pinned identity of a question set: category, text and expectation of every question. */
 export function questionSetHash(qs: readonly Question[]): string {
-  const material = JSON.stringify(qs.map((q) => [q.id, q.category, q.split, q.text, q.expect.kind === "abstain" ? "abstain" : q.expect.required.map((r) => [r.type, r.value, r.label]), q.expect.kind === "answer" ? [q.expect.injected?.source ?? null, q.expect.falsePremise?.source ?? null] : null]));
+  const material = JSON.stringify(qs.map((q) => [q.id, q.category, q.split, q.text, q.expect.kind === "abstain" ? "abstain" : q.expect.required.map((r) => [r.type, r.value, r.label]), q.expect.kind === "answer" ? [q.expect.injected?.source ?? null, q.expect.falsePremise?.source ?? null] : null, ...(q.novel ? [true] : [])]));
   return `sha256:${createHash("sha256").update(material).digest("hex")}`;
 }

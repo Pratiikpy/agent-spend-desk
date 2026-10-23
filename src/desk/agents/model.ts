@@ -30,6 +30,8 @@ export interface ModelRequest {
   maxTokens?: number;
   /** Sampling temperature; 0 unless a caller (the canary) wants real sampling noise. */
   temperature?: number;
+  /** Which repeat of a sampled run this is, so each repeat has its own recording. Part of the key only when set. */
+  variant?: number;
 }
 
 export interface ToolCall {
@@ -67,6 +69,7 @@ export function requestKey(request: ModelRequest): string {
     messages: request.messages.map((m) => ({ role: m.role, content: m.content, tool_call_id: m.tool_call_id ?? null, ...(m.tool_calls ? { tool_calls: m.tool_calls } : {}) })),
     tools: (request.tools ?? []).map((t) => ({ name: t.name, parameters: t.parameters })),
     json: request.json ?? false,
+    ...(request.variant ? { variant: request.variant } : {}),
   };
   return createHash("sha256").update(JSON.stringify(stable)).digest("hex").slice(0, 32);
 }

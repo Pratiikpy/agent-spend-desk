@@ -39,7 +39,7 @@ function describe(c: Claim): string {
 }
 
 function userPrompt(question: string, claims: readonly Claim[], rejections: readonly Rejection[] | null, previous: readonly Sentence[] | null): string {
-  let text = `Question: ${question}\n\nClaims:\n${claims.map(describe).join("\n")}`;
+  let text = `What the reader asked about: ${question}\n\nClaims:\n${claims.map(describe).join("\n")}`;
   if (rejections && previous) {
     text += `\n\nYour previous draft was checked. These sentences were rejected:\n${rejections.map((r) => `- ${JSON.stringify(r.sentence.text)} -> ${r.reason}: ${r.detail}`).join("\n")}\nRewrite the whole answer so every sentence passes. Remove any sentence you cannot support.`;
   }

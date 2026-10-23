@@ -70,6 +70,8 @@ const { values, positionals } = parseArgs({
     "memory-dir": { type: "string", default: "data/desk/memory" },
     outcome: { type: "boolean", default: false },
     arm: { type: "string" },
+    set: { type: "string" },
+    trials: { type: "string" },
     only: { type: "string" },
     results: { type: "string" },
     concurrency: { type: "string" },
@@ -178,7 +180,7 @@ ${t.pass} PASS, ${t.fail} FAIL, ${t.notRun} NOT RUN. NOT RUN is not a pass: it n
   await demo({ sampleDir: values.out, prices: values.prices, cassetteDir: values.cassettes, out: (t) => console.log(t) });
 } else if (command === "bench") {
   loadDotenv(".env");
-  console.log(await benchCommand({ sub: positionals[1] ?? "", dbPath: ledgerPath, sampleMode, record: values.record, arms: values.arm, split: values.split, only: values.only, results: values.results, concurrency: values.concurrency, env: process.env, log: (l) => console.error(l) }));
+  console.log(await benchCommand({ sub: positionals[1] ?? "", dbPath: ledgerPath, sampleMode, record: values.record, arms: values.arm, split: values.split, set: values.set, trials: values.trials, only: values.only, results: values.results, concurrency: values.concurrency, env: process.env, log: (l) => console.error(l) }));
 } else if (command === "bill") {
   const since = values.since ?? "0000-00-00";
   const until = values.until ?? "9999-99-99";

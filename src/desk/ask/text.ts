@@ -13,6 +13,7 @@ export type Slot =
   | { kind: "usd"; micros: number }
   | { kind: "count"; n: number }
   | { kind: "pct"; value: number; decimals: number }
+  | { kind: "decimal"; value: number; decimals: number }
   | { kind: "date"; iso: string }
   | { kind: "entity"; label: string }
   | { kind: "word"; text: string };
@@ -20,6 +21,7 @@ export type Slot =
 export const usd = (micros: number): Slot => ({ kind: "usd", micros });
 export const count = (n: number): Slot => ({ kind: "count", n });
 export const pct = (value: number, decimals = 1): Slot => ({ kind: "pct", value, decimals });
+export const decimal = (value: number, decimals = 1): Slot => ({ kind: "decimal", value, decimals });
 export const date = (iso: string): Slot => ({ kind: "date", iso });
 export const entity = (raw: unknown): Slot => ({ kind: "entity", label: sanitizeLabel(raw) });
 export const word = (text: string): Slot => {
@@ -35,6 +37,8 @@ export function show(slot: Slot): string {
       return slot.n.toLocaleString("en-US");
     case "pct":
       return `${slot.value.toFixed(slot.decimals)}%`;
+    case "decimal":
+      return slot.value.toFixed(slot.decimals);
     case "date":
       return slot.iso;
     case "entity":
@@ -78,6 +82,8 @@ export function figureOf(slot: Slot): { value: number; unit: Unit } | null {
       return { value: slot.n, unit: "count" };
     case "pct":
       return { value: Number(slot.value.toFixed(slot.decimals)), unit: "pct" };
+    case "decimal":
+      return { value: Number(slot.value.toFixed(slot.decimals)), unit: "none" };
     default:
       return null;
   }

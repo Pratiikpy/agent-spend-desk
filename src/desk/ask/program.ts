@@ -26,9 +26,10 @@ const compare = object({ id: stepId, op: literal("compare"), a: stepId, b: stepI
 const share = object({ id: stepId, op: literal("share"), part: stepId, whole: stepId });
 const perDay = object({ id: stepId, op: literal("per_day"), of: stepId });
 const percentOf = object({ id: stepId, op: literal("percent_of"), of: stepId, percent: integer({ min: 1, max: 100 }) });
+const inThousands = object({ id: stepId, op: literal("in_thousands"), of: stepId });
 const daysAbove = object({ id: stepId, op: literal("days_above"), from: day, to: day, usd: integer({ min: 1, max: 1_000_000 }) });
 
-const step = variants("op", { spend, top_sessions: topSessions, landing, changes_before: changesBefore, range_digest: rangeDigest, recall, compare, share, per_day: perDay, percent_of: percentOf, days_above: daysAbove });
+const step = variants("op", { spend, top_sessions: topSessions, landing, changes_before: changesBefore, range_digest: rangeDigest, recall, compare, share, per_day: perDay, percent_of: percentOf, in_thousands: inThousands, days_above: daysAbove });
 
 export type Step = Infer<typeof step>;
 export type StepOp = Step["op"];
@@ -57,7 +58,7 @@ function check(program: { steps: Step[] }): string | null {
       }
       if (s.part === s.whole) return `step ${s.id}: takes a share of a step in itself`;
     }
-    if (s.op === "per_day" || s.op === "percent_of") {
+    if (s.op === "per_day" || s.op === "percent_of" || s.op === "in_thousands") {
       const target = seen.get(s.of);
       if (!target) return `step ${s.id}: ${s.of} is not an earlier step`;
       if (target.op !== "spend" || target.group !== "none") return `step ${s.id}: ${s.of} must be a spend step with group none`;

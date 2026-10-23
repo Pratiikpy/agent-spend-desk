@@ -11,8 +11,8 @@ import { loadAutopsyCalls } from "../autopsy/load.ts";
 import { ask } from "../ask/ask.ts";
 import { buildCard } from "../card/build.ts";
 import { createRedactor } from "../card/redact.ts";
-import { BENCH_CASSETTES, QUESTIONS_FILE, RESULTS_FILE } from "../bench/command.ts";
-import { buildQuestions, BENCH_SEED, questionSetHash } from "../bench/questions.ts";
+import { BENCH_CASSETTES, filesFor } from "../bench/command.ts";
+import { buildQuestions, questionSetHash, type QuestionSet } from "../bench/questions.ts";
 import { ARMS, readResults, runBench, tally } from "../bench/run.ts";
 import { canaryCommand, SAMPLE_RUNS } from "../canary/command.ts";
 import { falseAlarmStudy } from "../canary/simulate.ts";
@@ -83,6 +83,39 @@ const fail = (detail: string): Outcome => ({ status: "FAIL", detail });
 const notRun = (detail: string): Outcome => ({ status: "NOT RUN", detail });
 
 const CARD_INPUT = { hours: 5, days: 14, ingest: { malformedLines: 0, truncatedTails: 0, usageConflicts: 0, logFilesFound: 1, searchedPaths: [] as string[] }, landingKnown: true };
+
+/** Replay every recorded run of a benchmark set from the recorded replies, and score it again. */
+function benchCheck(id: string, set: QuestionSet): Check {
+  const files = filesFor(set);
+  return {
+    id,
+    command: `replay every recorded run of benchmark set ${set} from the recorded replies and score it again`,
+    seed: files.seed,
+    async run(e) {
+      if (!existsSync(files.results) || !existsSync(BENCH_CASSETTES) || !existsSync(files.questions)) return notRun(`no recorded benchmark at ${files.results}; run it with: desk bench run --set ${set} --record`);
+      const recorded = readResults(files.results);
+      if (recorded.length === 0) return notRun("the recorded benchmark has no rows");
+      const registered = (JSON.parse(readFileSync(files.questions, "utf8")) as { hash: string }).hash;
+      const hash = questionSetHash(buildQuestions(e.db, files.seed, set));
+      if (hash !== registered) return fail(`the question set built from this ledger is ${hash.slice(0, 19)}, not the pre-registered ${registered.slice(0, 19)}`);
+      const dir = mkdtempSync(join(tmpdir(), "desk-bench-"));
+      try {
+        const out = join(dir, "replay.jsonl");
+        const trials = [...new Set(recorded.map((r) => r.trial))].sort((a, b) => a - b);
+        await runBench({ db: e.db, port: new CassettePort(BENCH_CASSETTES), arms: ARMS, split: "all", set, trials, out });
+        const again = new Map(readResults(out).map((x) => [`${x.qid}|${x.arm}|${x.trial}`, x]));
+        const answered = recorded.filter((x) => !x.error);
+        const differs = answered.filter((x) => { const y = again.get(`${x.qid}|${x.arm}|${x.trial}`); return !y || y.answer !== x.answer || y.exact !== x.exact || y.close !== x.close; });
+        const greedy = answered.filter((x) => x.trial === 0);
+        const line = ARMS.map((a) => { const c = tally(greedy.filter((x) => x.arm === a)); return `${a} ${c.exact}/${c.n}`; }).join(", ");
+        const errors = recorded.length - answered.length;
+        return (differs.length === 0 ? pass : fail)(`${answered.length} recorded runs replayed from recordings, ${differs.length} differ${differs.length > 0 ? ` (${differs.slice(0, 4).map((x) => `${x.qid} ${x.arm} t${x.trial}`).join(", ")})` : ""}; exact answers ${line}${errors > 0 ? `; ${errors} recorded runs ended in an error and are not replayed` : ""}; this reproduces the table, it does not say the Desk wins`);
+      } finally {
+        rmSync(dir, { recursive: true, force: true });
+      }
+    },
+  };
+}
 
 const CHECKS: Check[] = [
   {
@@ -365,32 +398,8 @@ const CHECKS: Check[] = [
       return (ok ? pass : fail)(`verdict ${v.verdict} on day ${v.day}${v.delta !== null ? `, ${(v.delta * 100).toFixed(1)} points` : ""}; control flat: ${/control arm: flat/.test(r.text)}; harness unchanged: ${v.harnessUnchanged}`);
     },
   },
-  {
-    id: "benchmark-reproduces-from-recordings",
-    command: "replay every recorded benchmark run from the recorded replies and score it again",
-    seed: BENCH_SEED,
-    async run(e) {
-      if (!existsSync(RESULTS_FILE) || !existsSync(BENCH_CASSETTES) || !existsSync(QUESTIONS_FILE)) return notRun(`no recorded benchmark at ${RESULTS_FILE}; run it with: desk bench run --record`);
-      const recorded = readResults(RESULTS_FILE);
-      if (recorded.length === 0) return notRun("the recorded benchmark has no rows");
-      const registered = (JSON.parse(readFileSync(QUESTIONS_FILE, "utf8")) as { hash: string }).hash;
-      const hash = questionSetHash(buildQuestions(e.db));
-      if (hash !== registered) return fail(`the question set built from this ledger is ${hash.slice(0, 19)}, not the pre-registered ${registered.slice(0, 19)}`);
-      const dir = mkdtempSync(join(tmpdir(), "desk-bench-"));
-      try {
-        const out = join(dir, "replay.jsonl");
-        await runBench({ db: e.db, port: new CassettePort(BENCH_CASSETTES), arms: ARMS, split: "all", out });
-        const again = new Map(readResults(out).map((x) => [`${x.qid}|${x.arm}`, x]));
-        const answered = recorded.filter((x) => !x.error);
-        const differs = answered.filter((x) => { const y = again.get(`${x.qid}|${x.arm}`); return !y || y.answer !== x.answer || y.exact !== x.exact || y.close !== x.close; });
-        const line = ARMS.map((a) => { const c = tally(answered.filter((x) => x.arm === a)); return `${a} ${c.exact}/${c.n}`; }).join(", ");
-        const errors = recorded.length - answered.length;
-        return (differs.length === 0 ? pass : fail)(`${answered.length} recorded runs replayed from recordings, ${differs.length} differ${differs.length > 0 ? ` (${differs.slice(0, 4).map((x) => `${x.qid} ${x.arm}`).join(", ")})` : ""}; exact answers ${line}${errors > 0 ? `; ${errors} recorded runs ended in an error and are not replayed` : ""}; this reproduces the table, it does not say the Desk wins`);
-      } finally {
-        rmSync(dir, { recursive: true, force: true });
-      }
-    },
-  },
+  benchCheck("benchmark-reproduces-from-recordings", "A"),
+  benchCheck("benchmark-set-b-reproduces-from-recordings", "B"),
   {
     id: "canary-statistic-false-alarms",
     command: "falseAlarmStudy({histories: 100}) with no injected change",
