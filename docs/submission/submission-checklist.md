@@ -4,6 +4,19 @@ No time limit applies to us. Submission is through HackOS and happens only when 
 
 Creating the first submission **locks the team**. Do not create it until the team is final.
 
+## Status on 2026-10-23 (what exists, what is not done, what only Prateek can do)
+
+Done and checked: slide deck (`docs/submission/deck/deck.html` and `desk-deck.pdf`, 16 slides with the architecture diagram, the stack, both sponsors' use, product screens, the head-to-head and canary evidence, what is not proven); sponsor technology explanation; README run from a fresh clone (verified on Windows 11 and Ubuntu 22.04, Node 22 and 24); sample inputs and a cleaned trace under `input_examples/` and `output_examples/`; `desk prove` with the checks listed in the README; secret scan on the tree and on history; size check.
+
+Built, not uploaded: a 3:44 captioned screen-recording of real runs (`node scripts/demo-video/record.mjs <out.mp4>`; the copy made on 2026-10-23 is outside the repository). It has no voice. The script in `demo-video-script.md` carries narration if a voiced version is wanted.
+
+Not done, and only Prateek can do it:
+- Upload the video and put its link in the HackOS form; create the submission (it locks the team); choose Track 3.
+- Cursor: the required IDE. No Cursor session is logged in `docs/sponsors/cursor-usage-log.md`; the explanation claims none. Work in Cursor and log real sessions, or accept a weaker sponsor score.
+- Zetaris and Meterless "running on your machine" as an eligibility condition is unconfirmed by the organisers.
+- Decide whether `CLAUDE.md`, `AGENTS.md` and `.claude/` (instruction files that name Prateek and carry personal working rules) stay in the public repository; they were committed with the project.
+- Push to GitHub and check the link while logged out. There is no remote yet.
+
 ## A. Required components
 
 - [ ] **Demo video**, 1–4 minutes, uploaded and playable from a logged-out browser

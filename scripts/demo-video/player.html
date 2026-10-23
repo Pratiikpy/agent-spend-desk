@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>desk. demo player</title>
+<style>
+@font-face { font-family: "Outfit"; src: url("../../assets/fonts/Outfit-Regular.ttf"); font-weight: 400; }
+@font-face { font-family: "Outfit"; src: url("../../assets/fonts/Outfit-SemiBold.ttf"); font-weight: 600 800; }
+@font-face { font-family: "JetBrains Mono"; src: url("../../assets/fonts/JetBrainsMono-Regular.ttf"); font-weight: 400; }
+@font-face { font-family: "JetBrains Mono"; src: url("../../assets/fonts/JetBrainsMono-Medium.ttf"); font-weight: 500 700; }
+:root { --ink: #0a0a0a; --paper: #fff; --halo: #fafaf7; --veil: #f8fafc; --line: #e5e7eb; --graphite: #6b7280; --cipher: #059669; --redline: #c2410c; }
+* { box-sizing: border-box; }
+html, body { margin: 0; width: 1920px; height: 1080px; background: var(--paper); color: var(--ink); font-family: "Outfit", sans-serif; overflow: hidden; }
+header { height: 92px; display: flex; align-items: center; gap: 22px; padding: 0 64px; border-bottom: 1px solid var(--line); }
+header .logo { display: flex; align-items: center; gap: 14px; font-size: 34px; font-weight: 700; letter-spacing: -0.04em; }
+header .beat { font-family: "JetBrains Mono", monospace; font-size: 20px; letter-spacing: 0.14em; color: var(--graphite); text-transform: uppercase; margin-left: 28px; }
+header .title { font-size: 28px; font-weight: 600; letter-spacing: -0.02em; }
+header .tag { margin-left: auto; font-family: "JetBrains Mono", monospace; font-size: 17px; color: var(--graphite); }
+main { height: 1080px; padding: 28px 64px 0; }
+#term { height: 790px; border: 1px solid var(--line); border-radius: 16px; background: var(--halo); padding: 26px 34px; overflow: hidden; position: relative; }
+#out { font-family: "JetBrains Mono", monospace; font-size: 17px; line-height: 24px; white-space: pre-wrap; word-break: break-word; position: absolute; left: 34px; right: 34px; bottom: 26px; }
+.l { min-height: 24px; }
+.l.dim { color: var(--graphite); }
+.l.pass { color: #047857; font-weight: 500; }
+.l.fail { color: var(--redline); font-weight: 500; }
+.l.key { background: #eef6f1; margin: 0 -10px; padding: 0 10px; border-radius: 4px; }
+.prompt { color: var(--graphite); }
+.cursor { display: inline-block; width: 11px; height: 22px; background: var(--ink); vertical-align: -4px; margin-left: 2px; animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+#cap, .capbar { position: fixed; left: 64px; right: 64px; bottom: 36px; min-height: 120px; padding: 18px 28px; background: var(--ink); color: #fff; border-radius: 14px; font-size: 33px; line-height: 1.3; letter-spacing: -0.01em; display: flex; align-items: center; z-index: 9999; font-family: "Outfit", sans-serif; }
+#cap.hide { opacity: 0; }
+.title-card { position: absolute; inset: 92px 0 0 0; display: flex; flex-direction: column; justify-content: center; padding: 0 160px; background: var(--paper); }
+.title-card h1 { font-size: 104px; letter-spacing: -0.05em; line-height: 0.98; margin: 0 0 36px; font-weight: 700; }
+.title-card p { font-size: 36px; line-height: 1.32; max-width: 1400px; color: #2a2a2c; margin: 0 0 18px; }
+.title-card .small { font-family: "JetBrains Mono", monospace; font-size: 22px; color: var(--graphite); }
+</style>
+</head>
+<body>
+<header><div class="logo"><svg width="40" height="40" viewBox="0 0 32 32"><rect x="2" y="11" width="15" height="6" fill="#0a0a0a"/><circle cx="24" cy="20" r="5" fill="#0a0a0a"/></svg>desk.</div><span class="beat" id="beat"></span><span class="title" id="title"></span><span class="tag">constructed scenario · recorded from a real run</span></header>
+<main><div id="term"><div id="out"></div></div></main>
+<div id="cap" class="hide"></div>
+<div id="card" class="title-card" style="display:none"></div>
+<script>
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const out = document.getElementById("out");
+const cap = document.getElementById("cap");
+let capTimers = [];
+
+function setCaption(text) {
+  if (!text) { cap.classList.add("hide"); return; }
+  cap.textContent = text;
+  cap.classList.remove("hide");
+}
+
+function classify(line) {
+  if (/\bFAIL\b|row_hash_mismatch|hash_mismatch|exit code 2|default deny|blocked/i.test(line)) return "fail";
+  if (/\bPASS\b|RESULT: PASS/.test(line)) return "pass";
+  if (/^\s*(note:|PASS means|PASS does not|figures sha|\.\.\.|…)/.test(line)) return "dim";
+  return "";
+}
+
+window.titleCard = async (spec) => {
+  document.getElementById("beat").textContent = "";
+  document.getElementById("title").textContent = "";
+  const card = document.getElementById("card");
+  card.innerHTML = `<h1>${spec.h1}</h1>${spec.lines.map((l, i) => `<p class="${i === spec.lines.length - 1 && spec.small ? "small" : ""}">${l}</p>`).join("")}`;
+  card.style.display = "flex";
+  document.getElementById("term").style.visibility = "hidden";
+  setCaption(spec.caption || "");
+  await sleep(spec.hold * 1000);
+};
+
+/** spec: { beat, title, command, lines[], hold, cps, lineMs, captions:[{t, text}], keys:[regex source] } */
+window.play = async (spec) => {
+  document.getElementById("card").style.display = "none";
+  document.getElementById("term").style.visibility = "visible";
+  document.getElementById("beat").textContent = spec.beat || "";
+  document.getElementById("title").textContent = spec.title || "";
+  out.innerHTML = "";
+  setCaption("");
+  capTimers.forEach(clearTimeout);
+  capTimers = (spec.captions || []).map((c) => setTimeout(() => setCaption(c.text), c.t * 1000));
+  const keys = (spec.keys || []).map((k) => new RegExp(k));
+  const cmd = document.createElement("div");
+  cmd.className = "l";
+  cmd.innerHTML = '<span class="prompt">$ </span><span id="typed"></span><span class="cursor"></span>';
+  out.appendChild(cmd);
+  const typed = cmd.querySelector("#typed");
+  const cps = spec.cps || 38;
+  for (const ch of spec.command) { typed.textContent += ch; await sleep(1000 / cps); }
+  await sleep(350);
+  cmd.querySelector(".cursor").remove();
+  const lineMs = spec.lineMs ?? 70;
+  for (const text of spec.lines) {
+    const d = document.createElement("div");
+    const k = keys.some((re) => re.test(text)) ? " key" : "";
+    d.className = `l ${classify(text)}${k}`.trim();
+    d.textContent = text === "" ? " " : text;
+    out.appendChild(d);
+    await sleep(lineMs);
+  }
+  await sleep((spec.hold || 6) * 1000);
+};
+window.showCaption = setCaption;
+</script>
+</body>
+</html>
