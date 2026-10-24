@@ -8,6 +8,7 @@ import type { Micros } from "../money.ts";
 import { evaluate, matches, routeOf } from "../policy/evaluate.ts";
 import { capDim, capLabel, NUMERIC_DIMS, numericOf, type NumericDim, type OptionalNumericDim, type Policy, type Request, type Verdict } from "../policy/types.ts";
 import type { PriceSnapshot } from "../pricing/pricebook.ts";
+import { checkpointInstruction, checkpointWorthy, CheckpointStore, isHandoffWrite, readHandoff, type CheckpointRow } from "./checkpoint.ts";
 import { worstCaseReservation } from "./estimate.ts";
 import { DEFAULT_RESERVATION_TTL_MS, GateLedger, sigValid } from "./ledger.ts";
 import { readTranscriptDelta, resolveTranscript } from "./observe.ts";
@@ -52,6 +53,21 @@ export interface GateConfig {
   shadowMs?: number;
   projectOf?: (cwd: string | null) => string;
   busyTimeoutMs?: number;
+  /**
+   * Where the handoff of a paused session is written. With it, a loop stop or a cap on a long window opens a checkpoint: the agent is told to write its handoff
+   * there and stop, and the session may do nothing else until the owner resumes it. Without it, a refusal is only a refusal.
+   */
+  handoffDir?: string;
+}
+
+/** What resuming a checkpoint did. */
+export interface ResumeResult {
+  checkpointId: number;
+  sessionId: string;
+  handoff: { written: boolean; sha256: string | null; path: string };
+  /** Present when the cap still bound and the owner granted headroom: the windows it covers, how much, and until when. */
+  extension: { dims: string[]; headroomMicros: Micros; expiresAt: string } | null;
+  eventId: number;
 }
 
 export interface SettleResult {
@@ -116,6 +132,7 @@ export class Gate {
   private readonly cfg: GateConfig;
   private readonly trace: Trace;
   readonly person: string;
+  readonly checkpoints: CheckpointStore | null;
 
   constructor(cfg: GateConfig) {
     this.cfg = cfg;
@@ -125,6 +142,7 @@ export class Gate {
     this.ledger = new GateLedger(cfg.db, cfg.now ?? Date.now);
     this.trace = cfg.trace ?? NULL_TRACE;
     this.person = cfg.person ?? safeUser();
+    this.checkpoints = cfg.handoffDir === undefined ? null : new CheckpointStore(cfg.db, cfg.handoffDir);
   }
 
   private mode(): GateMode {
@@ -203,6 +221,98 @@ export class Gate {
     });
   }
 
+  // ---- checkpoints (DF-051) ---------------------------------------------------------------------------------
+
+  /** Open a checkpoint for the session when the refusal is one that stops it (a loop stop, or a cap on a window that does not clear by itself). */
+  private openCheckpointFor(g: GateRequest, reasonCode: string, action: string | null, reasons: readonly string[], matched: readonly string[], nowIso: string, neededMicros: Micros): CheckpointRow | null {
+    if (this.checkpoints === null || !checkpointWorthy(reasonCode, action, reasons)) return null;
+    const reason = reasons.filter((r) => !r.startsWith("approval")).join("; ").slice(0, 300);
+    return this.checkpoints.create({ session: g.session_id, person: g.person, project: g.project, model: g.model, at: nowIso, reasonCode, reason, matched, neededMicros });
+  }
+
+  /** Checkpoints still open, newest first. */
+  openCheckpoints(): CheckpointRow[] {
+    return this.checkpoints === null ? [] : this.checkpoints.list("open");
+  }
+
+  /**
+   * Resume a stopped session. The agent's handoff must have been written into the file the Desk named, unless the owner says to go without it. If the cap that
+   * stopped the session still binds, resuming needs an extension: headroom for the windows that bind, for a limited time, signed with the owner key and
+   * written to the gate's record. An extension too small to let the session through is refused rather than granted and wasted.
+   */
+  resumeCheckpoint(o: { session?: string; id?: number; owner: string; extendMicros?: number; extendMs?: number; reason?: string; withoutHandoff?: boolean }): ResumeResult {
+    if (this.checkpoints === null) throw new GateError("E_NO_CHECKPOINTS", "this gate keeps no checkpoints: start it with a handoff directory", 400);
+    const cp = o.id !== undefined ? this.checkpoints.byId(o.id) : o.session !== undefined ? this.checkpoints.open(o.session) : undefined;
+    if (cp === undefined) throw new GateError("E_NOT_FOUND", "no checkpoint is open for that session", 404);
+    if (cp.status !== "open") throw new GateError("E_ALREADY_CLOSED", `checkpoint ${cp.id} was already resumed`, 409);
+    const handoff = readHandoff(cp.handoff_path);
+    if (!handoff.written && o.withoutHandoff !== true) {
+      throw new GateError("E_NO_HANDOFF", `the agent has not written its handoff into ${cp.handoff_path}; resuming from nothing is allowed only when the owner says so`, 409);
+    }
+    return this.ledger.tx(() => {
+      const nowIso = this.ledger.nowIso();
+      const view = this.policyView();
+      const probeMicros = Math.max(this.cfg.hookProbeMicros ?? 1, cp.needed_micros);
+      const g: GateRequest = { session_id: cp.session_id, person: cp.person, project: cp.project ?? "unknown", agent: "agent:main", model: cp.model ?? "claude-unknown", task_type: "code", waste_rule: "none", action: "tool_call", tool: null, recoverable_micros: 0, idempotency_key: null, estimate_micros: probeMicros, input_tokens: null, max_tokens: null, n: 1, ttl_ms: null, call_ref: null, approval_id: null };
+      const dayT = this.ledger.budgetTotals(budgetId(g.person, "day", nowIso));
+      const monthT = this.ledger.budgetTotals(budgetId(g.person, "month", nowIso));
+      const raw = this.requestFor(g, dayT.spent + dayT.reserved + probeMicros, monthT.spent + monthT.reserved + probeMicros, this.scopedDims(view.policy, g, nowIso, probeMicros));
+      const head = this.headroom(g.person, nowIso);
+      const binding = this.bindingDims(view.policy, this.withHeadroom(raw, head));
+      let extension: { dims: NumericDim[]; headroom_micros: number; expires_at: string } | null = null;
+      if (binding.length > 0) {
+        if (o.extendMicros === undefined) {
+          throw new GateError("E_CAP_BINDS", `the cap that stopped this session still binds (${binding.join(", ")}); resuming needs an extension: --extend-usd N --reason "..."`, 409, { binding });
+        }
+        if (this.cfg.ownerKey === undefined) throw new GateError("E_NO_OWNER_KEY", "an extension needs an owner key (DESK_GATE_OWNER_TOKEN); none is configured", 403);
+        if (!Number.isSafeInteger(o.extendMicros) || o.extendMicros < 1) throw new GateError("E_INVALID", "an extension is a positive amount", 400);
+        const ms = o.extendMs ?? 3_600_000;
+        if (!Number.isSafeInteger(ms) || ms < 60_000 || ms > 24 * 3_600_000) throw new GateError("E_INVALID", "an extension lasts 1 minute to 24 hours", 400);
+        if (o.reason === undefined || o.reason.trim().length < 3) throw new GateError("E_INVALID", "an extension needs a reason, in words", 400);
+        extension = { dims: binding, headroom_micros: o.extendMicros, expires_at: new Date(this.ledger.now() + ms).toISOString() };
+        // The grant has to be enough: with it set against the request the cap must no longer bind.
+        const after = this.withHeadroom(raw, this.mergeHeadroom(head, extension.dims, extension.headroom_micros));
+        const still = this.bindingDims(view.policy, after);
+        if (still.length > 0) throw new GateError("E_EXTENSION_TOO_SMALL", `an extension of ${o.extendMicros} micro-dollars does not let the session through: ${still.join(", ")} still bind`, 409, { binding: still });
+      }
+      const row = this.ledger.append({
+        kind: "approved",
+        session_id: cp.session_id,
+        person: cp.person,
+        reason_code: "checkpoint_resumed",
+        reason: `checkpoint ${cp.id} resumed by ${o.owner}${extension ? ` with an extension: ${o.reason}` : ""}`,
+        ...(extension ? { expires_at: extension.expires_at, signKey: this.cfg.ownerKey as string } : {}),
+        basis: { checkpoint_id: cp.id, by: o.owner, extension, handoff: { written: handoff.written, sha256: handoff.sha256 }, reason: o.reason ?? null },
+      });
+      this.checkpoints!.markResumed(cp.id, nowIso, o.owner);
+      this.trace.emit({ event: "risk.flag", why: "rule", detail: { op: "gate.checkpoint", state: "resumed", checkpointId: cp.id, extended: extension !== null, eventId: row.id } });
+      return {
+        checkpointId: cp.id,
+        sessionId: cp.session_id,
+        handoff: { written: handoff.written, sha256: handoff.sha256, path: cp.handoff_path },
+        extension: extension === null ? null : { dims: extension.dims, headroomMicros: extension.headroom_micros, expiresAt: extension.expires_at },
+        eventId: row.id,
+      };
+    });
+  }
+
+  /** The numbers whose cap the request would pass, so denied: what a resume has to make room in. */
+  private bindingDims(policy: Policy, req: Request): NumericDim[] {
+    const out = new Set<NumericDim>();
+    for (const rule of policy.rules) {
+      if (rule.kind !== "permit" || rule.cap === undefined || !matches(rule.when, req)) continue;
+      const dim = capDim(rule.cap);
+      if (numericOf(req, dim) > rule.cap.maxMicros) out.add(dim);
+    }
+    return [...out].sort();
+  }
+
+  private mergeHeadroom(head: Partial<Record<NumericDim, number>>, dims: readonly NumericDim[], extra: number): Partial<Record<NumericDim, number>> {
+    const out = { ...head };
+    for (const d of dims) out[d] = (out[d] ?? 0) + extra;
+    return out;
+  }
+
   resume(person: string, owner: string): void {
     this.ledger.tx(() => {
       this.ledger.append({ kind: "resumed", person, reason_code: "resumed", reason: `resumed by ${owner}`, basis: { by: owner } });
@@ -212,7 +322,7 @@ export class Gate {
   // ---- limits and standing -----------------------------------------------------------------------------
 
   /** The tightest cap in force for this request, per window: every matching cap applies, so the smallest binds (spec 10.2). */
-  private limitsFor(policy: Policy, req: Request): Record<WindowKind, Micros | null> {
+  private limitsFor(policy: Policy, req: Request, head: Partial<Record<NumericDim, number>> = {}): Record<WindowKind, Micros | null> {
     const out: Record<WindowKind, Micros | null> = { day: null, month: null };
     for (const rule of policy.rules) {
       if (rule.kind !== "permit" || rule.cap === undefined || !matches(rule.when, req)) continue;
@@ -220,8 +330,35 @@ export class Gate {
       const dim = capDim(rule.cap);
       const w: WindowKind | null = dim === "day_spend_after_micros" ? "day" : dim === "month_spend_after_micros" ? "month" : null;
       if (w === null) continue;
+      const cap = rule.cap.maxMicros + (head[dim] ?? 0);
       const cur = out[w];
-      out[w] = cur === null ? rule.cap.maxMicros : Math.min(cur, rule.cap.maxMicros);
+      out[w] = cur === null ? cap : Math.min(cur, cap);
+    }
+    return out;
+  }
+
+  /** What the owner has granted a person beyond the policy's caps, still in force: headroom per window, read from the signed resume events. */
+  private headroom(person: string, nowIso: string): Partial<Record<NumericDim, number>> {
+    const rows = this.cfg.db
+      .prepare("SELECT basis FROM gate_event WHERE kind = 'approved' AND reason_code = 'checkpoint_resumed' AND person = ? AND expires_at IS NOT NULL AND expires_at > ?")
+      .all(person, nowIso) as { basis: string }[];
+    const out: Partial<Record<NumericDim, number>> = {};
+    for (const r of rows) {
+      const ext = (JSON.parse(r.basis) as { extension?: { dims: NumericDim[]; headroom_micros: number } | null }).extension;
+      if (ext === null || ext === undefined) continue;
+      for (const dim of ext.dims) out[dim] = (out[dim] ?? 0) + ext.headroom_micros;
+    }
+    return out;
+  }
+
+  /** The request as it stands once the headroom the owner granted is set against it: that much of each window counts as not spent. */
+  private withHeadroom(req: Request, head: Partial<Record<NumericDim, number>>): Request {
+    const out: Request = { ...req };
+    for (const [dim, extra] of Object.entries(head) as [NumericDim, number][]) {
+      if (dim === "recoverable_micros") continue;
+      const now = out[dim];
+      if (now === undefined) continue;
+      (out as unknown as Record<string, number>)[dim] = Math.max(0, now - extra);
     }
     return out;
   }
@@ -309,8 +446,9 @@ export class Gate {
     const nowIso = this.ledger.nowIso();
     const totalsDay = this.ledger.budgetTotals(budgetId(person, "day", nowIso));
     const totalsMonth = this.ledger.budgetTotals(budgetId(person, "month", nowIso));
-    const req = this.requestFor(g, totalsDay.spent + totalsDay.reserved, totalsMonth.spent + totalsMonth.reserved, this.scopedDims(view.policy, g, nowIso, 0));
-    const limits = this.limitsFor(view.policy, req);
+    const head = this.headroom(person, nowIso);
+    const req = this.withHeadroom(this.requestFor(g, totalsDay.spent + totalsDay.reserved, totalsMonth.spent + totalsMonth.reserved, this.scopedDims(view.policy, g, nowIso, 0)), head);
+    const limits = this.limitsFor(view.policy, req, head);
     const refs = this.budgetsFor(person, nowIso, limits, true);
     return {
       person,
@@ -431,6 +569,8 @@ export class Gate {
     if (enforced && this.isPaused(g.person)) {
       return this.denyEarly(g, "paused", `${g.person} is paused after a budget overshoot; the owner must resume them`, false, view.version, key);
     }
+    const stopped = enforced ? this.checkpoints?.open(g.session_id) : undefined;
+    if (stopped !== undefined) return this.denyEarly(g, "checkpoint", `session ${g.session_id} is paused for checkpoint ${stopped.id} (${stopped.reason}). ${checkpointInstruction(stopped)}`, false, view.version, key);
 
     const est = worstCaseReservation(this.cfg.prices, {
       model: g.model,
@@ -456,10 +596,11 @@ export class Gate {
     if (!Number.isSafeInteger(dayAfter) || !Number.isSafeInteger(monthAfter)) {
       return this.denyEarly(g, "amount_overflow", "the amounts involved do not fit in a safe integer", true, view.version, key);
     }
-    const preq = this.requestFor(g, dayAfter, monthAfter, this.scopedDims(view.policy, g, nowIso, reserve));
+    const head = this.headroom(g.person, nowIso);
+    const preq = this.withHeadroom(this.requestFor(g, dayAfter, monthAfter, this.scopedDims(view.policy, g, nowIso, reserve)), head);
     const scopedNow = this.scopedStanding(view.policy, preq);
     const verdict = evaluate(view.policy, preq);
-    const limits = this.limitsFor(view.policy, preq);
+    const limits = this.limitsFor(view.policy, preq, head);
     const mode = this.mode();
     const shadow = mode === "shadow";
     const routedModel = routeOf(view.policy, preq);
@@ -555,6 +696,8 @@ export class Gate {
     }
 
     // deny: recorded, not cached (a transient denial is not an authorization, so a retry is evaluated afresh)
+    const cp = this.openCheckpointFor(g, reasonCode, verdict.action ?? null, reasons, verdict.matched, nowIso, reserve);
+    if (cp !== null) reasons.push(checkpointInstruction(cp));
     const row = this.ledger.append({
       kind: "denied",
       idempotency_key: key,
@@ -892,12 +1035,16 @@ export class Gate {
           if (!(error instanceof GateError && error.code === "E_TRANSCRIPT_MISSING")) throw error;
         }
       }
+      const open = this.checkpoints?.open(sessionId);
+      if (open !== undefined && !this.bypassOpen().open && isHandoffWrite(open.handoff_path, toolName, input["tool_input"])) {
+        return { decision: "allow", reason: `writing the handoff for checkpoint ${open.id}`, failedClosed: false };
+      }
       const model = lastModel ?? (this.cfg.db.prepare("SELECT last_model FROM gate_transcript WHERE session_id = ?").get(sessionId) as { last_model?: string | null } | undefined)?.last_model ?? "claude-unknown";
       const d = this.checkOnly(
         { session_id: sessionId, person, project, agent: "agent:main", model, task_type: "code", waste_rule: "none", action: "tool_call", tool: toolName, recoverable_micros: 0, idempotency_key: null, estimate_micros: this.cfg.hookProbeMicros ?? 1, input_tokens: null, max_tokens: null, n: 1, ttl_ms: null, call_ref: null, approval_id: null },
       );
       if (d.verdict === "allow") return { decision: "allow", reason: d.reasons.join("; ") || "allowed", failedClosed: false };
-      const stop = d.action === "pause_with_checkpoint" ? " Finish the current step, write a short handoff (what is done, what is open, the branch) and stop." : "";
+      const stop = d.action === "pause_with_checkpoint" && !d.reasons.some((r) => r.includes("handoff")) ? " Finish the current step, write a short handoff (what is done, what is open, the branch) and stop." : "";
       return { decision: d.verdict, reason: `Desk gate: ${d.reasons.join("; ") || d.reasonCode}.${stop}`, failedClosed: d.failed };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -923,27 +1070,34 @@ export class Gate {
         return { verdict: "allow", failed: false, shadow: false, reasonCode: "bypass", reasons: [`emergency switch open until ${bypass.expiresAt}`], matched: [], action: null, reservationId: null, idempotencyKey: key, idempotent: false, reservedMicros: 0, expiresAt: null, routedModel: g.model, standing: [], policyVersion: view.version, approvalRequest: null, basis: {} };
       }
       if (this.isPaused(g.person)) return this.denyEarly(g, "paused", `${g.person} is paused after a budget overshoot; the owner must resume them`, false, view.version, key);
+      const stopped = this.checkpoints?.open(g.session_id);
+      if (stopped !== undefined) return this.denyEarly(g, "checkpoint", `session ${g.session_id} is paused for checkpoint ${stopped.id} (${stopped.reason}). ${checkpointInstruction(stopped)}`, false, view.version, key);
       const dayT = this.ledger.budgetTotals(budgetId(g.person, "day", nowIso));
       const monthT = this.ledger.budgetTotals(budgetId(g.person, "month", nowIso));
       const probe = g.estimate_micros ?? 1;
-      const preq = this.requestFor(g, dayT.spent + dayT.reserved + probe, monthT.spent + monthT.reserved + probe);
+      const head = this.headroom(g.person, nowIso);
+      const preq = this.withHeadroom(this.requestFor(g, dayT.spent + dayT.reserved + probe, monthT.spent + monthT.reserved + probe, this.scopedDims(view.policy, g, nowIso, probe)), head);
       const verdict = evaluate(view.policy, preq);
-      const limits = this.limitsFor(view.policy, preq);
+      const limits = this.limitsFor(view.policy, preq, head);
+      const scopedNow = this.scopedStanding(view.policy, preq);
       const refs = this.budgetsFor(g.person, nowIso, limits, true);
       const standing = refs.map((b) => standingOf(b, (b.window === "day" ? dayT : monthT).spent, (b.window === "day" ? dayT : monthT).reserved));
       const reasonCode = verdict.verdict === "allow" ? "allowed" : verdict.verdict === "ask" ? "ask_required" : verdict.action ? "forbidden" : verdict.reasons.some((r) => r.startsWith("cap ")) ? "cap_exceeded" : "no_permit";
       const base: GateDecision = {
         verdict: verdict.verdict, failed: false, shadow: false, reasonCode, reasons: verdict.reasons, matched: verdict.matched, action: verdict.action ?? null, reservationId: null,
-        idempotencyKey: key, idempotent: false, reservedMicros: 0, expiresAt: null, routedModel: routeOf(view.policy, preq), standing, policyVersion: view.version, approvalRequest: null, basis: {},
+        idempotencyKey: key, idempotent: false, reservedMicros: 0, expiresAt: null, routedModel: routeOf(view.policy, preq), standing, ...(scopedNow.length > 0 ? { scoped: scopedNow } : {}), policyVersion: view.version, approvalRequest: null, basis: {},
       };
       if (verdict.verdict === "allow") return base;
       if (this.mode() === "shadow") {
         this.ledger.append({ kind: "shadow_would_deny", session_id: g.session_id, person: g.person, project: g.project, model: g.model, tool: g.tool, reason_code: reasonCode, reason: verdict.reasons.join("; "), verdict: verdict.verdict, policy_version: view.version, basis: { matched: verdict.matched } });
         return { ...base, verdict: "allow", shadow: true, reasons: [...verdict.reasons, `shadow mode: allowed, would have been ${verdict.verdict}`] };
       }
+      const cp = verdict.verdict === "deny" ? this.openCheckpointFor(g, reasonCode, verdict.action ?? null, verdict.reasons, verdict.matched, nowIso, probe) : null;
+      const outReasons = cp === null ? verdict.reasons : [...verdict.reasons, checkpointInstruction(cp)];
+      base.reasons = outReasons;
       this.ledger.append({
         kind: verdict.verdict === "ask" ? "asked" : "denied", session_id: g.session_id, person: g.person, project: g.project, agent: g.agent, model: g.model, tool: g.tool, reason_code: reasonCode,
-        reason: verdict.reasons.join("; "), verdict: verdict.verdict, policy_version: view.version, basis: { matched: verdict.matched, action: verdict.action ?? null, action_digest: hashJson({ s: g.session_id, t: g.tool, pv: view.version }) },
+        reason: outReasons.join("; "), verdict: verdict.verdict, policy_version: view.version, basis: { matched: verdict.matched, action: verdict.action ?? null, action_digest: hashJson({ s: g.session_id, t: g.tool, pv: view.version }) },
       });
       this.trace.emit({ event: "desk.authorize", why: "rule", detail: { verdict: verdict.verdict, reasonCode, surface: "hook", tool: g.tool } });
       return base;

@@ -10,6 +10,7 @@ import { loadSnapshot } from "../pricing/pricebook.ts";
 import { parseVirtualPrices, withVirtualPrices } from "../pricing/virtual.ts";
 import { MemoryTrace } from "../agents/trace.ts";
 import { Gate } from "./gate.ts";
+import { GateError } from "./types.ts";
 import { startGateway } from "../gateway/server.ts";
 import { startGateServer } from "./http.ts";
 import { serveMcp } from "./mcp.ts";
@@ -20,8 +21,9 @@ const DEFAULT_PRICES = "data/prices/anthropic-litellm-2026-10-22.json";
 const DEFAULT_PORT = 8765;
 const DEFAULT_GATEWAY_PORT = 8766;
 const DEFAULT_SHADOW = "7d";
+const DEFAULT_HANDOFF_DIR = "data/desk/handoffs";
 
-const USAGE = `Use: gate serve|gateway|mcp|open|close|status|integrity [options]
+const USAGE = `Use: gate serve|gateway|mcp|open|close|status|integrity|checkpoints|resume [options]
   serve      --policy FILE [--db FILE] [--prices FILE] [--port N] [--shadow-for 7d|0] [--person NAME] [--transcript-root DIR]...
              needs DESK_GATE_TOKEN (at least 16 characters); DESK_GATE_OWNER_TOKEN enables approve, switch, pause on the owner routes
   gateway    --upstream URL --policy FILE [--db FILE] [--prices FILE] [--port N] [--shadow-for 7d|0] [--person NAME] [--reserve MODEL=USD]...
@@ -32,7 +34,11 @@ const USAGE = `Use: gate serve|gateway|mcp|open|close|status|integrity [options]
   open       --for 30m          owner only: open the emergency switch (signed with DESK_GATE_OWNER_TOKEN)
   close                          close the emergency switch
   status     [--db FILE]         switch, paused people, budgets, integrity
-  integrity  [--db FILE]         recompute I-R1 to I-R5 and the hash chain; exits 1 on any violation`;
+  integrity  [--db FILE]         recompute I-R1 to I-R5 and the hash chain; exits 1 on any violation
+  checkpoints [--db FILE]        sessions stopped for a checkpoint, with where each handoff is to be written
+  resume     --session ID [--extend-usd N --for 1h --reason "..."] [--no-handoff]
+             owner only: resume a stopped session. If its cap still binds, an extension (headroom for a limited time, signed with DESK_GATE_OWNER_TOKEN) is needed.
+  Where handoffs go: --handoff-dir DIR (default data/desk/handoffs).`;
 
 /** "30m", "2h", "45s", "7d" or a bare number of milliseconds. */
 export function parseDuration(text: string): number {
@@ -74,6 +80,11 @@ const GATE_OPTIONS = {
   reserve: { type: "string", multiple: true },
   price: { type: "string", multiple: true },
   ledger: { type: "string" },
+  session: { type: "string" },
+  "extend-usd": { type: "string" },
+  reason: { type: "string" },
+  "no-handoff": { type: "boolean", default: false },
+  "handoff-dir": { type: "string", default: DEFAULT_HANDOFF_DIR },
 } as const;
 
 const parseGateArgs = (rest: readonly string[]) => parseOrUsage({ args: [...rest], options: GATE_OPTIONS, allowPositionals: false });
@@ -105,6 +116,7 @@ export async function runGateCli(argv: readonly string[], env: Record<string, st
       prices: priceBook(),
       policy: filePolicy(values.policy ?? "policies/none.yaml"),
       shadowMs: parseDuration(values["shadow-for"] ?? DEFAULT_SHADOW),
+      handoffDir: values["handoff-dir"] ?? DEFAULT_HANDOFF_DIR,
       ...(env["DESK_GATE_OWNER_TOKEN"] !== undefined ? { ownerKey: env["DESK_GATE_OWNER_TOKEN"] } : {}),
       ...(values.person !== undefined ? { person: values.person } : {}),
       ...(values["transcript-root"] !== undefined ? { transcriptRoots: values["transcript-root"] } : {}),
@@ -183,11 +195,59 @@ export async function runGateCli(argv: readonly string[], env: Record<string, st
       const state = JSON.parse(gate.ledger.projectionJson()) as { budgets: unknown[]; paused: string[]; eventCount: number; open: unknown[] };
       console.log(`switch: ${b.open ? `OPEN until ${b.expiresAt}` : b.reason}`);
       console.log(`events: ${state.eventCount}, open reservations: ${state.open.length}, paused: ${state.paused.join(", ") || "none"}`);
+      const stopped = gate.openCheckpoints();
+      console.log(`checkpoints: ${stopped.length === 0 ? "none open" : `${stopped.length} session${stopped.length === 1 ? "" : "s"} stopped, see: desk gate checkpoints`}`);
       const behind = gate.clockBehindMs();
       if (behind > 0) console.log(`clock: ${Math.round(behind / 1000)} s behind the last recorded event, so the gate holds its own time until the clock catches up`);
       console.log(`integrity: ${violations.length === 0 ? "ok" : `${violations.length} violation(s)`}`);
       for (const v of violations.slice(0, 5)) console.log(`  ${v.invariant} event ${String(v.eventId)}: ${v.message}`);
       return violations.length === 0 ? 0 : 1;
+    }
+    case "checkpoints": {
+      const gate = makeGate(false);
+      const open = gate.openCheckpoints();
+      if (open.length === 0) {
+        console.log("no session is stopped for a checkpoint");
+        return 0;
+      }
+      for (const c of open) console.log(`checkpoint ${c.id}  session ${c.session_id}  ${c.person}${c.project ? ` in ${c.project}` : ""}  ${c.created_at}\n  why: ${c.reason}\n  handoff: ${c.handoff_path}`);
+      return 0;
+    }
+    case "resume": {
+      if (values.session === undefined) {
+        console.error('Use: gate resume --session ID [--extend-usd N --for 1h --reason "..."] [--no-handoff]');
+        return 2;
+      }
+      const gate = makeGate(true);
+      const usd = values["extend-usd"];
+      let extendMicros: number | undefined;
+      if (usd !== undefined) {
+        const m = /^(\d+)(?:\.(\d{1,6}))?$/.exec(usd.trim());
+        if (m === null) {
+          console.error(`cannot read --extend-usd "${usd}" as dollars; use 25 or 25.50`);
+          return 2;
+        }
+        extendMicros = Number(m[1]) * 1_000_000 + Number((m[2] ?? "").padEnd(6, "0"));
+      }
+      try {
+        const r = gate.resumeCheckpoint({
+          session: values.session,
+          owner: env["USERNAME"] ?? env["USER"] ?? "owner",
+          ...(extendMicros !== undefined ? { extendMicros } : {}),
+          ...(values.for !== undefined ? { extendMs: parseDuration(values.for) } : {}),
+          ...(values.reason !== undefined ? { reason: values.reason } : {}),
+          withoutHandoff: values["no-handoff"] === true,
+        });
+        console.log(`resumed checkpoint ${r.checkpointId} for session ${r.sessionId} (signed event ${r.eventId}); handoff ${r.handoff.written ? `written (${r.handoff.sha256?.slice(0, 12)})` : "not written, resumed without it as asked"}`);
+        if (r.extension) console.log(`extension: ${(r.extension.headroomMicros / 1_000_000).toFixed(2)} USD of headroom on ${r.extension.dims.join(", ")} until ${r.extension.expiresAt}`);
+        return 0;
+      } catch (e) {
+        if (e instanceof GateError) {
+          console.error(`${e.code}: ${e.message}`);
+          return 1;
+        }
+        throw e;
+      }
     }
     case "integrity": {
       const gate = makeGate(false);

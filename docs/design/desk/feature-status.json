@@ -52,7 +52,7 @@
     { "id": "DF-048", "status": "built", "evidence": ["src/desk/replay/policy-replay.ts", "tests/desk/replay.test.ts"], "missing": "" },
     { "id": "DF-049", "status": "built", "evidence": ["src/desk/approvals/habit.ts", "src/desk/approvals/command.ts", "src/desk/dossier/approval.ts", "src/desk/dossier/policy-change.ts", "tests/desk/approvals.test.ts", "docs/verification/approvals-and-brief-2026-10-25.md"], "missing": "per-call gate approvals are not in the habit record, only dossier approvals" },
     { "id": "DF-050", "status": "built", "evidence": ["src/desk/gate/gate.ts", "src/desk/gate/cli.ts", "tests/desk/gate/gate.test.ts"], "missing": "" },
-    { "id": "DF-051", "status": "partial", "evidence": ["src/desk/gate/gate.ts"], "missing": "pause is a refusal; no checkpoint is written for a resume" },
+    { "id": "DF-051", "status": "built", "evidence": ["src/desk/gate/checkpoint.ts", "src/desk/gate/gate.ts", "src/desk/gate/cli.ts", "tests/desk/gate/checkpoint.test.ts", "tests/desk/gate/checkpoint-cli.test.ts", "docs/verification/checkpoint-2026-10-25.md"], "missing": "not run against a live Claude Code session; only the hook can let the agent write its handoff (the gateway and MCP doors tell it where, and cannot gate its own tools); a tool with no hook and no gateway gets nothing" },
     { "id": "DF-052", "status": "partial", "evidence": ["src/desk/gate/gate.ts", "docs/verification/gate-enforcement.md"], "missing": "a ladder of enforcement surfaces with notify-only labels" },
     { "id": "DF-053", "status": "built", "evidence": ["src/desk/gate/http.ts", "tests/desk/gate/gate.test.ts"], "missing": "" },
     { "id": "DF-054", "status": "built", "evidence": ["src/desk/gate/mcp.ts", "tests/desk/gate/mcp.test.ts"], "missing": "" },

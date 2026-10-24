@@ -274,3 +274,20 @@ describe("the example policy that ships with the Desk", () => {
     expect(past.reasons).toContain("cap per-session: deny (session)");
   });
 });
+
+describe("the hook reads the new windows too", () => {
+  it("stops a tool call from a session that has used its session cap, and not another session's", () => {
+    const yaml = withRules(`  - id: per-session
+    kind: permit
+    when: {}
+    cap: { window: session, max_usd: "4.00", ask_at: 1.0, warn_at: 0.5 }
+`);
+    const r = rig({ policyYaml: yaml, hookProbeMicros: USD(2) });
+    spend(r, { idempotency_key: "a", session_id: "s-1" }); // $2.50 in the session; the next tool call is assumed to cost $2
+    const event = (session: string) => ({ hook_event_name: "PreToolUse", session_id: session, tool_name: "Bash", cwd: "/work/api" });
+    const stopped = r.gate.hookPreToolUse(event("s-1"));
+    expect(stopped.decision).toBe("deny");
+    expect(stopped.reason).toContain("cap per-session: deny (session)");
+    expect(r.gate.hookPreToolUse(event("s-2")).decision).toBe("allow");
+  });
+});
