@@ -8,6 +8,8 @@ import { openLedger, type Ledger } from "../ledger/db.ts";
 import { ingestClaudeCode } from "../ledger/ingest.ts";
 import { findRepoRoot } from "../outcomes/git.ts";
 import { linkOutcomes } from "../outcomes/link.ts";
+import { refreshTasks } from "../tasks/assign.ts";
+import { defaultMarkerPath } from "../tasks/markers.ts";
 import { loadSnapshot } from "../pricing/pricebook.ts";
 import { buildSample, DEFAULT_SAMPLE, sampleLogsDir, sampleReposDir } from "../sample/gen.ts";
 import { renderCardAnsi } from "./ansi.ts";
@@ -85,6 +87,7 @@ export async function runCard(o: RunCardOptions): Promise<RunCardResult> {
     const files = findJsonlLogs(claudeDir);
     say(`Found ${files.length} log file${files.length === 1 ? "" : "s"} in ${claudeDir}. Reading what is new in them; the first read of a long history can take a few minutes, later ones seconds.`);
     await ingestClaudeCode(db, files, snapshot);
+    refreshTasks(db, { useLabels: o.mode === "own_logs", markerPath: defaultMarkerPath() });
     // Totals over every ingest run: a later run reads only new lines, so the last run alone would hide earlier skips.
     const skipped = db.prepare("SELECT COALESCE(SUM(malformed_lines), 0) m, COALESCE(SUM(truncated_tails), 0) t, COALESCE(SUM(usage_conflicts), 0) u FROM ingest_run").get() as unknown as { m: number; t: number; u: number };
     if (o.mode === "own_logs" && repos.length === 0) {

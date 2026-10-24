@@ -16,6 +16,7 @@ export const COMMANDS: readonly CommandHelp[] = [
   { name: "ingest", group: "Read more sources", summary: "Read agent logs into the ledger: Claude Code by default, or --agent codex, opencode or statusline." },
   { name: "retention", group: "Read more sources", summary: "Which agent logs are about to be deleted before they were read, and a daily ingest command (`retention schedule`)." },
   { name: "statusline", group: "Read more sources", summary: "The Claude Code status line that records your plan limits (`statusline install` prints the setting to add)." },
+  { name: "task", group: "Read more sources", summary: "Label the work you start (`task <label>`, `task end`) so sessions group into tasks; `task list` shows how each task was identified." },
   { name: "landing", group: "Read more sources", summary: "Tie sessions to the commits they produced in your repositories, and show what the spend bought." },
   { name: "reconcile", group: "Read more sources", summary: "Compare the cost Claude Code recorded for itself with our estimate, process by process." },
   { name: "silos", group: "Read more sources", summary: "Ask the invoice, CI and roster data through Zetaris (`silos seed` builds the sample data)." },

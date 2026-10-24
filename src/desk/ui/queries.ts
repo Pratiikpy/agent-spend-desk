@@ -495,6 +495,36 @@ export function session(ctx: UiContext, id: string): object {
 
 // ---------------------------------------------------------------------------------------------- outcomes
 
+/** How the sessions in a span were grouped into tasks, and the costliest tasks. Empty (not assigned) when the ledger has no task rows yet. */
+function taskView(ctx: UiContext, span: Span): object {
+  const has = one<{ n: number }>(ctx.db, "SELECT COUNT(*) AS n FROM sqlite_master WHERE type = 'table' AND name = 'task'");
+  if (!has || has.n === 0 || (one<{ n: number }>(ctx.db, "SELECT COUNT(*) AS n FROM task")?.n ?? 0) === 0) return { assigned: false, methods: [], top: [] };
+  const methods = all<{ method: string; tasks: number; sessions: number; micros: number | null }>(
+    ctx.db,
+    `SELECT t.method, COUNT(DISTINCT t.task_id) tasks, COUNT(DISTINCT m.session_id) sessions, SUM(c.total_micros) micros
+     FROM model_call m JOIN task_session ts ON ts.session_id = m.session_id JOIN task t ON t.task_id = ts.task_id
+     LEFT JOIN cost_event c ON c.call_id = m.call_id AND c.class = 'estimated' WHERE m.ts >= ? AND m.ts <= ? GROUP BY t.method`,
+    span.sinceIso,
+    span.untilIso,
+  );
+  const top = all<{ task_id: string; method: string; label: string; sessions: number; micros: number | null }>(
+    ctx.db,
+    `SELECT t.task_id, t.method, t.label, COUNT(DISTINCT m.session_id) sessions, SUM(c.total_micros) micros
+     FROM model_call m JOIN task_session ts ON ts.session_id = m.session_id JOIN task t ON t.task_id = ts.task_id
+     JOIN cost_event c ON c.call_id = m.call_id AND c.class = 'estimated' WHERE m.ts >= ? AND m.ts <= ? GROUP BY t.task_id ORDER BY micros DESC LIMIT 15`,
+    span.sinceIso,
+    span.untilIso,
+  );
+  const order = ["explicit", "ticket", "pull_request", "branch", "session"];
+  const by = new Map(methods.map((m) => [m.method, m]));
+  return {
+    assigned: true,
+    methods: order.map((method) => ({ method, tasks: by.get(method)?.tasks ?? 0, sessions: by.get(method)?.sessions ?? 0, micros: by.get(method)?.micros ?? 0 })),
+    // The task id carries the project path, which the browser never gets; the label is what a person reads.
+    top: top.map((t) => ({ method: t.method, label: t.label, sessions: t.sessions, micros: t.micros ?? 0 })),
+  };
+}
+
 export function outcomes(ctx: UiContext, span: Span): object {
   const empty = emptyState(ctx);
   if (empty) return empty;
@@ -524,6 +554,7 @@ export function outcomes(ctx: UiContext, span: Span): object {
     repos,
     commits: { total: commits.n, merged: commits.merged, reverted: commits.reverted },
     landing: { rows: landingRows(landing), totalMicros: landing.totalMicros, lowConfidenceMicros: landing.lowConfidenceMicros },
+    tasks: taskView(ctx, span),
     byMethod: byMethod.map((m) => ({ method: m.method, confidence: m.confidence, links: m.n })),
     top: rows.map((r) => ({ id: r.session_id, project: projectName(r.project_path), micros: r.micros, state: r.state ?? "unlinked", confidence: r.conf, commits: r.commits ?? 0, method: r.method })),
   };

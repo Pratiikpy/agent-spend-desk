@@ -12,9 +12,12 @@ beforeEach(() => {
 });
 afterEach(() => dir.dispose());
 
+// The tables a later version added, dropped when a test puts a ledger back at an older version. Each new migration adds its tables here.
+const DROP_AFTER_V6 = "DROP TABLE IF EXISTS task_session; DROP TABLE IF EXISTS task;";
+
 describe("the ledger schema", () => {
-  it("is at version 6 and a reader can use version 3 and later", () => {
-    expect(SCHEMA_VERSION).toBe(6);
+  it("is at version 7 and a reader can use version 3 and later", () => {
+    expect(SCHEMA_VERSION).toBe(7);
     expect(OLDEST_READABLE_VERSION).toBe(3);
   });
 
@@ -24,7 +27,7 @@ describe("the ledger schema", () => {
     const first = openLedger(path);
     await ingestClaudeCode(first, [dir.file("a.jsonl", [assistantLine({ id: "m1", session: "s1", ts: "2026-10-20T10:00:00Z", output: 10 }), assistantLine({ id: "m2", session: "s1", ts: "2026-10-20T10:01:00Z", output: 20 })])], testSnapshot());
     const before = { sources: first.prepare("SELECT * FROM ingest_source").all(), calls: first.prepare("SELECT call_id, source_id, output_tokens FROM model_call ORDER BY call_id").all() };
-    first.exec("PRAGMA foreign_keys = OFF; DROP TABLE limit_sample; PRAGMA user_version = 4;");
+    first.exec(`PRAGMA foreign_keys = OFF; ${DROP_AFTER_V6} DROP TABLE limit_sample; PRAGMA user_version = 4;`);
     first.exec(`
       CREATE TABLE ingest_source_old (id INTEGER PRIMARY KEY, kind TEXT NOT NULL CHECK (kind IN ('claude_code')), path TEXT NOT NULL UNIQUE, size_bytes INTEGER NOT NULL CHECK (size_bytes >= 0), offset_bytes INTEGER NOT NULL CHECK (offset_bytes >= 0), last_ingested_at TEXT NOT NULL);
       INSERT INTO ingest_source_old SELECT id, kind, path, size_bytes, offset_bytes, last_ingested_at FROM ingest_source;
@@ -36,7 +39,7 @@ describe("the ledger schema", () => {
 
     const upgraded = openLedger(path);
     try {
-      expect((upgraded.prepare("PRAGMA user_version").get() as { user_version: number }).user_version).toBe(6);
+      expect((upgraded.prepare("PRAGMA user_version").get() as { user_version: number }).user_version).toBe(7);
       expect(upgraded.prepare("SELECT * FROM ingest_source").all()).toEqual(before.sources);
       expect(upgraded.prepare("SELECT call_id, source_id, output_tokens FROM model_call ORDER BY call_id").all()).toEqual(before.calls);
       expect(upgraded.prepare("PRAGMA foreign_key_check").all()).toEqual([]);
@@ -59,6 +62,7 @@ describe("the ledger schema", () => {
     // Put it back at version 5 with the table as that version had it.
     first.exec(`
       PRAGMA foreign_keys = OFF;
+      ${DROP_AFTER_V6}
       CREATE TABLE ingest_source_old (id INTEGER PRIMARY KEY, kind TEXT NOT NULL CHECK (kind IN ('claude_code', 'codex')), path TEXT NOT NULL UNIQUE, size_bytes INTEGER NOT NULL CHECK (size_bytes >= 0), offset_bytes INTEGER NOT NULL CHECK (offset_bytes >= 0), last_ingested_at TEXT NOT NULL);
       INSERT INTO ingest_source_old SELECT id, kind, path, size_bytes, offset_bytes, last_ingested_at FROM ingest_source;
       DROP TABLE ingest_source;
@@ -81,7 +85,7 @@ describe("the ledger schema", () => {
 
   it("opens a fresh ledger at the newest version and refuses one from a newer build", () => {
     const fresh = openLedger(":memory:");
-    expect((fresh.prepare("PRAGMA user_version").get() as { user_version: number }).user_version).toBe(6);
+    expect((fresh.prepare("PRAGMA user_version").get() as { user_version: number }).user_version).toBe(7);
     fresh.close();
     const path = join(dir.path, "future.db");
     const f = new DatabaseSync(path);

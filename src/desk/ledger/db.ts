@@ -271,7 +271,24 @@ DROP TABLE ingest_source;
 ALTER TABLE ingest_source_v6 RENAME TO ingest_source;
 `;
 
-const MIGRATIONS: readonly string[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6];
+// Which task a session belongs to (DF-030). Rebuilt from the sessions and the owner's labels each time, so it holds no history of its own.
+const SCHEMA_V7 = `
+CREATE TABLE task (
+  task_id TEXT PRIMARY KEY,
+  method TEXT NOT NULL CHECK (method IN ('explicit', 'ticket', 'pull_request', 'branch', 'session')),
+  label TEXT NOT NULL,
+  project_path TEXT,
+  first_ts TEXT,
+  last_ts TEXT
+);
+CREATE TABLE task_session (
+  session_id TEXT PRIMARY KEY REFERENCES session (session_id),
+  task_id TEXT NOT NULL REFERENCES task (task_id)
+);
+CREATE INDEX task_session_task ON task_session (task_id);
+`;
+
+const MIGRATIONS: readonly string[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7];
 
 /** The schema version this build writes: the number of migrations. A reader compares a ledger's `user_version` with it. */
 export const SCHEMA_VERSION = MIGRATIONS.length;

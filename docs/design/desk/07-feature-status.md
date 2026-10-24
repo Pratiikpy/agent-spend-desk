@@ -2,7 +2,7 @@
 
 Generated from `feature-status.json` by `npm run desk -- status` and checked by `tests/desk/feature-status.test.ts`. The specification is `02-feature-list.md`, which was written as design; this page says how much of it exists.
 
-**42 built, 57 partial, 30 absent** of 129.
+**43 built, 56 partial, 30 absent** of 129.
 
 How to read a status. *Built*: the core of the feature as specified exists and a test, a `desk prove` check or a verification record exercises it. *Partial*: a real part exists and the missing part is named. *Absent*: no code was found. A status is a judgement made by reading and searching, which is why every row cites the files it rests on. A built feature can still be shallow; the "missing" column says so where known.
 
@@ -37,7 +37,7 @@ How to read a status. *Built*: the core of the feature as specified exists and a
 | DF-027 Provenance classes, reconciliation and allocation | partial | `src/desk/silo/facts.ts`, `src/desk/cost/cost.ts` | a reported class, idle and shared allocation |
 | DF-028 Unpriced handling | built | `src/desk/cost/cost.ts`, `tests/desk/cost.test.ts` | - |
 | DF-029 Repricing as superseding events | partial | `src/desk/ledger/db.ts`, `src/desk/ledger/ingest.ts` | repricing replaces a cost event by re-ingest; it is not recorded as a superseding event |
-| DF-030 Task identity | partial | `src/desk/outcomes/link.ts` | a task identity beyond the session |
+| DF-030 Task identity | built | `src/desk/tasks/identity.ts`, `src/desk/tasks/assign.ts`, `src/desk/tasks/markers.ts`, `src/desk/tasks/command.ts`, `src/desk/tasks/mark.ts`, `tests/desk/tasks.test.ts` | no prompt-thread method, by design: no prompt text is kept, so sessions are never grouped by what they were about; a task worked on under several branches is several tasks |
 | DF-031 Attribution with confidence | built | `src/desk/outcomes/attribute.ts`, `src/desk/calibrate/attribution.ts`, `tests/desk/calibration.test.ts`, `tests/desk/outcomes.test.ts` | - |
 | DF-032 Landing lattice | built | `src/desk/outcomes/attribute.ts`, `src/desk/outcomes/breakdown.ts`, `src/desk/pr/cost.ts`, `tests/desk/outcomes.test.ts`, `tests/desk/pr-cost.test.ts` | - |
 | DF-033 Waste classes | partial | `src/desk/autopsy/engine.ts`, `tests/desk/autopsy.test.ts` | classes beyond the ones the sample plants (truncation re-reads, reflection loops, edit-failure loops) |

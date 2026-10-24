@@ -31,7 +31,7 @@
     { "id": "DF-027", "status": "partial", "evidence": ["src/desk/silo/facts.ts", "src/desk/cost/cost.ts"], "missing": "a reported class, idle and shared allocation" },
     { "id": "DF-028", "status": "built", "evidence": ["src/desk/cost/cost.ts", "tests/desk/cost.test.ts"], "missing": "" },
     { "id": "DF-029", "status": "partial", "evidence": ["src/desk/ledger/db.ts", "src/desk/ledger/ingest.ts"], "missing": "repricing replaces a cost event by re-ingest; it is not recorded as a superseding event" },
-    { "id": "DF-030", "status": "partial", "evidence": ["src/desk/outcomes/link.ts"], "missing": "a task identity beyond the session" },
+    { "id": "DF-030", "status": "built", "evidence": ["src/desk/tasks/identity.ts", "src/desk/tasks/assign.ts", "src/desk/tasks/markers.ts", "src/desk/tasks/command.ts", "src/desk/tasks/mark.ts", "tests/desk/tasks.test.ts"], "missing": "no prompt-thread method, by design: no prompt text is kept, so sessions are never grouped by what they were about; a task worked on under several branches is several tasks" },
     { "id": "DF-031", "status": "built", "evidence": ["src/desk/outcomes/attribute.ts", "src/desk/calibrate/attribution.ts", "tests/desk/calibration.test.ts", "tests/desk/outcomes.test.ts"], "missing": "" },
     { "id": "DF-032", "status": "built", "evidence": ["src/desk/outcomes/attribute.ts", "src/desk/outcomes/breakdown.ts", "src/desk/pr/cost.ts", "tests/desk/outcomes.test.ts", "tests/desk/pr-cost.test.ts"], "missing": "" },
     { "id": "DF-033", "status": "partial", "evidence": ["src/desk/autopsy/engine.ts", "tests/desk/autopsy.test.ts"], "missing": "classes beyond the ones the sample plants (truncation re-reads, reflection loops, edit-failure loops)" },

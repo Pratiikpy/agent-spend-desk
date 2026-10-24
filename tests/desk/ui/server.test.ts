@@ -8,6 +8,7 @@ import { findJsonlLogs } from "../../../src/desk/ingest/discover.ts";
 import { openLedger } from "../../../src/desk/ledger/db.ts";
 import { ingestClaudeCode } from "../../../src/desk/ledger/ingest.ts";
 import { linkOutcomes } from "../../../src/desk/outcomes/link.ts";
+import { assignTasks } from "../../../src/desk/tasks/assign.ts";
 import { loadSnapshot } from "../../../src/desk/pricing/pricebook.ts";
 import { buildSample, sampleLogsDir, sampleReposDir } from "../../../src/desk/sample/gen.ts";
 import { TEAM_OF_REPO } from "../../../src/desk/silo/seed.ts";
@@ -29,6 +30,7 @@ beforeAll(async () => {
   const db = openLedger(dbPath);
   await ingestClaudeCode(db, findJsonlLogs(sampleLogsDir(out)), loadSnapshot(PRICES));
   linkOutcomes(db, Object.keys(TEAM_OF_REPO).map((n) => join(sampleReposDir(out), n)), Date.parse("2026-12-01T00:00:00Z"));
+  assignTasks(db, []);
   db.close();
   const emptyPath = join(dir, "empty.db");
   openLedger(emptyPath).close();
@@ -127,6 +129,17 @@ describe("the screens' data", () => {
     expect(autopsy.card.causes.reduce((s: number, c: { micros: number }) => s + c.micros, 0)).toBe(autopsy.card.totals.estimatedMicros);
     expect(brief.state).toBe("ok");
     expect(brief.causes.length).toBeGreaterThan(0);
+  });
+
+  it("shows how sessions were grouped into tasks, and the same spend as the other screens", async () => {
+    const outcomes = await json(full, "/api/outcomes?range=all");
+    const bill = await json(full, "/api/bill?range=all");
+    expect(outcomes.tasks.assigned).toBe(true);
+    expect(outcomes.tasks.methods.map((m: { method: string }) => m.method)).toEqual(["explicit", "ticket", "pull_request", "branch", "session"]);
+    const total = outcomes.tasks.methods.reduce((s: number, m: { micros: number }) => s + m.micros, 0);
+    expect(total).toBe(bill.totals.estimatedMicros);
+    expect(outcomes.tasks.top.length).toBeGreaterThan(0);
+    expect(outcomes.tasks.top.every((t: { micros: number }) => t.micros > 0)).toBe(true);
   });
 
   it("gives the evidence screen a state for every block, and says plainly which are not recorded", async () => {

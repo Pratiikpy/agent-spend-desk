@@ -1,5 +1,7 @@
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { spawnSync } from "node:child_process";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { parseOrExit } from "./args.ts";
 
 import { findJsonlLogs } from "./ingest/discover.ts";
@@ -56,6 +58,9 @@ import { evaluateProtocol, renderProtocol } from "./lab/protocol.ts";
 import { renderSummary, summarise as summariseRuns } from "./lab/stats.ts";
 import { loadTasks, type LabTask } from "./lab/task.ts";
 import { forgetLedger, forgetPreview } from "./security/forget.ts";
+import { refreshTasks } from "./tasks/assign.ts";
+import { taskCommand } from "./tasks/command.ts";
+import { appendMarker, defaultMarkerPath } from "./tasks/markers.ts";
 import { summariseEgress } from "./security/egress.ts";
 
 const regretPath = (): string => (sampleMode ? join(values.out, "regret.db") : "data/desk/regret.db");
@@ -168,6 +173,20 @@ const db = command === "card" || command === "status" || command === "lab" ? ope
 
 if (command === "help") {
   console.log(helpText());
+} else if (command === "task") {
+  const markerPath = defaultMarkerPath();
+  if (positionals[1] === "run") {
+    const [label, ...program] = positionals.slice(2);
+    if (label === undefined || program.length === 0) throw new Error("Use: desk task run <label> -- <command>");
+    // The label is in force for sessions the command starts, in this folder, and ends when the command does.
+    appendMarker(markerPath, { ts: new Date().toISOString(), label, project: process.cwd() });
+    const run = spawnSync(program[0]!, program.slice(1), { stdio: "inherit", env: { ...process.env, DESK_TASK: label }, shell: process.platform === "win32" });
+    appendMarker(markerPath, { ts: new Date().toISOString(), label: null, project: process.cwd() });
+    process.exitCode = run.status ?? 1;
+  } else {
+    const markCommand = `node "${join(dirname(fileURLToPath(import.meta.url)), "tasks", "mark.ts")}"`;
+    console.log(taskCommand(positionals.slice(1), { markerPath, cwd: process.cwd(), nowIso: new Date().toISOString(), env: process.env, db, markCommand }));
+  }
 } else if (command === "retention") {
   if (positionals[1] === "schedule") {
     console.log(scheduleSnippets(process.cwd(), process.platform));
@@ -246,6 +265,7 @@ ${sensitivity}`);
   const files = findJsonlLogs(values["claude-dir"]);
   const started = Date.now();
   const r = await ingestClaudeCode(db, files, loadSnapshot(pricesPath));
+  refreshTasks(db, { useLabels: !sampleMode, markerPath: defaultMarkerPath() });
   const seconds = ((Date.now() - started) / 1000).toFixed(1);
   console.log(`read ${r.files} files, ${r.linesRead} lines in ${seconds}s`);
   console.log(`calls: ${r.callsNew} new, ${r.callsMerged} extra content-block lines merged, ${r.usageConflicts} input/cache conflicts, ${r.outputRegressions} output regressions`);

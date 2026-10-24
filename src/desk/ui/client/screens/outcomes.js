@@ -7,6 +7,24 @@ import { stackedBar, swatch } from "../lib/charts.js";
 
 export const usesRange = true;
 
+const METHOD_LABEL = { explicit: "A label you set", ticket: "A ticket key in the branch", pull_request: "A pull request number in the branch", branch: "A feature branch", session: "The session itself" };
+
+// Which task each session belongs to, and how that was decided. A session on no feature branch is its own task: no prompt text is kept, so nothing is grouped by what it was about.
+function tasksSection(d) {
+  if (!d.tasks || !d.tasks.assigned) return section("Tasks", "not identified yet", h("p", { class: "note" }, "Tasks are identified when logs are read: run `desk ingest`, then `desk task list`. Set a label for the work you start with `desk task <label>`."));
+  return section(
+    "Tasks",
+    "how sessions were grouped",
+    h("p", { class: "note" }, "A task is the work a session belongs to: your label, else a ticket key or pull request number in the branch name, else the feature branch, else the session itself."),
+    h(
+      "div",
+      { class: "pair wide" },
+      table("How tasks were identified", [{ label: "Method", render: (r) => METHOD_LABEL[r.method] || r.method }, { label: "Tasks", num: true, render: (r) => int(r.tasks) }, { label: "Sessions", num: true, render: (r) => int(r.sessions) }, { label: "Spend", num: true, render: (r) => usd(r.micros) }], d.tasks.methods),
+      table("Costliest tasks", [{ label: "Task", render: (r) => r.label }, { label: "Identified by", render: (r) => (METHOD_LABEL[r.method] || r.method).toLowerCase() }, { label: "Sessions", num: true, render: (r) => int(r.sessions) }, { label: "Spend", num: true, render: (r) => usd(r.micros) }], d.tasks.top, { maxh: true }),
+    ),
+  );
+}
+
 export async function render(ctx) {
   const d = await ctx.api("/api/outcomes", { range: ctx.range });
   if (d.state === "empty") return h("div", null, head("Outcomes", "Nothing to attribute yet"), emptyState(d));
@@ -15,6 +33,7 @@ export async function render(ctx) {
       "div",
       null,
       head("Outcomes", "No repository linked", "Without a link between a session and a commit, nothing can be called landed."),
+      tasksSection(d),
       section("Next step", "one command", h("div", { class: "state" }, h("span", { class: "kicker" }, "Link repositories"), h("p", null, "The Desk matches a session to a commit by the files it wrote, the time, and the agent trailer on the commit. It reads file names, never contents."), h("p", { class: "hint" }, "desk landing --repo <path-to-your-repo>"))),
     );
   }
@@ -39,6 +58,7 @@ export async function render(ctx) {
       h("p", { class: "note" }, "A link is only as good as its evidence. High means an agent trailer and the files both agree; medium means the files agree inside the session window; low means a time window or part of the files. Only medium and high can move a session out of unlinked."),
       table("Links by method", [{ label: "Method", render: (r) => r.method.replace("_", " ") }, { label: "Confidence", render: (r) => pill(r.confidence, r.confidence === "high" ? "live" : "") }, { label: "Links", num: true, render: (r) => int(r.links) }], d.byMethod),
     ),
+    tasksSection(d),
     section(
       "Largest sessions",
       "by spend",
