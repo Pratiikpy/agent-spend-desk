@@ -1,0 +1,22 @@
+{
+  "schema": "desk.lab.task.v1",
+  "id": "money-alloc",
+  "title": "Exact money arithmetic",
+  "kind": "feature",
+  "prompt": "Implement the money functions in `src/money.js` (stubs that throw): `parse`, `format`, `add`, `sub`, `mul`, `allocate` and `split`. An amount of money is a plain object `{ minor, currency }` where `minor` is a `BigInt` count of the smallest unit and `currency` is one of `USD` (2 decimal places), `EUR` (2), `JPY` (0) and `KWD` (3). Every function that returns money returns a new object with exactly those two keys; none changes its arguments. A value that is not such an object (null, a string, a `minor` that is not a BigInt, a missing key) given where money is expected throws `TypeError('not an amount of money')`; a currency that is not one of the four throws `Error('unknown currency: <currency>')`, written with the value as a string. `parse(text, currency)` reads a decimal string: an optional leading `-`, then digits, either plain or with thousands groups (`1,234,567`: a first group of one to three digits and then groups of exactly three), then optionally a `.` and at least one fraction digit, and no more fraction digits than the currency has decimal places (fewer is fine and is padded: `1.5` is 1500 KWD minor units). Nothing else is allowed (no spaces, no `+`, no exponent, no trailing or leading `.`, no other digit characters): anything else throws `Error('invalid amount: <text>')` with the text as given. `-0` and `-0.00` are zero. A `text` that is not a string throws `TypeError('amount must be a string')`. The amount can be any size. `format(money)` is the inverse: thousands groups with `,`, all the currency's decimal places after a `.` (none for JPY), and a leading `-` for a negative amount (zero has no sign): `{ minor: -123456n, currency: 'USD' }` is `-1,234.56`. `add(a, b)` and `sub(a, b)` work on the minor units; amounts of different currencies throw `Error('currency mismatch: <a currency> vs <b currency>')`. `mul(money, factor, mode = 'half-even')` multiplies by a decimal string `factor` (an optional `-`, digits, and optionally `.` with at least one digit; nothing else, and not a number) and rounds the exact product to a whole number of minor units by `mode`: `half-even` (to the nearest, an exact half to the even neighbour), `half-up` (an exact half away from zero), `half-down` (an exact half toward zero), `down` (toward zero), `up` (away from zero), `floor` (toward minus infinity), `ceil` (toward plus infinity); whatever is exact is left as it is. The arithmetic must be exact however many digits the factor has and however large the amount is. A factor that is not a valid string throws `Error('invalid factor: <factor>')` and an unknown mode `Error('unknown rounding mode: <mode>')`. `allocate(money, weights)` shares the amount between parts in proportion to `weights`, an array of at least one non-negative whole number (a JavaScript number that is a safe integer) with a positive sum; anything else throws `Error('weights must be non-negative whole numbers with a positive sum')`, and the array passed in is not changed. The parts add up to the amount exactly: work on the size of the amount, give each part the whole units of its exact share, and give the units that are left over one each to the parts with the largest leftover fractions, the earlier part first when fractions are equal; a part with weight 0 gets nothing. A negative amount is shared by its size and every part is negative (or zero). The result is an array of money in the same currency, in the order of the weights. `split(money, parts)` is `allocate` with `parts` equal weights; `parts` must be a safe positive whole number, otherwise `Error('parts must be a positive whole number')`. Run `npm test` to check your work.",
+  "test": {
+    "files": [
+      "test/visible.test.js",
+      "test/hidden.test.js"
+    ],
+    "timeoutSec": 60
+  },
+  "protected": [
+    "test"
+  ],
+  "origin": {
+    "type": "handwritten",
+    "licence": "MIT (this repository)",
+    "note": "Second tranche. Exact decimal parsing, seven rounding modes on negative numbers and halves, and the largest-remainder allocation, with a property test that the parts add up."
+  }
+}

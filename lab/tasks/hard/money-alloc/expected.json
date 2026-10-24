@@ -1,0 +1,29 @@
+{
+  "fail_to_pass": [
+    "parse reads digits, optional thousands groups and a fraction with at most the currency exponent of digits",
+    "there is no negative zero",
+    "parse refuses anything else, naming the text as it was given",
+    "format writes thousands groups, the full fraction and a minus sign for a negative amount",
+    "format and parse are inverses",
+    "add and sub work in minor units, return new plain objects, and leave their arguments alone",
+    "amounts of different currencies are never combined",
+    "mul rounds the exact product by the mode: half-even is the default",
+    "mul modes: half-up and half-down send exact halves away from zero and toward it",
+    "mul modes: down and up go toward and away from zero, floor and ceil toward minus and plus infinity",
+    "mul is exact for large amounts and long factors",
+    "mul refuses a factor that is not a plain decimal string and a mode it does not know",
+    "allocate shares an amount by whole-number weights and no minor unit is lost: the largest remainders get the extra units, earlier parts first on a tie",
+    "allocate treats a negative amount by its size and gives every part the minus sign",
+    "allocate keeps the currency and handles amounts far beyond the safe integer range",
+    "allocate refuses weights that are not non-negative whole numbers with a positive sum, and does not change the array it is given",
+    "allocate always adds up exactly, and no part is more than one unit away from its exact share",
+    "split shares an amount into equal parts, the extra units going to the first parts",
+    "a value that is not an amount of money is a TypeError",
+    "parses and formats an amount",
+    "adds amounts of the same currency",
+    "a dollar split three ways has no lost cent",
+    "multiplication rounds half to even by default"
+  ],
+  "pass_to_pass": [],
+  "total": 23
+}
