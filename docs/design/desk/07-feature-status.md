@@ -2,7 +2,7 @@
 
 Generated from `feature-status.json` by `npm run desk -- status` and checked by `tests/desk/feature-status.test.ts`. The specification is `02-feature-list.md`, which was written as design; this page says how much of it exists.
 
-**72 built, 35 partial, 22 absent** of 129.
+**73 built, 35 partial, 21 absent** of 129.
 
 How to read a status. *Built*: the core of the feature as specified exists and a test, a `desk prove` check or a verification record exercises it. *Partial*: a real part exists and the missing part is named. *Absent*: no code was found. A status is a judgement made by reading and searching, which is why every row cites the files it rests on. A built feature can still be shallow; the "missing" column says so where known.
 
@@ -67,7 +67,7 @@ How to read a status. *Built*: the core of the feature as specified exists and a
 | DF-057 Zetaris data path and the on-camera query | built | `src/sponsors/zetaris/silo-port.ts`, `src/sponsors/zetaris/queries.ts`, `tests/sponsors/zetaris/silo-port.test.ts` | - |
 | DF-058 Model endpoint (Nemotron through NVIDIA's free API) | built | `src/desk/agents/model.ts`, `tests/desk/agents.test.ts` | - |
 | DF-059 Team mode with permissioned views | absent | none | no team mode |
-| DF-060 CI gate | absent | none | no CI gate and no exit-code contract for a pipeline |
+| DF-060 CI gate | built | `src/desk/ci/gate.ts`, `src/desk/ci/command.ts`, `src/desk/ci/simulate.ts`, `tests/desk/ci.test.ts`, `docs/verification/ci-gate-2026-10-25.md` | Not run in a real pipeline with a live model; false-alarm study is on simulated packs |
 | DF-061 Seat return and renewal sheet | built | `src/desk/seats/seats.ts`, `src/desk/seats/command.ts`, `src/desk/prove/run.ts` | the renewal sheet export is not verified |
 | DF-062 Bill auditor and dispute pack | absent | none | no bill auditor or dispute pack |
 | DF-063 Adapter SDK and open ledger format | absent | none | no adapter SDK or published ledger format |

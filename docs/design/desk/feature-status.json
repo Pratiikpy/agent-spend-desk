@@ -61,7 +61,7 @@
     { "id": "DF-057", "status": "built", "evidence": ["src/sponsors/zetaris/silo-port.ts", "src/sponsors/zetaris/queries.ts", "tests/sponsors/zetaris/silo-port.test.ts"], "missing": "" },
     { "id": "DF-058", "status": "built", "evidence": ["src/desk/agents/model.ts", "tests/desk/agents.test.ts"], "missing": "" },
     { "id": "DF-059", "status": "absent", "evidence": [], "missing": "no team mode" },
-    { "id": "DF-060", "status": "absent", "evidence": [], "missing": "no CI gate and no exit-code contract for a pipeline" },
+    { "id": "DF-060", "status": "built", "evidence": ["src/desk/ci/gate.ts", "src/desk/ci/command.ts", "src/desk/ci/simulate.ts", "tests/desk/ci.test.ts", "docs/verification/ci-gate-2026-10-25.md"], "missing": "Not run in a real pipeline with a live model; false-alarm study is on simulated packs" },
     { "id": "DF-061", "status": "built", "evidence": ["src/desk/seats/seats.ts", "src/desk/seats/command.ts", "src/desk/prove/run.ts"], "missing": "the renewal sheet export is not verified" },
     { "id": "DF-062", "status": "absent", "evidence": [], "missing": "no bill auditor or dispute pack" },
     { "id": "DF-063", "status": "absent", "evidence": [], "missing": "no adapter SDK or published ledger format" },

@@ -79,6 +79,7 @@ import { backfillClaudeCodeFields } from "./ledger/backfill.ts";
 import { wasteCommand } from "./waste/command.ts";
 import { delegationCommand } from "./delegation/command.ts";
 import { overheadCommand } from "./overhead/command.ts";
+import { ciCommand, ciWorkflowSnippet } from "./ci/command.ts";
 import { ladder, readResults, recordResults, renderLadder, TOOLS } from "./enforce/ladder.ts";
 import { installedVersions } from "./enforce/version.ts";
 import { testGatewayDoor, testHookContract, testHookLive } from "./enforce/selftest.ts";
@@ -165,6 +166,18 @@ const { values, positionals } = parseOrExit({
     period: { type: "string" },
     month: { type: "string" },
     landed: { type: "string" },
+    baseline: { type: "string" },
+    candidate: { type: "string" },
+    runs: { type: "string" },
+    "min-delta": { type: "string" },
+    level: { type: "string" },
+    "min-tasks": { type: "string" },
+    "error-rate-max": { type: "string" },
+    "max-cost-increase": { type: "string" },
+    "on-inconclusive": { type: "string" },
+    evidence: { type: "string" },
+    format: { type: "string" },
+    "print-workflow": { type: "boolean", default: false },
     live: { type: "boolean", default: false },
     export: { type: "string" },
     "if-due": { type: "boolean", default: false },
@@ -564,7 +577,7 @@ Ctrl+C stops it.`);
     console.log(canaryScheduleSnippet(process.cwd(), process.platform));
   } else if (positionals[1] === "run") {
     loadDotenv(".env");
-    const ran = await canaryRunCommand({ runsPath: OWN_RUNS, env: process.env, today: new Date().toISOString().slice(0, 10), db, snapshot: loadSnapshot(pricesPath), ifDue: values["if-due"], preview: values.preview });
+    const ran = await canaryRunCommand({ runsPath: values.runs ?? OWN_RUNS, env: process.env, today: new Date().toISOString().slice(0, 10), db, snapshot: loadSnapshot(pricesPath), ifDue: values["if-due"], preview: values.preview });
     console.log(ran.text);
   } else {
     console.log(canaryCommand({ runsPath: sampleMode ? SAMPLE_RUNS : OWN_RUNS, sample: sampleMode }).text);
@@ -616,6 +629,37 @@ ${t.pass} PASS, ${t.fail} FAIL, ${t.notRun} NOT RUN. NOT RUN is not a pass: it n
   });
   console.log(result.text);
   if (!result.ok) process.exitCode = 1;
+} else if (command === "ci") {
+  if (values["print-workflow"]) {
+    console.log(ciWorkflowSnippet());
+  } else {
+    const num = (v: string | undefined): number | undefined => (v === undefined ? undefined : Number(v));
+    const fmt = values.format ?? "text";
+    const onInc = values["on-inconclusive"];
+    if (!["text", "json", "markdown"].includes(fmt) || (onInc !== undefined && !["fail", "pass", "inconclusive"].includes(onInc))) {
+      console.error("desk ci: --format is text, json or markdown; --on-inconclusive is fail, pass or inconclusive.");
+      process.exitCode = 2;
+    } else if (values.baseline === undefined || values.candidate === undefined) {
+      console.error("desk ci: give --baseline FILE (the canary runs recorded on the main branch) and --candidate FILE (the pack run on this change). desk ci --print-workflow prints a pipeline step.");
+      process.exitCode = 2;
+    } else {
+      const r = ciCommand({
+        baselinePath: values.baseline,
+        candidatePath: values.candidate,
+        format: fmt as "text" | "json" | "markdown",
+        pricesPath: pricesPath,
+        ...(num(values["min-delta"]) !== undefined ? { minDelta: num(values["min-delta"]) as number } : {}),
+        ...(num(values.level) !== undefined ? { level: num(values.level) as number } : {}),
+        ...(num(values["min-tasks"]) !== undefined ? { minTasks: num(values["min-tasks"]) as number } : {}),
+        ...(num(values["error-rate-max"]) !== undefined ? { errorRateMax: num(values["error-rate-max"]) as number } : {}),
+        ...(values["max-cost-increase"] !== undefined ? { maxCostIncrease: Number(values["max-cost-increase"]) } : {}),
+        ...(values.evidence !== undefined ? { evidenceDir: values.evidence } : {}),
+        ...(onInc !== undefined ? { onInconclusive: onInc as "fail" | "pass" | "inconclusive" } : {}),
+      });
+      console.log(r.text);
+      process.exitCode = r.exitCode;
+    }
+  }
 } else if (command === "enforcement") {
   const resultsPath = "data/desk/enforcement.json";
   if (positionals[1] === "test") {

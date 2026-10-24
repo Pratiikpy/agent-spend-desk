@@ -738,8 +738,10 @@ const CHECKS: Check[] = [
     command: "the recorded learning run replayed from its recordings: the same lessons, in the same rounds, with the same held-out counts",
     seed: DEFAULT_LEARN.seed,
     async run(e) {
-      if (!existsSync(LEARNING_REPORT) || !existsSync(LEARNING_CASSETTES)) return notRun(`no recorded learning run at ${LEARNING_REPORT}; record one with: desk lessons learn --record`);
+      if (!existsSync(LEARNING_REPORT)) return notRun(`no recorded learning run at ${LEARNING_REPORT}; record one with: desk lessons learn --record`);
       const stored = JSON.parse(readFileSync(LEARNING_REPORT, "utf8")) as StoredReport;
+      // A run with no mistakes makes no model call, so it has no recordings; a git checkout does not keep an empty folder, so only a run that called the model needs one.
+      if (stored.mistakes > 0 && !existsSync(LEARNING_CASSETTES)) return notRun(`the recorded learning run in ${LEARNING_REPORT} called the model, and its recordings at ${LEARNING_CASSETTES} are missing`);
       const inputs = learningInputs(e.db);
       if (inputs.missing) return notRun(`the learning run needs ${inputs.missing}`);
       const lessons = openLessons(":memory:");
@@ -748,7 +750,7 @@ const CHECKS: Check[] = [
       const ids = (xs: { id: string }[]): string => xs.map((x) => x.id).sort().join(",");
       const same = exact(again) === exact(stored) && ids(allLessons(lessons)) === ids(stored.lessons) && again.regression.exact === stored.regression.exact;
       const last = stored.rounds.filter((r) => !r.reverted).at(-1)!;
-      return (same ? pass : fail)(`${stored.mistakes} mistakes on ${inputs.training.questions.length} training questions, ${stored.resolved} with a verified plan; held-out exact by round ${exact(stored)} of ${last.n}; the change since round 0 is ${(last.change.change * 100).toFixed(1)} points (95% interval ${(last.change.low * 100).toFixed(1)} to ${(last.change.high * 100).toFixed(1)}); ${stored.regression.exact} of ${stored.regression.n} lessons pass as tests; replayed from recordings${same ? "" : ", and the replay differs"}`);
+      return (same ? pass : fail)(`${stored.mistakes} mistakes on ${inputs.training.questions.length} training questions, ${stored.resolved} with a verified plan; held-out exact by round ${exact(stored)} of ${last.n}; the change since round 0 is ${(last.change.change * 100).toFixed(1)} points (95% interval ${(last.change.low * 100).toFixed(1)} to ${(last.change.high * 100).toFixed(1)}); ${stored.regression.exact} of ${stored.regression.n} lessons pass as tests; ${stored.mistakes > 0 ? "replayed from recordings" : "no mistake, so no model call and nothing to learn on this ledger"}${same ? "" : ", and the replay differs"}`);
     },
   },
   {

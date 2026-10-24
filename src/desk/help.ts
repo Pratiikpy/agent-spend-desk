@@ -29,6 +29,7 @@ export const COMMANDS: readonly CommandHelp[] = [
   { name: "close", group: "Costs and limits", summary: "Close a month: spend, invoices, canary, a replay and drafted change, and a signed month dossier a stranger can check offline." },
   { name: "review", group: "Costs and limits", summary: "The weekly review: what the week cost, what it bought, how the forecasts did, what drifted, and at most three changes worth making." },
   { name: "bill", group: "Costs and limits", summary: "The bill for a month or any dates: kinds of figure, what it bought, where it went; --export csv or json gives every line." },
+  { name: "ci", group: "Decide and enforce", summary: "A pipeline gate: fail a change that worsens the canary suite or raises cost past a bound. Exit 0 pass, 1 fail, 2 error, 3 inconclusive." },
   { name: "enforcement", group: "Decide and enforce", summary: "What the Desk can actually stop, tool by tool: enforced, advisory or notify only. `enforcement test [--live]` records the evidence." },
   { name: "overhead", group: "Costs and limits", summary: "Share the idle and unowned spend of a period among the projects that landed work, to the micro-dollar." },
   { name: "delegation", group: "Costs and limits", summary: "Which agents started which: each delegated agent alone and with the agents it started, and the sessions that went too deep." },
