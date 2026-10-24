@@ -1,0 +1,23 @@
+{
+  "fail_to_pass": [
+    "an exact version, with or without an equals sign, and build metadata never counts",
+    "comparators and sets of comparators",
+    "caret ranges keep the leftmost non-zero part fixed",
+    "tilde ranges fix the minor part when it is given",
+    "x-ranges and the empty range",
+    "a comparator with a partial version means the whole family it names",
+    "hyphen ranges include both ends, and a partial upper end means the whole family",
+    "alternatives with || each stand on their own, and an empty alternative means any version",
+    "a prerelease satisfies a set only when one of its comparators names a prerelease of the same major.minor.patch",
+    "with includePrerelease a prerelease is judged by its place in the order alone",
+    "prerelease precedence follows semver 2.0: numbers by value, names by text, numbers before names, a shorter list before a longer one, a prerelease before its release",
+    "maxSatisfying gives the highest version in the range, the first of equals, and null when none",
+    "a version has to be exactly major.minor.patch with an optional prerelease and build: nothing else is accepted",
+    "a range has to be made of the forms above: anything else is refused with the range as it was given",
+    "caret and tilde ranges",
+    "the highest version in a range",
+    "a bad version is refused with the text in the message"
+  ],
+  "pass_to_pass": [],
+  "total": 17
+}
