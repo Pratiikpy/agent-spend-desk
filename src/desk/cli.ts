@@ -146,7 +146,7 @@ const pricesPath = values.prices ?? (sampleMode ? DEFAULT_SNAPSHOT : LIVE_SNAPSH
 const ledgerPath = sampleMode && !process.argv.includes("--db") && command !== "card" ? join(values.out, "ledger.db") : values.db;
 // Commands that read the sample ledger build it first when it is not there, so `--sample` works from a fresh clone.
 if (sampleMode && ["propose", "silos", "ask", "ui", "verify-answer", "bench", "seats", "calibrate", "regret", "lessons"].includes(command) && !existsSync(ledgerPath)) {
-  await runCard({ mode: "sample", claudeDir: "", dbPath: "", pricesPath: pricesPath, outDir: values["card-dir"], sampleDir: values.out, days: 14, hours: 5, repos: [], color: false });
+  await runCard({ mode: "sample", claudeDir: "", dbPath: "", pricesPath: pricesPath, outDir: values["card-dir"], sampleDir: values.out, days: 14, hours: 5, repos: [], color: false, onProgress: (m) => console.error(m) });
 }
 const db = command === "card" || command === "status" || command === "lab" ? openLedger(":memory:") : openLedger(ledgerPath);
 
@@ -241,6 +241,8 @@ ${sensitivity}`);
     repos: values.repo ?? [],
     color: Boolean(process.stdout.isTTY) && !process.env.NO_COLOR,
     ...(process.stdout.columns ? { width: process.stdout.columns } : {}),
+    // Progress goes to stderr so that the card on stdout can still be piped or saved.
+    onProgress: (m) => console.error(m),
   });
   console.log(r.text);
   if (r.files.length > 0) console.log(`

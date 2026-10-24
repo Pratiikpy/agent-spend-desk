@@ -30,6 +30,8 @@ export interface RunCardOptions {
   repos: string[];
   color: boolean;
   width?: number;
+  /** Told what is being done, so that reading a large history is not silent. Messages carry counts and folder names, never log content. */
+  onProgress?: (message: string) => void;
 }
 
 export interface RunCardResult {
@@ -79,7 +81,9 @@ export async function runCard(o: RunCardOptions): Promise<RunCardResult> {
   }
   const db = openLedger(dbPath);
   try {
+    const say = o.onProgress ?? (() => undefined);
     const files = findJsonlLogs(claudeDir);
+    say(`Found ${files.length} log file${files.length === 1 ? "" : "s"} in ${claudeDir}. Reading what is new in them; the first read of a long history can take a few minutes, later ones seconds.`);
     await ingestClaudeCode(db, files, snapshot);
     // Totals over every ingest run: a later run reads only new lines, so the last run alone would hide earlier skips.
     const skipped = db.prepare("SELECT COALESCE(SUM(malformed_lines), 0) m, COALESCE(SUM(truncated_tails), 0) t, COALESCE(SUM(usage_conflicts), 0) u FROM ingest_run").get() as unknown as { m: number; t: number; u: number };
@@ -92,7 +96,9 @@ export async function runCard(o: RunCardOptions): Promise<RunCardResult> {
       }
       repos = [...roots];
     }
+    say(repos.length > 0 ? `Tying sessions to commits in ${repos.length} repositor${repos.length === 1 ? "y" : "ies"}.` : "No repository to tie sessions to.");
     const linked = repos.length > 0 ? linkOutcomes(db, repos, Date.now()) : null;
+    say("Building the card.");
     const calls = loadAutopsyCalls(db, snapshot, "0000", "9999");
     const built = buildCard({
       calls,
