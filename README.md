@@ -26,7 +26,7 @@ Usage trackers such as ccusage and CodexBar read agent logs and show cost; as fa
 | | |
 |---|---|
 | **Code** | About 41,400 lines of TypeScript in 265 files, 2,200 lines of browser JavaScript in 19 files, and 19,200 lines of tests in 115 files. Runtime dependencies: two |
-| **Checked** | 1,451 tests, and `desk prove` with 35 checks, all PASS, on fresh clones of Windows 11 (Node 24.20) and Ubuntu 22.04 (Node 22.23) |
+| **Checked** | 1,451 tests (one skipped on Linux without a PDF reader), and `desk prove` with 35 checks, all PASS, on fresh clones of Windows 11 (Node 24.20) and Ubuntu 22.04 (Node 22.23) |
 | **The product** | 54 commands (`desk help` lists them), a 13-screen local UI, nine agent roles, a gate that Claude Code calls before each tool use and a gateway door for tools that can point at an endpoint, signed dossiers with an offline verifier |
 | **Specified** | 129 numbered features and a requirements document under `docs/design/desk/`; 200-odd pages of design, sponsor and verification notes |
 | **Measured** | Pre-registered 60-question benchmarks in three rounds, whose 2,748 recorded model replies `desk prove` replays, a 52-task canary over 30 days with a control arm, a wind tunnel, a regret ledger, a learning loop, and what each of them got wrong |
@@ -61,7 +61,7 @@ npm test                      # the unit and integration tests
 
 **On your own logs:** `npm run desk` reads `~/.claude/projects` read-only and prints your own limit autopsy in under three minutes: where your last heavy window went, which fix is worth making, and what the Desk could not know. Add `--repo <path>` to tie sessions to commits. Nothing is written outside `data/desk/`.
 
-Verified from a fresh clone of the final commit, each with the card (same figures hash), `desk prove` (35 PASS, 0 FAIL, 0 NOT RUN) and 1,451 tests: Windows 11 on Node 24.20, and Ubuntu 22.04 (WSL) on Node 22.23. Node 22.19 and macOS are NOT VERIFIED at this commit. On PowerShell, `$env:SAMPLE_MODE="true"` does the same as `--sample`.
+Verified from fresh clones at commit `9d9f620` (every commit after it changes documents only, starting with this line): typecheck clean, 1,451 tests (1,450 on Ubuntu, where the one test that needs a PDF reader is skipped) and `desk prove` at 35 PASS, 0 FAIL, 0 NOT RUN, with the card's figures hash identical in both (`sha256:797c813a83e0`): Windows 11 on Node 24.20, and Ubuntu 22.04 (WSL) on Node 22.23. Node 22.19 and macOS are NOT VERIFIED. On PowerShell, `$env:SAMPLE_MODE="true"` does the same as `--sample`.
 
 ## The problem
 
