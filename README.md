@@ -21,6 +21,17 @@ Most tools that watch AI spend show a number. desk. treats every number as a cla
 
 Usage trackers such as ccusage and CodexBar read agent logs and show cost; as far as we read them on 2026-10-20 (`docs/design/desk/05-track-coverage-and-sources.md`), none ties each dollar to landed work, replays a policy on a month it did not see, calls a regression against a control arm, or signs the result. desk. takes their log-reading and pace ideas and adds those.
 
+## At a glance
+
+| | |
+|---|---|
+| **Code** | About 24,700 lines of TypeScript in 168 files, and about 5,900 lines of tests in 30 files. Runtime dependencies: two |
+| **Checked** | 468 tests, and `desk prove` with 26 checks, all PASS, on fresh clones of Windows 11 (Node 24.20) and Ubuntu 22.04 (Node 22.23) |
+| **The product** | 25 commands, a 12-screen local UI, nine agent roles, a gate that Claude Code calls before each tool use, signed dossiers with an offline verifier |
+| **Specified** | 129 numbered features and a requirements document under `docs/design/desk/`; 200-odd pages of design, sponsor and verification notes |
+| **Measured** | A pre-registered 60-question benchmark in two sets, 900 recorded runs that `desk prove` replays, a 52-task canary over 30 days with a control arm, a wind tunnel, a regret ledger, a learning loop, and what each of them got wrong |
+| **Sponsors** | Zetaris joins three silos with one statement; three Meterless engines run in our process (conformance 8/8, 13/13, 8/8); Nemotron serves every language role |
+
 ## One product, three tracks
 
 ![The architecture: sources, data, reasoning, decisions, and where each track and each sponsor sits](docs/submission/deck/img/architecture.png)
@@ -78,8 +89,11 @@ The first three are why the autopsy exists, the fourth is why the canary runs ev
 | Why did it change? | An answer from typed, read-only steps that an Auditor checks; engines can be switched off | `desk ask` |
 | Is the reasoning architecture better than calling the model? | A pre-registered 60-question head-to-head, with its first losing run and its misses | `desk bench report` |
 | Can it stop a runaway? | A local gate that Claude Code calls before each tool use; it fails closed | `desk gate serve` |
-
-Route replay, seat return, calibration, the regret ledger and learning from mistakes are in [docs/commands.md](docs/commands.md).
+| Would a cheaper model have done the same work? | The recorded tasks replayed on two routes, with a screen for which kinds of task held up on both halves | `desk route` |
+| Which seats earn their price? | Seats a team holds beyond the people who landed work, from the Zetaris roster | `desk seats` |
+| Does its stated confidence mean what it says? | Link confidence against planted truth, the wind tunnel's range and probability against what happened | `desk calibrate` |
+| Was the Desk's own judgement right? | What it expected of each option when it proposed, scored on the month that followed, with regret | `desk regret` |
+| Does it learn from its mistakes? | Wrong answers become lessons; held-out error is measured per round and a worse round is reverted | `desk lessons learn` |
 
 ## The evidence
 
@@ -155,6 +169,6 @@ The design documents under `docs/`, the sponsor notes and the two guard scripts 
 
 ## More
 
-[docs/the-agents.md](docs/the-agents.md) the agents and the Track 3 mapping · [docs/evidence.md](docs/evidence.md) the evidence in full, one real trace, and the organizers' red flags · [docs/commands.md](docs/commands.md) every question and its command · [docs/reference.md](docs/reference.md) stack, run time and live mode · `docs/design/desk/` the architecture, register, feature list and requirements · `docs/verification/` what was run against the real thing · `docs/sponsors/` verified facts per sponsor · `docs/submission/` the deck (`desk-deck.pdf`), the demo video script, and the sponsor explanation · `scripts/demo-video-motion/` the Remotion project that renders the captioned motion video, with every figure read from a real run or a result file.
+[docs/the-agents.md](docs/the-agents.md) the agents and the Track 3 mapping · [docs/evidence.md](docs/evidence.md) the evidence in full, one real trace, and the organizers' red flags · [docs/reference.md](docs/reference.md) stack, run time and live mode · `docs/design/desk/` the architecture, register, feature list and requirements · `docs/verification/` what was run against the real thing · `docs/sponsors/` verified facts per sponsor · `docs/submission/` the deck (`desk-deck.pdf`), the demo video script, and the sponsor explanation · `scripts/demo-video-motion/` the Remotion project that renders the captioned motion video, with every figure read from a real run or a result file.
 
 Licence: Apache-2.0. No secret is ever written to the repository; `python scripts/secret_scan.py` runs before every commit.
