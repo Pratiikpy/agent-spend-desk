@@ -9,15 +9,17 @@ import type { GateDecision } from "../gate/types.ts";
 import { resolvePrice, type PriceSnapshot } from "../pricing/pricebook.ts";
 
 /**
- * The gateway door. An agent that can be pointed at an OpenAI-compatible base URL (an environment variable or a setting)
- * is pointed here instead of at the model endpoint, and every chat completion it sends is reserved against the gate before
- * it goes out and settled for the tokens it used when it comes back. This is the door for tools with no hook of their own.
+ * The gateway door. An agent that can be pointed at an OpenAI-compatible or Anthropic-compatible base URL (an environment
+ * variable or a setting) is pointed here instead of at the model endpoint, and every chat completion or message it sends is
+ * reserved against the gate before it goes out and settled for the tokens it used when it comes back. This is the door for
+ * tools with no hook of their own.
  *
  * What it does and does not see. It sees what passes through it: nothing else the agent does, and nothing sent to the
- * endpoint by another route. It meters one route, `POST /v1/chat/completions`. Reads (listing models) pass through
- * unmetered and are counted as such. Any other write is refused as a route that cannot be metered, because letting it
- * through would let money leave unseen. The caller's own Authorization header is passed on and never stored or logged.
- * It listens on the loopback interface only, and refuses a request whose Host header is not its own address.
+ * endpoint by another route. It meters two routes, `POST /v1/chat/completions` and `POST /v1/messages`. Reads (listing
+ * models) and token counting (`POST /v1/messages/count_tokens`, which costs nothing) pass through unmetered and are counted as
+ * such. Any other write is refused as a route that cannot be metered, because letting it through would let money leave
+ * unseen. The caller's own key (an Authorization or x-api-key header) is passed on and never stored or logged. It listens on
+ * the loopback interface only, and refuses a request whose Host header is not its own address.
  */
 export interface GatewayEntry {
   ts: string;
@@ -45,7 +47,7 @@ export interface GatewayStats {
   denied: number;
   /** Refused because the gate could not decide. */
   failedClosed: number;
-  /** Reads passed through without a reservation, and writes refused because they cannot be metered. */
+  /** Reads and token counts passed through without a reservation, and writes refused because they cannot be metered. */
   unmetered: number;
   unmeteredRefused: number;
   /** Calls settled for what was reserved because the tokens used were never reported (or the caller hung up). */
@@ -77,11 +79,27 @@ export interface Gateway {
   close(): Promise<void>;
 }
 
+type Family = "openai" | "anthropic";
+
+const METERED: Readonly<Record<string, Family>> = { "/chat/completions": "openai", "/messages": "anthropic" };
+const FREE_POST = new Set(["/messages/count_tokens"]);
 const HOP = new Set(["connection", "keep-alive", "proxy-authenticate", "proxy-authorization", "te", "trailer", "transfer-encoding", "upgrade", "host", "content-length", "accept-encoding"]);
-const METERED = "/chat/completions";
 const READS = new Set(["GET", "HEAD", "OPTIONS"]);
 
-function errorBody(code: string, message: string, extra: Record<string, unknown> = {}): string {
+const ANTHROPIC_TYPE: Readonly<Record<string, string>> = {
+  policy_denied: "permission_error",
+  approval_required: "permission_error",
+  unmetered_model: "permission_error",
+  unmetered_route: "permission_error",
+  budget_exceeded: "rate_limit_error",
+  bad_request: "invalid_request_error",
+  request_too_large: "request_too_large",
+  gate_unavailable: "api_error",
+  gateway_error: "api_error",
+};
+
+function errorBody(family: Family, code: string, message: string, extra: Record<string, unknown> = {}): string {
+  if (family === "anthropic") return JSON.stringify({ type: "error", error: { type: ANTHROPIC_TYPE[code] ?? "api_error", message, desk_code: code, ...extra } });
   return JSON.stringify({ error: { message, type: code === "gate_unavailable" || code === "gateway_error" ? "desk_gateway_error" : "desk_gate_denied", code, ...extra } });
 }
 
@@ -93,23 +111,55 @@ function refusal(d: GateDecision): { status: number; code: string } {
   return { status: 403, code: "policy_denied" };
 }
 
+/** Tokens by the kinds that are priced apart. */
 interface Usage {
-  promptTokens: number;
-  completionTokens: number;
-  cachedTokens: number;
+  input: number;
+  cacheRead: number;
+  cacheWrite5m: number;
+  cacheWrite1h: number;
+  output: number;
 }
 
-function readUsage(o: Record<string, unknown>): Usage | null {
+const whole = (n: unknown): n is number => typeof n === "number" && Number.isSafeInteger(n) && n >= 0;
+
+/** OpenAI-compatible: the prompt count includes the cached part, which is priced as a cache read. */
+function readOpenAi(o: Record<string, unknown>): Usage | null {
   const u = o["usage"];
   if (u === null || typeof u !== "object") return null;
   const x = u as Record<string, unknown>;
-  if (typeof x["prompt_tokens"] !== "number" || typeof x["completion_tokens"] !== "number") return null;
-  const d = x["prompt_tokens_details"];
-  const cached = d !== null && typeof d === "object" && typeof (d as Record<string, unknown>)["cached_tokens"] === "number" ? ((d as Record<string, number>)["cached_tokens"] as number) : 0;
   const prompt = x["prompt_tokens"];
   const completion = x["completion_tokens"];
-  if (![prompt, completion, cached].every((n) => Number.isSafeInteger(n) && n >= 0)) return null;
-  return { promptTokens: prompt, completionTokens: completion, cachedTokens: Math.min(cached, prompt) };
+  if (!whole(prompt) || !whole(completion)) return null;
+  const d = x["prompt_tokens_details"];
+  const cachedRaw = d !== null && typeof d === "object" ? (d as Record<string, unknown>)["cached_tokens"] : undefined;
+  const cached = whole(cachedRaw) ? Math.min(cachedRaw, prompt) : 0;
+  return { input: prompt - cached, cacheRead: cached, cacheWrite5m: 0, cacheWrite1h: 0, output: completion };
+}
+
+/** Anthropic: the fields a usage object carries, as far as it carries them (a stream spreads them over several events). */
+function readAnthropic(u: unknown): Partial<Usage> {
+  if (u === null || typeof u !== "object") return {};
+  const x = u as Record<string, unknown>;
+  const out: Partial<Usage> = {};
+  if (whole(x["input_tokens"])) out.input = x["input_tokens"];
+  if (whole(x["output_tokens"])) out.output = x["output_tokens"];
+  if (whole(x["cache_read_input_tokens"])) out.cacheRead = x["cache_read_input_tokens"];
+  const split = x["cache_creation"];
+  if (split !== null && typeof split === "object" && (whole((split as Record<string, unknown>)["ephemeral_5m_input_tokens"]) || whole((split as Record<string, unknown>)["ephemeral_1h_input_tokens"]))) {
+    const s = split as Record<string, unknown>;
+    out.cacheWrite5m = whole(s["ephemeral_5m_input_tokens"]) ? s["ephemeral_5m_input_tokens"] : 0;
+    out.cacheWrite1h = whole(s["ephemeral_1h_input_tokens"]) ? s["ephemeral_1h_input_tokens"] : 0;
+  } else if (whole(x["cache_creation_input_tokens"])) {
+    // No split reported: the five-minute price is the one that applies by default.
+    out.cacheWrite5m = x["cache_creation_input_tokens"];
+    out.cacheWrite1h = 0;
+  }
+  return out;
+}
+
+function completeAnthropic(p: Partial<Usage>): Usage | null {
+  if (p.input === undefined || p.output === undefined) return null;
+  return { input: p.input, output: p.output, cacheRead: p.cacheRead ?? 0, cacheWrite5m: p.cacheWrite5m ?? 0, cacheWrite1h: p.cacheWrite1h ?? 0 };
 }
 
 async function readWithin(reader: ReadableStreamDefaultReader<Uint8Array>, ms: number): Promise<ReadableStreamReadResult<Uint8Array>> {
@@ -135,7 +185,7 @@ export async function startGateway(opts: GatewayOptions): Promise<Gateway> {
 
   const server: Server = createServer((req, res) => {
     const work = handle(req, res).catch((e: unknown) => {
-      if (!res.headersSent) send(res, 500, errorBody("gateway_error", `gateway error: ${(e as Error).message}`));
+      if (!res.headersSent) send(res, 500, errorBody("openai", "gateway_error", `gateway error: ${(e as Error).message}`));
       else res.end();
     });
     pending.add(work);
@@ -176,10 +226,10 @@ export async function startGateway(opts: GatewayOptions): Promise<Gateway> {
     return out;
   }
 
-  function priced(model: string, usage: Usage): number | null {
+  function priced(model: string, u: Usage): number | null {
     const r = resolvePrice(opts.prices, model);
     if (r.kind !== "priced") return null;
-    return listPriceCost({ inputTokens: usage.promptTokens - usage.cachedTokens, outputTokens: usage.completionTokens, cacheReadTokens: usage.cachedTokens, cacheWrite5mTokens: 0, cacheWrite1hTokens: 0 }, r.row).totalMicros;
+    return listPriceCost({ inputTokens: u.input, outputTokens: u.output, cacheReadTokens: u.cacheRead, cacheWrite5mTokens: u.cacheWrite5m, cacheWrite1hTokens: u.cacheWrite1h }, r.row).totalMicros;
   }
 
   function settle(d: GateDecision, model: string, usage: Usage | null, entry: GatewayEntry): void {
@@ -217,28 +267,33 @@ export async function startGateway(opts: GatewayOptions): Promise<Gateway> {
     const path = url[0] ?? "";
     const query = url[1] ? `?${url[1]}` : "";
     const entry: GatewayEntry = { ts: new Date().toISOString(), path, method, status: 0, ms: 0 };
+    const rest = path.startsWith("/v1/") ? path.slice("/v1".length) : "";
+    const family: Family = METERED[rest] ?? (rest.startsWith("/messages") ? "anthropic" : "openai");
     const finish = (status: number): void => {
       entry.status = status;
       entry.ms = Date.now() - started;
       opts.onEntry?.(entry);
     };
-    const reply = (status: number, body: string, headers: Record<string, string> = {}): void => {
-      send(res, status, body, headers);
+    const refuse = (status: number, code: string, message: string, extra: Record<string, unknown> = {}): void => {
+      send(res, status, errorBody(family, code, message, extra));
       finish(status);
     };
 
-    if (![`127.0.0.1:${port}`, `localhost:${port}`].includes(req.headers.host ?? "")) return reply(421, errorBody("gateway_error", "this gateway answers only on its own loopback address"));
-    if (!path.startsWith("/v1/") && path !== "/v1") return reply(404, errorBody("gateway_error", "use the /v1 base URL"));
-    const rest = path.slice("/v1".length);
+    if (![`127.0.0.1:${port}`, `localhost:${port}`].includes(req.headers.host ?? "")) return refuse(421, "gateway_error", "this gateway answers only on its own loopback address");
+    if (rest === "") return refuse(404, "gateway_error", "use the /v1 base URL");
 
-    if (method !== "POST" || rest !== METERED) {
-      if (!READS.has(method)) {
+    const metered = method === "POST" ? METERED[rest] : undefined;
+    if (metered === undefined) {
+      const freePost = method === "POST" && FREE_POST.has(rest);
+      if (!READS.has(method) && !freePost) {
         stats.unmeteredRefused += 1;
-        return reply(403, errorBody("unmetered_route", `${method} ${path} cannot be metered by this gateway, so it is refused: only POST /v1/chat/completions is metered, and reads pass through`));
+        return refuse(403, "unmetered_route", `${method} ${path} cannot be metered by this gateway, so it is refused: only POST /v1/chat/completions and POST /v1/messages are metered, reads and token counting pass through`);
       }
       stats.unmetered += 1;
-      const up = await fetchImpl(`${upstream}${rest}${query}`, { method, headers: forwardHeaders(req), signal: AbortSignal.timeout(firstByteMs) }).catch((e: unknown) => e as Error);
-      if (up instanceof Error) return reply(502, errorBody("gateway_error", `upstream unreachable: ${up.message}`.slice(0, 200)));
+      const body = freePost ? await readBody(req) : null;
+      if (freePost && body === null) return refuse(413, "request_too_large", `the request body is over ${maxBody} bytes`);
+      const up = await fetchImpl(`${upstream}${rest}${query}`, { method, headers: forwardHeaders(req), ...(body !== null && body.length > 0 ? { body } : {}), signal: AbortSignal.timeout(firstByteMs) }).catch((e: unknown) => e as Error);
+      if (up instanceof Error) return refuse(502, "gateway_error", `upstream unreachable: ${up.message}`.slice(0, 200));
       const text = await up.text();
       res.writeHead(up.status, relayHeaders(up));
       res.end(method === "HEAD" ? undefined : text);
@@ -246,17 +301,17 @@ export async function startGateway(opts: GatewayOptions): Promise<Gateway> {
     }
 
     const raw = await readBody(req);
-    if (raw === null) return reply(413, errorBody("request_too_large", `the request body is over ${maxBody} bytes`));
+    if (raw === null) return refuse(413, "request_too_large", `the request body is over ${maxBody} bytes`);
     let body: Record<string, unknown>;
     try {
       const v = JSON.parse(raw.toString("utf8")) as unknown;
       if (v === null || typeof v !== "object" || Array.isArray(v)) throw new Error("not an object");
       body = v as Record<string, unknown>;
     } catch {
-      return reply(400, errorBody("bad_request", "the request body must be a JSON object"));
+      return refuse(400, "bad_request", "the request body must be a JSON object");
     }
     const model = body["model"];
-    if (typeof model !== "string" || model === "") return reply(400, errorBody("bad_request", "the request names no model"));
+    if (typeof model !== "string" || model === "") return refuse(400, "bad_request", "the request names no model");
     entry.model = model;
     entry.stream = body["stream"] === true;
 
@@ -264,8 +319,8 @@ export async function startGateway(opts: GatewayOptions): Promise<Gateway> {
       const v = req.headers[name];
       return typeof v === "string" && v !== "" ? v.slice(0, 200) : undefined;
     };
-    const maxTokens = typeof body["max_completion_tokens"] === "number" ? body["max_completion_tokens"] : typeof body["max_tokens"] === "number" ? body["max_tokens"] : null;
-    const n = typeof body["n"] === "number" && Number.isSafeInteger(body["n"]) && body["n"] >= 1 ? body["n"] : 1;
+    const maxTokens = metered === "anthropic" ? body["max_tokens"] : typeof body["max_completion_tokens"] === "number" ? body["max_completion_tokens"] : body["max_tokens"];
+    const n = metered === "openai" && typeof body["n"] === "number" && Number.isSafeInteger(body["n"]) && body["n"] >= 1 ? body["n"] : 1;
     stats.controlled += 1;
     let decision: GateDecision;
     try {
@@ -277,14 +332,14 @@ export async function startGateway(opts: GatewayOptions): Promise<Gateway> {
         model,
         task_type: header("x-desk-task-type") ?? "unknown",
         input_tokens: Math.ceil(raw.length / 3),
-        max_tokens: maxTokens !== null && Number.isSafeInteger(maxTokens) && maxTokens >= 0 ? maxTokens : null,
+        max_tokens: typeof maxTokens === "number" && Number.isSafeInteger(maxTokens) && maxTokens >= 0 ? maxTokens : null,
         n,
         idempotency_key: randomUUID(),
       });
     } catch (e) {
       stats.failedClosed += 1;
       entry.error = `gate: ${(e as Error).message}`.slice(0, 200);
-      return reply(503, errorBody("gate_unavailable", "the gate could not decide, so the call was not sent"));
+      return refuse(503, "gate_unavailable", "the gate could not decide, so the call was not sent");
     }
     entry.verdict = decision.verdict;
     entry.reasonCode = decision.reasonCode;
@@ -293,7 +348,11 @@ export async function startGateway(opts: GatewayOptions): Promise<Gateway> {
       stats.denied += 1;
       const r = refusal(decision);
       const standing = decision.standing.find((s) => s.window === "day");
-      return reply(r.status, errorBody(r.code, decision.reasons[0] ?? "the gate refused this call", { reasons: decision.reasons, ...(standing?.remainingMicros != null ? { remaining_usd: standing.remainingMicros / 1e6 } : {}), ...(decision.approvalRequest ? { approval_request_id: decision.approvalRequest.approval_request_id } : {}) }));
+      return refuse(r.status, r.code, decision.reasons[0] ?? "the gate refused this call", {
+        reasons: decision.reasons,
+        ...(standing?.remainingMicros != null ? { remaining_usd: standing.remainingMicros / 1e6 } : {}),
+        ...(decision.approvalRequest ? { approval_request_id: decision.approvalRequest.approval_request_id } : {}),
+      });
     }
     stats.allowed += 1;
 
@@ -303,7 +362,8 @@ export async function startGateway(opts: GatewayOptions): Promise<Gateway> {
       stats.routed += 1;
       entry.routedModel = routedModel;
     }
-    if (body["stream"] === true) {
+    if (metered === "openai" && body["stream"] === true) {
+      // An OpenAI-compatible stream reports its usage only when asked.
       const so = body["stream_options"] !== null && typeof body["stream_options"] === "object" && !Array.isArray(body["stream_options"]) ? (body["stream_options"] as Record<string, unknown>) : {};
       out["stream_options"] = { ...so, include_usage: true };
     }
@@ -329,7 +389,7 @@ export async function startGateway(opts: GatewayOptions): Promise<Gateway> {
       }
       const timedOut = controller.signal.aborted;
       entry.error = `upstream ${timedOut ? "did not answer in time" : "unreachable"}: ${(e as Error).message}`.slice(0, 200);
-      return reply(timedOut ? 504 : 502, errorBody("gateway_error", entry.error));
+      return refuse(timedOut ? 504 : 502, "gateway_error", entry.error);
     }
     clearTimeout(timer);
     const ctype = up.headers.get("content-type") ?? "";
@@ -350,12 +410,12 @@ export async function startGateway(opts: GatewayOptions): Promise<Gateway> {
       } catch (e) {
         free(decision, entry);
         entry.error = `upstream reply broke: ${(e as Error).message}`.slice(0, 200);
-        return reply(502, errorBody("gateway_error", entry.error));
+        return refuse(502, "gateway_error", entry.error);
       }
       let usage: Usage | null = null;
       try {
         const v = JSON.parse(text) as unknown;
-        if (v !== null && typeof v === "object" && !Array.isArray(v)) usage = readUsage(v as Record<string, unknown>);
+        if (v !== null && typeof v === "object" && !Array.isArray(v)) usage = metered === "openai" ? readOpenAi(v as Record<string, unknown>) : completeAnthropic(readAnthropic((v as Record<string, unknown>)["usage"]));
       } catch {
         /* not JSON: relayed as it is, and settled at the worst case */
       }
@@ -365,12 +425,14 @@ export async function startGateway(opts: GatewayOptions): Promise<Gateway> {
       return finish(up.status);
     }
 
-    // A stream: pass each chunk on as it comes and read the events for the usage the upstream reports last.
+    // A stream: pass each chunk on as it comes and read the events for the usage the upstream reports.
     res.writeHead(up.status, { ...relayHeaders(up), ...routedHeader });
     const reader = up.body?.getReader();
     const decoder = new TextDecoder();
     let buffer = "";
-    let usage: Usage | null = null;
+    let openAiUsage: Usage | null = null;
+    let anthropic: Partial<Usage> = {};
+    let finalSeen = false;
     let broke: string | null = null;
     if (reader) {
       for (;;) {
@@ -395,7 +457,15 @@ export async function startGateway(opts: GatewayOptions): Promise<Gateway> {
             if (payload === "" || payload === "[DONE]") continue;
             try {
               const v = JSON.parse(payload) as unknown;
-              if (v !== null && typeof v === "object" && !Array.isArray(v)) usage = readUsage(v as Record<string, unknown>) ?? usage;
+              if (v === null || typeof v !== "object" || Array.isArray(v)) continue;
+              const o = v as Record<string, unknown>;
+              if (metered === "openai") openAiUsage = readOpenAi(o) ?? openAiUsage;
+              else if (o["type"] === "message_start") anthropic = { ...anthropic, ...readAnthropic((o["message"] as Record<string, unknown> | undefined)?.["usage"]) };
+              else if (o["type"] === "message_delta") {
+                const u = readAnthropic(o["usage"]);
+                anthropic = { ...anthropic, ...u };
+                if (u.output !== undefined) finalSeen = true;
+              }
             } catch {
               /* a data line that is not JSON is passed on untouched */
             }
@@ -403,6 +473,7 @@ export async function startGateway(opts: GatewayOptions): Promise<Gateway> {
         }
       }
     }
+    const usage = metered === "openai" ? openAiUsage : finalSeen ? completeAnthropic(anthropic) : null;
     settle(decision, routedModel, usage, entry);
     if (broke !== null) entry.error = `stream ended early: ${broke}`.slice(0, 200);
     if (!res.writableEnded) res.end();

@@ -23,7 +23,7 @@ const USAGE = `Use: gate serve|gateway|mcp|open|close|status|integrity [options]
   serve      --policy FILE [--db FILE] [--prices FILE] [--port N] [--shadow-for 7d|0] [--person NAME] [--transcript-root DIR]...
              needs DESK_GATE_TOKEN (at least 16 characters); DESK_GATE_OWNER_TOKEN enables approve, switch, pause on the owner routes
   gateway    --upstream URL --policy FILE [--db FILE] [--prices FILE] [--port N] [--shadow-for 7d|0] [--person NAME] [--reserve MODEL=USD]...
-             an OpenAI-compatible door: point an agent's base URL at it; each chat completion is reserved before it is sent and settled after.
+             an OpenAI-compatible and Anthropic-compatible door: point an agent's base URL at it; each chat completion or message is reserved before it is sent and settled after.
              --price MODEL=IN,OUT sets a price (dollars per million tokens) for a model with none, so caps count its tokens; --reserve gives
              such a model a flat reservation per call instead. The caller's own key is passed on; nothing else is stored.
   mcp        --policy FILE [--db FILE] [--prices FILE] [--person NAME]   MCP over stdio (advisory tools)
