@@ -1,4 +1,5 @@
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
@@ -32,6 +33,9 @@ import { coverage, openRegret, recordDecision, scoreDecisions } from "../regret/
 import { configFromEnv } from "../../sponsors/zetaris/silo-port.ts";
 import { falseAlarmStudy } from "../canary/simulate.ts";
 import { approve, issueApproval, type DossierPaths } from "../dossier/command.ts";
+import { closeCommand } from "../close/command.ts";
+import { overheadView } from "../overhead/view.ts";
+import { testGatewayDoor, testHookContract } from "../enforce/selftest.ts";
 import { buildPolicyChangePack } from "../dossier/policy-change.ts";
 import { OwnerMemory } from "../engines/memory.ts";
 import { readConformance, recordConformance } from "../engines/registry.ts";
@@ -294,6 +298,39 @@ const CHECKS: Check[] = [
     },
   },
   {
+    id: "month-close-verifies-and-tamper-fails",
+    command: "close a month on the sample ledger, sign the month dossier, verify it on plain Node, change one byte of its rows, verify again",
+    seed: SEED,
+    async run(e) {
+      const dbPath = (e.db.prepare("PRAGMA database_list").all() as unknown as { file: string }[])[0]!.file;
+      const root = mkdtempSync(join(tmpdir(), "desk-prove-close-"));
+      try {
+        const r = await closeCommand({
+          dbPath, pricesPath: PRICES, pricesDir: "data/prices", month: "2026-09", now: new Date("2026-10-02T00:00:00Z"), sign: true, askApproval: false,
+          canaryRunsPath: join(root, "no-canary.jsonl"), sample: true, keyPath: join(root, "signer.pem"), dossierDir: join(root, "dossiers"),
+          propose: { minUsd: "2.00", cassetteDir: join(root, "cassettes"), record: false, sampleMode: true, personFromBranch: false, outDir: join(root, "proposals"), env: {} },
+        });
+        const bundle = join(root, "dossiers", "month-2026-09");
+        if (!r.ok || !existsSync(bundle)) return fail(`the month could not be closed and signed: ${r.text.split("\n").slice(0, 3).join(" ")}`);
+        const pins = JSON.parse(readFileSync(`${bundle}.pins.json`, "utf8")) as unknown;
+        const plain = execFileSync(process.execPath, ["src/desk/verify/main.ts", bundle, "--pins", `${bundle}.pins.json`], { encoding: "utf8" });
+        const files = readBundleDir(bundle);
+        const good = verifyBundle(files, { pins });
+        const bad = new Map(files);
+        const name = [...bad.keys()].find((k) => k.endsWith(".jsonl") && (bad.get(k)?.length ?? 0) > 100) ?? "";
+        if (name === "") return fail("the month dossier has no rows file to change");
+        const bytes = new Uint8Array(bad.get(name)!);
+        bytes[Math.floor(bytes.length / 2)] = bytes[Math.floor(bytes.length / 2)]! ^ 1;
+        bad.set(name, bytes);
+        const tampered = verifyBundle(bad, { pins });
+        const ok = /RESULT: PASS/.test(plain) && good.overall === "PASS" && tampered.overall === "FAIL";
+        return (ok ? pass : fail)(`the signed month bill: plain Node says ${/RESULT: PASS/.test(plain) ? "PASS" : "not PASS"}, in-process ${good.overall} (${good.levels.filter((l) => l.status === "PASS").length} levels pass); one byte of ${name.split("/").pop()} changed: ${tampered.overall}`);
+      } finally {
+        rmSync(root, { recursive: true, force: true });
+      }
+    },
+  },
+  {
     id: "auditor-rejects-and-explainer-revises",
     command: "ask() with a scripted Explainer that first states a figure no claim supports",
     seed: null,
@@ -401,6 +438,117 @@ const CHECKS: Check[] = [
       }
       const v = gate.integrity();
       return v.length === 0 && refusedJunk === 6 ? pass("I-R1 to I-R5 and the hash chain recomputed clean after 400 operations; 6 of 6 junk requests refused with a named error") : fail(`${v.length} integrity violations; ${refusedJunk} of 6 junk requests refused`);
+    },
+  },
+  {
+    id: "velocity-session-and-model-caps",
+    command: "a gate with a cap on the last ten minutes, on one session and on one model: a burst, a session and a model each stopped for their own reason",
+    seed: null,
+    async run() {
+      let t = Date.parse("2026-10-22T09:00:00.000Z");
+      const yaml = [
+        "version: 1",
+        "rules:",
+        "  - { id: velocity, kind: permit, when: {}, cap: { window: 10m, max_usd: \"6.00\", warn_at: 0.5, ask_at: 1.0 } }",
+        "  - { id: per-session, kind: permit, when: {}, cap: { window: session, max_usd: \"4.00\", warn_at: 0.5, ask_at: 1.0 } }",
+        "  - { id: per-model, kind: permit, when: { model: { in: [\"claude-sonnet-*\"] } }, cap: { window: day, per: model, max_usd: \"1.50\", warn_at: 0.5, ask_at: 1.0 } }",
+        "",
+      ].join("\n");
+      const gate = new Gate({ db: new DatabaseSync(":memory:"), prices: loadSnapshot(PRICES), policy: fixedPolicy(parsePolicyYaml(yaml)), now: () => t, person: "p-0" });
+      const call = (key: string, model: string, session: string, maxTokens: number) => gate.authorize({ session_id: session, person: "p-0", project: "prove", model, max_tokens: maxTokens, idempotency_key: key });
+      const settle = (d: ReturnType<typeof call>): void => void (d.reservationId !== null && gate.settle({ reservation_id: d.reservationId, actual_micros: d.reservedMicros }));
+      // Opus at $25 a million output tokens: 100,000 tokens reserve $2.50.
+      const a = call("a", "claude-opus-5", "s1", 100_000);
+      settle(a);
+      const b = call("b", "claude-opus-5", "s2", 100_000);
+      settle(b);
+      const burst = call("c", "claude-opus-5", "s3", 100_000); // $7.50 in ten minutes passes $6
+      t += 11 * 60_000;
+      const later = call("d", "claude-opus-5", "s3", 100_000);
+      settle(later);
+      const session = call("e", "claude-opus-5", "s1", 100_000); // $2.50 + $2.50 in one session passes $4; the last ten minutes hold only $5
+      t += 11 * 60_000;
+      const model = call("f", "claude-sonnet-5-5", "s4", 200_000); // one sonnet call is more than its model's $1.50 day
+      const reasonOf = (d: ReturnType<typeof call>): string => d.reasons.find((r) => r.startsWith("cap ")) ?? "";
+      const ok =
+        a.verdict === "allow" && b.verdict === "allow" && burst.verdict === "deny" && reasonOf(burst) === "cap velocity: deny (last 10 minutes)" && later.verdict === "allow" &&
+        session.verdict === "deny" && reasonOf(session) === "cap per-session: deny (session)" && model.verdict === "deny" && reasonOf(model) === "cap per-model: deny (day per model)" && gate.integrity().length === 0;
+      return (ok ? pass : fail)(`burst refused (${reasonOf(burst)}), allowed again after the window slid; session refused (${reasonOf(session)}); model refused (${reasonOf(model)}); integrity ${gate.integrity().length === 0 ? "clean" : "broken"}`);
+    },
+  },
+  {
+    id: "checkpoint-handoff-and-extension",
+    command: "a cap stops a session; the agent may write only its handoff; resuming needs the handoff and, while the cap binds, a signed extension that is enough",
+    seed: null,
+    async run() {
+      const dir = mkdtempSync(join(tmpdir(), "desk-prove-handoff-"));
+      try {
+        const t = Date.parse("2026-10-22T09:00:00.000Z");
+        const yaml = 'version: 1\nrules:\n  - { id: allow-claude, kind: permit, when: { model: { in: ["claude-*"] } }, cap: { window: day, max_usd: "5.50", warn_at: 0.5, ask_at: 1.0 } }\n';
+        const gate = new Gate({ db: new DatabaseSync(":memory:"), prices: loadSnapshot(PRICES), policy: fixedPolicy(parsePolicyYaml(yaml)), now: () => t, person: "p-0", ownerKey: ["owner", "key", "for", "prove", "0123456789"].join("-"), handoffDir: dir });
+        const req = (k: string) => ({ session_id: "s-9", person: "p-0", project: "prove", model: "claude-opus-5", max_tokens: 100_000, idempotency_key: k });
+        for (const k of ["a", "b"]) {
+          const d = gate.authorize(req(k));
+          gate.settle({ reservation_id: d.reservationId, actual_micros: d.reservedMicros });
+        }
+        const stopped = gate.authorize(req("c"));
+        const cp = gate.checkpoints?.open("s-9");
+        if (stopped.verdict !== "deny" || cp === undefined) return fail("the cap did not stop the session with a checkpoint");
+        const hook = (tool: string, input: Record<string, unknown>) => gate.hookPreToolUse({ hook_event_name: "PreToolUse", session_id: "s-9", tool_name: tool, cwd: "/work/prove", tool_input: input }).decision;
+        const handoffAllowed = hook("Write", { file_path: cp.handoff_path, content: "x" }) === "allow";
+        const otherBlocked = hook("Bash", { command: "ls" }) === "deny" && hook("Write", { file_path: `${cp.handoff_path}.x`, content: "x" }) === "deny";
+        const refuse = (o: Parameters<Gate["resumeCheckpoint"]>[0]): string => {
+          try {
+            gate.resumeCheckpoint(o);
+            return "resumed";
+          } catch (err) {
+            return err instanceof GateError ? err.code : "error";
+          }
+        };
+        const noHandoff = refuse({ session: "s-9", owner: "owner" });
+        writeFileSync(cp.handoff_path, readFileSync(cp.handoff_path, "utf8").replace("<!-- the agent writes below this line -->", "<!-- the agent writes below this line -->\nDone: the importer. Open: the tests."));
+        const capBinds = refuse({ session: "s-9", owner: "owner" });
+        const tooSmall = refuse({ session: "s-9", owner: "owner", extendMicros: 1, reason: "a little more" });
+        const res = gate.resumeCheckpoint({ session: "s-9", owner: "owner", extendMicros: 5_000_000, reason: "the release is today" });
+        const after = gate.authorize(req("d"));
+        const signed = res.eventId > 0 && gate.integrity().length === 0;
+        const ok = handoffAllowed && otherBlocked && noHandoff === "E_NO_HANDOFF" && capBinds === "E_CAP_BINDS" && tooSmall === "E_EXTENSION_TOO_SMALL" && after.verdict === "allow" && signed;
+        return (ok ? pass : fail)(`stopped with a checkpoint; the handoff file allowed, anything else blocked; resume refused without the handoff (${noHandoff}), under a cap that still binds (${capBinds}), with a too-small extension (${tooSmall}); resumed with a signed extension, then the session spent again; integrity ${gate.integrity().length === 0 ? "clean" : "broken"}`);
+      } finally {
+        rmSync(dir, { recursive: true, force: true });
+      }
+    },
+  },
+  {
+    id: "enforcement-surface-tests-can-fail",
+    command: "the hook and both gateway doors against the Desk's own gate, then the same tests against a gate that permits everything",
+    seed: null,
+    async run() {
+      const prices = loadSnapshot(PRICES);
+      const permitAll = "version: 1\nrules:\n  - id: allow-all\n    kind: permit\n    when: {}\n";
+      const real = [await testHookContract(prices), await testGatewayDoor(prices, "openai"), await testGatewayDoor(prices, "anthropic")];
+      const broken = [await testHookContract(prices, { policyYaml: permitAll }), await testGatewayDoor(prices, "openai", { policyYaml: permitAll }), await testGatewayDoor(prices, "anthropic", { policyYaml: permitAll })];
+      const ok = real.every((r) => r.passed) && broken.every((r) => !r.passed);
+      return (ok ? pass : fail)(`${real.filter((r) => r.passed).length} of 3 surfaces pass against the real gate (${real.reduce((n, r) => n + r.checks.length, 0)} checks); ${broken.filter((r) => !r.passed).length} of 3 fail against a gate that permits everything, so a pass means the gate stopped something`);
+    },
+  },
+  {
+    id: "overhead-shares-add-up-exactly",
+    command: "share the idle and unowned spend of each sample month among the projects that landed work, at each of the three bars",
+    seed: SEED,
+    async run(e) {
+      const snapshot = loadSnapshot(PRICES);
+      const rows: string[] = [];
+      let bad = 0;
+      for (const [from, to] of [["2026-09-01T00:00:00.000Z", "2026-09-30T23:59:59.999Z"], ["2026-10-01T00:00:00.000Z", "2026-10-31T23:59:59.999Z"]] as const) {
+        for (const bar of ["committed", "merged", "kept"] as const) {
+          const v = overheadView(e.db, snapshot, from, to, bar);
+          const total = v.allocation.rows.reduce((s, r) => s + r.allocatedMicros, 0) + v.allocation.unallocatedMicros;
+          if (total !== v.overheadMicros || v.allocation.rows.some((r) => r.allocatedMicros < 0 || r.directMicros <= 0)) bad += 1;
+          rows.push(`${from.slice(0, 7)} ${bar}: ${(v.overheadMicros / 1e6).toFixed(2)} USD over ${v.allocation.rows.length} project${v.allocation.rows.length === 1 ? "" : "s"}${v.allocation.unallocatedMicros > 0 ? ", unallocated" : ""}`);
+        }
+      }
+      return (bad === 0 ? pass : fail)(`${rows.join("; ")}; every allocation plus the unallocated bin equals the overhead to the micro-dollar, and no project that landed nothing is charged`);
     },
   },
   {
