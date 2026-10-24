@@ -1,12 +1,20 @@
 {
   "key": "a554fb0a15a4b00d9d149dfa88abb9bc",
-  "recordedAt": "2026-10-23T08:37:43.489Z",
+  "recordedAt": "2026-10-24T22:18:32.791Z",
   "role": "explainer",
   "response": {
     "content": "{\"sentences\": [{\"text\": \"The number of days with spend above $150.00 was 17.\", \"cites\": [\"days_above_150.1\", \"days_above_150.2\"]}]}",
     "toolCalls": [],
-    "servedBy": "nvidia",
-    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_4vk2kouo",
+      "decisionId": "req_4vk2kouo",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 2348
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
     "usage": {
       "inputTokens": 306,
       "outputTokens": 57,

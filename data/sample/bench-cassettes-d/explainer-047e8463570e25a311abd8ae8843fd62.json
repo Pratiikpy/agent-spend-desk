@@ -1,0 +1,24 @@
+{
+  "key": "047e8463570e25a311abd8ae8843fd62",
+  "recordedAt": "2026-10-24T10:16:50.973Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Estimated list-price spend between 2026-09-24 and 2026-10-06 was $1,417.34.\", \"cites\": [\"daily.1\"]}, {\"text\": \"The day 2026-09-24 cost $199.48.\", \"cites\": [\"daily.3\"]}, {\"text\": \"The day 2026-09-25 cost $154.93.\", \"cites\": [\"daily.7\"]}, {\"text\": \"The day 2026-09-29 cost $183.45.\", \"cites\": [\"daily.4\"]}, {\"text\": \"The day 2026-10-02 cost $174.13.\", \"cites\": [\"daily.5\"]}, {\"text\": \"The day 2026-10-06 cost $163.74.\", \"cites\": [\"daily.6\"]}, {\"text\": \"Everything outside those five cost $541.61 in total.\", \"cites\": [\"daily.8\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_erjjzgio",
+      "decisionId": "req_erjjzgio",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 2813
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 1076,
+      "outputTokens": 277,
+      "reasoningTokens": 0
+    }
+  }
+}

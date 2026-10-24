@@ -1,0 +1,32 @@
+{
+  "key": "77b122853161c118e972149b9e0eadd1",
+  "recordedAt": "2026-10-24T15:05:41.581Z",
+  "role": "ask_planner",
+  "response": {
+    "content": "",
+    "toolCalls": [
+      {
+        "id": "call-75b1bb02-911e-4fd0-b885-fcdee9ffa728",
+        "name": "cannot_answer",
+        "arguments": {
+          "reason": "The ledger records agent spend, not provider invoices or billed amounts."
+        }
+      }
+    ],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_s69n7lw5",
+      "decisionId": "req_s69n7lw5",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 649
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 2772,
+      "outputTokens": 39,
+      "reasoningTokens": 0
+    }
+  }
+}

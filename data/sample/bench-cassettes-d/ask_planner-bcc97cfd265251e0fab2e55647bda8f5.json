@@ -1,0 +1,32 @@
+{
+  "key": "bcc97cfd265251e0fab2e55647bda8f5",
+  "recordedAt": "2026-10-24T19:09:30.089Z",
+  "role": "ask_planner",
+  "response": {
+    "content": "",
+    "toolCalls": [
+      {
+        "id": "call-434d9b52-2ce4-4d9d-a0bc-809043a29848",
+        "name": "cannot_answer",
+        "arguments": {
+          "reason": "The ledger covers 2026-09-01 to 2026-10-31 only, so November 2026 spend is a future forecast it cannot hold."
+        }
+      }
+    ],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_sf0sw80s",
+      "decisionId": "req_sf0sw80s",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 881
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 2774,
+      "outputTokens": 68,
+      "reasoningTokens": 0
+    }
+  }
+}

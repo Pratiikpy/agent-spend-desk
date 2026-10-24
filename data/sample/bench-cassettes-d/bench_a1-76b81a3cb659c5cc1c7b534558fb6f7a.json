@@ -1,0 +1,24 @@
+{
+  "key": "76b81a3cb659c5cc1c7b534558fb6f7a",
+  "recordedAt": "2026-10-24T20:20:34.691Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "The ledger does not record the code written in sessions, only their cost and whether their work is tied to a commit. The most expensive session was `sess-00195` in `infra` at $73.51, and its work is not tied to any commit.",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_px6x6u0i",
+      "decisionId": "req_px6x6u0i",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 1461
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 1230,
+      "outputTokens": 64,
+      "reasoningTokens": 0
+    }
+  }
+}

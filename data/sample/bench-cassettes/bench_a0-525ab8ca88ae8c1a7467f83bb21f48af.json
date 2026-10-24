@@ -1,15 +1,23 @@
 {
   "key": "525ab8ca88ae8c1a7467f83bb21f48af",
-  "recordedAt": "2026-10-23T03:06:49.109Z",
+  "recordedAt": "2026-10-24T22:00:38.925Z",
   "role": "bench_a0",
   "response": {
-    "content": "The ledger does not show that spend tripled. From 2026-10-06 to 2026-10-14, total spend was $1,000.00. From 2026-10-15 to 2026-10-23, total spend was $718.56. Spend decreased by $281.44, and the ledger does not provide a cause.",
+    "content": "The ledger does not show spend tripling between those periods. From 2026-10-06 to 2026-10-14, total spend was $1,000.00. From 2026-10-15 to 2026-10-23, total spend was $720.66, a decrease of $279.34. The ledger does not provide reasons for spend changes.",
     "toolCalls": [],
-    "servedBy": "nvidia",
-    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_sdnl1xcl",
+      "decisionId": "req_sdnl1xcl",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 2837
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
     "usage": {
       "inputTokens": 7667,
-      "outputTokens": 107,
+      "outputTokens": 110,
       "reasoningTokens": 0
     }
   }

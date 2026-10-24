@@ -1,15 +1,23 @@
 {
   "key": "1fea973bce25d49d0160b29b8a4e6adf",
-  "recordedAt": "2026-10-23T08:29:14.842Z",
+  "recordedAt": "2026-10-24T09:18:15.352Z",
   "role": "explainer",
   "response": {
-    "content": "{\"sentences\": [{\"text\": \"Estimated list-price spend between 2026-10-05 and 2026-10-09 was $809.82.\", \"cites\": [\"spend_range.1\"]}, {\"text\": \"That covers 6,838 model calls.\", \"cites\": [\"spend_range.2\"]}]}",
+    "content": "{\"sentences\": [{\"text\": \"Estimated list-price spend between 2026-10-05 and 2026-10-09 was $809.82, an estimate from logged tokens and not a bill.\", \"cites\": [\"spend_range.1\"]}, {\"text\": \"That covers 6,838 model calls.\", \"cites\": [\"spend_range.2\"]}]}",
     "toolCalls": [],
-    "servedBy": "nvidia",
-    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_9r9ok7id",
+      "decisionId": "req_9r9ok7id",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 3405
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
     "usage": {
       "inputTokens": 331,
-      "outputTokens": 88,
+      "outputTokens": 98,
       "reasoningTokens": 0
     }
   }

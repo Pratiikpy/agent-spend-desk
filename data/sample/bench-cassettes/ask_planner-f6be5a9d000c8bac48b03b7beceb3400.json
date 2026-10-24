@@ -1,0 +1,32 @@
+{
+  "key": "f6be5a9d000c8bac48b03b7beceb3400",
+  "recordedAt": "2026-10-24T21:45:43.898Z",
+  "role": "ask_planner",
+  "response": {
+    "content": "",
+    "toolCalls": [
+      {
+        "id": "call-3198d084-1253-440a-a52a-ddbcf0406b28",
+        "name": "cannot_answer",
+        "arguments": {
+          "reason": "The ledger covers 2026-09-01 to 2026-10-31 only, so it has no data for March 2019."
+        }
+      }
+    ],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_gp2onzrt",
+      "decisionId": "req_gp2onzrt",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 722
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 2775,
+      "outputTokens": 65,
+      "reasoningTokens": 0
+    }
+  }
+}

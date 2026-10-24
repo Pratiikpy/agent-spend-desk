@@ -1,0 +1,32 @@
+{
+  "key": "401bab678a5a8b76468018e793753db6",
+  "recordedAt": "2026-10-24T16:20:53.106Z",
+  "role": "ask_planner",
+  "response": {
+    "content": "",
+    "toolCalls": [
+      {
+        "id": "call-45ddd5e2-a967-4f91-b687-3bf0bf4a5331",
+        "name": "cannot_answer",
+        "arguments": {
+          "reason": "The ledger does not contain information about engineers or team size."
+        }
+      }
+    ],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_acpz0xcn",
+      "decisionId": "req_acpz0xcn",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 2535
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 2765,
+      "outputTokens": 36,
+      "reasoningTokens": 0
+    }
+  }
+}

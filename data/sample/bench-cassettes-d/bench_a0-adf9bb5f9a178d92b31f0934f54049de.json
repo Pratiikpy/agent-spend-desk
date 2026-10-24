@@ -1,0 +1,24 @@
+{
+  "key": "adf9bb5f9a178d92b31f0934f54049de",
+  "recordedAt": "2026-10-24T19:23:21.404Z",
+  "role": "bench_a0",
+  "response": {
+    "content": "The ledger cannot answer why spend tripled; it only records spend, not causes.\n\nPeriod 1 (2026-09-06 to 2026-09-14): $862.65\nPeriod 2 (2026-09-15 to 2026-09-23): $1,520.49\nDollar difference: $657.84",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_ilzl2s3m",
+      "decisionId": "req_ilzl2s3m",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 4435
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 7667,
+      "outputTokens": 102,
+      "reasoningTokens": 0
+    }
+  }
+}

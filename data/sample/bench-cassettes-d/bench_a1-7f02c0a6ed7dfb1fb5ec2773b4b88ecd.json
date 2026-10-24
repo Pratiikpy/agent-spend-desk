@@ -1,0 +1,60 @@
+{
+  "key": "7f02c0a6ed7dfb1fb5ec2773b4b88ecd",
+  "recordedAt": "2026-10-24T16:44:58.002Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "",
+    "toolCalls": [
+      {
+        "id": "call-9392b752-3cb7-4fc9-be69-645ee3e636cd",
+        "name": "spend",
+        "arguments": {
+          "from": "2026-09-27",
+          "to": "2026-10-07",
+          "group": "none"
+        }
+      },
+      {
+        "id": "call-634808dd-eae6-4e4f-aed4-1f2177d24f1f",
+        "name": "spend",
+        "arguments": {
+          "from": "2026-10-08",
+          "to": "2026-10-18",
+          "group": "none"
+        }
+      },
+      {
+        "id": "call-0dd21ad6-3a09-4255-8d31-c0502b8b8b06",
+        "name": "changes_before",
+        "arguments": {
+          "date": "2026-10-08",
+          "days": 14
+        }
+      },
+      {
+        "id": "call-b64f72b5-122d-420a-a80f-b54b34009058",
+        "name": "top_sessions",
+        "arguments": {
+          "from": "2026-09-27",
+          "to": "2026-10-18",
+          "limit": 10
+        }
+      }
+    ],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_sloer99r",
+      "decisionId": "req_sloer99r",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 2064
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 1178,
+      "outputTokens": 230,
+      "reasoningTokens": 0
+    }
+  }
+}

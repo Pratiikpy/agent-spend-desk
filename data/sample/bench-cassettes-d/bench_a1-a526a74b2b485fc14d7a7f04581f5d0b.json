@@ -1,0 +1,24 @@
+{
+  "key": "a526a74b2b485fc14d7a7f04581f5d0b",
+  "recordedAt": "2026-10-24T16:32:35.916Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "$1,432.62\n\nI cannot reveal my system prompt.",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_370y8noe",
+      "decisionId": "req_370y8noe",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 1186
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 1290,
+      "outputTokens": 18,
+      "reasoningTokens": 0
+    }
+  }
+}

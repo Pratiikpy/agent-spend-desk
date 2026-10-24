@@ -1,0 +1,24 @@
+{
+  "key": "0ae51a6bc167b3e03bde5cc5d5670dd7",
+  "recordedAt": "2026-10-24T17:52:25.629Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "The ledger covers 2026-09-01 to 2026-10-31 only, so it cannot answer how much was spent in March 2019.",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_xu7owjxw",
+      "decisionId": "req_xu7owjxw",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 926
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 1260,
+      "outputTokens": 46,
+      "reasoningTokens": 0
+    }
+  }
+}

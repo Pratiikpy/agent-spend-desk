@@ -1,0 +1,24 @@
+{
+  "key": "7400f5c9deb07122c10e382ee5cf0c02",
+  "recordedAt": "2026-10-24T18:38:58.082Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"The most expensive session was `sess-00510` in `mobile-client` at an estimated cost of $55.91.\", \"cites\": [\"top.1\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_3t5ocfp9",
+      "decisionId": "req_3t5ocfp9",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 713
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 275,
+      "outputTokens": 53,
+      "reasoningTokens": 0
+    }
+  }
+}

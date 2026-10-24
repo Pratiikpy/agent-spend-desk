@@ -1,0 +1,24 @@
+{
+  "key": "bff7f6eecac52f89e58d8328b55074dd",
+  "recordedAt": "2026-10-24T09:05:17.563Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Estimated list-price spend between 2026-09-02 and 2026-09-10 was $1,017.47.\", \"cites\": [\"p1.1\"]}, {\"text\": \"Estimated list-price spend between 2026-09-11 and 2026-09-19 was $1,034.26.\", \"cites\": [\"p2.1\"]}, {\"text\": \"Estimated list-price spend between 2026-09-02 and 2026-09-10 was $1,017.47.\", \"cites\": [\"digest1.1\"]}, {\"text\": \"The whole range was read in 9 periods and each period covered 1 days.\", \"cites\": [\"digest1.2\", \"digest1.3\"]}, {\"text\": \"The costliest period started on 2026-09-04 and cost $241.99.\", \"cites\": [\"digest1.4\"]}, {\"text\": \"Model `claude-opus-5` cost $844.26, model `claude-sonnet-5-5` cost $172.45, and model `claude-haiku-5-5` cost $0.75 in the range.\", \"cites\": [\"digest1.5\", \"digest1.6\", \"digest1.7\"]}, {\"text\": \"Spending in the last third of the range was 66.7% of the first third.\", \"cites\": [\"digest1.8\"]}, {\"text\": \"Estimated list-price spend between 2026-09-11 and 2026-09-19 was $1,034.26.\", \"cites\": [\"digest2.1\"]}, {\"text\": \"The whole range was read in 9 periods and each period covered 1 days.\", \"cites\": [\"digest2.2\", \"digest2.3\"]}, {\"text\": \"The costliest period started on 2026-09-14 and cost $238.30.\", \"cites\": [\"digest2.4\"]}, {\"text\": \"Model `claude-opus-5` cost $852.94, model `claude-sonnet-5-5` cost $178.56, and model `claude-haiku-5-5` cost $2.76 in the range.\", \"cites\": [\"digest2.5\", \"digest2.6\", \"digest2.7\"]}, {\"text\": \"Spending in the last third of the range was 148.6% of the first third.\", \"cites\": [\"digest2.8\"]}, {\"text\": \"1 changes were recorded between 2026-09-01 and 2026-09-11.\", \"cites\": [\"changes.1\"]}, {\"text\": \"Model `claude-haiku-5-5` first appeared on 2026-09-02.\", \"cites\": [\"changes.2\"]}, {\"text\": \"Model `claude-sonnet-5-5`, model `claude-opus-5`, tool version `vsample-1`, and plan setting `tier standard speed standard` were in use throughout the window and stayed as they were.\", \"cites\": [\"changes.3\", \"changes.4\", \"changes.5\", \"changes.6\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_ea4z9sud",
+      "decisionId": "req_ea4z9sud",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 6781
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 1587,
+      "outputTokens": 815,
+      "reasoningTokens": 0
+    }
+  }
+}

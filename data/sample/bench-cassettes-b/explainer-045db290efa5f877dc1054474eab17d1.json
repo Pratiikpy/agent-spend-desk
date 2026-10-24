@@ -1,0 +1,24 @@
+{
+  "key": "045db290efa5f877dc1054474eab17d1",
+  "recordedAt": "2026-10-24T08:36:08.214Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"The estimated median daily spend was $154.93 over 11 days.\", \"cites\": [\"m.1\", \"m.2\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_swzrcn19",
+      "decisionId": "req_swzrcn19",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 760
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 303,
+      "outputTokens": 45,
+      "reasoningTokens": 0
+    }
+  }
+}

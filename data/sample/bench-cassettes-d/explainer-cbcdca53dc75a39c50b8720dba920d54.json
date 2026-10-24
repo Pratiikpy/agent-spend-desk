@@ -1,0 +1,24 @@
+{
+  "key": "cbcdca53dc75a39c50b8720dba920d54",
+  "recordedAt": "2026-10-24T16:51:57.751Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Estimated list-price spend between 2026-09-07 and 2026-09-20 was $1,526.54.\", \"cites\": [\"p1.1\"]}, {\"text\": \"Estimated list-price spend between 2026-09-21 and 2026-10-04 was $1,640.31.\", \"cites\": [\"p2.1\"]}, {\"text\": \"The second period cost $113.77 more than the first.\", \"cites\": [\"c.1\"]}, {\"text\": \"The second period was 107.5% of the first.\", \"cites\": [\"c.2\"]}, {\"text\": \"Session `sess-00510` in `mobile-client` cost $55.91.\", \"cites\": [\"top.1\"]}, {\"text\": \"Session `sess-00334` in `data-pipeline` cost $44.45.\", \"cites\": [\"top.2\"]}, {\"text\": \"Session `sess-00527` in `web-app` cost $44.33.\", \"cites\": [\"top.3\"]}, {\"text\": \"Session `sess-00391` in `web-app` cost $41.79.\", \"cites\": [\"top.4\"]}, {\"text\": \"Session `sess-00408` in `mobile-client` cost $37.66.\", \"cites\": [\"top.5\"]}, {\"text\": \"Session `sess-00374` in `web-app` cost $35.26.\", \"cites\": [\"top.6\"]}, {\"text\": \"Session `sess-00447` in `mobile-client` cost $31.49.\", \"cites\": [\"top.7\"]}, {\"text\": \"Session `sess-00365` in `payments-api` cost $30.24.\", \"cites\": [\"top.8\"]}, {\"text\": \"Session `sess-00536` in `infra` cost $30.12.\", \"cites\": [\"top.9\"]}, {\"text\": \"Session `sess-00507` in `payments-api` cost $23.55.\", \"cites\": [\"top.10\"]}, {\"text\": \"Spend on sessions whose work counts as landed was $998.77.\", \"cites\": [\"land.2\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_17zbzolu",
+      "decisionId": "req_17zbzolu",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 17852
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 1573,
+      "outputTokens": 592,
+      "reasoningTokens": 0
+    }
+  }
+}

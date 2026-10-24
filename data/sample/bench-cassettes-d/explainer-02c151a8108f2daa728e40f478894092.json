@@ -1,0 +1,24 @@
+{
+  "key": "02c151a8108f2daa728e40f478894092",
+  "recordedAt": "2026-10-24T15:39:53.299Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Estimated list-price spend on model `claude-opus-5` between 2026-10-01 and 2026-10-31 was $1,711.30, an estimate from logged tokens and not a bill.\", \"cites\": [\"oct_opus.1\"]}, {\"text\": \"That covers 11,883 model calls.\", \"cites\": [\"oct_opus.2\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_ym5l2c6f",
+      "decisionId": "req_ym5l2c6f",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 2524
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 352,
+      "outputTokens": 111,
+      "reasoningTokens": 0
+    }
+  }
+}

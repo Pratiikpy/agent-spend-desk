@@ -1,0 +1,24 @@
+{
+  "key": "f28919b8afedc11654136035f9e8d79f",
+  "recordedAt": "2026-10-24T17:20:08.482Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Estimated spend on model `claude-haiku-5-5` from 2026-10-01 to 2026-10-31 was $3.49.\", \"cites\": [\"haiku_oct.1\", \"haiku_oct.3\"]}, {\"text\": \"That covers 1,231 model calls.\", \"cites\": [\"haiku_oct.2\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_ggqpbd4x",
+      "decisionId": "req_ggqpbd4x",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 1680
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 400,
+      "outputTokens": 106,
+      "reasoningTokens": 0
+    }
+  }
+}

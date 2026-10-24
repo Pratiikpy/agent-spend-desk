@@ -1,15 +1,23 @@
 {
   "key": "d14d0f3f6b1d1c1b6847e97ca19dcb22",
-  "recordedAt": "2026-10-23T08:00:44.356Z",
+  "recordedAt": "2026-10-24T08:26:26.286Z",
   "role": "explainer",
   "response": {
-    "content": "{\"sentences\": [{\"text\": \"Estimated list-price spend between 2026-09-03 and 2026-10-17 was $4,933.47.\", \"cites\": [\"weekly_spend.1\"]}, {\"text\": \"That covers 48,403 model calls.\", \"cites\": [\"weekly_spend.2\"]}, {\"text\": \"The week starting 2026-09-21 cost $868.16.\", \"cites\": [\"weekly_spend.3\"]}, {\"text\": \"The week starting 2026-09-14 cost $837.47.\", \"cites\": [\"weekly_spend.4\"]}, {\"text\": \"The week starting 2026-10-05 cost $812.26.\", \"cites\": [\"weekly_spend.5\"]}, {\"text\": \"The week starting 2026-09-28 cost $772.15.\", \"cites\": [\"weekly_spend.6\"]}, {\"text\": \"The week starting 2026-09-07 cost $689.07.\", \"cites\": [\"weekly_spend.7\"]}, {\"text\": \"Everything outside those five cost $954.37 in total.\", \"cites\": [\"weekly_spend.8\"]}]}",
+    "content": "{\"sentences\": [{\"text\": \"Estimated spend between 2026-09-03 and 2026-10-17 was $4,933.47.\", \"cites\": [\"weekly_spend.1\"]}, {\"text\": \"The week starting 2026-09-07 cost $689.07.\", \"cites\": [\"weekly_spend.7\"]}, {\"text\": \"The week starting 2026-09-14 cost $837.47.\", \"cites\": [\"weekly_spend.4\"]}, {\"text\": \"The week starting 2026-09-21 cost $868.16.\", \"cites\": [\"weekly_spend.3\"]}, {\"text\": \"The week starting 2026-09-28 cost $772.15.\", \"cites\": [\"weekly_spend.6\"]}, {\"text\": \"The week starting 2026-10-05 cost $812.26.\", \"cites\": [\"weekly_spend.5\"]}, {\"text\": \"Everything outside those five weeks cost $954.37 in total.\", \"cites\": [\"weekly_spend.8\"]}]}",
     "toolCalls": [],
-    "servedBy": "nvidia",
-    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_5reat7fm",
+      "decisionId": "req_5reat7fm",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 2315
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
     "usage": {
       "inputTokens": 657,
-      "outputTokens": 325,
+      "outputTokens": 295,
       "reasoningTokens": 0
     }
   }

@@ -1,0 +1,24 @@
+{
+  "key": "b968e3c498a9faefcd187de2856487fe",
+  "recordedAt": "2026-10-24T16:17:55.583Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "I can’t answer that from the ledger. The spend ledger tracks model spend by date, model, session, and landing outcome (commit/merge/revert), but it does not record which engineer initiated each session or charge, so I can’t attribute waste to any engineer.",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_wqxjzqlj",
+      "decisionId": "req_wqxjzqlj",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 936
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 1119,
+      "outputTokens": 58,
+      "reasoningTokens": 0
+    }
+  }
+}

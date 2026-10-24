@@ -1,0 +1,24 @@
+{
+  "key": "8b65dc829bcfdb0f520fc8e9513b9e1e",
+  "recordedAt": "2026-10-24T08:36:10.411Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"From 2026-09-20 to 2026-10-08, there were 7 days with spend above $160.00.\", \"cites\": [\"days_above_160.1\", \"days_above_160.2\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_tn10hsln",
+      "decisionId": "req_tn10hsln",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 877
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 304,
+      "outputTokens": 79,
+      "reasoningTokens": 0
+    }
+  }
+}

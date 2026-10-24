@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
@@ -473,6 +473,29 @@ const CHECKS: Check[] = [
   },
   benchCheck("benchmark-reproduces-from-recordings", "A"),
   benchCheck("benchmark-set-b-reproduces-from-recordings", "B"),
+  benchCheck("benchmark-set-d-reproduces-from-recordings", "D"),
+  {
+    id: "nightshift-receipts-in-recordings",
+    command: "every recorded model reply that says Meterless Nightshift served it carries Nightshift's compute receipt",
+    seed: null,
+    async run() {
+      const dirs = ["data/sample/bench-cassettes", "data/sample/bench-cassettes-b", "data/sample/bench-cassettes-d", "data/sample/learning-cassettes", "data/sample/learning-cassettes-c"];
+      let served = 0;
+      let bare = 0;
+      for (const d of dirs) {
+        if (!existsSync(d)) continue;
+        for (const f of readdirSync(d)) {
+          if (!f.endsWith(".json")) continue;
+          const c = JSON.parse(readFileSync(join(d, f), "utf8")) as { response?: { servedBy?: string; receipt?: { id?: unknown } } };
+          if (c.response?.servedBy !== "nightshift") continue;
+          served += 1;
+          if (typeof c.response.receipt?.id !== "string") bare += 1;
+        }
+      }
+      if (served === 0) return notRun("no recorded reply was served through Nightshift");
+      return (bare === 0 ? pass : fail)(`${served} recorded replies were served through Nightshift; ${bare} lack a receipt id`);
+    },
+  },
   {
     id: "pass-k-reliability",
     command: "pass^k over the recorded repeat trials of benchmark set B (temperature 0.7, one recording per trial)",

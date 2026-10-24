@@ -1,0 +1,24 @@
+{
+  "key": "2eb4e7a994796c49c1c68dd80a06cb69",
+  "recordedAt": "2026-10-24T20:19:06.089Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"The median daily spend, counting only days with any spend, was $155.17, an estimate from logged tokens.\", \"cites\": [\"median_spend.1\"]}, {\"text\": \"That median is over 14 days.\", \"cites\": [\"median_spend.2\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_8zgnx5ou",
+      "decisionId": "req_8zgnx5ou",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 1187
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 309,
+      "outputTokens": 75,
+      "reasoningTokens": 0
+    }
+  }
+}

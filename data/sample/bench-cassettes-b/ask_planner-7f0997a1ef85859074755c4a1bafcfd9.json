@@ -1,0 +1,32 @@
+{
+  "key": "7f0997a1ef85859074755c4a1bafcfd9",
+  "recordedAt": "2026-10-24T08:32:35.126Z",
+  "role": "ask_planner",
+  "response": {
+    "content": "",
+    "toolCalls": [
+      {
+        "id": "call-19560a5b-f192-418b-926a-8c2dcb29f116",
+        "name": "cannot_answer",
+        "arguments": {
+          "reason": "The ledger tracks spend, tokens, sessions, models, landing, and changes, but not individuals or engineers such as eng07."
+        }
+      }
+    ],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_sb7u2tgp",
+      "decisionId": "req_sb7u2tgp",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 804
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 2769,
+      "outputTokens": 51,
+      "reasoningTokens": 0
+    }
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "key": "332eecc4a92d6984921658f3650e42e0",
+  "recordedAt": "2026-10-24T19:29:49.541Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "",
+    "toolCalls": [
+      {
+        "id": "call-a219814e-8d54-4e75-adf0-75ba4a632b1e",
+        "name": "spend",
+        "arguments": {
+          "from": "2026-09-14",
+          "to": "2026-10-09",
+          "group": "none"
+        }
+      }
+    ],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_b75nzd5p",
+      "decisionId": "req_b75nzd5p",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 1398
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 1152,
+      "outputTokens": 63,
+      "reasoningTokens": 0
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "key": "c5049c23d8085411ec75117fcde5ccbc",
+  "recordedAt": "2026-10-24T18:09:30.272Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "The ledger does not show spend doubling. Spend rose from $1,062.93 (2026-09-26 to 2026-10-06) to $1,107.83 (2026-10-07 to 2026-10-17), an increase of $44.90 (about 4.2%). The ledger records no explanatory cause for this change; model mix shifted toward claude-opus-5 and away from claude-sonnet-5-5, but no reason for that shift is given.",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_uvijdxz7",
+      "decisionId": "req_uvijdxz7",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 28390
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 1780,
+      "outputTokens": 139,
+      "reasoningTokens": 0
+    }
+  }
+}

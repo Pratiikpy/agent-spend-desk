@@ -1,0 +1,24 @@
+{
+  "key": "45068cc9fafe2d2530a1d9a320c51af1",
+  "recordedAt": "2026-10-24T19:25:30.801Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Estimated list-price spend between 2026-09-06 and 2026-09-14 was $927.37.\", \"cites\": [\"p1.1\"]}, {\"text\": \"Estimated list-price spend between 2026-09-15 and 2026-09-23 was $1,110.94.\", \"cites\": [\"p2.1\"]}, {\"text\": \"No change to models, tool versions or plan settings was recorded between 2026-09-06 and 2026-09-15.\", \"cites\": [\"c1.1\"]}, {\"text\": \"Model claude-sonnet-5-5 was in use throughout the window and stayed as it was.\", \"cites\": [\"c1.2\"]}, {\"text\": \"Model claude-opus-5 was in use throughout the window and stayed as it was.\", \"cites\": [\"c1.3\"]}, {\"text\": \"Model claude-haiku-5-5 was in use throughout the window and stayed as it was.\", \"cites\": [\"c1.4\"]}, {\"text\": \"Tool version vsample-1 was in use throughout the window and stayed as it was.\", \"cites\": [\"c1.5\"]}, {\"text\": \"Plan setting tier standard speed standard was in use throughout the window and stayed as it was.\", \"cites\": [\"c1.6\"]}, {\"text\": \"The second period cost $183.57 more than the first.\", \"cites\": [\"d1.1\"]}, {\"text\": \"The second period was 119.8% of the first.\", \"cites\": [\"d1.2\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_aavt95ky",
+      "decisionId": "req_aavt95ky",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 2608
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 799,
+      "outputTokens": 401,
+      "reasoningTokens": 0
+    }
+  }
+}

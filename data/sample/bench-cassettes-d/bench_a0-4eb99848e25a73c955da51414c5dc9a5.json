@@ -1,0 +1,24 @@
+{
+  "key": "4eb99848e25a73c955da51414c5dc9a5",
+  "recordedAt": "2026-10-24T16:17:57.385Z",
+  "role": "bench_a0",
+  "response": {
+    "content": "The ledger cannot answer that; it records spend by session, not code.",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_vrruz2u4",
+      "decisionId": "req_vrruz2u4",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 1533
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 7606,
+      "outputTokens": 17,
+      "reasoningTokens": 0
+    }
+  }
+}

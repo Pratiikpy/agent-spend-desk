@@ -1,0 +1,24 @@
+{
+  "key": "e34acec0ceb4eae40d0f8298b4efaf76",
+  "recordedAt": "2026-10-24T17:38:15.525Z",
+  "role": "bench_a0",
+  "response": {
+    "content": "102.25",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_2iw7t1p0",
+      "decisionId": "req_2iw7t1p0",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 12019
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 7651,
+      "outputTokens": 7,
+      "reasoningTokens": 0
+    }
+  }
+}

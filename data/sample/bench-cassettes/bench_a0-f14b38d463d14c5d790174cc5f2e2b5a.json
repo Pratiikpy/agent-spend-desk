@@ -1,15 +1,23 @@
 {
   "key": "f14b38d463d14c5d790174cc5f2e2b5a",
-  "recordedAt": "2026-10-23T04:05:56.927Z",
+  "recordedAt": "2026-10-24T21:51:56.949Z",
   "role": "bench_a0",
   "response": {
-    "content": "The ledger does not contain token usage or engineer information.",
+    "content": "The ledger does not contain token usage or engineer information, so it cannot answer that question.",
     "toolCalls": [],
-    "servedBy": "nvidia",
-    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_7uubnigm",
+      "decisionId": "req_7uubnigm",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 571
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
     "usage": {
       "inputTokens": 7606,
-      "outputTokens": 13,
+      "outputTokens": 20,
       "reasoningTokens": 0
     }
   }

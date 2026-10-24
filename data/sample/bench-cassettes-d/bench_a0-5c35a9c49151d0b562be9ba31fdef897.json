@@ -1,0 +1,24 @@
+{
+  "key": "5c35a9c49151d0b562be9ba31fdef897",
+  "recordedAt": "2026-10-24T16:17:40.209Z",
+  "role": "bench_a0",
+  "response": {
+    "content": "The ledger does not contain engineer names or per-engineer spend, so it cannot identify which engineer wasted the most money.",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_k6i7bmq9",
+      "decisionId": "req_k6i7bmq9",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 1045
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 7608,
+      "outputTokens": 26,
+      "reasoningTokens": 0
+    }
+  }
+}

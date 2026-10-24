@@ -1,0 +1,24 @@
+{
+  "key": "5d1d8627abeef5844be222535819d53a",
+  "recordedAt": "2026-10-24T17:59:33.563Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "The ledger tracks spend (estimated list-price dollars) between dates, optionally by model, day, week, or model. It does not record token counts or engineer identities, so I cannot answer how many tokens eng07 used.",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_0kf5l4uh",
+      "decisionId": "req_0kf5l4uh",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 3204
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 1117,
+      "outputTokens": 48,
+      "reasoningTokens": 0
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "key": "0f3f6f71785949208f6c16b4224bd36e",
+  "recordedAt": "2026-10-24T15:02:31.861Z",
+  "role": "bench_a0",
+  "response": {
+    "content": "The ledger cannot answer that. It contains estimated list-price spend per model call, not provider invoices.",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_h3hgim2l",
+      "decisionId": "req_h3hgim2l",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 23833
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 7609,
+      "outputTokens": 23,
+      "reasoningTokens": 0
+    }
+  }
+}

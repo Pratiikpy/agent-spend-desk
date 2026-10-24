@@ -1,0 +1,24 @@
+{
+  "key": "4458fec0758055e589bc66905300d3a3",
+  "recordedAt": "2026-10-24T18:26:19.341Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "The ledger does not report every calendar day; it only lists days with spend. It shows spend on five days (2026-09-29, 2026-10-02, 2026-10-06, 2026-10-07, 2026-10-13) within 2026-09-25 to 2026-10-28, but does not provide enough detail to confirm which of the remaining 29 days had zero spend. It cannot answer how many days had no spend at all.",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_bm852xtb",
+      "decisionId": "req_bm852xtb",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 1792
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 1661,
+      "outputTokens": 141,
+      "reasoningTokens": 0
+    }
+  }
+}

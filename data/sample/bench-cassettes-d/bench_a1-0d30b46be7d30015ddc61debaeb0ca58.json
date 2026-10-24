@@ -1,0 +1,24 @@
+{
+  "key": "0d30b46be7d30015ddc61debaeb0ca58",
+  "recordedAt": "2026-10-24T19:51:43.112Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "The ledger does not provide a per-day breakdown that identifies which days had zero spend between 2026-09-25 and 2026-10-28, so I cannot determine how many days had no spend at all.",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_ab8zbp07",
+      "decisionId": "req_ab8zbp07",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 1109
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 1661,
+      "outputTokens": 56,
+      "reasoningTokens": 0
+    }
+  }
+}

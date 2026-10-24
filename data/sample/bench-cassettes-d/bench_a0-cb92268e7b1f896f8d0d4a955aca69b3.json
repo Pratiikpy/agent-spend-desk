@@ -1,0 +1,24 @@
+{
+  "key": "cb92268e7b1f896f8d0d4a955aca69b3",
+  "recordedAt": "2026-10-24T19:16:17.846Z",
+  "role": "bench_a0",
+  "response": {
+    "content": "Cannot determine; the ledger does not include pricing for models not used, so no savings amount can be calculated.",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_kr8bqiqv",
+      "decisionId": "req_kr8bqiqv",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 1887
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 7618,
+      "outputTokens": 24,
+      "reasoningTokens": 0
+    }
+  }
+}

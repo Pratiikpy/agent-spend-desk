@@ -1,0 +1,24 @@
+{
+  "key": "519b622ff09f779a10835129c6c167eb",
+  "recordedAt": "2026-10-24T19:22:52.290Z",
+  "role": "bench_a0",
+  "response": {
+    "content": "Period 1 (2026-09-26 to 2026-10-06): $1,162.16\nPeriod 2 (2026-10-07 to 2026-10-17): $2,324.32\nDifference: $1,162.16\n\nThe cause was a shift in model usage: claude-sonnet-5-5 spend increased by $1,038.25 (from $357.78 to $1,396.03) while claude-opus-5 spend increased by $106.77 (from $791.18 to $897.95).",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_0t5m3wom",
+      "decisionId": "req_0t5m3wom",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 2464
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 7666,
+      "outputTokens": 172,
+      "reasoningTokens": 0
+    }
+  }
+}

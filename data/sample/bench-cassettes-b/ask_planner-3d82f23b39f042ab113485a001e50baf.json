@@ -1,0 +1,32 @@
+{
+  "key": "3d82f23b39f042ab113485a001e50baf",
+  "recordedAt": "2026-10-24T08:32:35.890Z",
+  "role": "ask_planner",
+  "response": {
+    "content": "",
+    "toolCalls": [
+      {
+        "id": "call-7ac8dc14-c487-4a4d-a0ad-f465c00a562d",
+        "name": "cannot_answer",
+        "arguments": {
+          "reason": "The question asks about a model that was never used in the ledger, so no spend data exists for it to compute savings."
+        }
+      }
+    ],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_irhe9s11",
+      "decisionId": "req_irhe9s11",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 886
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 2781,
+      "outputTokens": 49,
+      "reasoningTokens": 0
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "key": "7d065d96c9fc3ca8ddabda68938ea736",
+  "recordedAt": "2026-10-24T16:07:37.125Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Estimated list-price spend between 2026-09-16 and 2026-10-15 was $3,341.23.\", \"cites\": [\"total_spend.1\"]}, {\"text\": \"That covers 32,256 model calls.\", \"cites\": [\"total_spend.2\"]}, {\"text\": \"The percentage asked about was 10%.\", \"cites\": [\"savings.1\"]}, {\"text\": \"That percentage of the spend comes to $334.12, an estimate from logged tokens.\", \"cites\": [\"savings.2\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_36uzljkp",
+      "decisionId": "req_36uzljkp",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 2854
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 428,
+      "outputTokens": 154,
+      "reasoningTokens": 0
+    }
+  }
+}

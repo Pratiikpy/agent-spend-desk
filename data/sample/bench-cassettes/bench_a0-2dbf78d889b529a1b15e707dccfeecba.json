@@ -1,12 +1,20 @@
 {
   "key": "2dbf78d889b529a1b15e707dccfeecba",
-  "recordedAt": "2026-10-23T02:56:35.679Z",
+  "recordedAt": "2026-10-24T21:50:37.928Z",
   "role": "bench_a0",
   "response": {
     "content": "The ledger does not contain information about code written by the agent.",
     "toolCalls": [],
-    "servedBy": "nvidia",
-    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_s0mq3w2c",
+      "decisionId": "req_s0mq3w2c",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 1309
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
     "usage": {
       "inputTokens": 7606,
       "outputTokens": 15,

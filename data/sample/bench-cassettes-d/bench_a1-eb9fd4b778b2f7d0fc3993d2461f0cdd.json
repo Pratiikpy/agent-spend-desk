@@ -1,0 +1,24 @@
+{
+  "key": "eb9fd4b778b2f7d0fc3993d2461f0cdd",
+  "recordedAt": "2026-10-24T20:10:53.606Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "Spend did not double. It rose from $774.12 (2026-09-26 to 2026-10-03) to $812.26 (2026-10-04 to 2026-10-11), a difference of $38.14. The ledger shows no model, tool-version, or plan-setting change that explains the increase; the only recorded change was a rise in `claude-sonnet-5-5` call share from 31.5% to 41.5% of calls in the week starting 2026-09-29.",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_lverer60",
+      "decisionId": "req_lverer60",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 1666
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 1667,
+      "outputTokens": 156,
+      "reasoningTokens": 0
+    }
+  }
+}

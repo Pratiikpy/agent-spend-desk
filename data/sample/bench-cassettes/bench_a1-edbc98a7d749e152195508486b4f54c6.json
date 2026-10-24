@@ -1,0 +1,24 @@
+{
+  "key": "edbc98a7d749e152195508486b4f54c6",
+  "recordedAt": "2026-10-24T22:04:32.590Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "The ledger does not show spend tripling. Spend fell from $1,135.23 (2026-09-30 to 2026-10-08) to $742.31 (2026-10-09 to 2026-10-17), a decrease of $392.92. The model mix shifted toward claude-opus-5 and away from claude-sonnet-5-5, but that did not produce a tripling.",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_2s5kdl8u",
+      "decisionId": "req_2s5kdl8u",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 7574
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 1778,
+      "outputTokens": 123,
+      "reasoningTokens": 0
+    }
+  }
+}

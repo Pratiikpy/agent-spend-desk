@@ -1,0 +1,24 @@
+{
+  "key": "620110d3c233559c82f7e992c6423451",
+  "recordedAt": "2026-10-24T22:00:12.373Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "The ledger does not show a doubling. Spend was $1,034.26 from 2026-09-11 to 2026-09-18 and $868.16 from 2026-09-19 to 2026-09-26—a decrease of $166.10. No model, tool-version, or plan-setting changes were recorded between those periods, so the ledger cannot identify a cause for any increase.",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_75mieqn8",
+      "decisionId": "req_75mieqn8",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 2382
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 1635,
+      "outputTokens": 117,
+      "reasoningTokens": 0
+    }
+  }
+}

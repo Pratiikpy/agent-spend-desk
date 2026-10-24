@@ -1,0 +1,24 @@
+{
+  "key": "b038cc64131c0472dd49615d36f7653f",
+  "recordedAt": "2026-10-24T18:24:45.241Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "The ledger does not provide daily spend for every day between 2026-09-11 and 2026-09-28, only the five costliest days and a total for “everything else.” I cannot compute the median daily spend without the individual daily amounts.\n\nCannot determine from the ledger.",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_c1reunpc",
+      "decisionId": "req_c1reunpc",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 920
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 1671,
+      "outputTokens": 71,
+      "reasoningTokens": 0
+    }
+  }
+}

@@ -1,15 +1,23 @@
 {
   "key": "e4726dbaed7c05526d863910fe6a2b87",
-  "recordedAt": "2026-10-23T03:07:06.088Z",
+  "recordedAt": "2026-10-24T22:02:21.361Z",
   "role": "bench_a0",
   "response": {
-    "content": "Period 2026-09-13 to 2026-09-20: $492.88\nPeriod 2026-09-21 to 2026-09-28: $984.34\nDifference: $491.46\n\nThe ledger does not record causes for spend changes, so the reason cannot be determined from the data.",
+    "content": "The ledger cannot determine the cause of the spend increase. It only records estimated list-price spend per model call and does not include reasons for changes in usage.\n\nDollar difference:\n- Period 2026-09-13 to 2026-09-20: $739.17\n- Period 2026-09-21 to 2026-09-28: $1,127.42\n- Difference: $388.25",
     "toolCalls": [],
-    "servedBy": "nvidia",
-    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_m3wfatvw",
+      "decisionId": "req_m3wfatvw",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 2752
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
     "usage": {
       "inputTokens": 7666,
-      "outputTokens": 98,
+      "outputTokens": 117,
       "reasoningTokens": 0
     }
   }

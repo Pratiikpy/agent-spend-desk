@@ -1,0 +1,24 @@
+{
+  "key": "a5e665ee32936fe36e8c5498ae076805",
+  "recordedAt": "2026-10-24T18:11:16.601Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "The ledger shows spend of $1,274.28 from 2026-09-27 to 2026-10-07 and $894.51 from 2026-10-08 to 2026-10-18—a decrease of $379.77, not a quadrupling. The ledger cannot confirm a quadrupling because the amounts do not match that description. Model mix shifted toward claude-opus-5 after 2026-10-06, but that does not explain the claimed increase.",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_44ycnu6d",
+      "decisionId": "req_44ycnu6d",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 1319
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 1779,
+      "outputTokens": 137,
+      "reasoningTokens": 0
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "key": "04cd6487cfdd564afed5f8c10ab78507",
+  "recordedAt": "2026-10-24T16:19:45.516Z",
+  "role": "ask_planner",
+  "response": {
+    "content": "",
+    "toolCalls": [
+      {
+        "id": "call-e7444e72-3104-4a66-9680-c7f2e3e82bc0",
+        "name": "cannot_answer",
+        "arguments": {
+          "reason": "The ledger records spend by model and day, not by engineer, so it cannot identify which engineer wasted the most money."
+        }
+      }
+    ],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_o096j2wn",
+      "decisionId": "req_o096j2wn",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 1253
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 2771,
+      "outputTokens": 48,
+      "reasoningTokens": 0
+    }
+  }
+}

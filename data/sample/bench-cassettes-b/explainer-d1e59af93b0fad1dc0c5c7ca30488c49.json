@@ -1,0 +1,24 @@
+{
+  "key": "d1e59af93b0fad1dc0c5c7ca30488c49",
+  "recordedAt": "2026-10-24T09:05:21.143Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Estimated list-price spend between 2026-09-18 and 2026-10-01 was $1,611.52.\", \"cites\": [\"spend1.1\"]}, {\"text\": \"Estimated list-price spend between 2026-10-02 and 2026-10-15 was $1,485.13.\", \"cites\": [\"spend2.1\"]}, {\"text\": \"Estimated list-price spend between 2026-09-18 and 2026-10-01 was $1,611.52.\", \"cites\": [\"range_digest1.1\"]}, {\"text\": \"The whole range was read in 14 periods.\", \"cites\": [\"range_digest1.2\"]}, {\"text\": \"Each period covered 1 days.\", \"cites\": [\"range_digest1.3\"]}, {\"text\": \"The costliest period started on 2026-09-24 and cost $199.48.\", \"cites\": [\"range_digest1.4\"]}, {\"text\": \"Model `claude-opus-5` cost $1,344.52 in the range.\", \"cites\": [\"range_digest1.5\"]}, {\"text\": \"Model `claude-sonnet-5-5` cost $265.70 in the range.\", \"cites\": [\"range_digest1.6\"]}, {\"text\": \"Model `claude-haiku-5-5` cost $1.30 in the range.\", \"cites\": [\"range_digest1.7\"]}, {\"text\": \"Spending in the last third of the range was 189.0% of the first third.\", \"cites\": [\"range_digest1.8\"]}, {\"text\": \"Estimated list-price spend between 2026-10-02 and 2026-10-15 was $1,485.13.\", \"cites\": [\"range_digest2.1\"]}, {\"text\": \"The whole range was read in 14 periods.\", \"cites\": [\"range_digest2.2\"]}, {\"text\": \"Each period covered 1 days.\", \"cites\": [\"range_digest2.3\"]}, {\"text\": \"The costliest period started on 2026-10-07 and cost $213.33.\", \"cites\": [\"range_digest2.4\"]}, {\"text\": \"Model `claude-opus-5` cost $1,171.37 in the range.\", \"cites\": [\"range_digest2.5\"]}, {\"text\": \"Model `claude-sonnet-5-5` cost $313.00 in the range.\", \"cites\": [\"range_digest2.6\"]}, {\"text\": \"Model `claude-haiku-5-5` cost $0.76 in the range.\", \"cites\": [\"range_digest2.7\"]}, {\"text\": \"Spending in the last third of the range was 165.9% of the first third.\", \"cites\": [\"range_digest2.8\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_2f0romk8",
+      "decisionId": "req_2f0romk8",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 5048
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 1379,
+      "outputTokens": 741,
+      "reasoningTokens": 0
+    }
+  }
+}

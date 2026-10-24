@@ -1,0 +1,24 @@
+{
+  "key": "1e12a58907cfc8849f488d303bc0b959",
+  "recordedAt": "2026-10-24T19:29:08.605Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "Spend did not double from the period 2026-09-26 to 2026-10-03 to the period 2026-10-04 to 2026-10-11.\n\n- 2026-09-26 to 2026-10-03: $774.12\n- 2026-10-04 to 2026-10-11: $812.26\n- Dollar difference: $38.14\n\nThe increase is $38.14, not a doubling. The ledger does not record reasons for spend changes, so I cannot identify the cause.",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_csag7ocf",
+      "decisionId": "req_csag7ocf",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 5447
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 1439,
+      "outputTokens": 168,
+      "reasoningTokens": 0
+    }
+  }
+}

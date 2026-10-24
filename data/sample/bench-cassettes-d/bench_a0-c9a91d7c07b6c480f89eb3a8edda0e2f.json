@@ -1,0 +1,24 @@
+{
+  "key": "c9a91d7c07b6c480f89eb3a8edda0e2f",
+  "recordedAt": "2026-10-24T17:55:56.433Z",
+  "role": "bench_a0",
+  "response": {
+    "content": "The ledger does not contain code or session content; it only lists estimated spend per session. The most expensive session is sess-00195 ($73.51), but the code it wrote cannot be determined from the ledger.",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_xvxjl5vu",
+      "decisionId": "req_xvxjl5vu",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 877
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 7606,
+      "outputTokens": 52,
+      "reasoningTokens": 0
+    }
+  }
+}

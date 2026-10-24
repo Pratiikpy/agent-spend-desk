@@ -1,0 +1,24 @@
+{
+  "key": "4fe19f84e783a85981c60dd13147a15e",
+  "recordedAt": "2026-10-24T08:27:47.702Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Estimated list-price spend between 2026-10-07 and 2026-10-14 was $967.73, an estimate from logged tokens and not a bill.\", \"cites\": [\"p1.1\"]}, {\"text\": \"Estimated list-price spend between 2026-10-15 and 2026-10-22 was $600.95, an estimate from logged tokens and not a bill.\", \"cites\": [\"p2.1\"]}, {\"text\": \"The first period cost $366.78 more than the second.\", \"cites\": [\"c.1\"]}, {\"text\": \"The second period was 62.1% of the first.\", \"cites\": [\"c.2\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_l6wqwxp7",
+      "decisionId": "req_l6wqwxp7",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 1192
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 556,
+      "outputTokens": 191,
+      "reasoningTokens": 0
+    }
+  }
+}

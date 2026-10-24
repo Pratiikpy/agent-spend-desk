@@ -1,0 +1,32 @@
+{
+  "key": "8e5488b783043d8fc9e5855a40ef5f3d",
+  "recordedAt": "2026-10-24T08:27:26.187Z",
+  "role": "ask_planner",
+  "response": {
+    "content": "",
+    "toolCalls": [
+      {
+        "id": "call-3a892a6c-ec9b-46de-b688-be09611716cd",
+        "name": "cannot_answer",
+        "arguments": {
+          "reason": "The question asks about a model that was never used, which the ledger cannot hold any spend or pricing data for."
+        }
+      }
+    ],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_tkrdnrr8",
+      "decisionId": "req_tkrdnrr8",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 628
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 2781,
+      "outputTokens": 47,
+      "reasoningTokens": 0
+    }
+  }
+}

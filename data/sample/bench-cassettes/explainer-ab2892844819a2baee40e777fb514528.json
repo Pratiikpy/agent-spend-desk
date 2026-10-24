@@ -1,0 +1,24 @@
+{
+  "key": "ab2892844819a2baee40e777fb514528",
+  "recordedAt": "2026-10-24T09:21:19.094Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Estimated list-price spend between 2026-09-21 and 2026-10-20 was $3,295.62.\", \"cites\": [\"total.1\"]}, {\"text\": \"The average spend per day, counting every day in the range, was $109.85, an estimate from logged tokens.\", \"cites\": [\"avg.1\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_jawfzolu",
+      "decisionId": "req_jawfzolu",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 1830
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 394,
+      "outputTokens": 103,
+      "reasoningTokens": 0
+    }
+  }
+}

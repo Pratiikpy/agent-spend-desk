@@ -1,0 +1,24 @@
+{
+  "key": "f91431c7e2291b8b50f06a05dab9a101",
+  "recordedAt": "2026-10-24T16:15:22.569Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "The ledger contains estimated list-price spend, not provider invoices, so it cannot provide the provider's invoice total for September 2026.",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_oyls88ah",
+      "decisionId": "req_oyls88ah",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 583
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 1120,
+      "outputTokens": 32,
+      "reasoningTokens": 0
+    }
+  }
+}

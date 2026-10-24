@@ -1,0 +1,24 @@
+{
+  "key": "1716a1016771a1d0da066564898a0a7b",
+  "recordedAt": "2026-10-24T09:45:59.467Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Estimated list-price spend between 2026-09-26 and 2026-10-09 was $1,583.94.\", \"cites\": [\"p1.1\"]}, {\"text\": \"That covers 14,426 model calls.\", \"cites\": [\"p1.2\"]}, {\"text\": \"Estimated list-price spend between 2026-10-10 and 2026-10-23 was $1,124.94.\", \"cites\": [\"p2.1\"]}, {\"text\": \"That covers 16,348 model calls.\", \"cites\": [\"p2.2\"]}, {\"text\": \"The first period cost $459.00 more than the second.\", \"cites\": [\"c1.1\"]}, {\"text\": \"The second period was 71.0% of the first.\", \"cites\": [\"c1.2\"]}, {\"text\": \"Estimated list-price spend between 2026-09-26 and 2026-10-09 was $1,583.94.\", \"cites\": [\"d1.1\"]}, {\"text\": \"The whole range was read in 14 periods.\", \"cites\": [\"d1.2\"]}, {\"text\": \"Each period covered 1 days.\", \"cites\": [\"d1.3\"]}, {\"text\": \"The costliest period started on 2026-10-07 and cost $213.33.\", \"cites\": [\"d1.4\"]}, {\"text\": \"Model `claude-opus-5` cost $1,327.24 in the range.\", \"cites\": [\"d1.5\"]}, {\"text\": \"Model `claude-sonnet-5-5` cost $255.67 in the range.\", \"cites\": [\"d1.6\"]}, {\"text\": \"Model `claude-haiku-5-5` cost $1.03 in the range.\", \"cites\": [\"d1.7\"]}, {\"text\": \"Spending in the last third of the range was 233.5% of the first third.\", \"cites\": [\"d1.8\"]}, {\"text\": \"Estimated list-price spend between 2026-10-10 and 2026-10-23 was $1,124.94.\", \"cites\": [\"d2.1\"]}, {\"text\": \"The whole range was read in 14 periods.\", \"cites\": [\"d2.2\"]}, {\"text\": \"Each period covered 1 days.\", \"cites\": [\"d2.3\"]}, {\"text\": \"The costliest period started on 2026-10-13 and cost $166.22.\", \"cites\": [\"d2.4\"]}, {\"text\": \"Model `claude-sonnet-5-5` cost $582.46 in the range.\", \"cites\": [\"d2.5\"]}, {\"text\": \"Model `claude-opus-5` cost $540.42 in the range.\", \"cites\": [\"d2.6\"]}, {\"text\": \"Model `claude-haiku-5-5` cost $2.06 in the range.\", \"cites\": [\"d2.7\"]}, {\"text\": \"Spending in the last third of the range was 140.3% of the first third.\", \"cites\": [\"d2.8\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_mkl8hq9j",
+      "decisionId": "req_mkl8hq9j",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 5999
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 1414,
+      "outputTokens": 819,
+      "reasoningTokens": 0
+    }
+  }
+}

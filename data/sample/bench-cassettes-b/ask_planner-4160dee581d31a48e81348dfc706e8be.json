@@ -1,0 +1,32 @@
+{
+  "key": "4160dee581d31a48e81348dfc706e8be",
+  "recordedAt": "2026-10-24T08:22:03.908Z",
+  "role": "ask_planner",
+  "response": {
+    "content": "",
+    "toolCalls": [
+      {
+        "id": "call-ba5b85b9-add6-43d6-b7b9-e2bda1cb32b9",
+        "name": "cannot_answer",
+        "arguments": {
+          "reason": "The question asks about a model that was never used, which the ledger cannot hold."
+        }
+      }
+    ],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_5m3l5tf3",
+      "decisionId": "req_5m3l5tf3",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 785
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 2781,
+      "outputTokens": 41,
+      "reasoningTokens": 0
+    }
+  }
+}

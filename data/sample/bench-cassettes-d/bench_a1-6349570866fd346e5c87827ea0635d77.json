@@ -1,0 +1,24 @@
+{
+  "key": "6349570866fd346e5c87827ea0635d77",
+  "recordedAt": "2026-10-24T16:38:52.026Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "The ledger shows spend did not double: it rose from $1,062.93 to $1,107.83, a difference of $44.90 (about 4.2%). The ledger does not record causes for spend changes, so it cannot explain why spend increased.",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_pp4xwtb8",
+      "decisionId": "req_pp4xwtb8",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 785
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 1445,
+      "outputTokens": 68,
+      "reasoningTokens": 0
+    }
+  }
+}

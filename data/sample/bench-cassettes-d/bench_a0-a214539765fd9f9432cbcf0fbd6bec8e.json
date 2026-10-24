@@ -1,0 +1,24 @@
+{
+  "key": "a214539765fd9f9432cbcf0fbd6bec8e",
+  "recordedAt": "2026-10-24T20:16:16.110Z",
+  "role": "bench_a0",
+  "response": {
+    "content": "Period 1 (2026-09-26 to 2026-10-06): $466.83\nPeriod 2 (2026-10-07 to 2026-10-17): $934.65\nDollar difference: $467.82\n\nThe ledger does not provide reasons for spend changes, so the cause cannot be determined from the data.",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_ebw4at51",
+      "decisionId": "req_ebw4at51",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 1206
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 7666,
+      "outputTokens": 104,
+      "reasoningTokens": 0
+    }
+  }
+}

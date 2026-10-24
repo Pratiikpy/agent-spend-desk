@@ -1,0 +1,24 @@
+{
+  "key": "80be5e7e2ea0282728038e02f32dc95e",
+  "recordedAt": "2026-10-24T15:20:20.847Z",
+  "role": "bench_a0",
+  "response": {
+    "content": "Spend did not triple. Period 1 (2026-09-07 to 2026-09-20) totaled $1,424.41, while Period 2 (2026-09-21 to 2026-10-04) totaled $1,230.42, a decrease of $193.99. The ledger does not provide a cause for spend changes.",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_cru78nfq",
+      "decisionId": "req_cru78nfq",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 1189
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 7667,
+      "outputTokens": 109,
+      "reasoningTokens": 0
+    }
+  }
+}

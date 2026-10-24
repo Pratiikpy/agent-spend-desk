@@ -1,0 +1,24 @@
+{
+  "key": "537c7275c10c98a2b9e138f73e2eef7c",
+  "recordedAt": "2026-10-24T15:15:45.250Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Estimated list-price spend between 2026-09-26 and 2026-10-06 was $1,062.93.\", \"cites\": [\"p1.1\"]}, {\"text\": \"Estimated list-price spend between 2026-10-07 and 2026-10-17 was $1,107.83.\", \"cites\": [\"p2.1\"]}, {\"text\": \"The second period cost $44.90 more than the first.\", \"cites\": [\"c1.1\"]}, {\"text\": \"The second period was 104.2% of the first.\", \"cites\": [\"c1.2\"]}, {\"text\": \"Owner memory is off, so nothing you told the Desk before can be recalled.\", \"cites\": [\"r1.1\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_fqnwqal0",
+      "decisionId": "req_fqnwqal0",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 2797
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 603,
+      "outputTokens": 209,
+      "reasoningTokens": 0
+    }
+  }
+}

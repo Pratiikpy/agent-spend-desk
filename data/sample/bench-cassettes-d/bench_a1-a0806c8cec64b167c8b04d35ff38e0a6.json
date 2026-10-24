@@ -1,0 +1,24 @@
+{
+  "key": "a0806c8cec64b167c8b04d35ff38e0a6",
+  "recordedAt": "2026-10-24T15:02:37.407Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "The ledger cannot answer that. It reports estimated list-price spend ($3,439.35 for September 2026), not the provider's invoice total.",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_mj2nafqa",
+      "decisionId": "req_mj2nafqa",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 764
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 1261,
+      "outputTokens": 38,
+      "reasoningTokens": 0
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "key": "c7a7242c0b3ff4612f9556d4230615d4",
+  "recordedAt": "2026-10-24T15:31:24.799Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Estimated list-price spend between 2026-09-25 and 2026-10-28 was $3,152.49.\", \"cites\": [\"total_days.1\"]}, {\"text\": \"The day 2026-10-07 cost $213.33.\", \"cites\": [\"active_days.3\"]}, {\"text\": \"The day 2026-09-29 cost $183.45.\", \"cites\": [\"active_days.4\"]}, {\"text\": \"The day 2026-10-02 cost $174.13.\", \"cites\": [\"active_days.5\"]}, {\"text\": \"The day 2026-10-13 cost $166.22.\", \"cites\": [\"active_days.6\"]}, {\"text\": \"The day 2026-10-06 cost $163.74.\", \"cites\": [\"active_days.7\"]}, {\"text\": \"Everything outside those five cost $2,251.62 in total.\", \"cites\": [\"active_days.8\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_cyla1cqi",
+      "decisionId": "req_cyla1cqi",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 4371
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 785,
+      "outputTokens": 279,
+      "reasoningTokens": 0
+    }
+  }
+}

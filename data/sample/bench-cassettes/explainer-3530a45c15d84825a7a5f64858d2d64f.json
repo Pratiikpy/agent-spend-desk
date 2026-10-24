@@ -1,0 +1,24 @@
+{
+  "key": "3530a45c15d84825a7a5f64858d2d64f",
+  "recordedAt": "2026-10-24T21:04:22.449Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Estimated list-price spend between 2026-10-16 and 2026-10-21 was $424.91, an estimate from logged tokens and not a bill.\", \"cites\": [\"total_spend.1\"]}, {\"text\": \"That covers 6,755 model calls.\", \"cites\": [\"total_spend.2\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_5q5n90aq",
+      "decisionId": "req_5q5n90aq",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 904
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 331,
+      "outputTokens": 98,
+      "reasoningTokens": 0
+    }
+  }
+}

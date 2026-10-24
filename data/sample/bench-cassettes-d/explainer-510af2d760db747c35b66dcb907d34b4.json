@@ -1,0 +1,24 @@
+{
+  "key": "510af2d760db747c35b66dcb907d34b4",
+  "recordedAt": "2026-10-24T18:47:29.041Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Estimated list-price spend on model `claude-sonnet-5-5` between 2026-09-25 and 2026-10-16 was $536.62.\", \"cites\": [\"part.1\"]}, {\"text\": \"Estimated list-price spend between 2026-09-25 and 2026-10-16 was $2,325.70.\", \"cites\": [\"whole.1\"]}, {\"text\": \"The part was 23.1% of the whole.\", \"cites\": [\"share.1\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_xul9yllr",
+      "decisionId": "req_xul9yllr",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 2276
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 592,
+      "outputTokens": 153,
+      "reasoningTokens": 0
+    }
+  }
+}

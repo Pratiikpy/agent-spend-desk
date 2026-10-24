@@ -1,0 +1,24 @@
+{
+  "key": "cbeb926a3f6a2fdf91480f878321811f",
+  "recordedAt": "2026-10-24T19:13:53.253Z",
+  "role": "bench_a0",
+  "response": {
+    "content": "The ledger does not contain any code written by the agent; it only tracks estimated spend per model call.",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_j5zl70qy",
+      "decisionId": "req_j5zl70qy",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 747
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 7606,
+      "outputTokens": 23,
+      "reasoningTokens": 0
+    }
+  }
+}

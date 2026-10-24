@@ -1,0 +1,24 @@
+{
+  "key": "885bc6f0a782253c8ebf97056f078f78",
+  "recordedAt": "2026-10-24T17:52:23.602Z",
+  "role": "bench_a0",
+  "response": {
+    "content": "The ledger covers 2026-09-01 to 2026-10-31 only. It cannot answer for March 2019.",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_lh783xpz",
+      "decisionId": "req_lh783xpz",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 24695
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 7612,
+      "outputTokens": 41,
+      "reasoningTokens": 0
+    }
+  }
+}

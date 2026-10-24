@@ -1,0 +1,40 @@
+{
+  "key": "415bdd09de4791e042277942f96bba78",
+  "recordedAt": "2026-10-24T09:45:38.610Z",
+  "role": "ask_planner",
+  "response": {
+    "content": "",
+    "toolCalls": [
+      {
+        "id": "call-e3e98814-ef2f-44ec-8a44-033986fe1c17",
+        "name": "plan_answer",
+        "arguments": {
+          "steps": [
+            {
+              "id": "spend_range",
+              "op": "spend",
+              "from": "2026-09-20",
+              "to": "2026-09-29",
+              "group": "none"
+            }
+          ]
+        }
+      }
+    ],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_7thr6l7x",
+      "decisionId": "req_7thr6l7x",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 745
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 2804,
+      "outputTokens": 76,
+      "reasoningTokens": 0
+    }
+  }
+}

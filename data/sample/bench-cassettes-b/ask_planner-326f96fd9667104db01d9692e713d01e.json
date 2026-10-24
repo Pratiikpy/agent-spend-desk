@@ -1,0 +1,83 @@
+{
+  "key": "326f96fd9667104db01d9692e713d01e",
+  "recordedAt": "2026-10-24T08:33:56.612Z",
+  "role": "ask_planner",
+  "response": {
+    "content": "",
+    "toolCalls": [
+      {
+        "id": "call-0c0479de-40de-461c-881e-31216a80863f",
+        "name": "plan_answer",
+        "arguments": {
+          "steps": [
+            {
+              "id": "p1",
+              "op": "spend",
+              "from": "2026-09-18",
+              "to": "2026-10-01",
+              "group": "none"
+            },
+            {
+              "id": "p2",
+              "op": "spend",
+              "from": "2026-10-02",
+              "to": "2026-10-15",
+              "group": "none"
+            },
+            {
+              "id": "diff",
+              "op": "compare",
+              "a": "p1",
+              "b": "p2"
+            },
+            {
+              "id": "land1",
+              "op": "landing",
+              "from": "2026-09-18",
+              "to": "2026-10-01"
+            },
+            {
+              "id": "land2",
+              "op": "landing",
+              "from": "2026-10-02",
+              "to": "2026-10-15"
+            },
+            {
+              "id": "changes",
+              "op": "changes_before",
+              "date": "2026-10-02",
+              "days": 30
+            },
+            {
+              "id": "digest1",
+              "op": "range_digest",
+              "from": "2026-09-18",
+              "to": "2026-10-01"
+            },
+            {
+              "id": "digest2",
+              "op": "range_digest",
+              "from": "2026-10-02",
+              "to": "2026-10-15"
+            }
+          ]
+        }
+      }
+    ],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_7h87vhse",
+      "decisionId": "req_7h87vhse",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 28689
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 3231,
+      "outputTokens": 364,
+      "reasoningTokens": 0
+    }
+  }
+}

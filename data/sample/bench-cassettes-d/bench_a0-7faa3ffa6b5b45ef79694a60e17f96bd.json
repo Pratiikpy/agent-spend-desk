@@ -1,0 +1,24 @@
+{
+  "key": "7faa3ffa6b5b45ef79694a60e17f96bd",
+  "recordedAt": "2026-10-24T15:07:21.954Z",
+  "role": "bench_a0",
+  "response": {
+    "content": "The ledger cannot answer that question.",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_3swjqf5l",
+      "decisionId": "req_3swjqf5l",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 7241
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 7602,
+      "outputTokens": 9,
+      "reasoningTokens": 0
+    }
+  }
+}

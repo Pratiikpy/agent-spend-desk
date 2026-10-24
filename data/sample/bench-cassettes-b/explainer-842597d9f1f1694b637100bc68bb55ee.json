@@ -1,0 +1,24 @@
+{
+  "key": "842597d9f1f1694b637100bc68bb55ee",
+  "recordedAt": "2026-10-24T08:32:55.800Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Estimated list-price spend between 2026-10-11 and 2026-10-17 was $584.38, an estimate from logged tokens and not a bill.\", \"cites\": [\"a.1\"]}, {\"text\": \"Estimated list-price spend between 2026-10-18 and 2026-10-24 was $538.12, an estimate from logged tokens and not a bill.\", \"cites\": [\"b.1\"]}, {\"text\": \"The first period cost $46.26 more than the second.\", \"cites\": [\"c.1\"]}, {\"text\": \"The second period was 92.1% of the first.\", \"cites\": [\"c.2\"]}, {\"text\": \"Estimated list-price spend between 2026-10-11 and 2026-10-24 was $1,122.50, an estimate from logged tokens and not a bill.\", \"cites\": [\"d.1\"]}, {\"text\": \"Spend on sessions whose work counts as landed (merged or kept) was $765.23.\", \"cites\": [\"d.2\"]}, {\"text\": \"3 changes were recorded between 2026-10-11 and 2026-10-18.\", \"cites\": [\"e.1\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_uqfxisl4",
+      "decisionId": "req_uqfxisl4",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 2617
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 1321,
+      "outputTokens": 332,
+      "reasoningTokens": 0
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "key": "8fe5ef3c4c03feac3be401155939c834",
+  "recordedAt": "2026-10-24T19:11:41.094Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "The ledger covers 2026-09-01 to 2026-10-31 only; it has no data for November 2026, so it cannot answer what we will spend in November 2026.",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_oczz3swv",
+      "decisionId": "req_oczz3swv",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 1400
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 1122,
+      "outputTokens": 58,
+      "reasoningTokens": 0
+    }
+  }
+}

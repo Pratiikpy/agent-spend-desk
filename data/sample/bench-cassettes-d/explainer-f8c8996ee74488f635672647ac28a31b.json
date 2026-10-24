@@ -1,0 +1,24 @@
+{
+  "key": "f8c8996ee74488f635672647ac28a31b",
+  "recordedAt": "2026-10-24T19:45:14.544Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"The median daily spend from 2026-09-11 to 2026-09-28 was $155.17, an estimate from logged tokens, over 14 days.\", \"cites\": [\"med.1\", \"med.2\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_zet891zg",
+      "decisionId": "req_zet891zg",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 1313
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 305,
+      "outputTokens": 75,
+      "reasoningTokens": 0
+    }
+  }
+}

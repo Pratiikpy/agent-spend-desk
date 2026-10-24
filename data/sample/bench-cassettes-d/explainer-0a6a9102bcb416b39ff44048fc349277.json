@@ -1,0 +1,24 @@
+{
+  "key": "0a6a9102bcb416b39ff44048fc349277",
+  "recordedAt": "2026-10-24T18:23:13.286Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Estimated list-price spend between 2026-10-01 and 2026-10-13 was $1,436.62, an estimate from logged tokens and not a bill.\", \"cites\": [\"spend_all.1\"]}, {\"text\": \"That covers 12,883 model calls.\", \"cites\": [\"spend_all.2\"]}, {\"text\": \"Estimated list-price spend on model claude-haiku-5-5 between 2026-10-01 and 2026-10-13 was $0.56, an estimate from logged tokens and not a bill.\", \"cites\": [\"haiku.1\"]}, {\"text\": \"That covers 195 model calls.\", \"cites\": [\"haiku.2\"]}, {\"text\": \"Estimated list-price spend on model claude-opus-5 between 2026-10-01 and 2026-10-13 was $1,203.95, an estimate from logged tokens and not a bill.\", \"cites\": [\"opus.1\"]}, {\"text\": \"That covers 8,257 model calls.\", \"cites\": [\"opus.2\"]}, {\"text\": \"Estimated list-price spend on model claude-sonnet-5-5 between 2026-10-01 and 2026-10-13 was $232.11, an estimate from logged tokens and not a bill.\", \"cites\": [\"sonnet.1\"]}, {\"text\": \"That covers 4,431 model calls.\", \"cites\": [\"sonnet.2\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_2m77z2il",
+      "decisionId": "req_2m77z2il",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 3442
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 1118,
+      "outputTokens": 393,
+      "reasoningTokens": 0
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "key": "174ca4bf16ad3e84d3f744fbfde95351",
+  "recordedAt": "2026-10-24T19:00:08.062Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Estimated list-price spend on model `claude-haiku-5-5` between 2026-09-21 and 2026-10-06 was $1.28, an estimate from logged tokens and not a bill.\", \"cites\": [\"haiku.1\"]}, {\"text\": \"The percentage asked about was 20%.\", \"cites\": [\"savings.1\"]}, {\"text\": \"That percentage of the spend comes to $0.26, an estimate from logged tokens.\", \"cites\": [\"savings.2\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_jscdyutc",
+      "decisionId": "req_jscdyutc",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 1669
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 431,
+      "outputTokens": 141,
+      "reasoningTokens": 0
+    }
+  }
+}

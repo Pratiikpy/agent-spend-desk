@@ -1,0 +1,24 @@
+{
+  "key": "0be3123f8ae3057db76fe73a2e3aa7cf",
+  "recordedAt": "2026-10-24T22:00:31.400Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Estimated list-price spend between 2026-09-11 and 2026-09-18 was $1,034.26.\", \"cites\": [\"spend1.1\"]}, {\"text\": \"Estimated list-price spend between 2026-09-19 and 2026-09-26 was $868.16.\", \"cites\": [\"spend2.1\"]}, {\"text\": \"The first period cost $166.10 more than the second.\", \"cites\": [\"compare.1\"]}, {\"text\": \"The second period was 83.9% of the first.\", \"cites\": [\"compare.2\"]}, {\"text\": \"Estimated list-price spend between 2026-09-11 and 2026-09-18 was $1,034.26.\", \"cites\": [\"digest1.1\"]}, {\"text\": \"The whole range was read in 8 periods.\", \"cites\": [\"digest1.2\"]}, {\"text\": \"Each period covered 1 days.\", \"cites\": [\"digest1.3\"]}, {\"text\": \"The costliest period started on 2026-09-14 and cost $238.30.\", \"cites\": [\"digest1.4\"]}, {\"text\": \"Model `claude-opus-5` cost $852.94 in the range.\", \"cites\": [\"digest1.5\"]}, {\"text\": \"Model `claude-sonnet-5-5` cost $178.56 in the range.\", \"cites\": [\"digest1.6\"]}, {\"text\": \"Model `claude-haiku-5-5` cost $2.76 in the range.\", \"cites\": [\"digest1.7\"]}, {\"text\": \"Spending in the last third of the range was 148.6% of the first third.\", \"cites\": [\"digest1.8\"]}, {\"text\": \"Estimated list-price spend between 2026-09-19 and 2026-09-26 was $868.16.\", \"cites\": [\"digest2.1\"]}, {\"text\": \"The whole range was read in 8 periods.\", \"cites\": [\"digest2.2\"]}, {\"text\": \"Each period covered 1 days.\", \"cites\": [\"digest2.3\"]}, {\"text\": \"The costliest period started on 2026-09-24 and cost $199.48.\", \"cites\": [\"digest2.4\"]}, {\"text\": \"Model `claude-opus-5` cost $740.42 in the range.\", \"cites\": [\"digest2.5\"]}, {\"text\": \"Model `claude-sonnet-5-5` cost $127.13 in the range.\", \"cites\": [\"digest2.6\"]}, {\"text\": \"Model `claude-haiku-5-5` cost $0.62 in the range.\", \"cites\": [\"digest2.7\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_er4fjs70",
+      "decisionId": "req_er4fjs70",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 16503
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 1390,
+      "outputTokens": 735,
+      "reasoningTokens": 0
+    }
+  }
+}

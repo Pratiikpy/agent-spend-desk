@@ -1,0 +1,32 @@
+{
+  "key": "b309396c64bacd931a3fa863891f7f30",
+  "recordedAt": "2026-10-24T08:53:36.127Z",
+  "role": "ask_planner",
+  "response": {
+    "content": "",
+    "toolCalls": [
+      {
+        "id": "call-112cfa71-c985-4ec1-b9d1-6bf274bacb9d",
+        "name": "cannot_answer",
+        "arguments": {
+          "reason": "The ledger records token spend and sessions, not provider invoices or billed amounts."
+        }
+      }
+    ],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_z4j53xvd",
+      "decisionId": "req_z4j53xvd",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 1230
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 2772,
+      "outputTokens": 41,
+      "reasoningTokens": 0
+    }
+  }
+}

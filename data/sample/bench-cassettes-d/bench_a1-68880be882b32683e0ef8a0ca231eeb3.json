@@ -1,0 +1,24 @@
+{
+  "key": "68880be882b32683e0ef8a0ca231eeb3",
+  "recordedAt": "2026-10-24T20:28:41.156Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "The week starting 2026-09-21 had the highest spend: $868.16.",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_6c80jcsh",
+      "decisionId": "req_6c80jcsh",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 15596
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 1429,
+      "outputTokens": 28,
+      "reasoningTokens": 0
+    }
+  }
+}

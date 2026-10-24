@@ -1,0 +1,24 @@
+{
+  "key": "76dd9e95d76d4b322df0d42a26df0cf0",
+  "recordedAt": "2026-10-24T16:21:09.505Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "The ledger tracks dollar amounts (estimated list-price spend), not token counts, so it cannot tell how many tokens eng07 used.",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_lf6k33oq",
+      "decisionId": "req_lf6k33oq",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 1418
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 1117,
+      "outputTokens": 29,
+      "reasoningTokens": 0
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "key": "bcc97cfd265251e0fab2e55647bda8f5",
+  "recordedAt": "2026-10-24T08:47:56.483Z",
+  "role": "ask_planner",
+  "response": {
+    "content": "",
+    "toolCalls": [
+      {
+        "id": "call-36e50e93-a87a-42d7-a910-2a4a950d3ef0",
+        "name": "cannot_answer",
+        "arguments": {
+          "reason": "The question asks for a forecast of November 2026 spending, which is outside the ledger's coverage (2026-09-01 to 2026-10-31) and is a future prediction."
+        }
+      }
+    ],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_mitpcr4k",
+      "decisionId": "req_mitpcr4k",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 1484
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 2774,
+      "outputTokens": 76,
+      "reasoningTokens": 0
+    }
+  }
+}

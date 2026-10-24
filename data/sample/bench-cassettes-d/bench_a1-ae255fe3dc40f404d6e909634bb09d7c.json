@@ -1,0 +1,24 @@
+{
+  "key": "ae255fe3dc40f404d6e909634bb09d7c",
+  "recordedAt": "2026-10-24T15:30:02.247Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "The ledger cannot answer that question. The spend tool only reports days with spend; it does not list days with zero spend, so I cannot count how many days had no spend at all.",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_7h5e546c",
+      "decisionId": "req_7h5e546c",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 1384
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 1406,
+      "outputTokens": 40,
+      "reasoningTokens": 0
+    }
+  }
+}

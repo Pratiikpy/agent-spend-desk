@@ -1,0 +1,24 @@
+{
+  "key": "7ba97acc167c52e700738e8e1a65f814",
+  "recordedAt": "2026-10-24T16:51:24.696Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "The ledger does not support the claim that spend tripled. Spend rose only modestly:\n\n- 2026-09-07 to 2026-09-20: $1,526.54\n- 2026-09-21 to 2026-10-04: $1,640.31\n\nDifference: $113.77 (about 7.5% higher).\n\nNo model, tool-version, or plan-setting change was recorded between the periods, so the ledger cannot provide a cause for any increase beyond normal call-volume variation (15,006 calls vs. 15,421 calls).",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_xf6ksr0y",
+      "decisionId": "req_xf6ksr0y",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 1881
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 1639,
+      "outputTokens": 160,
+      "reasoningTokens": 0
+    }
+  }
+}

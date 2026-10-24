@@ -1,0 +1,24 @@
+{
+  "key": "f9fc36377033b0cdd576be7078f9a71a",
+  "recordedAt": "2026-10-24T17:01:57.221Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "claude-sonnet-5-5: $232.11",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_i9ea8xuf",
+      "decisionId": "req_i9ea8xuf",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 495
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 1346,
+      "outputTokens": 18,
+      "reasoningTokens": 0
+    }
+  }
+}

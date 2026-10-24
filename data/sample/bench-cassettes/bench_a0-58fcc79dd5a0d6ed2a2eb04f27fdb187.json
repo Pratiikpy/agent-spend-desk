@@ -1,12 +1,20 @@
 {
   "key": "58fcc79dd5a0d6ed2a2eb04f27fdb187",
-  "recordedAt": "2026-10-23T04:05:30.529Z",
+  "recordedAt": "2026-10-24T21:49:17.616Z",
   "role": "bench_a0",
   "response": {
-    "content": "The ledger does not contain engineer names or engineer-level spend, so it cannot answer that question.",
+    "content": "The ledger does not contain engineer names or engineer-level spend, so it cannot answer this question.",
     "toolCalls": [],
-    "servedBy": "nvidia",
-    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_iv26o4sx",
+      "decisionId": "req_iv26o4sx",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 1306
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
     "usage": {
       "inputTokens": 7608,
       "outputTokens": 21,

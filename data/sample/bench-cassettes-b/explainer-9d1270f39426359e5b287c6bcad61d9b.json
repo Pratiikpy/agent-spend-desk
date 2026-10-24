@@ -1,0 +1,24 @@
+{
+  "key": "9d1270f39426359e5b287c6bcad61d9b",
+  "recordedAt": "2026-10-24T08:24:33.852Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Estimated list-price spend between 2026-09-28 and 2026-10-25 was $2,706.91, an estimate from logged tokens and not a bill.\", \"cites\": [\"top_day.1\", \"range_digest.1\"]}, {\"text\": \"That covers 30,762 model calls.\", \"cites\": [\"top_day.2\"]}, {\"text\": \"The day 2026-10-07 cost $213.33.\", \"cites\": [\"top_day.3\"]}, {\"text\": \"The day 2026-09-29 cost $183.45.\", \"cites\": [\"top_day.4\"]}, {\"text\": \"The day 2026-10-02 cost $174.13.\", \"cites\": [\"top_day.5\"]}, {\"text\": \"The day 2026-10-13 cost $166.22.\", \"cites\": [\"top_day.6\"]}, {\"text\": \"The day 2026-10-06 cost $163.74.\", \"cites\": [\"top_day.7\"]}, {\"text\": \"Everything outside those five cost $1,806.04 in total.\", \"cites\": [\"top_day.8\"]}, {\"text\": \"The whole range was read in 28 periods.\", \"cites\": [\"range_digest.2\"]}, {\"text\": \"Each period covered 1 days.\", \"cites\": [\"range_digest.3\"]}, {\"text\": \"The costliest period started on 2026-10-07 and cost $213.33.\", \"cites\": [\"range_digest.4\"]}, {\"text\": \"Model `claude-opus-5` cost $1,866.13 in the range.\", \"cites\": [\"range_digest.5\"]}, {\"text\": \"Model `claude-sonnet-5-5` cost $837.69 in the range.\", \"cites\": [\"range_digest.6\"]}, {\"text\": \"Model `claude-haiku-5-5` cost $3.09 in the range.\", \"cites\": [\"range_digest.7\"]}, {\"text\": \"Spending in the last third of the range was 50.7% of the first third.\", \"cites\": [\"range_digest.8\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_n04jzwi7",
+      "decisionId": "req_n04jzwi7",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 4381
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 1080,
+      "outputTokens": 569,
+      "reasoningTokens": 0
+    }
+  }
+}

@@ -1,15 +1,23 @@
 {
   "key": "dfadd186064c5ab80823648b1c89ada7",
-  "recordedAt": "2026-10-23T03:05:02.908Z",
+  "recordedAt": "2026-10-24T22:00:03.182Z",
   "role": "bench_a0",
   "response": {
-    "content": "The ledger does not show a doubling. Spend was $1,042.04 from 2026-09-11 to 2026-09-18 and $764.15 from 2026-09-19 to 2026-09-26, a decrease of $277.89. The ledger does not record causes for spend changes.",
+    "content": "The ledger cannot answer why spend changed; it only records estimated list-price spend per model call and does not include reasons or causes.\n\nDollar difference:\n- Period 2026-09-11 to 2026-09-18: $1,040.24\n- Period 2026-09-19 to 2026-09-26: $1,040.24\n- Difference: $0.00\n\nSpend did not double; it was identical between the two periods.",
     "toolCalls": [],
-    "servedBy": "nvidia",
-    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_us7dsll1",
+      "decisionId": "req_us7dsll1",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 2138
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
     "usage": {
       "inputTokens": 7666,
-      "outputTokens": 100,
+      "outputTokens": 127,
       "reasoningTokens": 0
     }
   }

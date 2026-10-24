@@ -1,0 +1,24 @@
+{
+  "key": "8aaf95d08e9f4e9e84f61d0b40b98613",
+  "recordedAt": "2026-10-24T15:21:34.722Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "The ledger does not show spend tripling. Estimated spend was $1,526.54 from 2026-09-07 to 2026-09-20 and $1,640.31 from 2026-09-21 to 2026-10-04, a difference of $113.77 (about 7.5% higher, not triple). No model, tool version, or plan setting changed between the periods, so the ledger cannot identify a cause for any tripling because it did not occur.",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_4g06ndcd",
+      "decisionId": "req_4g06ndcd",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 2202
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 1639,
+      "outputTokens": 137,
+      "reasoningTokens": 0
+    }
+  }
+}

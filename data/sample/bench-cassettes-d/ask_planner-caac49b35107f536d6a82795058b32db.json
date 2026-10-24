@@ -1,0 +1,32 @@
+{
+  "key": "caac49b35107f536d6a82795058b32db",
+  "recordedAt": "2026-10-24T17:55:18.734Z",
+  "role": "ask_planner",
+  "response": {
+    "content": "",
+    "toolCalls": [
+      {
+        "id": "call-dcfe8dfb-cff1-4bc8-8fc1-58a8b4fcaa9b",
+        "name": "cannot_answer",
+        "arguments": {
+          "reason": "The ledger tracks spend, sessions, models, landing, and changes only; it does not record engineers, so the question cannot be answered from it."
+        }
+      }
+    ],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_1ik0ks48",
+      "decisionId": "req_1ik0ks48",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 1444
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 2771,
+      "outputTokens": 54,
+      "reasoningTokens": 0
+    }
+  }
+}

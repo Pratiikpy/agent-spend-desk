@@ -11,6 +11,8 @@ export const RESULTS_FILE = "docs/verification/benchmark/results.jsonl";
 export const QUESTIONS_FILE = "docs/verification/benchmark/questions.json";
 export const RESULTS_FILE_B = "docs/verification/benchmark/set-b/results.jsonl";
 export const RESULTS_FILE_A_V2 = "docs/verification/benchmark/results-v2.jsonl";
+/** Set A run again, all three arms, on the Desk v3 (post hoc: set A was read to build the Desk). The first two files are history and cannot be replayed by today's code. */
+export const RESULTS_FILE_A_V3 = "docs/verification/benchmark/set-a-v3/results.jsonl";
 export const QUESTIONS_FILE_B = "docs/verification/benchmark/set-b/questions.json";
 export const RESULTS_FILE_C = "docs/verification/learning/train-c/results.jsonl";
 export const QUESTIONS_FILE_C = "docs/verification/learning/train-c/questions.json";
@@ -28,7 +30,11 @@ export const CASSETTES_D = "data/sample/bench-cassettes-d";
  * second file once that run is complete. Until it is, the first version's rows stand in, and are the history the table was
  * preregistered on.
  */
-export function setARows(): { rows: BenchRow[]; deskVersion: 1 | 2 } {
+export function setARows(): { rows: BenchRow[]; deskVersion: 1 | 2 | 3 } {
+  if (existsSync(RESULTS_FILE_A_V3)) {
+    const v3 = readResults(RESULTS_FILE_A_V3);
+    if (v3.length > 0) return { rows: v3, deskVersion: 3 };
+  }
   const first = existsSync(RESULTS_FILE) ? readResults(RESULTS_FILE) : [];
   const v2 = existsSync(RESULTS_FILE_A_V2) ? readResults(RESULTS_FILE_A_V2).filter((r) => r.arm === "A2") : [];
   const wasA2 = first.filter((r) => r.arm === "A2").length;
