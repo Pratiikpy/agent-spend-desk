@@ -13,25 +13,29 @@ Built for the Open Agent Hackathon 2026, Track 3 (Reasoning Architecture), with 
 | ![The morning brief](docs/submission/deck/img/brief.png) | ![The canary calling a regression](docs/submission/deck/img/canary-top.png) | ![An answer checked by code](docs/submission/deck/img/ask.png) |
 | The brief | The canary: a regression called, control arm flat | Ask: every figure comes from a typed step |
 
+Skim path: [The idea](#the-idea), [One product, three tracks](#one-product-three-tracks), [Try it](#try-it), [The evidence](#the-evidence), [Where it goes](#where-it-goes).
+
 ## The idea
 
 Most tools that watch AI spend show a number. desk. treats every number as a claim: it must carry the rows it came from, say what it could not know, and survive a test on data it never saw. The same discipline runs through the whole product. A figure is computed by code, never by the model. A policy is replayed on a month it was not drafted from, and the headline is the landed work it would have blocked. A regression is called only against a control arm. A conclusion is signed so that a stranger can verify it offline. Where it fell short of its own label (a "90%" range that held 73% of the time), it says so on screen.
+
+Usage trackers such as ccusage and CodexBar read agent logs and show cost; as far as we read them on 2026-10-20 (`docs/design/desk/05-track-coverage-and-sources.md`), none ties each dollar to landed work, replays a policy on a month it did not see, calls a regression against a control arm, or signs the result. desk. takes their log-reading and pace ideas and adds those.
 
 ## One product, three tracks
 
 ![The architecture: sources, data, reasoning, decisions, and where each track and each sponsor sits](docs/submission/deck/img/architecture.png)
 
-One primary track is judged, and we submit under **Track 3**. The same product also does the work of the other two, and the diagram shows where each lives.
+One primary track is judged, and we submit under **Track 3**. The same product also does the work of the other two. The diagram shows the parts; the table says which parts each track relies on.
 
 | Track | Where it lives in desk. | Try it |
 |---|---|---|
-| 1. Solving fragmented intelligence | Agent logs, plus invoices (files), CI (Postgres) and a seat roster (REST) joined by one Zetaris statement into one ledger. It shows where the sources disagree: invoices land 1.2% under the list-price estimate, and 60 of 644 landed sessions merged although the checks were red. | `desk silos`, `desk landing` |
+| 1. Solving fragmented intelligence | Agent logs, plus invoices (files), CI (Postgres) and a seat roster (REST) joined by one Zetaris statement into one ledger. The three silos are synthetic, derived from the constructed sample; the single statement that joins them and the conflicts it finds are real code. It shows where the sources disagree: invoices land 1.2% under the list-price estimate, and 60 of 644 landed sessions merged although the checks were red. | `desk silos`, `desk landing` |
 | 2. The agent that can explain why | Ask turns a question into a typed program that read-only specialists run, and an Auditor rejects any figure no claim supports. Every conclusion is a signed dossier that a stranger verifies offline; one changed byte names the row. | `desk ask`, `npm run desk-verify` |
 | 3. Reasoning architecture (primary) | Plan, critique, revise, replay: a Planner and its critic, specialists, an Auditor and Explainer, a Drafter, a restrict-only check and an Attacker, a canary with a control arm, Meterless engines as memory, Nemotron in every language role, and a pre-registered head-to-head against a tool agent. | `desk propose`, `desk bench report` |
 
 ## Try it
 
-Needs Node 22.19 or later. Nothing else for the sample.
+Needs Node 22.19 or later (run on 22.23 and 24.20; 22.19 itself is NOT VERIFIED). Nothing else for the sample.
 
 ```
 git clone https://github.com/Pratiikpy/agent-spend-desk.git && cd agent-spend-desk
@@ -125,13 +129,13 @@ A human stays in the loop where it matters: the gate turns an `ask` into an allo
 ## The evidence
 
 - **A regression, called.** The canary runs a 52-task pack once a day on two arms for 30 assigned days. The primary arm's model is switched on day 15, on purpose. The statistic calls it: **-40.0 points, 99% interval -56.2 to -23.8, control arm flat**. A first recording on 16 tasks measured a 35 point drop and correctly refused to call it (four clusters cannot support a call), so the pack was grown and re-recorded. Both are in the repository: `docs/verification/canary-first-run/`.
-- **A head-to-head, published as it came out.** Same Nemotron model, three arms: one call with a summary, a tool-using agent, and the Desk. On the first 60 questions the Desk was 51 exact against the agent's 47 and one call's 12. On a second set of 60 it had never seen, preregistered before it ran: **49 against 41 and 12**, and 77% against 63% when each question is asked three more times at temperature 0.7 (pass^3). Eight questions in sixty is at the edge of what that sample can show, and the Desk was level with the agent on the 7 questions from templates its tools were not built around (2 each). A defect found by reading that set (a refused plan was handed to the rule planner without telling the Planner why) was then fixed; after the fix the Desk is at 54 of 60 and 85% pass^3, reported as post hoc, beside the first figures and never in place of them. Its first run on the first set was 20 of 40 against the agent's 31. Everything is in `docs/verification/benchmark/` (`RESULTS-v2.md` has the written predictions, several of which failed or held only barely), and `desk prove` replays all 900 recorded runs from the recordings.
+- **A head-to-head, published as it came out.** Same Nemotron model, three arms: one call with a summary, a tool-using agent, and the Desk. On the first 60 questions the Desk was 51 exact against the agent's 47 and one call's 12. On a second set of 60 it had never seen, preregistered before it ran: **49 against 41 and 12**, and 77% against 63% when each question is asked three more times at temperature 0.7 (pass^3). Eight questions in sixty is at the edge of what that sample can show, and the Desk was level with the agent on the 7 questions from templates its tools were not built around (2 of 7 each). A defect found by reading that set (a refused plan was handed to the rule planner without telling the Planner why) was then fixed; after the fix the Desk is at 54 of 60 and 85% pass^3, reported as post hoc, beside the first figures and never in place of them. Its first run on the first set was 20 of 40 against the agent's 31. Everything is in `docs/verification/benchmark/` (`RESULTS-v2.md` has the written predictions, several of which failed or held only barely), and `desk prove` replays all 900 recorded runs from the recordings.
 - **Held-out replay.** A policy drafted from September meets October, a month it never saw. The headline is the landed work it would have blocked (5 of 333 sessions), not the savings.
-- **A verifier a stranger can run.** A signed dossier carries the rows its figures come from; `desk-verify` recomputes them on plain Node with the network off. Change one byte and it names the row.
+- **A verifier a stranger can run.** A signed dossier carries the rows its figures come from; `desk-verify` recomputes them on plain Node with the network off. Change one byte and it names the row. A signature proves the record was not altered after signing and that its figures follow from its rows; it does not prove that the agent logs were truthful.
 - **A fuzzed checker.** The restrict-only check (does an edit only narrow a policy?) agrees with an independent oracle on 3,000 random policy pairs, and a checker that always says "narrows" is caught.
 - **Its own confidence, measured.** Link confidence is checked against planted truth with Wilson intervals (high 99.2%, medium 98.6%, ordered as named). The wind tunnel's "90%" one-month range held the realized month in **73%** of 48 constructed samples with a regime change planted and **77%** with none (interval 63% to 87%), and its chance of blocking landed work had an expected calibration error of 0.29. Both are stated beside the range on screen: read it as a screen, not a promise.
 - **It keeps a record of its own judgement.** When a policy is proposed, the expected range for each option is written down; after the month that followed, each option is replayed and scored, with regret. On the sample, the proposed policy's month fell inside its range and blocked the same 5 landed sessions the held-out replay named.
-- **It learns from its mistakes, and says how much.** Nine wrong answers on 120 training questions gave six verified plans; the six lessons moved two held-out questions from wrong to right and none the other way (54 to 56 of 60, 95% interval -8.3 to 0.0 points), so no improvement is claimed. Nothing changed on the 7 new-template questions. A first run of this experiment measured the model's run-to-run noise rather than the lessons; both runs and the correction are in `docs/verification/learning/` and the preregistration.
+- **It tries to learn from its mistakes, and says how little it moved.** Nine wrong answers on 120 training questions gave six verified plans; the six lessons moved two held-out questions from wrong to right and none the other way (54 to 56 of 60, 95% interval -8.3 to 0.0 points), so no improvement is claimed. Nothing changed on the 7 new-template questions. A first run of this experiment measured the model's run-to-run noise rather than the lessons; both runs and the correction are in `docs/verification/learning/` and the preregistration.
 - **`desk prove`:** 26 PASS, 0 FAIL, 0 NOT RUN on a fresh clone. NOT RUN names a check the spec asks for that is not built or not recorded; it is never counted as a pass.
 
 ## How it is built
@@ -151,6 +155,8 @@ Zetaris ──► invoices · CI · roster ────────────�
 - **Verification is code.** Budgets (wall clock, model calls, tool calls, turns) are enforced in code. Every language role has a rule-based fallback and the trace says when it was used. Every run writes a JSONL trace with the reason for each decision.
 - **Honest classes.** Every dollar is `billed`, `reported`, `estimated` or `unpriced`. Dollar figures are list-price estimates from logged tokens and say so. A cause is a part of the cost, not a verdict.
 - **Reproducible.** Offline runs replay recorded model and Zetaris replies; a request with no recording is an error, never a guess.
+
+**Terms.** *Canary*: a fixed 52-task pack run daily on two arms, one of them a control, to call a regression. *Wind tunnel*: a replay of a policy over simulated 30-day months resampled from your history, giving a range for its effect. *Restrict-only check*: code that proves an edited policy only narrows the one in force. *Dossier*: a signed bundle of a conclusion with the rows its figures come from. *H-MEM, World Model, Markovian*: the three Meterless engines (owner definitions and past decisions; what changed when; bounds a long range).
 
 Code map: `src/desk/` (ledger, ingest, autopsy, outcomes, policy, replay, agents, ask, engines, silo, canary, bench, gate, dossier, verify, card, ui, propose, prove), `src/sponsors/zetaris/` (the Zetaris port), `src/engines/` (Meterless engines), `vendor/meterless/` (their conformance suites, unchanged), `infra/silos/` (three synthetic silos), `policies/`, `tests/`.
 
@@ -177,7 +183,7 @@ No GPU, no training, no package installed at run time, no download at run time. 
 | The whole demo | The same | Under a minute, offline |
 | One live `desk ask` | At most one plan, one revision, and two explainer revisions | Two model calls on the questions in the benchmark; the NVIDIA free API took from about 8 to 80 seconds per run on 2026-10-23 |
 
-The organizers' target is 5 to 10 minutes for a full agent run; every path here is inside it, and none runs without a bound.
+The organizers' target is 5 to 10 minutes for a full agent run; every path here is inside it, and none runs without a bound. The offline paths replay recorded model and Zetaris replies; the live path is the one with variable latency.
 
 ## Against the organizers' red flags
 
