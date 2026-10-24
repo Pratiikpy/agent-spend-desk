@@ -8,6 +8,8 @@ import { findJsonlLogs } from "../../../src/desk/ingest/discover.ts";
 import { openLedger } from "../../../src/desk/ledger/db.ts";
 import { ingestClaudeCode } from "../../../src/desk/ledger/ingest.ts";
 import { linkOutcomes } from "../../../src/desk/outcomes/link.ts";
+import { readCsvInvoice } from "../../../src/desk/billing/import.ts";
+import { storeInvoice } from "../../../src/desk/billing/store.ts";
 import { assignTasks } from "../../../src/desk/tasks/assign.ts";
 import { hashModels, loadSnapshot, parseSnapshot } from "../../../src/desk/pricing/pricebook.ts";
 import { repriceLedger } from "../../../src/desk/pricing/reprice.ts";
@@ -32,6 +34,10 @@ beforeAll(async () => {
   await ingestClaudeCode(db, findJsonlLogs(sampleLogsDir(out)), loadSnapshot(PRICES));
   linkOutcomes(db, Object.keys(TEAM_OF_REPO).map((n) => join(sampleReposDir(out), n)), Date.parse("2026-12-01T00:00:00Z"));
   assignTasks(db, []);
+  // An invoice for the busiest month that says what the estimate says, model by model, so the month reconciles.
+  const month = (db.prepare("SELECT substr(ts, 1, 7) m FROM model_call GROUP BY m ORDER BY COUNT(*) DESC LIMIT 1").get() as { m: string }).m;
+  const perModel = db.prepare("SELECT m.model model, SUM(c.total_micros) micros FROM model_call m JOIN cost_event c ON c.call_id = m.call_id AND c.class = 'estimated' WHERE substr(m.ts, 1, 7) = ? AND m.model LIKE 'claude%' GROUP BY m.model").all(month) as unknown as { model: string; micros: number }[];
+  storeInvoice(db, readCsvInvoice(["model,cost_usd", ...perModel.map((r) => `${r.model},${(r.micros / 1e6).toFixed(6)}`)].join("\n"), { sourceName: "month.csv", period: month }));
   // A price corrected after the logs were read: the busiest model's output price goes up by $1 per million tokens.
   const busiest = (db.prepare("SELECT model FROM model_call GROUP BY model ORDER BY COUNT(*) DESC LIMIT 1").get() as { model: string }).model;
   const base = loadSnapshot(PRICES);
@@ -135,6 +141,19 @@ describe("the screens' data", () => {
     expect(autopsy.card.causes.reduce((s: number, c: { micros: number }) => s + c.micros, 0)).toBe(autopsy.card.totals.estimatedMicros);
     expect(brief.state).toBe("ok");
     expect(brief.causes.length).toBeGreaterThan(0);
+  });
+
+  it("shows what the imported invoice says, and a reconciliation of the month against the estimate", async () => {
+    const bill = await json(full, "/api/bill?range=all");
+    const billed = bill.classes.find((c: { cls: string }) => c.cls === "billed");
+    expect(billed.invoices).toBe(1);
+    expect(billed.micros).toBeGreaterThan(0);
+    expect(billed.note).toMatch(/imported invoice/);
+    expect(bill.reconciliations.length).toBeGreaterThan(0);
+    const row = bill.reconciliations.find((r: { billedMicros: number | null }) => r.billedMicros !== null);
+    expect(row.vendor).toBe("anthropic");
+    expect(row.billedMicros).toBe(billed.micros);
+    expect(["reconciled", "partial", "unreconciled"]).toContain(row.status);
   });
 
   it("says on the Bill that the ledger was repriced, to which snapshot and why, and keeps the other screens in step with it", async () => {

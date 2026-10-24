@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { computeReconciliations } from "../billing/reconcile.ts";
 import { analyseCalls, buildAutopsy, CAUSES, type Autopsy, type AutopsyCall, type Cause, type PerCall } from "../autopsy/engine.ts";
 import { loadAutopsyCalls } from "../autopsy/load.ts";
 import { buildCard } from "../card/build.ts";
@@ -219,7 +220,7 @@ export function bill(ctx: UiContext, span: Span): object {
     span: { since: span.sinceIso, until: span.untilIso, days: span.days },
     totals: { ...t, pricedShare: t.pricedCalls + t.unpricedCalls === 0 ? 0 : t.pricedCalls / (t.pricedCalls + t.unpricedCalls) },
     classes: [
-      { cls: "billed", calls: 0, note: "Invoices are not read on this screen. When Zetaris is connected the invoice figures are on Org data." },
+      billedClass(ctx, span),
       reportedClass(reported),
       { cls: "estimated", calls: t.pricedCalls, micros: t.estimatedMicros, note: "List price times logged tokens." },
       { cls: "unpriced", calls: t.unpricedCalls, note: "Models with no price row: tokens counted, no dollars invented." },
@@ -227,6 +228,7 @@ export function bill(ctx: UiContext, span: Span): object {
     reconciliation: reconciliationSummary(reported),
     priceBand: priceBand(ctx, span, t.estimatedMicros),
     pricing: pricingNotes(ctx, span),
+    reconciliations: reconciliationRows(ctx, span),
     landing: { rows: landingRows(landing), totalMicros: landing.totalMicros, lowConfidenceMicros: landing.lowConfidenceMicros, linked: hasLinks(ctx.db) },
     costPerLandedSession: landed === 0 ? null : Math.round(landedMicros / landed),
     landedSessions: landed,
@@ -256,6 +258,34 @@ function priceBand(ctx: UiContext, span: Span, estimatedMicros: number): object 
     items: items.map((i) => ({ model: i.model, price: PRICE_LABEL[i.field] ?? i.field, longPrompts: i.tier === "long", tokens: i.tokens, deltaMicros: i.deltaMicros })),
     note: "Two sources of list prices disagree on the prices above. Which one is in force is not verified here; an invoice or a usage export for these tokens settles it.",
   };
+}
+
+/** The billed class: what imported invoices say for this period. Without one, the note says what importing would change. */
+function billedClass(ctx: UiContext, span: Span): object {
+  const none = { cls: "billed", calls: 0, invoices: 0, note: "No invoice is imported, so nothing here is billed. Import one (`desk invoices import <file>`) and this class shows what you were charged; the estimate then becomes a check on it. With Zetaris connected, its invoice figures are on Org data." };
+  const has = one<{ n: number }>(ctx.db, "SELECT COUNT(*) AS n FROM sqlite_master WHERE type = 'table' AND name = 'invoice'");
+  if (!has || has.n === 0) return none;
+  const r = one<{ micros: number | null; invoices: number; lines: number }>(
+    ctx.db,
+    `SELECT SUM(b.amount_micros) micros, COUNT(DISTINCT i.invoice_id) invoices, COUNT(*) lines FROM billed_line b JOIN invoice i ON i.invoice_id = b.invoice_id
+     WHERE i.status = 'imported' AND i.currency = 'USD' AND COALESCE(b.day, i.period_start) >= ? AND COALESCE(b.day, i.period_start) <= ?`,
+    span.sinceIso.slice(0, 10),
+    span.untilIso.slice(0, 10),
+  );
+  if (!r || r.micros === null) return none;
+  return { cls: "billed", calls: r.lines, invoices: r.invoices, micros: r.micros, note: `What ${r.invoices} imported invoice${r.invoices === 1 ? "" : "s"} charged for this period (USD, lines dated inside it). The invoice is the authority; the estimate below is a check on it.` };
+}
+
+/** Billed against estimated against reported, per vendor and month, for the months this period touches. */
+function reconciliationRows(ctx: UiContext, span: Span): object[] {
+  const has = one<{ n: number }>(ctx.db, "SELECT COUNT(*) AS n FROM sqlite_master WHERE type = 'table' AND name = 'invoice'");
+  if (!has || has.n === 0 || (one<{ n: number }>(ctx.db, "SELECT COUNT(*) AS n FROM invoice")?.n ?? 0) === 0) return [];
+  const from = span.sinceIso.slice(0, 7);
+  const to = span.untilIso.slice(0, 7);
+  return computeReconciliations(ctx.db)
+    .filter((r) => r.period >= from && r.period <= to)
+    .slice(-6)
+    .map((r) => ({ vendor: r.vendor, period: r.period, currency: r.currency, billedMicros: r.billedMicros, estimatedMicros: r.estimatedMicros, reportedMicros: r.reportedMicros, gapMicros: r.gapMicros, status: r.status, reason: r.reason }));
 }
 
 const RULE_LABEL: Record<string, string> = {

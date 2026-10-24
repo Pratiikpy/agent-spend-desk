@@ -7,6 +7,26 @@ import { stackedBar, dailyBars, swatch } from "../lib/charts.js";
 
 export const usesRange = true;
 
+const STATUS_PILL = { reconciled: "live", partial: "", unreconciled: "risk" };
+
+// Billed against estimated against reported, per vendor and month. The status is a comparison with a tolerance, never a claim that either figure is right.
+function reconciliationTable(rows) {
+  if (!rows || rows.length === 0) return null;
+  return table(
+    "Billed against estimated",
+    [
+      { label: "Month", render: (r) => `${r.vendor} ${r.period}` },
+      { label: "Billed", num: true, render: (r) => (r.billedMicros === null ? "none" : r.currency === "USD" ? usd(r.billedMicros) : `${r.currency} ${(r.billedMicros / 1e6).toFixed(2)}`) },
+      { label: "Estimated", num: true, render: (r) => usd(r.estimatedMicros) },
+      { label: "Reported", num: true, render: (r) => (r.reportedMicros === null ? "n/a" : usd(r.reportedMicros)) },
+      { label: "Status", render: (r) => pill(r.status, STATUS_PILL[r.status]) },
+      { label: "Why", render: (r) => r.reason },
+    ],
+    rows,
+    { maxh: true },
+  );
+}
+
 // Which pricing rules applied in this period, and any repricing: a price that was corrected or a snapshot that came later changed what the ledger says, and both versions are kept.
 function pricingNote(p) {
   if (!p) return null;
@@ -58,7 +78,8 @@ export async function render(ctx) {
     section(
       "Kinds of dollars",
       "the class of each figure",
-      h("ul", { class: "list" }, ...d.classes.map((c) => h("li", null, pill(c.cls, c.cls === "estimated" ? "ink" : ""), " ", c.processes !== undefined ? (c.processes > 0 ? `${int(c.processes)} processes, ${usd(c.micros)}. ` : "none. ") : c.calls > 0 ? `${int(c.calls)} calls${c.micros ? `, ${usd(c.micros)}` : ""}. ` : "none. ", c.note))),
+      h("ul", { class: "list" }, ...d.classes.map((c) => h("li", null, pill(c.cls, c.cls === "estimated" ? "ink" : ""), " ", c.processes !== undefined ? (c.processes > 0 ? `${int(c.processes)} processes, ${usd(c.micros)}. ` : "none. ") : c.invoices > 0 ? `${int(c.invoices)} invoice${c.invoices === 1 ? "" : "s"}, ${usd(c.micros)}. ` : c.calls > 0 ? `${int(c.calls)} calls${c.micros ? `, ${usd(c.micros)}` : ""}. ` : "none. ", c.note))),
+      reconciliationTable(d.reconciliations),
       d.reconciliation
         ? h("p", { class: "note" }, `Against the tool's own figure: ${int(d.reconciliation.match)} of ${int(d.reconciliation.processes)} processes agree. The tool recorded ${usd(d.reconciliation.reportedMicros)} and this estimate is ${usd(d.reconciliation.estimatedMicros)} for the same calls.${d.reconciliation.withSubAgents.processes > 0 ? ` ${int(d.reconciliation.withSubAgents.processes)} used sub-agents, where the tool's counter is known to fall behind (${usd(d.reconciliation.withSubAgents.reportedMicros)} recorded against ${usd(d.reconciliation.withSubAgents.estimatedMicros)} estimated).` : ""} ${d.reconciliation.toleranceNote}`)
         : null,

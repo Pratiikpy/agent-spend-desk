@@ -58,6 +58,7 @@ import { evaluateProtocol, renderProtocol } from "./lab/protocol.ts";
 import { renderSummary, summarise as summariseRuns } from "./lab/stats.ts";
 import { loadTasks, type LabTask } from "./lab/task.ts";
 import { forgetLedger, forgetPreview } from "./security/forget.ts";
+import { invoicesCommand } from "./billing/command.ts";
 import { backfillClaudeCodeFields } from "./ledger/backfill.ts";
 import { costVersions, listRepricings, renderRepricing, repriceLedger } from "./pricing/reprice.ts";
 import { refreshTasks } from "./tasks/assign.ts";
@@ -137,6 +138,11 @@ const { values, positionals } = parseOrExit({
     second: { type: "string" },
     portkey: { type: "string" },
     reason: { type: "string" },
+    vendor: { type: "string" },
+    currency: { type: "string" },
+    period: { type: "string" },
+    month: { type: "string" },
+    by: { type: "string" },
     preview: { type: "boolean", default: false },
     call: { type: "string" },
     backfill: { type: "boolean", default: false },
@@ -179,6 +185,18 @@ const db = command === "card" || command === "status" || command === "lab" ? ope
 
 if (command === "help") {
   console.log(helpText());
+} else if (command === "invoices") {
+  console.log(
+    invoicesCommand(positionals.slice(1), db, {
+      ...(values.vendor ? { vendor: values.vendor } : {}),
+      ...(values.currency ? { currency: values.currency } : {}),
+      ...(values.period ? { period: values.period } : {}),
+      ...(values.month ? { month: values.month } : {}),
+      ...(values.by ? { by: values.by } : {}),
+      ...(values.reason ? { reason: values.reason } : {}),
+      ...(values.tolerance !== "0.1" ? { tolerancePct: Number(values.tolerance) } : {}),
+    }),
+  );
 } else if (command === "task") {
   const markerPath = defaultMarkerPath();
   if (positionals[1] === "run") {

@@ -326,7 +326,56 @@ CREATE INDEX cost_event_history_call ON cost_event_history (call_id);
 CREATE INDEX cost_event_history_repricing ON cost_event_history (repricing_id);
 `;
 
-const MIGRATIONS: readonly string[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8];
+// Invoices and usage exports the owner imported, their lines with the place each came from, and what they were reconciled against (DF-024, DF-027).
+const SCHEMA_V9 = `
+CREATE TABLE invoice (
+  invoice_id TEXT PRIMARY KEY,
+  vendor TEXT NOT NULL,
+  invoice_number TEXT,
+  currency TEXT NOT NULL,
+  period_start TEXT NOT NULL,
+  period_end TEXT NOT NULL,
+  stated_total_micros INTEGER,
+  lines_total_micros INTEGER NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('imported', 'sum_mismatch', 'conflict')),
+  notes TEXT NOT NULL DEFAULT '[]',
+  source_name TEXT NOT NULL,
+  source_sha256 TEXT NOT NULL,
+  imported_at TEXT NOT NULL
+);
+CREATE UNIQUE INDEX invoice_number ON invoice (vendor, invoice_number) WHERE invoice_number IS NOT NULL;
+
+CREATE TABLE billed_line (
+  invoice_id TEXT NOT NULL REFERENCES invoice (invoice_id) ON DELETE CASCADE,
+  line_no INTEGER NOT NULL,
+  day TEXT,
+  model TEXT,
+  description TEXT NOT NULL,
+  quantity REAL,
+  amount_micros INTEGER NOT NULL,
+  locator TEXT NOT NULL,
+  PRIMARY KEY (invoice_id, line_no)
+);
+CREATE INDEX billed_line_day ON billed_line (day);
+
+CREATE TABLE reconciliation (
+  vendor TEXT NOT NULL,
+  period TEXT NOT NULL,
+  currency TEXT NOT NULL,
+  billed_micros INTEGER,
+  estimated_micros INTEGER NOT NULL,
+  reported_micros INTEGER,
+  gap_micros INTEGER,
+  status TEXT NOT NULL CHECK (status IN ('reconciled', 'partial', 'unreconciled')),
+  reason TEXT NOT NULL,
+  unmatched_billed_micros INTEGER NOT NULL DEFAULT 0,
+  unmatched_estimated_micros INTEGER NOT NULL DEFAULT 0,
+  computed_at TEXT NOT NULL,
+  PRIMARY KEY (vendor, period, currency)
+);
+`;
+
+const MIGRATIONS: readonly string[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8, SCHEMA_V9];
 
 /** The schema version this build writes: the number of migrations. A reader compares a ledger's `user_version` with it. */
 export const SCHEMA_VERSION = MIGRATIONS.length;

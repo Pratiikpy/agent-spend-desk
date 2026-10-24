@@ -1,0 +1,24 @@
+# Invoices and reconciliation (2026-10-24)
+
+`desk invoices import <file.csv|file.pdf>` reads an invoice or a usage export into the ledger, and `desk invoices reconcile` sets what it says beside the Desk's estimate and the tool's own recorded cost, month by month. The Bill screen shows the billed class and the same comparison. This note records what was built, what was run, and what is not known.
+
+## What it does
+
+- **CSV.** A small RFC 4180 reader (quoted fields, doubled quotes, line breaks inside quotes, CRLF, a byte-order mark) that refuses a quote left open. Columns are found by name (`date`, `model`, `description`, `quantity`, `amount` or `cost_usd`, `currency`, `invoice`). Every amount is read from its digits to whole micro-units, so no floating point is involved; a style it would have to guess at (a decimal comma, a space as thousands separator, more than six decimals) is refused with the line number, not read wrongly. A leading currency sign or code, a minus sign and accounting parentheses are understood.
+- **A total row** ("Total", "Amount due", "Balance due") is the stated total, not a line, wherever in the row its label sits; a subtotal row is left out with a note. If the lines do not add up to the stated total the invoice is stored **on hold** (`sum_mismatch`) and is left out of every reconciliation until `desk invoices accept <id> --reason "..."`, which keeps the reason with it.
+- **Currency.** A file that never states its currency is refused (say it with `--currency`); a file that mixes currencies is refused; an invoice in another currency is stored and shown but never compared with the USD estimate, and nothing is converted.
+- **Month.** Lines carry their date; for a file without dates `--period YYYY-MM` places it, and the note says the period was given, not read.
+- **PDF.** Read twice by `pdftotext` (poppler) in layout mode and in raw mode, in a throwaway folder, with no shell, a 30-second limit, a 20 MB output limit and an environment that holds only the program path. Every line that ends in an amount is taken from each reading and the two lists must hold the same amounts. If they do not, nothing is imported and each reading's own amounts are printed. A PDF cannot state its currency, vendor or month in a way this reader trusts, so those must be given.
+- **Identity.** The file's hash is the invoice id, so the same file twice changes nothing; a different file with the same vendor and invoice number is refused rather than replacing the first.
+- **Reconciliation** per vendor and month: `reconciled` only when an invoice covers every day of the month, the models on the invoice are the models in the ledger, and the totals are within the tolerance (2% by default; a parameter shown on screen, not a claim of accuracy). `partial` says what is missing (the days covered, or the unmatched models and their dollars); `unreconciled` says why (a gap of 11.5%, no invoice, a hold, another currency). The tool's own recorded cost sits beside both and replaces neither.
+- **Allocation.** `desk invoices allocate --month YYYY-MM --by session|model|task` splits the billed total across sessions, models or tasks in proportion to their estimates with largest-remainder rounding, so the parts sum to the billed total exactly (a credit keeps its sign). It is labelled "billed total, allocated by estimate" because the invoice does not know which session cost what.
+
+## What was run
+
+- 35 tests of the readers, the store and the reconciliation (`tests/desk/billing.test.ts`), including `0.1 + 0.2 = 0.3` to the micro-unit, every refusal above, and allocations whose parts sum exactly.
+- 10 tests of the command (`tests/desk/invoices-command.test.ts`), one of which writes a real one-page PDF and reads it with the real `pdftotext` through the quarantined tool; the disagreement case is run with two stand-in readings.
+- The Bill screen test imports an invoice for the busiest month of the constructed ledger, built from the ledger's own per-model estimates, and checks the billed class, the reconciliation row and that its billed figure is the class's figure.
+
+## Not covered
+
+**No real invoice was read.** Every file here is constructed. Anthropic's own console export has a column layout this reader has not seen; it finds columns by name and will refuse one it cannot map rather than guess, but whether a real export imports without `--period` or `--vendor` is not known. A real PDF invoice from a vendor may state its lines in a way (tables across columns, amounts on a separate line from their descriptions) that the two readings both miss; the check catches two readings that disagree, not two that are both wrong. Invoices in a currency other than USD are not compared. Vendors other than Anthropic reconcile only to the extent the ledger holds their calls with a price (the Codex and OpenCode readers carry none). The Zetaris invoice silo is a separate path (Org data screen) and is not merged with this one.
