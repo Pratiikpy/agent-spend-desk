@@ -21,7 +21,7 @@ Contents: 1 In one minute · 2 A day with it · 3 How it works · 4 Everything i
 
 **Why trust it.** It treats every number as a claim. A figure is computed by code, never by the model. Each figure carries the rows it came from, says what it could not know, and says whether it is billed, reported, estimated or unpriced. Where the product fell short of its own label (a "90%" range that held 73% of the time), it says so on screen.
 
-**What it is not.** It is not a billing system: every dollar is a list-price estimate from logged tokens unless an invoice says otherwise. It does not see tools that have no hook. It has not been tried by a real team yet.
+**What it is not.** It is not a billing system: every dollar is a list-price estimate from logged tokens unless an invoice says otherwise. It governs a tool with no hook only if that tool is pointed at the gateway door. It has not been tried by a real team yet.
 
 ---
 
@@ -278,7 +278,8 @@ Team mode (roles, per-team caps, more than one approver); a CI check on policy c
 - Memory: H-MEM uses the engine's stub hash embedder, so recall is lexical; precedent retrieval in learning is by wording.
 - The wind tunnel's "90%" range held 73% of the time; read it as a screen.
 - The benchmark has one model, one constructed ledger and one question author, who also built the tools.
-- The gate stops Claude Code with the hook installed; a tool without a hook, or a removed hook, is not stopped.
+- The gate stops Claude Code with the hook installed and any tool pointed at the gateway door (verified on a real OpenAI-compatible endpoint; the Anthropic route only on a fake one). A tool that does neither, a removed hook, or a clock set forward is not stopped.
+- Claude Code's status line (plan limits) has not been run against a real session. Which Sonnet 5.5 cache-read price is in force ($0.10 or $0.20 per million tokens) is not known.
 - The video is rendered but not uploaded; the HackOS submission is not created.
 
 ### 7.5 Planned, not built (see `docs/plan/05-desk-evidence-driven-build-plan.md`)
