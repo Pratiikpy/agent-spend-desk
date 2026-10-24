@@ -186,6 +186,21 @@ describe("git reader and the full pipeline", () => {
     expect((db.prepare("SELECT COUNT(*) n FROM session_commit").get() as { n: number }).n).toBe(1);
   });
 
+  it("stores a commit's author as a pseudonym and never as an e-mail address", async () => {
+    write("src/app.ts", "x");
+    git(repo, ["add", "-A"]);
+    git(repo, ["commit", "-q", "-m", "app"], "2026-10-20T10:20:00Z");
+    const log = dir.file("a.jsonl", [assistantLine({ id: "m1", ts: "2026-10-20T10:00:00Z", output: 10, tools: ["Edit"], toolInputs: [{ file_path: join(repo, "src", "app.ts") }] })]);
+    await ingestClaudeCode(db, [log], testSnapshot());
+    linkOutcomes(db, [repo], NOW);
+    const authors = (db.prepare("SELECT author_email FROM git_commit").all() as { author_email: string }[]).map((r) => r.author_email);
+    expect(authors.length).toBeGreaterThan(0);
+    for (const a of authors) {
+      expect(a).toMatch(/^h:[0-9a-f]{12}$/);
+      expect(a).not.toContain("test@example.com");
+    }
+  });
+
   it("marks a session whose commit was later reverted as reverted", async () => {
     write("src/app.ts", "x");
     git(repo, ["add", "-A"]);

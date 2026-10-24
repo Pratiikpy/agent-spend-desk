@@ -6,6 +6,7 @@ import { loadAutopsyCalls } from "../autopsy/load.ts";
 import { buildCard } from "../card/build.ts";
 import type { Ledger } from "../ledger/db.ts";
 import { landingBreakdown } from "../outcomes/breakdown.ts";
+import { reconcile, summariseReconciliation, type ReconcileRow } from "../reconcile/reconcile.ts";
 import type { PriceSnapshot } from "../pricing/pricebook.ts";
 import { describeWidening, restrictCheck } from "../policy/restrict.ts";
 import { parsePolicyYaml } from "../policy/parse.ts";
@@ -166,6 +167,14 @@ export const SCREENS = [
 
 // ---------------------------------------------------------------------------------------------- bill
 
+/** What the tool recorded for its own cost in a period, from the processes whose last record falls in it; null when this ledger predates the table. */
+function reportedInSpan(ctx: UiContext, span: Span): { rows: ReconcileRow[]; summary: ReturnType<typeof summariseReconciliation> } | null {
+  const has = one<{ n: number }>(ctx.db, "SELECT COUNT(*) AS n FROM sqlite_master WHERE type = 'table' AND name = 'reported_cost'");
+  if (!has || has.n === 0) return null;
+  const rows = reconcile(ctx.db).filter((r) => r.observedAt !== null && r.observedAt >= span.sinceIso && r.observedAt <= span.untilIso);
+  return { rows, summary: summariseReconciliation(rows) };
+}
+
 export function bill(ctx: UiContext, span: Span): object {
   const empty = emptyState(ctx);
   if (empty) return empty;
@@ -203,10 +212,11 @@ export function bill(ctx: UiContext, span: Span): object {
     totals: { ...t, pricedShare: t.pricedCalls + t.unpricedCalls === 0 ? 0 : t.pricedCalls / (t.pricedCalls + t.unpricedCalls) },
     classes: [
       { cls: "billed", calls: 0, note: "Invoices are not read on this screen. When Zetaris is connected the invoice figures are on Org data." },
-      { cls: "reported", calls: 0, note: "No tool reported its own cost." },
+      reportedClass(reportedInSpan(ctx, span)),
       { cls: "estimated", calls: t.pricedCalls, micros: t.estimatedMicros, note: "List price times logged tokens." },
       { cls: "unpriced", calls: t.unpricedCalls, note: "Models with no price row: tokens counted, no dollars invented." },
     ],
+    reconciliation: reconciliationSummary(reportedInSpan(ctx, span)),
     landing: { rows: landingRows(landing), totalMicros: landing.totalMicros, lowConfidenceMicros: landing.lowConfidenceMicros, linked: hasLinks(ctx.db) },
     costPerLandedSession: landed === 0 ? null : Math.round(landedMicros / landed),
     landedSessions: landed,
@@ -216,6 +226,35 @@ export function bill(ctx: UiContext, span: Span): object {
     byModel,
     byProject: [...merged.values()].sort((a, b) => b.micros - a.micros),
     snapshotId: ctx.snapshot.snapshotId,
+  };
+}
+
+function reportedClass(r: ReturnType<typeof reportedInSpan>): object {
+  if (r === null) return { cls: "reported", calls: 0, processes: 0, note: "This ledger was written before the tool's own cost was read. Run `desk ingest` once to read it." };
+  if (r.rows.length === 0) return { cls: "reported", calls: 0, processes: 0, note: "The tool recorded no cost of its own in this period (older Claude Code versions do not write one)." };
+  return {
+    cls: "reported",
+    calls: r.rows.reduce((s, x) => s + x.calls, 0),
+    processes: r.rows.length,
+    micros: r.summary.reportedMicros,
+    note: "The tool's own running total for those processes, cumulative from each process's start. It lags and undercounts when sub-agents run, and it uses an older cache-read price for Sonnet 5.5 and Opus 5.5. It is not an invoice.",
+  };
+}
+
+function reconciliationSummary(r: ReturnType<typeof reportedInSpan>): object | null {
+  if (r === null || r.rows.length === 0) return null;
+  const s = r.summary;
+  return {
+    processes: s.processes,
+    match: s.match,
+    estimateLow: s.estimateLow,
+    estimateHigh: s.estimateHigh,
+    reportedMicros: s.reportedMicros,
+    estimatedMicros: s.estimatedMicros,
+    medianAbsPctError: s.medianAbsPctError,
+    withoutSubAgents: s.withoutSubAgents,
+    withSubAgents: s.withSubAgents,
+    toleranceNote: "Agree means within 2% of the tool's own figure. Neither figure is an invoice.",
   };
 }
 

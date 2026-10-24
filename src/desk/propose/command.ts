@@ -7,6 +7,7 @@ import { openLedger } from "../ledger/db.ts";
 import { parsePolicyYaml, usdToMicros } from "../policy/parse.ts";
 import { loadSnapshot } from "../pricing/pricebook.ts";
 import { replaySessionsFromLedger } from "../replay/from-ledger.ts";
+import { describeRecord, proposalDecisionRecord, writeDecisionRecord } from "../decision/from-proposal.ts";
 import { propose, renderProposal, writeProposal } from "./run.ts";
 import { buildPolicyChangePack } from "../dossier/policy-change.ts";
 import { issueApproval, type DossierPaths } from "../dossier/command.ts";
@@ -67,6 +68,8 @@ export async function proposeCommand(o: ProposeCommandOptions): Promise<string> 
     const trace = new MemoryTrace();
     const result = await propose({ current, sessions, splitMs, targetMinMicros: usdToMicros(o.minUsd, "--min-usd"), port, trace, budget: new Budget(DRAFT_LIVE) });
     const files = writeProposal(result, o.outDir);
+    const record = proposalDecisionRecord({ result, sessions, splitMs, now: new Date() });
+    const recordLine = describeRecord(record, writeDecisionRecord(record, o.outDir));
     let tail = "";
     if (o.dossier) {
       if (!result.restrict.narrows) {
@@ -87,7 +90,7 @@ export async function proposeCommand(o: ProposeCommandOptions): Promise<string> 
         tail = "\n" + "\n" + issued.text;
       }
     }
-    return `${renderProposal(result, { sessions, splitMs })}\nmodel route: ${label}\nwritten: ${files.policyPath}, ${files.tracePath}${tail}`;
+    return `${renderProposal(result, { sessions, splitMs })}\nmodel route: ${label}\nwritten: ${files.policyPath}, ${files.tracePath}\n${recordLine}${tail}`;
   } finally {
     db.close();
   }

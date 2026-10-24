@@ -2,6 +2,7 @@ import { resolve, sep } from "node:path";
 
 import type { Ledger } from "../ledger/db.ts";
 import { assignCommits, outcomeOf, type Confidence, type LandingState, type Link, type SessionFacts } from "./attribute.ts";
+import { pseudonym } from "../security/secrets.ts";
 import { relativeTo, scanRepo, type GitCommit } from "./git.ts";
 
 export interface LinkReport {
@@ -68,7 +69,7 @@ export function linkOutcomes(db: Ledger, repoRoots: readonly string[], nowMs: nu
       const repoId = (insertRepo.get(root, scan.defaultRef, new Date(nowMs).toISOString()) as { repo_id: number }).repo_id;
       report.repos += 1;
       for (const c of scan.commits) {
-        insertCommit.run(repoId, c.sha, c.authoredAt, c.authorEmail, c.agentTrailer ? 1 : 0, JSON.stringify(c.files), c.merged ? 1 : 0, c.reverted ? 1 : 0);
+        insertCommit.run(repoId, c.sha, c.authoredAt, pseudonym(c.authorEmail), c.agentTrailer ? 1 : 0, JSON.stringify(c.files), c.merged ? 1 : 0, c.reverted ? 1 : 0);
         report.commits += 1;
       }
       const commitMap = new Map(scan.commits.map((c) => [c.sha, c]));

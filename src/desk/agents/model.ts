@@ -1,7 +1,9 @@
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { jsonlEgress, type EgressEntry } from "../security/egress.ts";
+import { maskSecrets } from "../security/secrets.ts";
 import type { Budget } from "./budget.ts";
 import { NULL_TRACE, type Trace } from "./trace.ts";
 
@@ -11,6 +13,22 @@ export interface ChatMessage {
   tool_call_id?: string;
   /** On an assistant turn that called tools: the calls, in the form the chat API expects them back. */
   tool_calls?: { id: string; type: "function"; function: { name: string; arguments: string } }[];
+}
+
+/** The messages with every credential-shaped string (and the given known values) masked, and how many were masked. */
+export function maskMessages(messages: readonly ChatMessage[], known: readonly string[]): { messages: ChatMessage[]; count: number } {
+  let count = 0;
+  const mask = (text: string): string => {
+    const r = maskSecrets(text, known);
+    count += r.count;
+    return r.text;
+  };
+  const out = messages.map((m): ChatMessage => ({
+    ...m,
+    content: mask(m.content),
+    ...(m.tool_calls ? { tool_calls: m.tool_calls.map((c) => ({ ...c, function: { ...c.function, arguments: mask(c.function.arguments) } })) } : {}),
+  }));
+  return { messages: out, count };
 }
 
 export interface ToolSpec {
@@ -96,9 +114,11 @@ export interface OpenAiConfig {
   backoffMs?: readonly number[];
   random?: () => number;
   fetchImpl?: typeof fetch;
+  /** Told, for every request sent, where it went, how big it was, its hash and how many secrets were masked: never the text. */
+  onEgress?: (e: EgressEntry) => void;
 }
 
-function isNvidiaHost(baseUrl: string): boolean {
+export function isNvidiaHost(baseUrl: string): boolean {
   try {
     return new URL(baseUrl).hostname.endsWith("nvidia.com");
   } catch {
@@ -129,7 +149,7 @@ export function readNightshiftReceipt(meterless: unknown): NightshiftReceipt | u
 
 /** An OpenAI-compatible chat endpoint: NVIDIA's API or a Meterless Nightshift URL. Only the three settings differ. Nightshift is claimed only when its receipt is in the reply. */
 export class OpenAiPort implements ModelPort {
-  private readonly cfg: Required<Omit<OpenAiConfig, "fetchImpl">> & { fetchImpl: typeof fetch };
+  private readonly cfg: Required<Omit<OpenAiConfig, "fetchImpl" | "onEgress">> & { fetchImpl: typeof fetch; onEgress?: (e: EgressEntry) => void };
   constructor(cfg: OpenAiConfig) {
     this.cfg = {
       sleep: (ms) => new Promise((r) => setTimeout(r, ms)),
@@ -163,11 +183,17 @@ export class OpenAiPort implements ModelPort {
   }
 
   private async once(request: ModelRequest, timeoutMs: number): Promise<ModelResponse> {
+    // Nothing leaves this machine with a credential in it: known shapes and this port's own key are masked in every
+    // outgoing message, and the count is reported (never the text) to whoever asked for an egress log.
+    const masked = maskMessages(request.messages, [this.cfg.apiKey]);
     const body: Record<string, unknown> = {
       model: this.cfg.model,
-      messages: request.messages,
+      messages: masked.messages,
       max_tokens: request.maxTokens ?? 1024,
       temperature: request.temperature ?? 0,
+      // Stated, not left to the endpoint: Nightshift fills in top_p 0.95 for this model when a request omits it, so the same
+      // sampled request would be drawn differently on the two routes. 1 is NVIDIA's own default.
+      top_p: 1,
       chat_template_kwargs: { enable_thinking: false },
     };
     if (request.tools && request.tools.length > 0) {
@@ -175,26 +201,35 @@ export class OpenAiPort implements ModelPort {
     }
     if (request.json) body["response_format"] = { type: "json_object" };
 
+    const payload = JSON.stringify(body);
+    this.logEgress(request.role, payload, masked.count);
+    const scrub = (text: string): string => maskSecrets(text, [this.cfg.apiKey]).text;
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     let res: Response;
     try {
       res = await this.cfg.fetchImpl(`${this.cfg.baseUrl.replace(/\/$/, "")}/chat/completions`, {
         method: "POST",
-        headers: { "content-type": "application/json", authorization: `Bearer ${this.cfg.apiKey}` },
-        body: JSON.stringify(body),
+        headers: {
+          "content-type": "application/json",
+          authorization: `Bearer ${this.cfg.apiKey}`,
+          // Nightshift keeps a response cache keyed on the prompt, and on 2026-10-24 it answered a repeat of a planner request from that
+          // cache with an empty message and no tool call (`from_cache: true`, 4 ms). A scope no other request shares keeps every call fresh.
+          ...(isNvidiaHost(this.cfg.baseUrl) ? {} : { "meterless-scope": `desk-${randomUUID()}`, "meterless-ttfb-ms": String(Math.min(300_000, Math.max(1_000, Math.floor(timeoutMs)))) }),
+        },
+        body: payload,
         signal: controller.signal,
       });
     } catch (e) {
       if (controller.signal.aborted) throw new ModelError("transient", `no reply within ${timeoutMs} ms`);
-      throw new ModelError("transient", `network error: ${(e as Error).message}`);
+      throw new ModelError("transient", scrub(`network error: ${(e as Error).message}`));
     } finally {
       clearTimeout(timer);
     }
     if (res.status === 429 || res.status >= 500) throw new ModelError("transient", `HTTP ${res.status}`, res.status);
     if (!res.ok) {
       const text = await res.text().catch(() => "");
-      throw new ModelError("non_transient", `HTTP ${res.status}${text ? `: ${text.replace(/\s+/g, " ").slice(0, 200)}` : ""}`, res.status);
+      throw new ModelError("non_transient", scrub(`HTTP ${res.status}${text ? `: ${text.replace(/\s+/g, " ").slice(0, 200)}` : ""}`), res.status);
     }
 
     let parsed: unknown;
@@ -204,6 +239,21 @@ export class OpenAiPort implements ModelPort {
       throw new ModelError("non_transient", "reply was not JSON");
     }
     return this.read(parsed);
+  }
+
+  private logEgress(role: string, payload: string, redactions: number): void {
+    if (!this.cfg.onEgress) return;
+    try {
+      let host = "unknown";
+      try {
+        host = new URL(this.cfg.baseUrl).hostname;
+      } catch {
+        /* keep "unknown" */
+      }
+      this.cfg.onEgress({ ts: new Date().toISOString(), host, role, bytes: Buffer.byteLength(payload), sha256: createHash("sha256").update(payload).digest("hex"), redactions });
+    } catch {
+      /* a failing log must never stop a call */
+    }
   }
 
   private read(raw: unknown): ModelResponse {
@@ -235,7 +285,9 @@ export class OpenAiPort implements ModelPort {
     }
     if (content.trim() === "" && toolCalls.length === 0) {
       const reasoningOnly = typeof message.reasoning_content === "string" && message.reasoning_content.length > 0;
-      throw new ModelError("non_transient", reasoningOnly ? "reasoning-only reply, no answer" : "empty reply");
+      // A hosted model now and then returns nothing at all for a request it answered a moment before; that is worth another try.
+      // A reply that holds only reasoning is not: the same request would think again and still not answer.
+      throw new ModelError(reasoningOnly ? "non_transient" : "transient", reasoningOnly ? "reasoning-only reply, no answer" : "empty reply");
     }
     const usage = o.usage
       ? { inputTokens: o.usage.prompt_tokens ?? 0, outputTokens: o.usage.completion_tokens ?? 0, reasoningTokens: o.usage.completion_tokens_details?.reasoning_tokens ?? 0 }
@@ -349,5 +401,6 @@ export function portFromEnv(env: Record<string, string | undefined>, cassetteDir
   if (!baseUrl || !apiKey || !model) {
     throw new ModelError("non_transient", "model not configured: set MODEL_BASE_URL, MODEL_API_KEY and NEMOTRON_MODEL (or the NVIDIA_ names), or run with SAMPLE_MODE=true");
   }
-  return new OpenAiPort({ baseUrl, apiKey, model, ...(opts.backoffMs ? { backoffMs: opts.backoffMs } : {}) });
+  const egressPath = env["DESK_EGRESS_LOG"] ?? "data/desk/egress.jsonl";
+  return new OpenAiPort({ baseUrl, apiKey, model, ...(opts.backoffMs ? { backoffMs: opts.backoffMs } : {}), ...(egressPath === "off" ? {} : { onEgress: jsonlEgress(egressPath) }) });
 }

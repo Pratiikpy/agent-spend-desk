@@ -265,10 +265,44 @@ describe("OpenAI-compatible port", () => {
     expect(count()).toBe(3);
   });
 
-  it("does not retry a 400, an empty reply, a reasoning-only reply or bad tool arguments", async () => {
+  it("states top_p, so that a gateway's default nucleus value cannot change a sampled draw", async () => {
+    const bodies: Record<string, unknown>[] = [];
+    const port = new OpenAiPort({ baseUrl: "http://127.0.0.1:8088/v1", apiKey: "k", model: "m", backoffMs: [], fetchImpl: (async (_url: unknown, init?: RequestInit) => { bodies.push(JSON.parse(String(init?.body))); return reply(); }) as typeof fetch });
+    await port.complete({ ...req, temperature: 0.7 }, 5000);
+    expect(bodies[0]).toMatchObject({ temperature: 0.7, top_p: 1 });
+  });
+
+  it("gives every request to a gateway its own cache scope, and sends no such header to NVIDIA", async () => {
+    const seen: Record<string, string>[] = [];
+    const mkPort = (baseUrl: string) => new OpenAiPort({ baseUrl, apiKey: "k", model: "m", backoffMs: [], fetchImpl: (async (_u: unknown, init?: RequestInit) => { seen.push(init?.headers as Record<string, string>); return reply(); }) as typeof fetch });
+    const local = mkPort("http://127.0.0.1:8088/v1");
+    await local.complete(req, 5000);
+    await local.complete(req, 5000);
+    // Nightshift stops a cloud lane that sends no first token within its own limit; the call's own deadline is the limit we mean.
+    expect(Number(seen[0]!["meterless-ttfb-ms"])).toBeGreaterThan(0);
+    expect(Number(seen[0]!["meterless-ttfb-ms"])).toBeLessThanOrEqual(5000);
+    expect(seen[0]!["meterless-scope"]).toMatch(/^desk-[0-9a-f-]{16,}$/);
+    expect(seen[1]!["meterless-scope"]).toMatch(/^desk-/);
+    expect(seen[0]!["meterless-scope"]).not.toBe(seen[1]!["meterless-scope"]);
+    await mkPort("https://integrate.api.nvidia.com/v1").complete(req, 5000);
+    expect(seen[2]!["meterless-scope"]).toBeUndefined();
+    expect(seen[2]!["meterless-ttfb-ms"]).toBeUndefined();
+  });
+
+  it("retries an empty reply, which the hosted model returns now and then, and gives up after the cap", async () => {
+    const empty = () => reply({ choices: [{ message: { content: "" } }] });
+    const { port, count, sleeps } = mk([empty(), empty(), reply()]);
+    expect((await port.complete(req, 5000)).content).toBe("hi");
+    expect(count()).toBe(3);
+    expect(sleeps).toEqual([10, 20]);
+    const stuck = mk([empty(), empty(), empty()]);
+    await expect(stuck.port.complete(req, 5000)).rejects.toMatchObject({ kind: "transient", message: expect.stringContaining("empty reply") });
+    expect(stuck.count()).toBe(3);
+  });
+
+  it("does not retry a 400, a reasoning-only reply or bad tool arguments", async () => {
     for (const r of [
       reply({}, 400),
-      reply({ choices: [{ message: { content: "" } }] }),
       reply({ choices: [{ message: { content: null, reasoning_content: "thinking" } }] }),
       reply({ choices: [{ message: { content: null, tool_calls: [{ id: "1", function: { name: "q", arguments: "{oops" } }] } }] }),
       reply({ choices: [] }),

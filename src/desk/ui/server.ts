@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import { DatabaseSync } from "node:sqlite";
 
 import { createRedactor } from "../card/redact.ts";
-import { openLedger, type Ledger } from "../ledger/db.ts";
+import { OLDEST_READABLE_VERSION, openLedger, SCHEMA_VERSION, type Ledger } from "../ledger/db.ts";
 import { loadSnapshot } from "../pricing/pricebook.ts";
 import * as q from "./queries.ts";
 import { askScreen, canaryScreen, dossiersScreen, silosScreen, type ExtraPaths } from "./extra.ts";
@@ -20,7 +20,6 @@ const FONT_FILES = ["Outfit-Regular.ttf", "Outfit-SemiBold.ttf", "JetBrainsMono-
 
 const MAX_URL_CHARS = 2048;
 const CACHE_TTL_MS = 60_000;
-const SCHEMA_VERSION = 3;
 
 const TYPES: Record<string, string> = {
   ".html": "text/html; charset=utf-8",
@@ -65,9 +64,9 @@ function openReadOnly(path: string): { db: Ledger; problem: string | null } {
   try {
     const db = new DatabaseSync(path, { readOnly: true });
     const v = (db.prepare("PRAGMA user_version").get() as { user_version: number }).user_version;
-    if (v < SCHEMA_VERSION) {
+    if (v < OLDEST_READABLE_VERSION) {
       db.close();
-      return { db: openLedger(":memory:"), problem: `${name} was written by an older build (schema ${v}, this build reads ${SCHEMA_VERSION}). Run \`desk ingest\` once to upgrade it.` };
+      return { db: openLedger(":memory:"), problem: `${name} was written by an older build (schema ${v}, this build reads ${OLDEST_READABLE_VERSION} to ${SCHEMA_VERSION}). Run \`desk ingest\` once to upgrade it.` };
     }
     if (v > SCHEMA_VERSION) {
       db.close();

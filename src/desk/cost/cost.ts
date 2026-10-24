@@ -1,5 +1,5 @@
 import { allocateExact, assertSafeInt, divRound, TOKENS_PER_MTOK, type Micros } from "../money.ts";
-import type { PriceRow } from "../pricing/pricebook.ts";
+import { promptTokens, type PriceRow } from "../pricing/pricebook.ts";
 
 export interface TokenCounts {
   inputTokens: number;
@@ -29,7 +29,9 @@ export interface CostResult {
  * to the total exactly. Reasoning tokens are a share of output tokens and are not billed
  * twice: they are recorded elsewhere, never added here.
  */
-export function listPriceCost(tokens: TokenCounts, price: PriceRow): CostResult {
+export function listPriceCost(tokens: TokenCounts, row: PriceRow): CostResult {
+  // A model priced by prompt length pays the higher prices on every token of a request whose prompt is over the line.
+  const price = row.longPrompt && promptTokens(tokens) > row.longPrompt.overPromptTokens ? row.longPrompt : row;
   const parts = [
     ["input", tokens.inputTokens, price.inputPerMTokMicros],
     ["output", tokens.outputTokens, price.outputPerMTokMicros],

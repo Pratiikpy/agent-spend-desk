@@ -3,6 +3,7 @@ import { statSync } from "node:fs";
 import { listPriceCost } from "../cost/cost.ts";
 import { parseClaudeCodeLine, type ParsedCall } from "../ingest/claude-code.ts";
 import { readJsonlLines } from "../ingest/jsonl.ts";
+import { maskStored } from "../security/secrets.ts";
 import { resolvePrice, type PriceSnapshot } from "../pricing/pricebook.ts";
 import type { Ledger } from "./db.ts";
 
@@ -109,6 +110,14 @@ export async function ingestClaudeCode(
   );
   const insertEdit = db.prepare("INSERT OR IGNORE INTO session_edit (tool_use_id, session_id, path, ts) VALUES (?, ?, ?, ?)");
   const insertPrompt = db.prepare("INSERT OR IGNORE INTO human_prompt (prompt_id, session_id, ts) VALUES (?, ?, ?)");
+  const getReported = db.prepare("SELECT total_micros FROM reported_cost WHERE session_id = ? AND process_start_ms = ?");
+  const putReported = db.prepare(
+    `INSERT OR REPLACE INTO reported_cost (session_id, process_start_ms, total_micros, api_duration_ms, lines_added, lines_removed, unknown_model_cost, observed_ts) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+  );
+  const clearReportedModels = db.prepare("DELETE FROM reported_model_usage WHERE session_id = ? AND process_start_ms = ?");
+  const putReportedModel = db.prepare(
+    `INSERT INTO reported_model_usage (session_id, process_start_ms, model, input_tokens, output_tokens, thinking_tokens, cache_read_tokens, cache_write_tokens, cost_micros) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  );
   const touched = new Set<string>();
   const touchedSessions = new Set<string>();
 
@@ -122,6 +131,12 @@ export async function ingestClaudeCode(
     }
     report.files += 1;
     let committedOffset = offset;
+    // The latest message time seen in this file so far, so a cost record can say how far its counter reached. A file read
+    // in several runs starts from what the earlier runs stored.
+    let lastTs: string | null = (db.prepare("SELECT MAX(m.ts) AS t FROM model_call m JOIN ingest_source s ON s.id = m.source_id WHERE s.path = ?").get(file) as { t: string | null }).t;
+    const seenAt = (ts: string): void => {
+      if (lastTs === null || Date.parse(ts) > Date.parse(lastTs)) lastTs = ts;
+    };
 
     db.exec("BEGIN");
     try {
@@ -141,13 +156,25 @@ export async function ingestClaudeCode(
           report.malformedReasons[outcome.reason] = (report.malformedReasons[outcome.reason] ?? 0) + 1;
         } else if (outcome.kind === "call") {
           mergeOrInsert(outcome.call, sourceId);
+          seenAt(outcome.call.ts);
+        } else if (outcome.kind === "cost_state") {
+          // The counters only grow within a process, so the largest record is the latest one.
+          const s = outcome.state;
+          const known = getReported.get(s.sessionId, s.processStartMs) as { total_micros: number } | undefined;
+          if (!known || s.totalMicros >= known.total_micros) {
+            putReported.run(s.sessionId, s.processStartMs, s.totalMicros, s.apiDurationMs, s.linesAdded, s.linesRemoved, s.unknownModelCost ? 1 : 0, lastTs);
+            clearReportedModels.run(s.sessionId, s.processStartMs);
+            for (const m of s.models) putReportedModel.run(s.sessionId, s.processStartMs, m.model, m.inputTokens, m.outputTokens, m.thinkingTokens, m.cacheReadTokens, m.cacheWriteTokens, m.costMicros);
+          }
         } else if (outcome.kind === "tool_results") {
           for (const r of outcome.results) {
             upsertToolResult.run(r.toolUseId, r.sessionId, r.ts, r.isError ? 1 : 0, r.resultChars);
+            seenAt(r.ts);
             report.toolResults += 1;
           }
         } else if (outcome.kind === "human_prompt") {
           insertPrompt.run(outcome.prompt.promptId, outcome.prompt.sessionId, outcome.prompt.ts);
+          seenAt(outcome.prompt.ts);
           report.humanPrompts += 1;
         }
         committedOffset = line.endOffset;
@@ -172,7 +199,7 @@ export async function ingestClaudeCode(
   function mergeOrInsert(call: ParsedCall, sourceId: number): void {
     touched.add(call.callId);
     touchedSessions.add(call.sessionId);
-    insertSession.run(call.sessionId, call.cwd, call.gitBranch, call.toolVersion);
+    insertSession.run(call.sessionId, maskStored(call.cwd), maskStored(call.gitBranch), maskStored(call.toolVersion));
     const existing = getCall.get(call.callId) as ExistingCall | undefined;
     if (!existing) {
       insertCall.run(
@@ -215,7 +242,7 @@ export async function ingestClaudeCode(
     for (const t of call.toolUses) {
       const r = insertToolCall.run(t.toolUseId, call.callId, call.sessionId, t.name, t.inputHash, call.ts);
       report.toolCalls += Number(r.changes);
-      if (t.editedPath) insertEdit.run(t.toolUseId, call.sessionId, t.editedPath, call.ts);
+      if (t.editedPath) insertEdit.run(t.toolUseId, call.sessionId, maskStored(t.editedPath), call.ts);
     }
   }
 }

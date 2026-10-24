@@ -14,7 +14,7 @@ export interface Redactor {
   counts(): Record<RedactionKind, number>;
 }
 
-const CREDENTIAL_SHAPES: RegExp[] = [
+export const CREDENTIAL_SHAPES: RegExp[] = [
   /\bsk-[A-Za-z0-9_-]{16,}\b/g,
   /\bnvapi-[A-Za-z0-9_-]{16,}\b/g,
   /\bgh[pousr]_[A-Za-z0-9]{30,}\b/g,

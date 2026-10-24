@@ -4,12 +4,30 @@ import { readFileSync } from "node:fs";
 import { canonicalJson } from "../../runtime/canonical.ts";
 
 /** Prices are integer micro-USD per million tokens, dated and sourced (spec 4.3). */
-export interface PriceRow {
+export interface BasePrices {
   inputPerMTokMicros: number;
   outputPerMTokMicros: number;
   cacheReadPerMTokMicros: number;
   cacheWrite5mPerMTokMicros: number;
   cacheWrite1hPerMTokMicros: number;
+}
+
+/**
+ * Higher prices for a request whose prompt is over a length. Anthropic prices Claude Haiku 5.5 this way: a request whose
+ * prompt (fresh input, cache reads and cache writes together) is over 100,000 tokens pays the higher prices on all of
+ * its tokens, each request on its own. Every other current model has one set of prices.
+ */
+export interface LongPromptTier extends BasePrices {
+  overPromptTokens: number;
+}
+
+export interface PriceRow extends BasePrices {
+  longPrompt?: LongPromptTier;
+}
+
+/** The length of a request's prompt: every input token, whether fresh, read from cache or written to it. */
+export function promptTokens(t: { inputTokens: number; cacheReadTokens: number; cacheWrite5mTokens: number; cacheWrite1hTokens: number }): number {
+  return t.inputTokens + t.cacheReadTokens + t.cacheWrite5mTokens + t.cacheWrite1hTokens;
 }
 
 export interface PriceSnapshot {
@@ -30,7 +48,7 @@ export type PriceResolution =
 
 const ALIASES_WITHOUT_VERSION = new Set(["sonnet", "haiku", "opus", "fable", "mythos"]);
 
-const PRICE_FIELDS: readonly (keyof PriceRow)[] = [
+const PRICE_FIELDS: readonly (keyof BasePrices)[] = [
   "inputPerMTokMicros",
   "outputPerMTokMicros",
   "cacheReadPerMTokMicros",
@@ -56,12 +74,25 @@ export function parseSnapshot(raw: unknown): PriceSnapshot {
   for (const [name, rowRaw] of Object.entries(modelsRaw as Record<string, unknown>)) {
     const row = rowRaw as Record<string, unknown>;
     const parsed = {} as PriceRow;
-    for (const f of PRICE_FIELDS) {
-      const v = row[f];
-      if (typeof v !== "number" || !Number.isSafeInteger(v) || v < 0) {
-        throw new TypeError(`price snapshot model ${name}: ${f} must be a non-negative integer`);
+    const readPrices = (from: Record<string, unknown>, label: string): BasePrices => {
+      const out = {} as BasePrices;
+      for (const f of PRICE_FIELDS) {
+        const v = from[f];
+        if (typeof v !== "number" || !Number.isSafeInteger(v) || v < 0) {
+          throw new TypeError(`price snapshot model ${label}: ${f} must be a non-negative integer`);
+        }
+        out[f] = v;
       }
-      parsed[f] = v;
+      return out;
+    };
+    Object.assign(parsed, readPrices(row, name));
+    const tier = row["longPrompt"];
+    if (tier !== undefined) {
+      if (typeof tier !== "object" || tier === null || Array.isArray(tier)) throw new TypeError(`price snapshot model ${name}: longPrompt must be an object`);
+      const t = tier as Record<string, unknown>;
+      const over = t["overPromptTokens"];
+      if (typeof over !== "number" || !Number.isSafeInteger(over) || over < 1) throw new TypeError(`price snapshot model ${name}: longPrompt.overPromptTokens must be a positive integer`);
+      parsed.longPrompt = { overPromptTokens: over, ...readPrices(t, `${name} longPrompt`) };
     }
     models[name] = parsed;
   }
@@ -80,6 +111,42 @@ export function parseSnapshot(raw: unknown): PriceSnapshot {
     throw new Error(`price snapshot ${snapshot.snapshotId}: contentHash does not match its models (file was edited)`);
   }
   return snapshot;
+}
+
+/** Prompt-length tiers read from a vendor's pricing page, with where they came from. */
+export interface TierSupplement {
+  supplementId: string;
+  source: string;
+  sourceUrl: string;
+  fetchedAt: string;
+  /** SHA-256 of the page text the tiers were read from. */
+  pageSha256: string;
+  tiers: Readonly<Record<string, LongPromptTier>>;
+}
+
+/**
+ * A new snapshot that is the given one plus prompt-length tiers. The id says both parts, the content hash is recomputed, and
+ * the note names the page the tiers were read from, so a figure priced with them can be traced to a source. The base
+ * snapshot is left exactly as it was: snapshots are dated and never edited.
+ */
+export function applyTiers(base: PriceSnapshot, sup: TierSupplement): PriceSnapshot {
+  const models: Record<string, PriceRow> = { ...base.models };
+  for (const [name, tier] of Object.entries(sup.tiers)) {
+    const row = models[name];
+    if (!row) throw new Error(`tier supplement ${sup.supplementId} names ${name}, which snapshot ${base.snapshotId} does not price`);
+    models[name] = { ...row, longPrompt: tier };
+  }
+  return parseSnapshot({
+    snapshotId: `${base.snapshotId}+${sup.supplementId}`,
+    source: `${base.source}; prompt-length tiers from ${sup.source}`,
+    sourceUrl: base.sourceUrl,
+    fetchedAt: base.fetchedAt,
+    license: base.license,
+    upstreamSha256: base.upstreamSha256,
+    note: `${base.note} Prompt-length tiers from ${sup.source} (${sup.sourceUrl}), page text sha256 ${sup.pageSha256}, read ${sup.fetchedAt}: a request whose prompt is over the stated length pays the higher prices on all its tokens.`,
+    contentHash: hashModels(models),
+    models,
+  });
 }
 
 export function loadSnapshot(path: string): PriceSnapshot {

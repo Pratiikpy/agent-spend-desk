@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
@@ -165,6 +165,25 @@ describe("the command", () => {
     openLedger(dbPath).close();
     expect(await proposeCommand({ ...base, dbPath })).toMatch(/No sessions in the ledger yet/);
   });
+
+  it("writes a decision record beside the proposal and says in the report what it recommends", async () => {
+    const dbPath = join(dir, "decision.db");
+    const db = openLedger(dbPath);
+    db.close();
+    // A ledger with sessions on both sides of a split, built from the constructed sample, so the command has something to propose from.
+    const { runCard } = await import("../../src/desk/card/run.ts");
+    await runCard({ mode: "sample", claudeDir: "", dbPath: "", pricesPath: base.pricesPath, outDir: join(dir, "card"), sampleDir: join(dir, "sample"), days: 14, hours: 5, repos: [], color: false });
+    const out = join(dir, "decision-out");
+    const text = await proposeCommand({ ...base, dbPath: join(dir, "sample", "ledger.db"), sampleMode: true, cassetteDir: "data/sample/cassettes", policyPath: "policies/daily-cap.yaml", personFromBranch: true, outDir: out });
+    const m = /decision record: (recommends [a-z ]+)(?: \(failed: [a-z, ]+\))?; evidence level estimated; written to (.+\.decision\.json)/.exec(text);
+    expect(m, text).not.toBeNull();
+    const file = (m as RegExpExecArray)[2] as string;
+    const parsed = JSON.parse(readFileSync(file, "utf8")) as { schema: string; alternatives: { summary: string }[]; evidenceLevel: string; approver: unknown };
+    expect(parsed.schema).toBe("desk.decision_record.v1");
+    expect(parsed.alternatives.some((a) => /do nothing/i.test(a.summary))).toBe(true);
+    expect(parsed.evidenceLevel).toBe("estimated");
+    expect(parsed.approver).toBeNull();
+  }, 120_000);
 
   it("chooses cassettes in SAMPLE_MODE, no model when nothing is configured, and the live model when configured", () => {
     expect(choosePort({ sampleMode: true, record: false, cassetteDir: dir, env: {} }).label).toMatch(/SAMPLE_MODE/);

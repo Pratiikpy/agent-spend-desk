@@ -63,8 +63,36 @@ export interface ParsedHumanPrompt {
   ts: string;
 }
 
+/**
+ * Claude Code writes a `cost-state` line into the session log with the cost it has itself counted for the running
+ * process (checked 2026-10-24 on logs from this machine). The counters are cumulative from `startTime`, the start of
+ * that process, so a log that was resumed has calls from before the counter began. It is the tool's own figure, and
+ * the one a computed estimate can be checked against.
+ */
+export interface ParsedCostModel {
+  model: string;
+  inputTokens: number;
+  outputTokens: number;
+  thinkingTokens: number;
+  cacheReadTokens: number;
+  cacheWriteTokens: number;
+  costMicros: number;
+}
+
+export interface ParsedCostState {
+  sessionId: string;
+  processStartMs: number;
+  totalMicros: number;
+  apiDurationMs: number | null;
+  linesAdded: number | null;
+  linesRemoved: number | null;
+  unknownModelCost: boolean;
+  models: ParsedCostModel[];
+}
+
 export type LineOutcome =
   | { kind: "call"; call: ParsedCall }
+  | { kind: "cost_state"; state: ParsedCostState }
   | { kind: "tool_results"; results: ParsedToolResult[] }
   | { kind: "human_prompt"; prompt: ParsedHumanPrompt }
   | { kind: "ignored" }
@@ -82,6 +110,46 @@ function text(v: unknown): string | null {
   return typeof v === "string" && v.length > 0 ? v : null;
 }
 
+function micros(usd: unknown): number | null {
+  return typeof usd === "number" && Number.isFinite(usd) && usd >= 0 ? Math.round(usd * 1_000_000) : null;
+}
+
+function optionalCount(v: unknown): number | null {
+  return typeof v === "number" && Number.isSafeInteger(v) && v >= 0 ? v : null;
+}
+
+function parseCostState(d: Record<string, unknown>): LineOutcome {
+  const sessionId = text(d["sessionId"]);
+  if (!sessionId) return { kind: "malformed", reason: "cost-state-without-session" };
+  const start = d["startTime"];
+  if (typeof start !== "number" || !Number.isFinite(start) || start <= 0) return { kind: "malformed", reason: "cost-state-without-start" };
+  const total = micros(d["totalCostUSD"]);
+  if (total === null) return { kind: "malformed", reason: "cost-state-without-total" };
+  const models: ParsedCostModel[] = [];
+  const usage = d["modelUsage"];
+  if (isObject(usage)) {
+    for (const [model, u] of Object.entries(usage)) {
+      if (!isObject(u)) continue;
+      const cost = micros(u["costUSD"]);
+      if (cost === null) continue;
+      models.push({ model, inputTokens: count(u["inputTokens"]), outputTokens: count(u["outputTokens"]), thinkingTokens: count(u["thinkingTokens"]), cacheReadTokens: count(u["cacheReadInputTokens"]), cacheWriteTokens: count(u["cacheCreationInputTokens"]), costMicros: cost });
+    }
+  }
+  return {
+    kind: "cost_state",
+    state: {
+      sessionId,
+      processStartMs: start,
+      totalMicros: total,
+      apiDurationMs: optionalCount(d["totalAPIDuration"]),
+      linesAdded: optionalCount(d["totalLinesAdded"]),
+      linesRemoved: optionalCount(d["totalLinesRemoved"]),
+      unknownModelCost: d["hasUnknownModelCost"] === true,
+      models,
+    },
+  };
+}
+
 export function parseClaudeCodeLine(line: string): LineOutcome {
   const trimmed = line.trim();
   if (trimmed.length === 0) return { kind: "ignored" };
@@ -93,6 +161,7 @@ export function parseClaudeCodeLine(line: string): LineOutcome {
   }
   if (!isObject(d)) return { kind: "malformed", reason: "not-an-object" };
   if (d["type"] === "user") return parseUserLine(d);
+  if (d["type"] === "cost-state") return parseCostState(d);
   if (d["type"] !== "assistant") return { kind: "ignored" };
   const message = d["message"];
   if (!isObject(message)) return { kind: "malformed", reason: "assistant-without-message" };

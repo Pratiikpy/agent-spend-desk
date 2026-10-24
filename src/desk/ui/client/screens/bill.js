@@ -35,7 +35,10 @@ export async function render(ctx) {
     section(
       "Kinds of dollars",
       "the class of each figure",
-      h("ul", { class: "list" }, ...d.classes.map((c) => h("li", null, pill(c.cls, c.cls === "estimated" ? "ink" : ""), " ", c.calls > 0 ? `${int(c.calls)} calls${c.micros ? `, ${usd(c.micros)}` : ""}. ` : "none. ", c.note))),
+      h("ul", { class: "list" }, ...d.classes.map((c) => h("li", null, pill(c.cls, c.cls === "estimated" ? "ink" : ""), " ", c.processes !== undefined ? (c.processes > 0 ? `${int(c.processes)} processes, ${usd(c.micros)}. ` : "none. ") : c.calls > 0 ? `${int(c.calls)} calls${c.micros ? `, ${usd(c.micros)}` : ""}. ` : "none. ", c.note))),
+      d.reconciliation
+        ? h("p", { class: "note" }, `Against the tool's own figure: ${int(d.reconciliation.match)} of ${int(d.reconciliation.processes)} processes agree. The tool recorded ${usd(d.reconciliation.reportedMicros)} and this estimate is ${usd(d.reconciliation.estimatedMicros)} for the same calls.${d.reconciliation.withSubAgents.processes > 0 ? ` ${int(d.reconciliation.withSubAgents.processes)} used sub-agents, where the tool's counter is known to fall behind (${usd(d.reconciliation.withSubAgents.reportedMicros)} recorded against ${usd(d.reconciliation.withSubAgents.estimatedMicros)} estimated).` : ""} ${d.reconciliation.toleranceNote}`)
+        : null,
     ),
     section(
       "What it bought",

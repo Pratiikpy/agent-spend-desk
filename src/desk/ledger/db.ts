@@ -192,7 +192,42 @@ CREATE TABLE session_outcome (
 );
 `;
 
-const MIGRATIONS: readonly string[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3];
+// The cost Claude Code recorded for itself, kept apart from every estimate so that a computed figure can never overwrite it.
+const SCHEMA_V4 = `
+CREATE TABLE reported_cost (
+  session_id TEXT NOT NULL,
+  process_start_ms INTEGER NOT NULL,
+  total_micros INTEGER NOT NULL CHECK (total_micros >= 0),
+  api_duration_ms INTEGER,
+  lines_added INTEGER,
+  lines_removed INTEGER,
+  unknown_model_cost INTEGER NOT NULL CHECK (unknown_model_cost IN (0, 1)),
+  -- The time of the last message read before this record in its file: the counter covers nothing later than that.
+  observed_ts TEXT,
+  PRIMARY KEY (session_id, process_start_ms)
+);
+
+CREATE TABLE reported_model_usage (
+  session_id TEXT NOT NULL,
+  process_start_ms INTEGER NOT NULL,
+  model TEXT NOT NULL,
+  input_tokens INTEGER NOT NULL,
+  output_tokens INTEGER NOT NULL,
+  thinking_tokens INTEGER NOT NULL,
+  cache_read_tokens INTEGER NOT NULL,
+  cache_write_tokens INTEGER NOT NULL,
+  cost_micros INTEGER NOT NULL CHECK (cost_micros >= 0),
+  PRIMARY KEY (session_id, process_start_ms, model)
+);
+`;
+
+const MIGRATIONS: readonly string[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4];
+
+/** The schema version this build writes: the number of migrations. A reader compares a ledger's `user_version` with it. */
+export const SCHEMA_VERSION = MIGRATIONS.length;
+
+/** The oldest ledger a read-only reader can use. Version 3 has no table for the tool's own recorded cost; readers check for it. */
+export const OLDEST_READABLE_VERSION = 3;
 
 export function openLedger(path: string): Ledger {
   if (path !== ":memory:") mkdirSync(dirname(path), { recursive: true });

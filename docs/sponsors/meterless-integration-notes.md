@@ -47,3 +47,20 @@ Source: the local clone of the sponsor reference repository, spot-checked by the
 The three conformance runners (H-MEM, World Model, Markovian) were run on this machine: first against Meterless's own reference implementations (13/13, 8/8, 8/8 checks), then against the copies vendored into `src/engines/` with `npm run conformance` (13/13, 8/8, 8/8). Source: https://github.com/Meterless/Meterless, commit `0aa7417`, Apache-2.0; see `vendor/meterless/NOTICE.md`. These are the references' own results, not an ablation: that an engine changes a Desk output is not yet shown. Scout Intent has no conformance runner and is not yet vendored.
 
 What Meterless's own site says about Nightshift (read 2026-10-22): a local app that exposes "one OpenAI-compatible base URL and key" on the owner's network, for installed local models plus any cloud provider the owner adds with their own key. The repository states there is no Meterless-hosted model gateway. What the organizers count as meeting the "Nightshift as a primary provider" rule is still unconfirmed.
+
+## Nightshift installed and routing the model, 2026-10-24
+
+Source: meterless.ai (the Nightshift pages and the Windows downloads folder, read 2026-10-24), the installed application's own files on this machine, and live calls from this machine.
+
+| Fact | Value |
+|---|---|
+| What was installed | Nightshift for Windows, edition 1.2.3, `Nightshift_1.2.3_x64-setup.exe`, per-user. The vendor's build info labels it a development artifact, not Authenticode-signed. SHA-256 matched the value published beside it (same server, so this proves transfer integrity only); Windows Defender found nothing; Windows Firewall holds inbound block rules for it on the public profile |
+| What it serves | An OpenAI-compatible endpoint on `127.0.0.1:8088/v1` with a bearer token it generates (hotspot mode off, so loopback only), listing 69 models: its own `meterless/*` modes, local models, and cloud providers whose key is set |
+| NVIDIA as a provider | NVIDIA's hosted catalogue is a first-class provider. The key was set through the application's own key store |
+| Our model | `nvidia/nemotron-3.5-super-vl-120b-a12b` is held out by default (the application's note: 31 of 94 hosted calls failed across two reviews, 2026-10-22). The documented opt-in, `NVIDIA_SUPER_VL=true` in the engine host's key-value state, was set. A call then returned the answer with a `meterless.compute_receipt.v1` receipt (receipt id, decision id, routed model, provider, latency) |
+| What desk. does with it | `MODEL_BASE_URL`, `MODEL_API_KEY` and `NEMOTRON_MODEL` point the existing port at it. A reply is called Nightshift's only when it carries that receipt; the receipt id is in the trace, in cassettes and under every Ask answer (`served by Meterless Nightshift: ...`). A live `desk ask` through it returned the same figure as the recorded run |
+| Defect found | With the default scope the application's response cache answered a repeat of a planner request (a tool-call request) with an empty message, no tool call, `from_cache: true`, 4 ms. A request header `meterless-scope` with a value no other request shares avoids it (checked: same request, default scope empty, private scope a proper tool call). desk. sends one per request to any non-NVIDIA endpoint, together with `meterless-ttfb-ms` (the application's cloud first-token limit, which otherwise ended some calls early) |
+| Also seen | The cache's semantic tier is meant to replay answers for similar prompts; we avoid it entirely rather than depend on its thresholds |
+| Not used | Overnight jobs and judges, the local embedder, the local Nemotron lanes (whether 8 GB of VRAM can run them usefully is NOT VERIFIED), its reply cross-check, Nightshift Runtime and AI Hotspot features beyond serving this one endpoint |
+
+Unanswered: whether the organisers count this as meeting "Nightshift as a primary provider". On the Day 3 check-in, do not tick Nightshift Runtime or AI Hotspot features that are not used.

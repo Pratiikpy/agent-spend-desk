@@ -1,0 +1,174 @@
+{
+  "snapshotId": "litellm-anthropic-2026-10-22+official-tiers-2026-10-24",
+  "source": "BerriAI/litellm model_prices_and_context_window.json (first-party Anthropic entries); prompt-length tiers from Anthropic pricing page, Model pricing and Long context pricing (read through the r.jina.ai text reader)",
+  "sourceUrl": "https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json",
+  "fetchedAt": "2026-10-22T14:55:58.263Z",
+  "license": "MIT (BerriAI/litellm)",
+  "upstreamSha256": "91da1a98e194e0d7c436aaf970800c8e734d70cc78027cfe314d5b27dfaf9a4c",
+  "note": "List price estimates in integer micro-USD per million tokens. Not a billing receipt: plan discounts, batch rates and long-context tiers are not applied. Prompt-length tiers from Anthropic pricing page, Model pricing and Long context pricing (read through the r.jina.ai text reader) (https://platform.claude.com/docs/en/about-claude/pricing), page text sha256 af58183971be6e6ea075dd53a9117a1697ef5daf729822b4c45e161c3ac2f0fb, read 2026-10-24T10:20:00.000Z: a request whose prompt is over the stated length pays the higher prices on all its tokens.",
+  "contentHash": "8ba03020ec49c174e6e3ba164418c3e2285bc4be300f001c89468964eb27abb8",
+  "models": {
+    "claude-haiku-4-5-20251001": {
+      "inputPerMTokMicros": 1000000,
+      "outputPerMTokMicros": 5000000,
+      "cacheReadPerMTokMicros": 100000,
+      "cacheWrite5mPerMTokMicros": 1250000,
+      "cacheWrite1hPerMTokMicros": 2000000
+    },
+    "claude-haiku-4-5": {
+      "inputPerMTokMicros": 1000000,
+      "outputPerMTokMicros": 5000000,
+      "cacheReadPerMTokMicros": 100000,
+      "cacheWrite5mPerMTokMicros": 1250000,
+      "cacheWrite1hPerMTokMicros": 2000000
+    },
+    "claude-sonnet-4-5": {
+      "inputPerMTokMicros": 3000000,
+      "outputPerMTokMicros": 15000000,
+      "cacheReadPerMTokMicros": 300000,
+      "cacheWrite5mPerMTokMicros": 3750000,
+      "cacheWrite1hPerMTokMicros": 6000000
+    },
+    "claude-sonnet-4-5-20250929": {
+      "inputPerMTokMicros": 3000000,
+      "outputPerMTokMicros": 15000000,
+      "cacheReadPerMTokMicros": 300000,
+      "cacheWrite5mPerMTokMicros": 3750000,
+      "cacheWrite1hPerMTokMicros": 6000000
+    },
+    "claude-sonnet-5": {
+      "inputPerMTokMicros": 2000000,
+      "outputPerMTokMicros": 10000000,
+      "cacheReadPerMTokMicros": 200000,
+      "cacheWrite5mPerMTokMicros": 2500000,
+      "cacheWrite1hPerMTokMicros": 4000000
+    },
+    "claude-sonnet-5-5": {
+      "inputPerMTokMicros": 2000000,
+      "outputPerMTokMicros": 10000000,
+      "cacheReadPerMTokMicros": 100000,
+      "cacheWrite5mPerMTokMicros": 2500000,
+      "cacheWrite1hPerMTokMicros": 4000000
+    },
+    "claude-sonnet-4-6": {
+      "inputPerMTokMicros": 3000000,
+      "outputPerMTokMicros": 15000000,
+      "cacheReadPerMTokMicros": 300000,
+      "cacheWrite5mPerMTokMicros": 3750000,
+      "cacheWrite1hPerMTokMicros": 6000000
+    },
+    "claude-opus-4-5-20251101": {
+      "inputPerMTokMicros": 5000000,
+      "outputPerMTokMicros": 25000000,
+      "cacheReadPerMTokMicros": 500000,
+      "cacheWrite5mPerMTokMicros": 6250000,
+      "cacheWrite1hPerMTokMicros": 10000000
+    },
+    "claude-opus-4-5": {
+      "inputPerMTokMicros": 5000000,
+      "outputPerMTokMicros": 25000000,
+      "cacheReadPerMTokMicros": 500000,
+      "cacheWrite5mPerMTokMicros": 6250000,
+      "cacheWrite1hPerMTokMicros": 10000000
+    },
+    "claude-opus-4-6": {
+      "inputPerMTokMicros": 5000000,
+      "outputPerMTokMicros": 25000000,
+      "cacheReadPerMTokMicros": 500000,
+      "cacheWrite5mPerMTokMicros": 6250000,
+      "cacheWrite1hPerMTokMicros": 10000000
+    },
+    "claude-opus-4-6-20260205": {
+      "inputPerMTokMicros": 5000000,
+      "outputPerMTokMicros": 25000000,
+      "cacheReadPerMTokMicros": 500000,
+      "cacheWrite5mPerMTokMicros": 6250000,
+      "cacheWrite1hPerMTokMicros": 10000000
+    },
+    "claude-opus-4-7": {
+      "inputPerMTokMicros": 5000000,
+      "outputPerMTokMicros": 25000000,
+      "cacheReadPerMTokMicros": 500000,
+      "cacheWrite5mPerMTokMicros": 6250000,
+      "cacheWrite1hPerMTokMicros": 10000000
+    },
+    "claude-opus-4-7-20260416": {
+      "inputPerMTokMicros": 5000000,
+      "outputPerMTokMicros": 25000000,
+      "cacheReadPerMTokMicros": 500000,
+      "cacheWrite5mPerMTokMicros": 6250000,
+      "cacheWrite1hPerMTokMicros": 10000000
+    },
+    "claude-fable-5": {
+      "inputPerMTokMicros": 10000000,
+      "outputPerMTokMicros": 50000000,
+      "cacheReadPerMTokMicros": 1000000,
+      "cacheWrite5mPerMTokMicros": 12500000,
+      "cacheWrite1hPerMTokMicros": 20000000
+    },
+    "claude-fable-5-1": {
+      "inputPerMTokMicros": 10000000,
+      "outputPerMTokMicros": 50000000,
+      "cacheReadPerMTokMicros": 250000,
+      "cacheWrite5mPerMTokMicros": 12500000,
+      "cacheWrite1hPerMTokMicros": 20000000
+    },
+    "claude-opus-5-5": {
+      "inputPerMTokMicros": 4000000,
+      "outputPerMTokMicros": 20000000,
+      "cacheReadPerMTokMicros": 200000,
+      "cacheWrite5mPerMTokMicros": 5000000,
+      "cacheWrite1hPerMTokMicros": 8000000
+    },
+    "claude-opus-5": {
+      "inputPerMTokMicros": 5000000,
+      "outputPerMTokMicros": 25000000,
+      "cacheReadPerMTokMicros": 500000,
+      "cacheWrite5mPerMTokMicros": 6250000,
+      "cacheWrite1hPerMTokMicros": 10000000
+    },
+    "claude-opus-4-8": {
+      "inputPerMTokMicros": 5000000,
+      "outputPerMTokMicros": 25000000,
+      "cacheReadPerMTokMicros": 500000,
+      "cacheWrite5mPerMTokMicros": 6250000,
+      "cacheWrite1hPerMTokMicros": 10000000
+    },
+    "claude-mythos-5": {
+      "inputPerMTokMicros": 10000000,
+      "outputPerMTokMicros": 50000000,
+      "cacheReadPerMTokMicros": 1000000,
+      "cacheWrite5mPerMTokMicros": 12500000,
+      "cacheWrite1hPerMTokMicros": 20000000
+    },
+    "claude-mythos-5-1": {
+      "inputPerMTokMicros": 10000000,
+      "outputPerMTokMicros": 50000000,
+      "cacheReadPerMTokMicros": 250000,
+      "cacheWrite5mPerMTokMicros": 12500000,
+      "cacheWrite1hPerMTokMicros": 20000000
+    },
+    "claude-mythos-preview": {
+      "inputPerMTokMicros": 10000000,
+      "outputPerMTokMicros": 50000000,
+      "cacheReadPerMTokMicros": 1000000,
+      "cacheWrite5mPerMTokMicros": 12500000,
+      "cacheWrite1hPerMTokMicros": 20000000
+    },
+    "claude-haiku-5-5": {
+      "inputPerMTokMicros": 100000,
+      "outputPerMTokMicros": 500000,
+      "cacheReadPerMTokMicros": 10000,
+      "cacheWrite5mPerMTokMicros": 125000,
+      "cacheWrite1hPerMTokMicros": 200000,
+      "longPrompt": {
+        "overPromptTokens": 100000,
+        "inputPerMTokMicros": 500000,
+        "outputPerMTokMicros": 2500000,
+        "cacheReadPerMTokMicros": 50000,
+        "cacheWrite5mPerMTokMicros": 625000,
+        "cacheWrite1hPerMTokMicros": 1000000
+      }
+    }
+  }
+}
