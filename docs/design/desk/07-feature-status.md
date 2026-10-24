@@ -2,7 +2,7 @@
 
 Generated from `feature-status.json` by `npm run desk -- status` and checked by `tests/desk/feature-status.test.ts`. The specification is `02-feature-list.md`, which was written as design; this page says how much of it exists.
 
-**71 built, 36 partial, 22 absent** of 129.
+**72 built, 35 partial, 22 absent** of 129.
 
 How to read a status. *Built*: the core of the feature as specified exists and a test, a `desk prove` check or a verification record exercises it. *Partial*: a real part exists and the missing part is named. *Absent*: no code was found. A status is a judgement made by reading and searching, which is why every row cites the files it rests on. A built feature can still be shallow; the "missing" column says so where known.
 
@@ -59,7 +59,7 @@ How to read a status. *Built*: the core of the feature as specified exists and a
 | DF-049 Approval echo card and approval-habit metrics | built | `src/desk/approvals/habit.ts`, `src/desk/approvals/command.ts`, `src/desk/dossier/approval.ts`, `src/desk/dossier/policy-change.ts`, `tests/desk/approvals.test.ts`, `docs/verification/approvals-and-brief-2026-10-25.md` | per-call gate approvals are not in the habit record, only dossier approvals |
 | DF-050 Shadow mode and the emergency gate switch | built | `src/desk/gate/gate.ts`, `src/desk/gate/cli.ts`, `tests/desk/gate/gate.test.ts` | - |
 | DF-051 Pause with checkpoint | built | `src/desk/gate/checkpoint.ts`, `src/desk/gate/gate.ts`, `src/desk/gate/cli.ts`, `tests/desk/gate/checkpoint.test.ts`, `tests/desk/gate/checkpoint-cli.test.ts`, `docs/verification/checkpoint-2026-10-25.md` | not run against a live Claude Code session; only the hook can let the agent write its handoff (the gateway and MCP doors tell it where, and cannot gate its own tools); a tool with no hook and no gateway gets nothing |
-| DF-052 Enforcement-surface ladder and notify-only labels | partial | `src/desk/gate/gate.ts`, `docs/verification/gate-enforcement.md` | a ladder of enforcement surfaces with notify-only labels |
+| DF-052 Enforcement-surface ladder and notify-only labels | built | `src/desk/enforce/ladder.ts`, `src/desk/enforce/selftest.ts`, `src/desk/enforce/version.ts`, `src/desk/ui/queries.ts`, `src/desk/ui/client/screens/policy.js`, `tests/desk/enforce.test.ts`, `docs/verification/enforcement-2026-10-25.md`, `docs/verification/enforcement-results-2026-10-25.json` | the live test covers Claude Code only; the other tools' rows come from what each is known to expose, marked not verified where that is a belief |
 | DF-053 Local reserve endpoint (HTTP) | built | `src/desk/gate/http.ts`, `tests/desk/gate/gate.test.ts` | - |
 | DF-054 MCP tools | built | `src/desk/gate/mcp.ts`, `tests/desk/gate/mcp.test.ts` | - |
 | DF-055 Gateway door | partial | `src/desk/gateway/server.ts`, `src/desk/pricing/virtual.ts`, `tests/desk/gateway/gateway.test.ts`, `tests/desk/gateway/anthropic.test.ts`, `tests/desk/virtual-prices.test.ts`, `docs/verification/gateway-2026-10-24.md` | the OpenAI chat route (run against a real endpoint) and the Anthropic messages route (a fake upstream only); no Responses API, TLS to a public endpoint not exercised, and a tool not pointed at it is outside it |

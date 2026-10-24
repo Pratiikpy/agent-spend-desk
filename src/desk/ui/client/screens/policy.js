@@ -6,6 +6,8 @@ import { usd, pct, int } from "../lib/fmt.js";
 
 export const usesRange = true;
 
+const LEVEL_WORDS = { enforced: "enforced", advisory: "advisory", notify_only: "notify only" };
+
 export async function render(ctx) {
   const d = await ctx.api("/api/policy", { range: ctx.range, from: ctx.params.get("from") || "", to: ctx.params.get("to") || "" });
   if (d.state === "empty") return h("div", null, head("Policy", "No policy yet"), emptyState(d));
@@ -65,6 +67,20 @@ export async function render(ctx) {
         ? h("div", null, ...cur.rules.map((x) => h("div", { class: "rule" }, h("span", { class: "id" }, x.id), pill(x.kind, x.kind === "forbid" ? "risk" : x.kind === "route" ? "ink" : ""), h("span", { class: "what" }, x.summary))))
         : h("p", { class: "note" }, "This file has no rules."),
       cur ? h("details", null, h("summary", { class: "kicker" }, "Source"), h("pre", { class: "src" }, cur.source)) : null,
+    ),
+    section(
+      "Enforcement",
+      "what the Desk can actually stop",
+      table(
+        "Tools",
+        [
+          { label: "Tool", render: (r) => r.label },
+          { label: "Level", render: (r) => pill(LEVEL_WORDS[r.level] || r.level, r.level === "enforced" ? "live" : r.level === "notify_only" ? "risk" : "") },
+          { label: "Why", render: (r) => r.reason },
+        ],
+        d.enforcement || [],
+      ),
+      h("p", { class: "note" }, 'A tool is "enforced" only after a recorded test shows the Desk stopping it. An untested hook is advisory, not tested; a tool with no hook and no gateway path gets notices, not a stop. `desk enforcement test --live` runs the real tool.'),
     ),
     section(
       "Restrict-only check",

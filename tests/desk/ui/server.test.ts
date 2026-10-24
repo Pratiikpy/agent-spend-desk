@@ -240,6 +240,17 @@ describe("the screens' data", () => {
     expect(p.files.map((f: { name: string }) => f.name)).toContain("stop-loops.yaml");
   });
 
+  it("says, tool by tool, what the Desk can actually stop, and never calls anything enforced without a recorded test", async () => {
+    const p = await json(full, "/api/policy?range=all");
+    const rows = p.enforcement as { tool: string; level: string; reason: string }[];
+    expect(rows.map((r) => r.tool)).toContain("claude_code");
+    expect(rows.find((r) => r.tool === "cursor")).toMatchObject({ level: "notify_only" });
+    expect(rows.find((r) => r.tool === "cursor")!.reason).toContain("notify only");
+    // The fixture has no recorded results of its own: the shared results file may or may not exist on the machine running this, so only what cannot depend on it is asserted.
+    for (const r of rows) expect(["enforced", "advisory", "notify_only"]).toContain(r.level);
+    expect(rows.find((r) => r.tool === "codex")!.level).not.toBe("enforced");
+  });
+
   it("answers a question, refuses an action, and says unknowable for nonsense", async () => {
     const a = await json(full, `/api/ask?q=${encodeURIComponent("How much did we spend?")}`);
     expect(a.status).toBe("answered");

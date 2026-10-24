@@ -22,6 +22,8 @@ import { wasteEventsOf } from "../waste/load.ts";
 import { delegationTrees } from "../delegation/tree.ts";
 import { overheadView } from "../overhead/view.ts";
 import { capLabel } from "../policy/types.ts";
+import { ladder, readResults, TOOLS } from "../enforce/ladder.ts";
+import { installedVersions } from "../enforce/version.ts";
 import { buildCard } from "../card/build.ts";
 import type { Ledger } from "../ledger/db.ts";
 import { landingBreakdown } from "../outcomes/breakdown.ts";
@@ -55,6 +57,8 @@ export interface UiContext {
   nowMs: () => number;
   /** The approval record (dossier database), read for how approvals were made; null in the sample, which has none. */
   dossierDbPath?: string | null;
+  /** Where the recorded results of the enforcement tests are kept; the Policy screen reads them. */
+  enforcementPath?: string | null;
   /** The owner's time zone: "yesterday" is the calendar day that just ended there. Default UTC. */
   timeZone?: string;
   /** The gate's database, read for what it paused or denied; null when the gate is not running here. */
@@ -1099,7 +1103,10 @@ export function policy(ctx: UiContext, span: Span, fromName: string | null, toNa
       landedBlocked: r.landedBlocked.length,
     };
   }
-  return { state: "ok", files: list, selected: { from, to }, valid: "policy" in candidate, error: "error" in candidate ? candidate.error : null, restrict, replay, span: { since: span.sinceIso, until: span.untilIso, days: span.days } };
+  const commands: Record<string, string> = {};
+  for (const t of TOOLS) if (t.versionCommand) commands[t.tool] = t.versionCommand;
+  const enforcement = ladder(readResults(ctx.enforcementPath ?? "data/desk/enforcement.json").results, installedVersions(commands, ctx.nowMs()));
+  return { state: "ok", files: list, selected: { from, to }, enforcement, valid: "policy" in candidate, error: "error" in candidate ? candidate.error : null, restrict, replay, span: { since: span.sinceIso, until: span.untilIso, days: span.days } };
 }
 
 function ledgerIsEmpty(ctx: UiContext): boolean {

@@ -1,0 +1,125 @@
+{
+  "version": 1,
+  "results": [
+    {
+      "surface": "gateway_anthropic",
+      "mode": "contract",
+      "tool": null,
+      "toolVersion": null,
+      "testedAt": "2026-10-24T22:15:10.967Z",
+      "passed": true,
+      "checks": [
+        {
+          "name": "a call within the cap is forwarded and answered",
+          "passed": true,
+          "detail": "status 200, 1 reached the model"
+        },
+        {
+          "name": "a call over the cap is refused and never reaches the model",
+          "passed": true,
+          "detail": "status 429, 1 reached the model"
+        },
+        {
+          "name": "a gate that cannot write blocks the call instead of letting it through",
+          "passed": true,
+          "detail": "status 503, 1 reached the model"
+        }
+      ]
+    },
+    {
+      "surface": "gateway_openai",
+      "mode": "contract",
+      "tool": null,
+      "toolVersion": null,
+      "testedAt": "2026-10-24T22:15:10.943Z",
+      "passed": true,
+      "checks": [
+        {
+          "name": "a call within the cap is forwarded and answered",
+          "passed": true,
+          "detail": "status 200, 1 reached the model"
+        },
+        {
+          "name": "a call over the cap is refused and never reaches the model",
+          "passed": true,
+          "detail": "status 429, 1 reached the model"
+        },
+        {
+          "name": "a gate that cannot write blocks the call instead of letting it through",
+          "passed": true,
+          "detail": "status 503, 1 reached the model"
+        }
+      ]
+    },
+    {
+      "surface": "hook",
+      "mode": "contract",
+      "tool": null,
+      "toolVersion": null,
+      "testedAt": "2026-10-24T22:15:10.915Z",
+      "passed": true,
+      "checks": [
+        {
+          "name": "a call over the cap is blocked",
+          "passed": true,
+          "detail": "exit 2"
+        },
+        {
+          "name": "a permitted call is let through silently",
+          "passed": true,
+          "detail": "exit 0"
+        },
+        {
+          "name": "a gate that cannot be reached blocks",
+          "passed": true,
+          "detail": "exit 2"
+        },
+        {
+          "name": "a missing token blocks",
+          "passed": true,
+          "detail": "exit 2"
+        },
+        {
+          "name": "input that is not JSON blocks",
+          "passed": true,
+          "detail": "exit 2"
+        },
+        {
+          "name": "a stopped session may write its handoff",
+          "passed": true,
+          "detail": "exit 0"
+        },
+        {
+          "name": "and nothing else: another file and a shell are blocked",
+          "passed": true,
+          "detail": "exits 2, 2"
+        }
+      ]
+    },
+    {
+      "surface": "hook",
+      "mode": "live",
+      "tool": "claude_code",
+      "toolVersion": "2.1.308",
+      "testedAt": "2026-10-24T22:15:59.872Z",
+      "passed": true,
+      "checks": [
+        {
+          "name": "with no gate running, the call is blocked (fails closed)",
+          "passed": true,
+          "detail": "the command did not run"
+        },
+        {
+          "name": "with a policy that refuses, the call is blocked",
+          "passed": true,
+          "detail": "the command did not run, 1 refusal recorded by the gate"
+        },
+        {
+          "name": "with a policy that permits, the call runs (the control)",
+          "passed": true,
+          "detail": "the command ran, 0 refusals recorded by the gate"
+        }
+      ]
+    }
+  ]
+}

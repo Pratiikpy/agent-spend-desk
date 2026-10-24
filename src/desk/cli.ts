@@ -79,6 +79,9 @@ import { backfillClaudeCodeFields } from "./ledger/backfill.ts";
 import { wasteCommand } from "./waste/command.ts";
 import { delegationCommand } from "./delegation/command.ts";
 import { overheadCommand } from "./overhead/command.ts";
+import { ladder, readResults, recordResults, renderLadder, TOOLS } from "./enforce/ladder.ts";
+import { installedVersions } from "./enforce/version.ts";
+import { testGatewayDoor, testHookContract, testHookLive } from "./enforce/selftest.ts";
 import { costVersions, listRepricings, renderRepricing, repriceLedger } from "./pricing/reprice.ts";
 import { refreshTasks } from "./tasks/assign.ts";
 import { taskCommand } from "./tasks/command.ts";
@@ -162,6 +165,7 @@ const { values, positionals } = parseOrExit({
     period: { type: "string" },
     month: { type: "string" },
     landed: { type: "string" },
+    live: { type: "boolean", default: false },
     export: { type: "string" },
     "if-due": { type: "boolean", default: false },
     output: { type: "string" },
@@ -612,6 +616,27 @@ ${t.pass} PASS, ${t.fail} FAIL, ${t.notRun} NOT RUN. NOT RUN is not a pass: it n
   });
   console.log(result.text);
   if (!result.ok) process.exitCode = 1;
+} else if (command === "enforcement") {
+  const resultsPath = "data/desk/enforcement.json";
+  if (positionals[1] === "test") {
+    const prices = loadSnapshot(pricesPath);
+    console.log("Running the surface tests: the hook against a real gate, and both gateway doors against a stand-in model endpoint.");
+    const fresh = [await testHookContract(prices), await testGatewayDoor(prices, "openai"), await testGatewayDoor(prices, "anthropic")];
+    if (values.live) {
+      console.log("Running the real Claude Code three times (a few cents on the cheapest model).");
+      fresh.push(await testHookLive(prices));
+    }
+    recordResults(resultsPath, fresh);
+    for (const r of fresh) {
+      console.log(`${r.passed ? "PASS" : "FAIL"}  ${r.surface}${r.tool ? ` (${r.tool}${r.toolVersion ? ` ${r.toolVersion}` : ""})` : ""}, ${r.mode}`);
+      for (const c of r.checks) console.log(`      ${c.passed ? "pass" : "FAIL"}  ${c.name}: ${c.detail}`);
+    }
+    if (fresh.some((r) => !r.passed)) process.exitCode = 1;
+    console.log("");
+  }
+  const versions: Record<string, string> = {};
+  for (const t of TOOLS) if (t.versionCommand) versions[t.tool] = t.versionCommand;
+  console.log(renderLadder(ladder(readResults(resultsPath).results, installedVersions(versions))));
 } else if (command === "overhead") {
   const result = overheadCommand({ db, snapshot: loadSnapshot(pricesPath), ...(values.month ? { month: values.month } : {}), ...(values.since ? { since: values.since } : {}), ...(values.until ? { until: values.until } : {}), ...(values.landed ? { landed: values.landed } : {}) });
   console.log(result.text);
