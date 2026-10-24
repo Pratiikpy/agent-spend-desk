@@ -59,6 +59,8 @@ import { renderSummary, summarise as summariseRuns } from "./lab/stats.ts";
 import { loadTasks, type LabTask } from "./lab/task.ts";
 import { forgetLedger, forgetPreview } from "./security/forget.ts";
 import { invoicesCommand } from "./billing/command.ts";
+import { alertsAdmin, runCheck, scheduleSnippet } from "./alerts/command.ts";
+import { realDeps } from "./alerts/deliver.ts";
 import { parseAmount } from "./billing/amounts.ts";
 import { estimateTask, pastTasks, renderEstimate } from "./estimate/estimate.ts";
 import { buildGauge, gaugeLine, renderGauge } from "./gauge/gauge.ts";
@@ -155,6 +157,11 @@ const { values, positionals } = parseOrExit({
     session: { type: "string" },
     type: { type: "string" },
     cap: { type: "string" },
+    person: { type: "string" },
+    "gate-db": { type: "string", default: "data/desk/gate.db" },
+    desktop: { type: "boolean", default: false },
+    webhook: { type: "string" },
+    "notify-command": { type: "string" },
     horizon: { type: "string", default: "7" },
     base: { type: "string" },
     head: { type: "string" },
@@ -194,6 +201,22 @@ const db = command === "card" || command === "status" || command === "lab" ? ope
 
 if (command === "help") {
   console.log(helpText());
+} else if (command === "alerts") {
+  const sub = positionals[1];
+  if (sub === "schedule") console.log(scheduleSnippet(process.cwd(), process.platform, values.policy?.[0] ? `--policy ${values.policy[0]}` : ""));
+  else if (sub === "check") {
+    const snapshot = loadSnapshot(pricesPath);
+    const policyPath = values.policy?.[0];
+    console.log(
+      await runCheck({
+        db, snapshot, now: new Date(), canaryRunsPath: sampleMode ? SAMPLE_RUNS : OWN_RUNS,
+        gate: policyPath ? { policyPath, dbPath: values["gate-db"], person: values.person ?? process.env["USERNAME"] ?? process.env["USER"] ?? "owner" } : null,
+        statusSamples: readSamples(statuslineLogPath()),
+        channels: { terminal: true, desktop: values.desktop, ...(values.webhook ? { webhook: values.webhook } : {}), ...(values["notify-command"] ? { command: values["notify-command"].split(" ").filter((x) => x !== "") } : {}) },
+        deps: realDeps(),
+      }),
+    );
+  } else console.log(alertsAdmin(sub, positionals[2], db));
 } else if (command === "estimate") {
   refreshTasks(db, { useLabels: !sampleMode, markerPath: defaultMarkerPath() });
   const cap = values.cap === undefined ? null : parseAmount(values.cap);

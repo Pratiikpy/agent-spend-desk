@@ -34,6 +34,7 @@ export const COMMANDS: readonly CommandHelp[] = [
   { name: "propose", group: "Decide and enforce", summary: "Draft a spend policy from your own history and check by proof that it only narrows what is in force." },
   { name: "replay", group: "Decide and enforce", summary: "Replay a policy over past sessions: what it would have blocked, and what that would have saved." },
   { name: "tunnel", group: "Decide and enforce", summary: "The same as replay, for several policies side by side." },
+  { name: "alerts", group: "Decide and enforce", summary: "Tell you once when something needs you: a cap nearly spent, a pause, idle spend, a canary regression, a month that will not reconcile." },
   { name: "approve", group: "Decide and enforce", summary: "Approve a pending policy change; the approval is signed into the dossier." },
   { name: "gate", group: "Decide and enforce", summary: "The spend gate: `gate serve`, `gate gateway` (a door for tools with no hook), `gate mcp`, `gate status`, `gate open` and `gate close`." },
   { name: "seats", group: "Decide and enforce", summary: "For each person, whether a flat seat or tokens at list price is cheaper." },

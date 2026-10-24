@@ -380,7 +380,34 @@ const SCHEMA_V10 = `
 CREATE INDEX model_call_source_ts ON model_call (source_id, ts);
 `;
 
-const MIGRATIONS: readonly string[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8, SCHEMA_V9, SCHEMA_V10];
+// Alerts (DF-010): what each rule last said, what was last spoken about it, and every decision to speak or stay quiet.
+const SCHEMA_V11 = `
+CREATE TABLE alert_state (
+  key TEXT PRIMARY KEY,
+  suite TEXT NOT NULL,
+  state TEXT NOT NULL CHECK (state IN ('OK', 'WARNING', 'ALERT', 'NO_DATA')),
+  spoken_state TEXT CHECK (spoken_state IN ('OK', 'WARNING', 'ALERT', 'NO_DATA')),
+  paused INTEGER NOT NULL DEFAULT 0 CHECK (paused IN (0, 1)),
+  since TEXT NOT NULL,
+  evaluated_at TEXT NOT NULL
+);
+
+CREATE TABLE alert_event (
+  alert_id INTEGER PRIMARY KEY,
+  ts TEXT NOT NULL,
+  key TEXT NOT NULL,
+  suite TEXT NOT NULL,
+  state TEXT NOT NULL CHECK (state IN ('OK', 'WARNING', 'ALERT', 'NO_DATA')),
+  title TEXT NOT NULL,
+  body TEXT NOT NULL,
+  evidence TEXT NOT NULL,
+  disposition TEXT NOT NULL CHECK (disposition IN ('fired', 'suppressed_daily_limit', 'suppressed_paused', 'recovered')),
+  delivered TEXT NOT NULL DEFAULT '[]'
+);
+CREATE INDEX alert_event_day ON alert_event (suite, disposition, ts);
+`;
+
+const MIGRATIONS: readonly string[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8, SCHEMA_V9, SCHEMA_V10, SCHEMA_V11];
 
 /** The schema version this build writes: the number of migrations. A reader compares a ledger's `user_version` with it. */
 export const SCHEMA_VERSION = MIGRATIONS.length;
