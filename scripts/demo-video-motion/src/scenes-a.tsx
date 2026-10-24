@@ -42,7 +42,7 @@ const Title: React.FC<{ caps: string[] }> = ({ caps }) => {
   return (
     <Frame kicker="The product · Track 3, Reasoning Architecture" caps={caps}>
       <Reveal at={0.1}><div style={{ fontSize: 220, lineHeight: 0.9, letterSpacing: "-0.07em", fontWeight: 600 }}>desk<span style={{ color: C.cipher }}>.</span></div></Reveal>
-      <Reveal at={0.8}><div style={{ marginTop: 26, fontSize: 52, letterSpacing: "-0.03em", maxWidth: 1300 }}>A local desk for the person who pays for AI coding agents.</div></Reveal>
+      <Reveal at={0.8}><div style={{ marginTop: 26, fontSize: 52, letterSpacing: "-0.03em", maxWidth: 1060 }}>A local desk for the person who pays for AI coding agents.</div></Reveal>
       <div style={{ position: "absolute", right: 0, top: 40, width: 560, display: "grid", gap: 14 }}>
         {[["Zetaris", "the data layer"], ["Meterless", "memory and history"], ["NVIDIA Nemotron", "every language role"], ["Cursor", "the required IDE"]].map(([h, s], i) => (
           <Reveal key={h} at={cs[1] + 0.3 + i * 0.9} dx={30} dy={0}>
@@ -253,11 +253,21 @@ const Propose: React.FC<{ caps: string[] }> = ({ caps }) => {
           </React.Fragment>
         ))}
       </div>
-      <Reveal at={cs[2]} style={{ marginTop: 40 }}>
+      <div style={{ display: "flex", gap: 20, marginTop: 28 }}>
+        {propose.findings.map((f, i) => (
+          <Reveal key={f.id} at={1.2 + i * 0.5} dy={12} style={{ flex: 1 }}>
+            <Card style={{ padding: "12px 20px", background: C.veil }}>
+              <Mono size={20} color={C.graphite}>finding {f.id}</Mono>
+              <div style={{ fontSize: 26, fontWeight: 600, letterSpacing: "-0.02em" }}>{f.runs.toLocaleString("en-US")} runs, {usd(f.usd)} recoverable</div>
+            </Card>
+          </Reveal>
+        ))}
+      </div>
+      <Reveal at={cs[2]} style={{ marginTop: 30 }}>
         <Label>On the held-out month, {propose.from} to {propose.to}</Label>
         <div style={{ display: "flex", alignItems: "baseline", gap: 36 }}>
-          <div style={{ fontSize: 210, fontWeight: 600, letterSpacing: "-0.07em", lineHeight: 1, color: C.redline }}><Count to={propose.blocked} at={cs[2]} /></div>
-          <div style={{ fontSize: 58, letterSpacing: "-0.03em", lineHeight: 1.08 }}>of {propose.landed} landed sessions<br />would have been blocked.</div>
+          <div style={{ fontSize: 170, fontWeight: 600, letterSpacing: "-0.07em", lineHeight: 1, color: C.redline }}><Count to={propose.blocked} at={cs[2]} /></div>
+          <div style={{ fontSize: 52, letterSpacing: "-0.03em", lineHeight: 1.08 }}>of {propose.landed} landed sessions<br />would have been blocked.</div>
         </div>
       </Reveal>
       <Reveal at={cs[2] + 2.2} style={{ display: "flex", gap: 28, marginTop: 24 }}>
