@@ -59,6 +59,8 @@ import { renderSummary, summarise as summariseRuns } from "./lab/stats.ts";
 import { loadTasks, type LabTask } from "./lab/task.ts";
 import { forgetLedger, forgetPreview } from "./security/forget.ts";
 import { invoicesCommand } from "./billing/command.ts";
+import { parseAmount } from "./billing/amounts.ts";
+import { estimateTask, pastTasks, renderEstimate } from "./estimate/estimate.ts";
 import { buildGauge, gaugeLine, renderGauge } from "./gauge/gauge.ts";
 import { gaugeCachePath, newestMtimeMs, watchLogs, writeGaugeCache } from "./gauge/watch.ts";
 import { backfillClaudeCodeFields } from "./ledger/backfill.ts";
@@ -151,6 +153,8 @@ const { values, positionals } = parseOrExit({
     line: { type: "boolean", default: false },
     watch: { type: "boolean", default: false },
     session: { type: "string" },
+    type: { type: "string" },
+    cap: { type: "string" },
     horizon: { type: "string", default: "7" },
     base: { type: "string" },
     head: { type: "string" },
@@ -190,6 +194,13 @@ const db = command === "card" || command === "status" || command === "lab" ? ope
 
 if (command === "help") {
   console.log(helpText());
+} else if (command === "estimate") {
+  refreshTasks(db, { useLabels: !sampleMode, markerPath: defaultMarkerPath() });
+  const cap = values.cap === undefined ? null : parseAmount(values.cap);
+  if (values.cap !== undefined && (cap === null || cap.micros < 0)) throw new Error("--cap must be an amount in dollars, such as 25 or 25.50");
+  // With no --repo the repository the person is in, if any, is the one asked about.
+  const repo = values.repo?.[0] ?? findRepoRoot(process.cwd()) ?? undefined;
+  console.log(renderEstimate(estimateTask(pastTasks(db), { ...(values.type ? { type: values.type } : {}), ...(repo ? { repo } : {}), ...(cap ? { capMicros: cap.micros } : {}), nowMs: Date.now() })));
 } else if (command === "gauge") {
   const snapshot = loadSnapshot(pricesPath);
   const hours = Number(values.hours);

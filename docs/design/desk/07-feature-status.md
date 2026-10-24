@@ -2,7 +2,7 @@
 
 Generated from `feature-status.json` by `npm run desk -- status` and checked by `tests/desk/feature-status.test.ts`. The specification is `02-feature-list.md`, which was written as design; this page says how much of it exists.
 
-**48 built, 52 partial, 29 absent** of 129.
+**49 built, 51 partial, 29 absent** of 129.
 
 How to read a status. *Built*: the core of the feature as specified exists and a test, a `desk prove` check or a verification record exercises it. *Partial*: a real part exists and the missing part is named. *Absent*: no code was found. A status is a judgement made by reading and searching, which is why every row cites the files it rests on. A built feature can still be shallow; the "missing" column says so where known.
 
@@ -16,7 +16,7 @@ How to read a status. *Built*: the core of the feature as specified exists and a
 | DF-006 Outcomes screen and the owner-question queue | partial | `src/desk/ui/client/screens/outcomes.js`, `src/desk/outcomes/link.ts`, `tests/desk/outcomes.test.ts` | the owner-question queue |
 | DF-007 Daily canary run and canary card | partial | `src/desk/canary/command.ts`, `src/desk/ui/client/screens/canary.js`, `tests/desk/canary/canary.test.ts` | a scheduled daily run; the pack is a fixed generic one |
 | DF-008 Quota runway across plans | partial | `src/desk/limits/fit.ts`, `src/desk/limits/analog.ts`, `src/desk/limits/runway.ts`, `src/desk/ledger/ingest-codex.ts`, `src/desk/statusline/statusline.ts`, `src/desk/ui/client/screens/brief.js`, `tests/desk/limits.test.ts`, `tests/desk/runway.test.ts`, `tests/desk/statusline.test.ts`, `tests/desk/ui/brief-runway.test.ts`, `docs/verification/runway-2026-10-24.md` | plan percent used and reset time are read from Codex logs and from a Claude Code status line command; each plan and window length is fitted separately (desk limits); desk runway and the Brief screen say whether a window will last, from how past windows of that plan ended (checked time-ordered on 110 Codex windows); no Claude reading has been captured yet (the user has to turn the status line on), and only the plus 5-hour window has enough history to forecast |
-| DF-009 Pre-run estimate | partial | `src/desk/gate/estimate.ts`, `tests/desk/gate/gate.test.ts` | P10/P50/P90 by task type, a mid-session warning, a `desk estimate` command |
+| DF-009 Pre-run estimate | built | `src/desk/estimate/estimate.ts`, `src/desk/estimate/from-ledger.ts`, `src/desk/gate/mcp.ts`, `src/desk/gate/cli.ts`, `tests/desk/estimate.test.ts`, `tests/desk/gate/mcp-estimate.test.ts`, `docs/verification/estimate-2026-10-24.md` | types come from branch prefixes, ticket keys and labels, none of which this machine's real history has, so a type-specific estimate has only met constructed tasks; the scorecard is one person's rolling backtest |
 | DF-010 Alerts on the owner's schedule | absent | none | no alerts or notifications |
 | DF-011 Weekly review | absent | none | no weekly review |
 | DF-012 Month close and the next-month decision | partial | `src/desk/propose/run.ts`, `src/desk/dossier/command.ts`, `tests/desk/propose.test.ts` | a month-close screen and its brief |

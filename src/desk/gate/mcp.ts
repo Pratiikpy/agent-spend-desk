@@ -27,12 +27,17 @@ const META_SERVER_INFO = "io.modelcontextprotocol/serverInfo";
 const INSTRUCTIONS =
   "Spend gate for AI agents. Call authorize before a paid call and settle after it (void if the call did not happen). budget_left and spend_so_far are read-only. These tools are advisory: they cannot stop an agent that does not call them.";
 
+/** What a tool may need besides the gate. The estimate reads the usage ledger, which the gate does not hold. */
+export interface McpContext {
+  estimate?: (args: Record<string, unknown>) => unknown;
+}
+
 interface ToolDef {
   name: string;
   description: string;
   inputSchema: Record<string, unknown>;
   annotations: Record<string, unknown>;
-  run(gate: Gate, args: Record<string, unknown>): unknown;
+  run(gate: Gate, args: Record<string, unknown>, ctx: McpContext): unknown;
 }
 
 const STR = { type: "string", minLength: 1, maxLength: 256 };
@@ -128,6 +133,16 @@ export const TOOLS: readonly ToolDef[] = [
     annotations: { readOnlyHint: false, idempotentHint: true },
     run: (g, a) => g.toolComplete(a),
   },
+  {
+    name: "estimate_cost",
+    description: "Before a large task: the cost range (10th to 90th percentile, with the number of tasks behind it) of similar past tasks, or no estimate when fewer than ten are similar. Never a point figure. Read-only.",
+    inputSchema: { type: "object", properties: { type: { ...STR, description: "The kind of task: a branch prefix such as fix or feat, a ticket project key, or the text before a colon in a task label." }, repo: { ...STR, description: "A path inside the repository." }, cap_usd: { type: "number", minimum: 0, description: "A cap to measure the chance of crossing." } }, additionalProperties: false },
+    annotations: { readOnlyHint: true, idempotentHint: true },
+    run: (_g, a, ctx) => {
+      if (ctx.estimate === undefined) throw new GateError("E_NO_LEDGER", "this server was started without a usage ledger; start it with --ledger FILE to enable estimates");
+      return ctx.estimate(a);
+    },
+  },
 ];
 
 type Id = string | number | null;
@@ -144,7 +159,7 @@ export interface McpSession {
   handle(line: string): string | null;
 }
 
-export function createMcpSession(gate: Gate): McpSession {
+export function createMcpSession(gate: Gate, ctx: McpContext = {}): McpSession {
   let initialized = false;
 
   const modernMeta = (params: Record<string, unknown> | undefined): { era: "modern" | "legacy" | "bad"; error?: string; code?: number; data?: unknown } => {
@@ -219,7 +234,7 @@ export function createMcpSession(gate: Gate): McpSession {
             return ok(id, toolResult({ error: { code: "E_INVALID", message: error instanceof Error ? error.message : String(error) } }, true));
           }
           try {
-            return ok(id, toolResult(tool.run(gate, args), false));
+            return ok(id, toolResult(tool.run(gate, args, ctx), false));
           } catch (error) {
             if (error instanceof GateError) return ok(id, toolResult({ error: { code: error.code, message: error.message }, ...(tool.name === "authorize" ? { verdict: "deny", failed: true } : {}) }, true));
             const message = error instanceof Error ? error.message : String(error);
@@ -234,8 +249,8 @@ export function createMcpSession(gate: Gate): McpSession {
 }
 
 /** Serve MCP over a pair of streams until the input ends. Only protocol messages are written to `output`. */
-export function serveMcp(gate: Gate, input: Readable, output: Writable): Promise<void> {
-  const session = createMcpSession(gate);
+export function serveMcp(gate: Gate, input: Readable, output: Writable, ctx: McpContext = {}): Promise<void> {
+  const session = createMcpSession(gate, ctx);
   const rl = createInterface({ input, crlfDelay: Infinity });
   return new Promise((resolve) => {
     rl.on("line", (line) => {

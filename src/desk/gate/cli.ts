@@ -1,9 +1,11 @@
 import { DatabaseSync } from "node:sqlite";
-import { mkdirSync } from "node:fs";
+import { existsSync, mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import { parseOrUsage, UsageError } from "../args.ts";
 
 import { loadDotenv } from "../env.ts";
+import { estimateFromLedger } from "../estimate/from-ledger.ts";
+import { openLedger } from "../ledger/db.ts";
 import { loadSnapshot } from "../pricing/pricebook.ts";
 import { parseVirtualPrices, withVirtualPrices } from "../pricing/virtual.ts";
 import { MemoryTrace } from "../agents/trace.ts";
@@ -71,6 +73,7 @@ const GATE_OPTIONS = {
   upstream: { type: "string" },
   reserve: { type: "string", multiple: true },
   price: { type: "string", multiple: true },
+  ledger: { type: "string" },
 } as const;
 
 const parseGateArgs = (rest: readonly string[]) => parseOrUsage({ args: [...rest], options: GATE_OPTIONS, allowPositionals: false });
@@ -151,7 +154,10 @@ export async function runGateCli(argv: readonly string[], env: Record<string, st
     }
     case "mcp": {
       const gate = makeGate(true);
-      await serveMcp(gate, process.stdin, process.stdout);
+      // The usage ledger, when there is one, lets an agent ask what a task like this has cost before.
+      const ledgerPath = values.ledger ?? "data/desk/ledger.db";
+      const ctx = existsSync(ledgerPath) ? { estimate: estimateFromLedger(openLedger(ledgerPath)) } : {};
+      await serveMcp(gate, process.stdin, process.stdout, ctx);
       return 0;
     }
     case "open": {
