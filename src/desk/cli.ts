@@ -8,6 +8,7 @@ import { buildAutopsy, heaviestWindow } from "./autopsy/engine.ts";
 import { loadAutopsyCalls } from "./autopsy/load.ts";
 import { openLedger } from "./ledger/db.ts";
 import { landingBreakdown } from "./outcomes/breakdown.ts";
+import { commandNames, helpText } from "./help.ts";
 import { baseRef, commitsInRange, findRepoRoot } from "./outcomes/git.ts";
 import { prCost, renderPr } from "./pr/cost.ts";
 import { linkOutcomes } from "./outcomes/link.ts";
@@ -150,7 +151,9 @@ if (sampleMode && ["propose", "silos", "ask", "ui", "verify-answer", "bench", "s
 }
 const db = command === "card" || command === "status" || command === "lab" ? openLedger(":memory:") : openLedger(ledgerPath);
 
-if (command === "retention") {
+if (command === "help") {
+  console.log(helpText());
+} else if (command === "retention") {
   if (positionals[1] === "schedule") {
     console.log(scheduleSnippets(process.cwd(), process.platform));
   } else {
@@ -552,7 +555,7 @@ ${t.pass} PASS, ${t.fail} FAIL, ${t.notRun} NOT RUN. NOT RUN is not a pass: it n
   console.log(`logs: ${sampleLogsDir(values.out)}`);
   console.log(`repos: ${sampleReposDir(values.out)}`);
 } else {
-  console.error(`unknown command "${command}". Use: card | status | forget | egress | limits | runway | pr | statusline | prices | retention | propose | silos | ask | remember | verify-answer | gate | approve | ui | canary | bench | seats | route | calibrate | regret | lessons | prove | demo | ingest | bill | autopsy | landing | replay | tunnel | sample build`);
+  console.error(`unknown command "${command}". These are the commands: ${commandNames().join(" | ")}. "desk help" explains each.`);
   process.exitCode = 2;
 }
 db.close();
