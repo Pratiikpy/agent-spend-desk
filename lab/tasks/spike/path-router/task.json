@@ -3,8 +3,20 @@
   "id": "path-router",
   "title": "URL path router",
   "kind": "feature",
-  "prompt": "Implement class `Router` in `src/router.js` (its methods are stubs that throw). `add(pattern, handler)` registers a route and `match(path)` finds one. A path is split on `/` and empty segments are dropped, so `/a/b`, `/a/b/`, `a/b` and `//a//b` are the same, and `/` and the empty string both mean the root. A pattern must be a string that starts with `/`. Its segments are: a static segment (compared exactly, case-sensitive), `:name` which matches any one segment and captures it (a name is a letter or underscore followed by letters, digits or underscores, it may not be `__proto__`, and a name may appear only once in a pattern), or `*` which is allowed only as the last segment and matches one or more remaining segments, captured under the key `*` as the segments joined by `/`. Anything else throws `Error('invalid route: <pattern>')`. Adding a pattern that has the same shape as an existing one (the same segments in the same positions, where all `:name` params count as the same, so `/a/:x` and `/a/:y` clash) throws `Error('duplicate route: <pattern>')`. `match(path)` returns `{ handler, params }` for the best route or `null`. `params` is a plain object, and every captured segment is percent-decoded with `decodeURIComponent`; the path's segments are decoded before static segments are compared, so `/caf%C3%A9` matches a static `café`; if any segment of the path has malformed percent-encoding `match` returns `null`. When more than one route fits, prefer at each segment, from left to right, a static segment over a `:param` over a `*`, and if the preferred choice cannot lead to a complete match fall back to the next one, so with routes `/users/me/posts` and `/users/:id/comments` the path `/users/me/comments` matches the second with `{ id: 'me' }`. `handler` can be any value and is returned as given. A `*` route does not match when there are no segments left for it, so `/files/*` does not match `/files`. Run `npm test` to check your work.",
-  "test": { "files": ["test/visible.test.js", "test/hidden.test.js"], "timeoutSec": 60 },
-  "protected": ["test"],
-  "origin": { "type": "handwritten", "licence": "MIT (this repository)", "note": "Spike task. Trie routing with backtracking, the usual source of subtle precedence bugs." }
+  "prompt": "Implement class `Router` in `src/router.js` (its methods are stubs that throw). `add(pattern, handler)` registers a route and `match(path)` finds one. A path is split on `/` and empty segments are dropped, so `/a/b`, `/a/b/`, `a/b` and `//a//b` are the same, and `/` and the empty string both mean the root. A pattern must be a string that starts with `/`. Its segments are: a static segment (compared exactly, case-sensitive), `:name` which matches any one segment and captures it (a name is a letter or underscore followed by letters, digits or underscores, it may not be `__proto__`, and a name may appear only once in a pattern), or `*` which is allowed only as the last segment and matches one or more remaining segments, captured under the key `*` as the segments joined by `/`. Anything else throws `Error('invalid route: <pattern>')`. Adding a pattern that has the same shape as an existing one (the same segments in the same positions, where all `:name` params count as the same, so `/a/:x` and `/a/:y` clash) throws `Error('duplicate route: <pattern>')`. `match(path)` returns `{ handler, params }` for the best route or `null`, and returns `null` for anything that is not a string. `params` is a plain object, and every captured segment is percent-decoded with `decodeURIComponent`; the path's segments are decoded before static segments are compared, so `/caf%C3%A9` matches a static `café`; if any segment of the path has malformed percent-encoding `match` returns `null`. When more than one route fits, prefer at each segment, from left to right, a static segment over a `:param` over a `*`, and if the preferred choice cannot lead to a complete match fall back to the next one, so with routes `/users/me/posts` and `/users/:id/comments` the path `/users/me/comments` matches the second with `{ id: 'me' }`. `handler` can be any value and is returned as given. A `*` route does not match when there are no segments left for it, so `/files/*` does not match `/files`. Run `npm test` to check your work.",
+  "test": {
+    "files": [
+      "test/visible.test.js",
+      "test/hidden.test.js"
+    ],
+    "timeoutSec": 60
+  },
+  "protected": [
+    "test"
+  ],
+  "origin": {
+    "type": "handwritten",
+    "licence": "MIT (this repository)",
+    "note": "Spike task. Trie routing with backtracking, the usual source of subtle precedence bugs."
+  }
 }
