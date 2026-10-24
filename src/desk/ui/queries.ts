@@ -9,6 +9,10 @@ import { canaryCard, type CanaryCard } from "../canary/card.ts";
 import { OWN_RUNS, SAMPLE_RUNS } from "../canary/command.ts";
 import { nightLine, readGateNight } from "../gate/readout.ts";
 import { addDays, isDate, localDate, localDayRange } from "./localday.ts";
+import { explainBlock, findBlocks, type BlockKind } from "../explain/blocks.ts";
+import { readExcerpts } from "../explain/lines.ts";
+import { classCoverage, coverageLine } from "../bill/coverage.ts";
+import { formatUsd } from "../money.ts";
 import { buildReview, weekLabel, weekRange } from "../review/review.ts";
 import { defaultMarkerPath, readMarkers } from "../tasks/markers.ts";
 import { analyseCalls, buildAutopsy, CAUSES, type Autopsy, type AutopsyCall, type Cause, type PerCall } from "../autopsy/engine.ts";
@@ -210,6 +214,7 @@ export function bill(ctx: UiContext, span: Span): object {
   const landing = landingBreakdown(ctx.db, span.sinceIso, span.untilIso);
   const landed = landing.byState.kept.sessions + landing.byState.merged.sessions;
   const landedMicros = landing.byState.kept.micros + landing.byState.merged.micros;
+  const coverage = classCoverage(ctx.db, span.sinceIso, span.untilIso);
   const daily = all<{ day: string; micros: number; calls: number }>(ctx.db, "SELECT day, SUM(estimated_micros) micros, SUM(calls) calls FROM v_cost_by_day_model WHERE day >= ? AND day <= ? GROUP BY day ORDER BY day", span.sinceIso.slice(0, 10), span.untilIso.slice(0, 10));
   const byModel = all<{ model: string; calls: number; micros: number | null; unpriced: number }>(
     ctx.db,
@@ -221,7 +226,7 @@ export function bill(ctx: UiContext, span: Span): object {
     ctx.db,
     `SELECT s.project_path, SUM(c.total_micros) micros, COUNT(DISTINCT m.session_id) sessions
      FROM model_call m JOIN session s ON s.session_id = m.session_id JOIN cost_event c ON c.call_id = m.call_id AND c.class = 'estimated'
-     WHERE m.ts >= ? AND m.ts <= ? GROUP BY s.project_path ORDER BY micros DESC LIMIT 12`,
+     WHERE m.ts >= ? AND m.ts <= ? GROUP BY s.project_path ORDER BY micros DESC LIMIT 500`,
     span.sinceIso,
     span.untilIso,
   );
@@ -236,6 +241,9 @@ export function bill(ctx: UiContext, span: Span): object {
   return {
     state: "ok",
     span: { since: span.sinceIso, until: span.untilIso, days: span.days },
+    window: { from: span.sinceIso, to: span.untilIso },
+    coverage,
+    coverageLine: coverageLine(coverage, formatUsd),
     totals: { ...t, pricedShare: t.pricedCalls + t.unpricedCalls === 0 ? 0 : t.pricedCalls / (t.pricedCalls + t.unpricedCalls) },
     classes: [
       billedClass(ctx, span),
@@ -254,7 +262,7 @@ export function bill(ctx: UiContext, span: Span): object {
     missSavingMicros: autopsy.missEvents.reduce((s, e) => s + e.savingMicros, 0),
     daily,
     byModel,
-    byProject: [...merged.values()].sort((a, b) => b.micros - a.micros),
+    byProject: [...merged.values()].sort((a, b) => b.micros - a.micros).slice(0, 12),
     snapshotId: ctx.snapshot.snapshotId,
   };
 }
@@ -642,6 +650,106 @@ export function sessions(ctx: UiContext, span: Span, sort: string, limit: number
   };
 }
 
+const KIND_TITLE: Record<BlockKind, string> = { loops: "A failing command repeated", idle: "The agent working on its own", subagents: "A delegated agent's run", cache_miss: "A context rewritten after the cache was lost" };
+
+const toolList = (raw: string): string[] => {
+  try {
+    const t: unknown = JSON.parse(raw);
+    return Array.isArray(t) ? t.filter((x): x is string => typeof x === "string").slice(0, 6) : [];
+  } catch {
+    return [];
+  }
+};
+
+/** One waste block of one session, explained: where the rule would have stopped it, how it matched, how the failure unfolded, the lines behind it, each call's price and what the session landed. */
+export async function sessionBlock(ctx: UiContext, id: string, blockId: string): Promise<object> {
+  if (id.length === 0 || id.length > 200 || blockId.length === 0 || blockId.length > 80) throw new BadParam("session id or block id is empty or too long");
+  const span = one<{ a: string; b: string; n: number }>(ctx.db, "SELECT MIN(ts) a, MAX(ts) b, COUNT(*) n FROM model_call WHERE session_id = ?", id);
+  if (!span || span.n === 0) return { state: "empty", reason: "No such session in this ledger.", hint: "Pick a session from the Sessions list." };
+  const sessionCalls = loadAutopsyCalls(ctx.db, ctx.snapshot, span.a, span.b, { sessionId: id });
+  const analysis = analyseCalls(sessionCalls);
+  const autopsy = buildAutopsy(sessionCalls, Date.parse(span.a) - 1, Date.parse(span.b) + 1, analysis);
+  const block = findBlocks(sessionCalls, analysis, autopsy.missEvents).find((b) => b.id === blockId);
+  if (!block) return { state: "empty", reason: "This session has no such waste block.", hint: "Blocks are recomputed from the calls; a ledger read again since the link was made may have changed them. Open the session and pick one." };
+  const thread = sessionCalls.filter((c) => c.threadKey === block.threadKey).sort((a, b) => a.tsMs - b.tsMs || a.callId.localeCompare(b.callId));
+  const factsRows = all<{ call_id: string; n: number }>(
+    ctx.db,
+    "SELECT t.call_id, COUNT(*) n FROM tool_call t LEFT JOIN tool_result r ON r.tool_use_id = t.tool_use_id WHERE t.session_id = ? AND r.tool_use_id IS NULL GROUP BY t.call_id",
+    id,
+  );
+  const facts = new Map(factsRows.map((r) => [r.call_id, { withoutResult: r.n }]));
+  const start = Date.parse(span.a);
+  const exp = explainBlock(block, thread, new Map(autopsy.missEvents.map((m) => [m.callId, m])), facts, start);
+
+  // The calls the explanation stands on: the chain that led in, then the block.
+  const wanted = [...new Set([...exp.cascade.steps.map((s) => s.callId), ...block.calls.map((c) => c.callId)])].slice(0, 40);
+  const marks = wanted.map(() => "?").join(",");
+  const detail = all<{ call_id: string; ts: string; model: string; is_sidechain: number; class: string | null; snapshot_id: string | null; total_micros: number | null; unpriced_reason: string | null; tool_names: string; source_id: number | null }>(
+    ctx.db,
+    `SELECT m.call_id, m.ts, m.model, m.is_sidechain, c.class, c.snapshot_id, c.total_micros, c.unpriced_reason, m.tool_names, m.source_id
+     FROM model_call m LEFT JOIN cost_event c ON c.call_id = m.call_id WHERE m.call_id IN (${marks}) ORDER BY m.ts, m.call_id`,
+    ...wanted,
+  );
+  const inBlock = new Set(block.calls.map((c) => c.callId));
+  const calls = detail.map((c) => ({
+    id: c.call_id,
+    offsetSec: Math.round((Date.parse(c.ts) - start) / 1000),
+    model: c.model,
+    sidechain: c.is_sidechain === 1,
+    inBlock: inBlock.has(c.call_id),
+    isStop: c.call_id === exp.stop.callId,
+    isFirstBreak: c.call_id === exp.cascade.firstBreak?.callId,
+    snapshotId: c.snapshot_id,
+    micros: c.total_micros,
+    unpricedReason: c.unpriced_reason,
+    tools: toolList(c.tool_names),
+  }));
+  const sourceId = detail.find((c) => c.source_id !== null)?.source_id ?? null;
+  const path = sourceId === null ? null : (one<{ path: string }>(ctx.db, "SELECT path FROM ingest_source WHERE id = ?", sourceId)?.path ?? null);
+  const toolUses = new Map(all<{ tool_use_id: string; call_id: string }>(ctx.db, `SELECT tool_use_id, call_id FROM tool_call WHERE call_id IN (${marks})`, ...wanted).map((r) => [r.tool_use_id, r.call_id] as [string, string]));
+  const lines = await readExcerpts(path, wanted, toolUses);
+
+  const commits = all<{ sha: string; authored_at: string; method: string; confidence: string; merged: number; reverted: number }>(
+    ctx.db,
+    `SELECT g.sha, g.authored_at, sc.method, sc.confidence, g.merged, g.reverted FROM session_commit sc
+     JOIN git_commit g ON g.repo_id = sc.repo_id AND g.sha = sc.sha WHERE sc.session_id = ? ORDER BY g.authored_at`,
+    id,
+  );
+  const outcome = one<{ state: string; best_confidence: string | null }>(ctx.db, "SELECT state, best_confidence FROM session_outcome WHERE session_id = ?", id);
+  const before = commits.filter((c) => Date.parse(c.authored_at) < block.startMs);
+  const during = commits.filter((c) => Date.parse(c.authored_at) >= block.startMs && Date.parse(c.authored_at) <= block.endMs);
+  const after = commits.filter((c) => Date.parse(c.authored_at) > block.endMs);
+  const statement =
+    commits.length === 0
+      ? "No commit is tied to this session from the sources available, so no landing before or after this block can be shown. That is unknowable, not proof that nothing landed."
+      : after.length === 0
+        ? `Every commit tied to this session (${commits.length}) was made before or during this block; none was made after it, so stopping at the stop point would not have cut off a later landing that git shows.`
+        : `${after.length} commit${after.length === 1 ? "" : "s"} tied to this session ${after.length === 1 ? "was" : "were"} made after this block ended: the session went on to land work, so stopping it at the stop point may have cost that.`;
+  const redact = createRedactor();
+  return {
+    state: "ok",
+    id,
+    block: { id: block.id, kind: block.kind, title: KIND_TITLE[block.kind], rule: block.rule, calls: block.calls.length, micros: block.totalMicros, unpricedCalls: block.unpricedCalls, startOffsetSec: Math.round((block.startMs - start) / 1000), durationSec: Math.round((block.endMs - block.startMs) / 1000) },
+    project: projectName(one<{ project_path: string | null }>(ctx.db, "SELECT project_path FROM session WHERE session_id = ?", id)?.project_path ?? null),
+    stop: exp.stop,
+    rule: exp.rule,
+    cascade: exp.cascade,
+    sentences: exp.sentences,
+    calls,
+    lines: { ...lines, excerpts: lines.excerpts.map((e) => ({ ...e, text: redact.clean(e.text) })) },
+    landing: {
+      state: outcome?.state ?? "unlinked",
+      confidence: outcome?.best_confidence ?? null,
+      commits: commits.length,
+      before: before.length,
+      during: during.length,
+      after: after.map((c) => ({ sha: c.sha.slice(0, 9), authoredAt: c.authored_at, method: c.method, confidence: c.confidence, merged: c.merged === 1, reverted: c.reverted === 1 })),
+      statement,
+    },
+    snapshotId: ctx.snapshot.snapshotId,
+  };
+}
+
 const CAUSE_OF = (a: PerCall | undefined): "idle" | "loops" | "subagents" | "cache_miss" | "ordinary" => {
   if (!a) return "ordinary";
   if (a.wholeCall === "idle" || a.wholeCall === "loops" || a.wholeCall === "subagents") return a.wholeCall;
@@ -663,8 +771,9 @@ export function session(ctx: UiContext, id: string): object {
     id,
     LIMIT,
   );
-  const sessionCalls = loadAutopsyCalls(ctx.db, ctx.snapshot, span.a, span.b).filter((c) => c.sessionId === id);
+  const sessionCalls = loadAutopsyCalls(ctx.db, ctx.snapshot, span.a, span.b, { sessionId: id });
   const analysis = analyseCalls(sessionCalls);
+  const blocks = findBlocks(sessionCalls, analysis, buildAutopsy(sessionCalls, Date.parse(span.a) - 1, Date.parse(span.b) + 1, analysis).missEvents);
   const commits = all<{ sha: string; authored_at: string; method: string; confidence: string; merged: number; reverted: number; root: string }>(
     ctx.db,
     `SELECT g.sha, g.authored_at, sc.method, sc.confidence, g.merged, g.reverted, r.root FROM session_commit sc
@@ -717,6 +826,8 @@ export function session(ctx: UiContext, id: string): object {
     truncated: span.n > LIMIT,
     calls: rows,
     byCause,
+    blocks: blocks.slice(0, 50).map((b) => ({ id: b.id, kind: b.kind, rule: b.rule, calls: b.calls.length, micros: b.totalMicros, unpricedCalls: b.unpricedCalls, stopOffsetSec: Math.round((b.startMs - start) / 1000), durationSec: Math.round((b.endMs - b.startMs) / 1000) })),
+    blockCount: blocks.length,
     landing: {
       state: outcome?.state ?? "unlinked",
       confidence: outcome?.best_confidence ?? null,

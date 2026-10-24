@@ -29,25 +29,29 @@ interface CallRow {
  * joined to the call whose tools produced them and handed to the next call of the same thread (the
  * call that reads them). Human prompts are looked up per session. Nothing here reads message text.
  */
-export function loadAutopsyCalls(db: Ledger, snapshot: PriceSnapshot, sinceIso: string, untilIso: string): AutopsyCall[] {
+export function loadAutopsyCalls(db: Ledger, snapshot: PriceSnapshot, sinceIso: string, untilIso: string, only: { sessionId?: string } = {}): AutopsyCall[] {
+  // One session's calls only, when asked: a long session's explanation should not read every other session in the same weeks.
+  const sid = only.sessionId;
+  const sidSql = sid === undefined ? "" : " AND m.session_id = ?";
+  const sidArgs = sid === undefined ? [] : [sid];
   const rows = db
     .prepare(
       `SELECT m.call_id, m.source_id, m.session_id, m.ts, m.model, m.is_sidechain, m.input_tokens, m.output_tokens, m.reasoning_tokens,
               m.cache_read_tokens, m.cache_write_5m_tokens, m.cache_write_1h_tokens, c.class, c.input_micros, c.output_micros,
               c.cache_read_micros, c.cache_write_5m_micros, c.cache_write_1h_micros
        FROM model_call m LEFT JOIN cost_event c ON c.call_id = m.call_id
-       WHERE m.ts >= ? AND m.ts <= ? ORDER BY m.ts`,
+       WHERE m.ts >= ? AND m.ts <= ?${sidSql} ORDER BY m.ts`,
     )
-    .all(sinceIso, untilIso) as unknown as CallRow[];
+    .all(sinceIso, untilIso, ...sidArgs) as unknown as CallRow[];
   if (rows.length === 0) return [];
 
   const toolsByCall = new Map<string, { name: string; inputHash: string; resultIsError: boolean }[]>();
   const toolRows = db
     .prepare(
       `SELECT t.call_id, t.name, t.input_hash, COALESCE(r.is_error, 0) AS is_error FROM tool_call t
-       JOIN model_call m ON m.call_id = t.call_id LEFT JOIN tool_result r ON r.tool_use_id = t.tool_use_id WHERE m.ts >= ? AND m.ts <= ?`,
+       JOIN model_call m ON m.call_id = t.call_id LEFT JOIN tool_result r ON r.tool_use_id = t.tool_use_id WHERE m.ts >= ? AND m.ts <= ?${sidSql}`,
     )
-    .all(sinceIso, untilIso) as unknown as { call_id: string; name: string; input_hash: string; is_error: number }[];
+    .all(sinceIso, untilIso, ...sidArgs) as unknown as { call_id: string; name: string; input_hash: string; is_error: number }[];
   for (const t of toolRows) {
     const list = toolsByCall.get(t.call_id) ?? [];
     list.push({ name: t.name, inputHash: t.input_hash, resultIsError: t.is_error === 1 });
@@ -59,15 +63,15 @@ export function loadAutopsyCalls(db: Ledger, snapshot: PriceSnapshot, sinceIso: 
     .prepare(
       `SELECT t.call_id, SUM(r.result_chars) AS chars FROM tool_call t
        JOIN tool_result r ON r.tool_use_id = t.tool_use_id JOIN model_call m ON m.call_id = t.call_id
-       WHERE m.ts >= ? AND m.ts <= ? GROUP BY t.call_id`,
+       WHERE m.ts >= ? AND m.ts <= ?${sidSql} GROUP BY t.call_id`,
     )
-    .all(sinceIso, untilIso) as unknown as { call_id: string; chars: number }[];
+    .all(sinceIso, untilIso, ...sidArgs) as unknown as { call_id: string; chars: number }[];
   for (const r of resultRows) resultCharsByCall.set(r.call_id, r.chars);
 
   const promptsBySession = new Map<string, number[]>();
   const promptRows = db
-    .prepare("SELECT session_id, ts FROM human_prompt WHERE session_id IN (SELECT DISTINCT session_id FROM model_call WHERE ts >= ? AND ts <= ?) ORDER BY ts")
-    .all(sinceIso, untilIso) as unknown as { session_id: string; ts: string }[];
+    .prepare(`SELECT session_id, ts FROM human_prompt WHERE session_id IN (SELECT DISTINCT m.session_id FROM model_call m WHERE m.ts >= ? AND m.ts <= ?${sidSql}) ORDER BY ts`)
+    .all(sinceIso, untilIso, ...sidArgs) as unknown as { session_id: string; ts: string }[];
   for (const p of promptRows) {
     const list = promptsBySession.get(p.session_id) ?? [];
     list.push(Date.parse(p.ts));

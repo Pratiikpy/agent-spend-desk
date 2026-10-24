@@ -67,6 +67,7 @@ import { estimateTask, pastTasks, renderEstimate } from "./estimate/estimate.ts"
 import { buildGauge, gaugeLine, renderGauge } from "./gauge/gauge.ts";
 import { buildReview, renderReview, weekRange } from "./review/review.ts";
 import { closeCommand } from "./close/command.ts";
+import { billCommand } from "./bill/command.ts";
 import { approvalsCommand } from "./approvals/command.ts";
 import { readHabit } from "./ui/queries.ts";
 import { gaugeCachePath, newestMtimeMs, watchLogs, writeGaugeCache } from "./gauge/watch.ts";
@@ -153,6 +154,8 @@ const { values, positionals } = parseOrExit({
     currency: { type: "string" },
     period: { type: "string" },
     month: { type: "string" },
+    export: { type: "string" },
+    output: { type: "string" },
     sign: { type: "boolean", default: false },
     "ask-approval": { type: "boolean", default: false },
     by: { type: "string" },
@@ -570,22 +573,18 @@ ${t.pass} PASS, ${t.fail} FAIL, ${t.notRun} NOT RUN. NOT RUN is not a pass: it n
   loadDotenv(".env");
   console.log(await benchCommand({ sub: positionals[1] ?? "", dbPath: ledgerPath, sampleMode, record: values.record, arms: values.arm, split: values.split, set: values.set, trials: values.trials, only: values.only, results: values.results, concurrency: values.concurrency, env: process.env, log: (l) => console.error(l) }));
 } else if (command === "bill") {
-  const since = values.since ?? "0000-00-00";
-  const until = values.until ?? "9999-99-99";
-  const rows = db
-    .prepare(
-      `SELECT model, SUM(calls) calls, SUM(input_tokens) i, SUM(output_tokens) o, SUM(cache_read_tokens) cr, SUM(cache_write_tokens) cw,
-              SUM(estimated_micros) micros, SUM(unpriced_calls) unpriced
-       FROM v_cost_by_day_model WHERE day >= ? AND day <= ? GROUP BY model ORDER BY micros DESC`,
-    )
-    .all(since, until) as { model: string; calls: number; i: number; o: number; cr: number; cw: number; micros: number | null; unpriced: number }[];
-  let total = 0;
-  for (const r of rows) {
-    total += r.micros ?? 0;
-    const cost = r.micros === null ? "unpriced" : formatUsd(r.micros);
-    console.log(`${r.model.padEnd(22)} ${String(r.calls).padStart(7)} calls  in ${r.i}  out ${r.o}  cache-read ${r.cr}  cache-write ${r.cw}  ${cost}${r.unpriced > 0 && r.micros !== null ? `  (+${r.unpriced} unpriced)` : ""}`);
-  }
-  console.log(`estimated list-price total: ${formatUsd(total)}  (an estimate from logged tokens, not a bill)`);
+  const result = billCommand({
+    db,
+    snapshot: loadSnapshot(pricesPath),
+    mode: sampleMode ? "sample" : "own_logs",
+    ...(values.month ? { month: values.month } : {}),
+    ...(values.since ? { since: values.since } : {}),
+    ...(values.until ? { until: values.until } : {}),
+    ...(values.export ? { exportAs: values.export as "csv" | "json" } : {}),
+    ...(values.output ? { out: values.output } : {}),
+  });
+  console.log(result.text);
+  if (!result.ok) process.exitCode = 1;
 } else if (command === "autopsy") {
   const snapshot = loadSnapshot(pricesPath);
   const until = values.until ?? new Date().toISOString();

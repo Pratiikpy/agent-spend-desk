@@ -173,7 +173,7 @@ export async function startUiServer(opts: UiOptions): Promise<UiServer> {
 
   const extra: ExtraPaths = { cassetteDir: "data/sample/cassettes", memoryDir: "data/desk/memory", dossiersDir: "data/desk/dossiers", pendingDir: "data/desk/pending", sampleDir: "data/desk/sample", regretPath: opts.mode === "sample" ? "data/desk/sample/regret.db" : "data/desk/regret.db", ...opts.extra };
 
-  const route = (path: string, p: URLSearchParams): unknown => {
+  const route = async (path: string, p: URLSearchParams): Promise<unknown> => {
     switch (path) {
       case "/api/meta":
         return { ...(q.meta(ctx) as object), ledgerProblem: problem };
@@ -187,6 +187,8 @@ export async function startUiServer(opts: UiOptions): Promise<UiServer> {
         return withProblem(q.sessions(ctx, q.parseRange(p.get("range"), db), p.get("sort") ?? "cost", q.parseInt0(p.get("limit"), "limit", 50, 1, 200), q.parseInt0(p.get("offset"), "offset", 0, 0, 10_000_000), q.parseSessionFilter(p)));
       case "/api/session":
         return withProblem(q.session(ctx, p.get("id") ?? ""));
+      case "/api/session/block":
+        return withProblem(await q.sessionBlock(ctx, p.get("id") ?? "", p.get("block") ?? ""));
       case "/api/week":
         return withProblem(q.week(ctx, p.get("week")));
       case "/api/outcomes":

@@ -292,3 +292,22 @@ describe("a source that has not been read lately is said to be stale", () => {
     expect(byId["codex"]).toMatchObject({ stale: false, ageHours: 1 });
   });
 });
+
+describe("the bill's figures open the rows behind them too", () => {
+  it("states what kind of figure stands behind the dollars, and each model, project, state and day reproduces from its sessions", async () => {
+    const s = await serve(join(work, "main.db"), { timeZone: "UTC" });
+    const res = await get(s, "/api/bill?range=all");
+    const d = res.body;
+    expect(d.coverageLine).toMatch(/^\$7\.90: 0\.0% in months an invoice covers, 0\.0% in processes that recorded their own cost, 100\.0% only our estimate\.$/);
+    expect(d.window.from).toBe("2026-10-24T20:00:00.000Z");
+    const rows = async (q: string): Promise<Record<string, any>> => (await get(s, `/api/sessions?from=${encodeURIComponent(d.window.from)}&to=${encodeURIComponent(d.window.to)}&limit=200${q}`)).body;
+    expect((await rows("")).spendMicros).toBe(d.totals.estimatedMicros);
+    for (const m of d.byModel as { model: string; micros: number }[]) expect((await rows(`&model=${encodeURIComponent(m.model)}`)).spendMicros).toBe(m.micros);
+    for (const p of d.byProject as { project: string; micros: number }[]) expect((await rows(`&project=${encodeURIComponent(p.project)}`)).spendMicros).toBe(p.micros);
+    for (const r of d.landing.rows as { state: string; micros: number }[]) expect((await rows(`&state=${r.state}`)).spendMicros).toBe(r.micros);
+    for (const day of d.daily as { day: string; micros: number }[]) {
+      const w = (await get(s, `/api/sessions?from=${day.day}T00%3A00%3A00.000Z&to=${day.day}T23%3A59%3A59.999Z&limit=200`)).body;
+      expect(w.spendMicros).toBe(day.micros);
+    }
+  });
+});

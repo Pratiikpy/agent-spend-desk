@@ -13,7 +13,8 @@ function statePill(state) {
 
 export async function render(ctx) {
   const id = ctx.params.get("id");
-  return id ? detail(ctx, id) : list(ctx);
+  const block = ctx.params.get("block");
+  return id ? (block ? blockDetail(ctx, id, block) : detail(ctx, id)) : list(ctx);
 }
 
 // What a link from another screen narrowed this list to. The same narrowing is sent to the API and kept by the sort and the pager.
@@ -75,6 +76,140 @@ async function list(ctx) {
   );
 }
 
+const KIND_LABEL = { loops: "A failing command repeated", idle: "The agent on its own", subagents: "A delegated agent's run", cache_miss: "A cache lost" };
+const ROLE_LABEL = { assistant_text: "said", tool_use: "called", tool_result: "got back" };
+
+function offset(sec) {
+  const s = Math.max(0, Math.round(sec));
+  if (s < 120) return `+${s}s`;
+  if (s < 7200) return `+${Math.floor(s / 60)}m ${String(s % 60).padStart(2, "0")}s`;
+  return `+${Math.floor(s / 3600)}h ${String(Math.floor((s % 3600) / 60)).padStart(2, "0")}m`;
+}
+
+function blocksSection(ctx, d) {
+  if (!d.blocks || d.blocks.length === 0) return section("Waste blocks", "what a rule would have stopped", h("p", { class: "note" }, "No rule flags a block of calls in this session."));
+  return section(
+    "Waste blocks",
+    "what a rule would have stopped",
+    table(
+      "Waste blocks",
+      [
+        { label: "What", render: (b) => h("a", { href: ctx.link("sessions", { id: d.id, block: b.id, range: ctx.range }) }, KIND_LABEL[b.kind] || b.kind) },
+        { label: "Rule", id: true, render: (b) => b.rule },
+        { label: "Stop point", num: true, render: (b) => offset(b.stopOffsetSec) },
+        { label: "Calls", num: true, render: (b) => int(b.calls) },
+        { label: "Cost", num: true, render: (b) => usd(b.micros) },
+      ],
+      d.blocks,
+      { maxh: true },
+    ),
+    d.blockCount > d.blocks.length ? h("p", { class: "note" }, `Showing the ${d.blocks.length} costliest of ${int(d.blockCount)}.`) : null,
+    h("p", { class: "note" }, "A block is a run of calls one rule flags together. Open one to see where the rule would have stopped it and why."),
+  );
+}
+
+async function blockDetail(ctx, id, blockId) {
+  const d = await ctx.api("/api/session/block", { id, block: blockId });
+  const back = h("p", null, h("a", { class: "btn", href: ctx.link("sessions", { id, range: ctx.range }) }, "Back to the session"));
+  if (d.state === "empty") return h("div", null, head("Waste block", "Not found"), emptyState(d), back);
+  const b = d.block;
+  const c = d.cascade;
+  const l = d.lines;
+  return h(
+    "div",
+    null,
+    head("Waste block", b.title, `${d.project}, ${offset(b.startOffsetSec)} into the session, ${int(b.calls)} call${b.calls === 1 ? "" : "s"}, ${usd(b.micros)}.`),
+    section(
+      "Stop point",
+      "where the rule would have acted",
+      h(
+        "div",
+        { class: "stats" },
+        stat("Stop at", offset(d.stop.offsetSec), d.stop.why),
+        stat("Would have saved", num(usd(d.stop.savingMicros), PROV.estimated(d.snapshotId, { Basis: "the cost of the stop call and every later call of the block, at each call's own price snapshot" })), `${int(d.stop.callsAfter)} further call${d.stop.callsAfter === 1 ? "" : "s"} after it; an upper bound`),
+        stat("Rule", d.rule.id, b.unpricedCalls > 0 ? `${int(b.unpricedCalls)} call${b.unpricedCalls === 1 ? "" : "s"} on a model with no price, not priced` : "every call priced"),
+      ),
+      h("ul", { class: "list", "data-sentences": "true" }, ...d.sentences.map((s) => h("li", null, s.text, h("span", { class: "note" }, ` (${s.basis})`)))),
+    ),
+    section(
+      "The rule",
+      "its own numbers",
+      table(
+        "Rule parameters and what was observed",
+        [
+          { label: "", render: (r) => r.kind },
+          { label: "Name", id: true, render: (r) => r.name.replaceAll("_", " ") },
+          { label: "Value", num: true, render: (r) => String(r.value) },
+        ],
+        [...Object.entries(d.rule.params).map(([name, value]) => ({ kind: "the rule's setting", name, value })), ...Object.entries(d.rule.observed).map(([name, value]) => ({ kind: "observed here", name, value }))],
+      ),
+      h("p", { class: "note" }, "The settings are design parameters of this rule, not tuned on your history."),
+    ),
+    section(
+      "How it unfolded",
+      "the failure cascade",
+      h("p", null, pill(`confidence ${c.confidence}`, c.confidence === "low" ? "risk" : "live"), " ", c.why),
+      c.steps.length === 0
+        ? null
+        : table(
+            "Calls from the first break to the end of the block",
+            [
+              { label: "At", num: true, render: (s) => offset((s.atMs - (d.stop.atMs - d.stop.offsetSec * 1000)) / 1000) },
+              { label: "Tools", render: (s) => s.tools.join(", ") || "none" },
+              { label: "What", render: (s) => [s.callId === (c.firstBreak && c.firstBreak.callId) ? "first break" : null, s.repeatsFirstBreak ? "same failure again" : s.failed ? "a different failure" : "no failure", s.opaque ? `opaque: ${s.opaqueWhy}` : null].filter(Boolean).join("; ") },
+            ],
+            c.steps,
+          ),
+    ),
+    section(
+      "The lines",
+      "redacted, from your own log",
+      l.unreadable ? h("p", { class: "note" }, l.unreadable) : null,
+      l.excerpts.length === 0 && !l.unreadable ? h("p", { class: "note" }, "No line was found for these calls in the log file.") : null,
+      l.excerpts.length > 0
+        ? table(
+            "Log lines",
+            [
+              { label: "Call", id: true, render: (e) => e.callId.slice(-8) },
+              { label: "Kind", render: (e) => `${ROLE_LABEL[e.role] || e.role}${e.tool ? ` ${e.tool}` : ""}${e.isError ? " (error)" : ""}` },
+              { label: "Excerpt", render: (e) => h("span", { class: "traceline" }, e.text) },
+            ],
+            l.excerpts,
+            { maxh: true },
+          )
+        : null,
+      l.missingCalls.length > 0 && !l.unreadable ? h("p", { class: "note" }, `${int(l.missingCalls.length)} call${l.missingCalls.length === 1 ? "" : "s"} could not be found in the log: shown as a gap, not filled in.`) : null,
+      l.missingResults.length > 0 && !l.unreadable ? h("p", { class: "note" }, `${int(l.missingResults.length)} tool use${l.missingResults.length === 1 ? "" : "s"} ha${l.missingResults.length === 1 ? "s" : "ve"} no result in the log: a gap.`) : null,
+      h("p", { class: "note" }, "Credentials, paths and long random strings are masked and each line is cut short. Nothing here leaves this machine."),
+    ),
+    section(
+      "Calls and what each cost",
+      "price snapshot per call",
+      table(
+        "Calls",
+        [
+          { label: "At", num: true, render: (x) => offset(x.offsetSec) },
+          { label: "Model", id: true, render: (x) => x.model },
+          { label: "Tools", render: (x) => x.tools.join(", ") || "none" },
+          { label: "Role", render: (x) => [x.isFirstBreak ? "first break" : null, x.isStop ? "stop point" : null, x.inBlock && !x.isStop ? "in the block" : null, !x.inBlock && !x.isFirstBreak ? "leading in" : null, x.sidechain ? "delegated" : null].filter(Boolean).join(", ") },
+          { label: "Snapshot", id: true, render: (x) => x.snapshotId || "none" },
+          { label: "Cost", num: true, render: (x) => (x.micros === null ? "unpriced" : usd(x.micros)) },
+        ],
+        d.calls,
+        { maxh: true },
+      ),
+    ),
+    section(
+      "What the session landed",
+      "from git",
+      h("p", { "data-landing-statement": "true" }, d.landing.statement),
+      d.landing.after.length > 0 ? table("Commits made after the block", [{ label: "Commit", id: true, render: (x) => x.sha }, { label: "At", render: (x) => stamp(x.authoredAt) }, { label: "Evidence", render: (x) => `${x.method.replace("_", " ")}, ${x.confidence}` }, { label: "State", render: (x) => (x.reverted ? "reverted" : x.merged ? "merged" : "committed") }], d.landing.after) : null,
+    ),
+    back,
+    footnote(`price snapshot ${d.snapshotId}`, "A stop point is a counterfactual on a recorded session: it assumes nothing the agent did later was needed."),
+  );
+}
+
 async function detail(ctx, id) {
   const d = await ctx.api("/api/session", { id });
   if (d.state === "empty") return h("div", null, head("Session", "Not found"), emptyState(d), h("p", null, h("a", { class: "btn", href: ctx.link("sessions", {}) }, "Back to the list")));
@@ -109,6 +244,7 @@ async function detail(ctx, id) {
       "this session",
       table("Causes", [{ label: "Cause", render: (r) => CAUSE_LABEL[r[0]] || r[0] }, { label: "Calls", num: true, render: (r) => int(r[1].calls) }, { label: "Spend", num: true, render: (r) => usd(r[1].micros) }], causes),
     ),
+    blocksSection(ctx, d),
     section(
       "Commits",
       d.landing.commits.length === 0 ? "none tied" : "how the link was made",
