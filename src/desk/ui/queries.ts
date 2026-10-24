@@ -23,6 +23,7 @@ import { landingBreakdown } from "../outcomes/breakdown.ts";
 import { reconcile, summariseReconciliation, type ReconcileRow } from "../reconcile/reconcile.ts";
 import { groupLabel, limitGroups } from "../limits/fit.ts";
 import { renderRunway, runwayDetail, runwayFromLedger, runwayHead } from "../limits/runway.ts";
+import { plansView } from "../limits/plans.ts";
 import { comparePrices, type ForeignRow } from "../pricing/compare.ts";
 import type { PriceSnapshot } from "../pricing/pricebook.ts";
 import { costBand, priceSensitivity } from "../pricing/sensitivity.ts";
@@ -542,6 +543,7 @@ function runwayRows(ctx: UiContext): object[] {
   if (!has || has.n === 0) return [];
   const now = new Date(ctx.nowMs());
   const out: object[] = [];
+  const view = plansView(ctx.db, now);
   for (const [tool, name] of RUNWAY_TOOLS) {
     const groups = limitGroups(ctx.db, tool, now);
     const current = groups[0];
@@ -549,7 +551,8 @@ function runwayRows(ctx: UiContext): object[] {
     for (const g of groups.filter((x) => x.planType === current.planType).sort((a, b) => a.windowMinutes - b.windowMinutes)) {
       const label = `${name}, ${groupLabel(g)}`;
       const r = runwayFromLedger(ctx.db, { tool, windowMinutes: g.windowMinutes, planType: g.planType, now });
-      out.push({ label, ...r, resetsAt: r.resetsAt === null ? null : r.resetsAt.toISOString(), head: runwayHead(r), detail: runwayDetail(r), text: renderRunway(r, label) });
+      const w = view.windows.find((x) => x.tool === tool && x.windowMinutes === g.windowMinutes && x.planType === g.planType);
+      out.push({ label, ...r, resetsAt: r.resetsAt === null ? null : r.resetsAt.toISOString(), head: runwayHead(r), detail: runwayDetail(r), text: renderRunway(r, label), source: w?.source ?? "official", local: w?.local ?? null, linear: w?.linear ?? null });
     }
   }
   return out;

@@ -68,6 +68,7 @@ import { buildGauge, gaugeLine, renderGauge } from "./gauge/gauge.ts";
 import { buildReview, renderReview, weekRange } from "./review/review.ts";
 import { closeCommand } from "./close/command.ts";
 import { billCommand } from "./bill/command.ts";
+import { plansView, renderPlans } from "./limits/plans.ts";
 import { approvalsCommand } from "./approvals/command.ts";
 import { readHabit } from "./ui/queries.ts";
 import { gaugeCachePath, newestMtimeMs, watchLogs, writeGaugeCache } from "./gauge/watch.ts";
@@ -429,6 +430,10 @@ ${sensitivity}`);
       if (!fit.abstained) console.log(renderLeaveOneOut(leaveOneOut(obs)));
     }
   }
+} else if (command === "plans") {
+  const at = values.at ? new Date(values.at) : new Date();
+  if (Number.isNaN(at.getTime())) throw new Error("--at must be a date and time such as 2026-10-24T12:00:00Z");
+  console.log(renderPlans(plansView(db, at, values.agent ? { tool: values.agent } : {})));
 } else if (command === "runway") {
   const at = values.at ? new Date(values.at) : new Date();
   if (Number.isNaN(at.getTime())) throw new Error("--at must be a date and time such as 2026-10-24T12:00:00Z");

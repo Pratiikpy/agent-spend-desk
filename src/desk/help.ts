@@ -31,6 +31,7 @@ export const COMMANDS: readonly CommandHelp[] = [
   { name: "bill", group: "Costs and limits", summary: "The bill for a month or any dates: kinds of figure, what it bought, where it went; --export csv or json gives every line." },
   { name: "autopsy", group: "Costs and limits", summary: "Split a window of spend into causes: idle, loops, cache misses, and work that was needed." },
   { name: "limits", group: "Costs and limits", summary: "What a percent of your plan limit costs in tokens, per plan and window, with an interval, or why there is no estimate." },
+  { name: "plans", group: "Costs and limits", summary: "Every plan window your tools report: the tool's own figure beside a local count, the outlook, and the limit hits and model changes." },
   { name: "runway", group: "Costs and limits", summary: "Will this plan window last until it resets? Judged from how past windows of the same plan ended." },
   { name: "prices", group: "Costs and limits", summary: "`prices compare` checks our price book against another; `reprice` prices the ledger again, keeping old costs; `history` shows them." },
   { name: "pr", group: "Costs and limits", summary: "What the agent work behind one change cost, as a description to paste into the pull request." },
