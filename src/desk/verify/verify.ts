@@ -70,7 +70,8 @@ class Level {
 }
 
 const dec = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true });
-const SAFE_PATH = /^[A-Za-z0-9._-]+(\/[A-Za-z0-9._-]+)*$/;
+// A plus sign is allowed because a price snapshot with supplements applied is named `base+supplement+supplement`.
+const SAFE_PATH = /^[A-Za-z0-9._+-]+(\/[A-Za-z0-9._+-]+)*$/;
 const ALLOWED_PREFIXES = ["rows/", "proofs/", "price_snapshots/", "policy/", "evidence/blobs/sha256/", "approvals/"];
 
 function text(bytes: Uint8Array): string {

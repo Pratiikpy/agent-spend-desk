@@ -122,7 +122,7 @@ export function renderProposal(r: ProposeResult, input: Pick<ProposeInput, "sess
   const training = input.sessions.filter((s) => s.startMs < input.splitMs);
   const held = input.sessions.filter((s) => s.startMs >= input.splitMs);
   const out: string[] = [];
-  out.push(`Policy proposal, drafted from ${range(training)} (${training.length} sessions), checked on ${range(held)} (${held.length} sessions, held out: not used while drafting)`);
+  out.push(`Policy proposal, drafted from ${range(training)} (${training.length} session${training.length === 1 ? "" : "s"}), checked on ${range(held)} (${held.length} session${held.length === 1 ? "" : "s"}, held out: not used while drafting)`);
   out.push("");
   if (r.findings.length === 0) out.push("No waste run in the training period was large enough to propose a rule.");
   for (const f of r.findings) out.push(`finding  ${f.wasteRule}: ${f.occurrences} runs, ${formatUsd(f.recoverableMicros)} recoverable`);

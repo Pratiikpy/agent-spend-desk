@@ -1,8 +1,8 @@
-import { priceCall } from "../cost/price-call.ts";
+import { effectiveRow, priceCall } from "../cost/price-call.ts";
 import { restrictCheck } from "../policy/restrict.ts";
 import { replayPolicy, type ReplayCall, type ReplaySession } from "../replay/policy-replay.ts";
 import type { Policy } from "../policy/types.ts";
-import type { PriceSnapshot } from "../pricing/pricebook.ts";
+import { promptTokens, resolvePrice, type PriceSnapshot } from "../pricing/pricebook.ts";
 import { LIMITS, type Row } from "./format.ts";
 
 /**
@@ -231,6 +231,72 @@ const costMicros: Run = (spec, rows, env) => {
   return { values: { value: Number(total), unpriced_calls: unpriced }, rowsUsed: picked.length, allowedClasses: ["estimated"] };
 };
 
+const TOKEN_FIELDS = ["input_tokens", "output_tokens", "cache_read_tokens", "cache_write_5m_tokens", "cache_write_1h_tokens"] as const;
+
+/**
+ * A total over rows that each stand for many calls: one row per day, model, tier, speed and geography, holding the sums of the
+ * calls' tokens and of the costs the ledger recorded for them. Each call's cost is its exact list-price figure rounded half up to a
+ * micro-USD, so the rows' recorded cost can differ from the exact figure over their summed tokens by less than half a micro-USD per
+ * call, and by no more. A row that is further off than that is refused. A row for calls priced at the long-prompt rates must hold
+ * more prompt tokens than the line allows each call; the sum cannot show that each call was over it, and the dossier says so.
+ * A row for a model with no price must cost nothing and the snapshot must really have no price for it.
+ */
+const costBounds: Run = (spec, rows, env) => {
+  allowedArgs(spec.args, ["where"]);
+  const picked = rows.filter((r) => matches(r, parseWhere(spec.args["where"])));
+  let total = 0n;
+  let calls = 0n;
+  let unpriced = 0n;
+  let long = 0n;
+  for (const r of picked) {
+    const d = dataOf(r);
+    const where = `${r.stream}#${r.seq}`;
+    const n = intField(r, "calls");
+    if (n < 1) fail("bad_field", `${where}: calls must be at least 1`);
+    const snapshot = env.snapshots.get(strField(r, "snapshot_id"));
+    if (!snapshot) fail("snapshot_missing", `${where} cites price snapshot ${strField(r, "snapshot_id")}, which is not in the bundle`);
+    const recorded = intField(r, "cost_micros");
+    if (recorded < 0) fail("bad_field", `${where}: cost_micros is negative`);
+    const tier = strField(r, "tier");
+    if (tier !== "std" && tier !== "long") fail("bad_field", `${where}: tier must be std or long`);
+    if (typeof d["priced"] !== "boolean") fail("bad_field", `${where}: priced must be true or false`);
+    const resolved = resolvePrice(snapshot, strField(r, "model"));
+    calls += BigInt(n);
+    if (!d["priced"]) {
+      if (resolved.kind !== "unpriced") fail("row_priced_mismatch", `${where}: marked unpriced, but the snapshot has a price for ${strField(r, "model")}`);
+      if (recorded !== 0) fail("row_cost_mismatch", `${where}: an unpriced row records ${recorded} micro-USD, not 0`);
+      unpriced += BigInt(n);
+      continue;
+    }
+    if (resolved.kind === "unpriced") fail("row_priced_mismatch", `${where}: marked priced, but the snapshot has no price for ${strField(r, "model")}`);
+    const speed = typeof d["speed"] === "string" ? (d["speed"] as string) : null;
+    const geo = typeof d["inference_geo"] === "string" ? (d["inference_geo"] as string) : null;
+    const base = effectiveRow(resolved.row, speed, geo).row;
+    const tokens = Object.fromEntries(TOKEN_FIELDS.map((f) => [f, intField(r, f)])) as Record<(typeof TOKEN_FIELDS)[number], number>;
+    let rates = base;
+    if (tier === "long") {
+      if (!base.longPrompt) fail("row_tier_mismatch", `${where}: marked long-prompt, but ${strField(r, "model")} has no long-prompt rates here`);
+      const prompt = promptTokens({ inputTokens: tokens.input_tokens, cacheReadTokens: tokens.cache_read_tokens, cacheWrite5mTokens: tokens.cache_write_5m_tokens, cacheWrite1hTokens: tokens.cache_write_1h_tokens });
+      if (BigInt(prompt) <= BigInt(n) * BigInt(base.longPrompt.overPromptTokens)) fail("row_tier_mismatch", `${where}: marked long-prompt, but its ${n} calls hold ${prompt} prompt tokens, not more than ${n} times ${base.longPrompt.overPromptTokens}`);
+      rates = { ...base, ...base.longPrompt };
+      long += BigInt(n);
+    }
+    const numerator =
+      BigInt(tokens.input_tokens) * BigInt(rates.inputPerMTokMicros) +
+      BigInt(tokens.output_tokens) * BigInt(rates.outputPerMTokMicros) +
+      BigInt(tokens.cache_read_tokens) * BigInt(rates.cacheReadPerMTokMicros) +
+      BigInt(tokens.cache_write_5m_tokens) * BigInt(rates.cacheWrite5mPerMTokMicros) +
+      BigInt(tokens.cache_write_1h_tokens) * BigInt(rates.cacheWrite1hPerMTokMicros);
+    // Each call rounds to the nearest micro-USD, a half upward, so the error of n calls lies in (-n/2, n/2] micro-USD; times 1e6 below.
+    const off = BigInt(recorded) * 1_000_000n - numerator;
+    const slack = BigInt(n) * 500_000n;
+    if (off > slack || off <= -slack) fail("row_cost_mismatch", `${where}: recorded ${recorded} micro-USD, but ${n} calls with those tokens cost ${(Number(numerator) / 1e6).toFixed(3)} micro-USD at the pinned prices, further off than rounding allows`);
+    total += BigInt(recorded);
+  }
+  if (total > BigInt(Number.MAX_SAFE_INTEGER)) fail("overflow", "total cost is not a safe integer");
+  return { values: { value: Number(total), calls: Number(calls), unpriced_calls: Number(unpriced), long_prompt_calls: Number(long) }, rowsUsed: picked.length, allowedClasses: ["estimated"] };
+};
+
 const pairedDiffCi: Run = (spec, rows) => {
   allowedArgs(spec.args, ["a", "b", "seed", "resamples", "level_bp", "where"]);
   const a = argStr(spec.args, "a");
@@ -337,6 +403,7 @@ export const COMPUTATIONS: Readonly<Record<string, Registered>> = {
   "count@1": { run: count, needsRows: true },
   "ratio_bp@1": { run: ratioBp, needsRows: true },
   "cost_micros@1": { run: costMicros, needsRows: true },
+  "cost_bounds@1": { run: costBounds, needsRows: true },
   "paired_diff_ci@1": { run: pairedDiffCi, needsRows: true },
   "restrict_narrows@1": { run: restrictNarrows, needsRows: false },
   "policy_replay@1": { run: policyReplay, needsRows: true },

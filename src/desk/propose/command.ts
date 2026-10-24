@@ -27,6 +27,8 @@ export interface ProposeCommandOptions {
   sampleMode: boolean;
   /** Read the person from the branch prefix; see BridgeOptions. */
   personFromBranch: boolean;
+  /** Draft from, and check on, only the sessions in this window (inclusive ISO timestamps). Default: the whole ledger. */
+  window?: { sinceIso: string; untilIso: string };
   outDir: string;
   /** Issue an approval request and prepare the signed dossier. */
   dossier?: DossierPaths;
@@ -49,7 +51,7 @@ export function choosePort(o: Pick<ProposeCommandOptions, "sampleMode" | "record
 export async function proposeCommand(o: ProposeCommandOptions): Promise<string> {
   const db = openLedger(o.dbPath);
   try {
-    const sessions = replaySessionsFromLedger(db, loadSnapshot(o.pricesPath), "0000", "9999", { personFromBranch: o.sampleMode || o.personFromBranch });
+    const sessions = replaySessionsFromLedger(db, loadSnapshot(o.pricesPath), o.window?.sinceIso ?? "0000", o.window?.untilIso ?? "9999", { personFromBranch: o.sampleMode || o.personFromBranch });
     if (sessions.length === 0) return "No sessions in the ledger yet. Run `desk card` (or `desk ingest`) first.";
     const first = sessions[0]!.startMs;
     const last = sessions[sessions.length - 1]!.startMs;

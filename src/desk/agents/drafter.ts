@@ -173,7 +173,7 @@ export async function draftPolicy(opts: DraftOptions): Promise<DraftResult> {
     rounds,
     usedFallback,
     check: final.check,
-    escalation: ok ? null : passes(final.check) && !added ? `No rule could stop ${findings.map((f) => f.wasteRule).join(", ")} without pausing landed sessions on the training window. The owner must decide.` : final.check.widening ? `A passing policy was not found. Counterexample: ${final.check.widening}` : `A passing policy was not found: it would pause ${final.check.landedBlocked} of ${final.check.landedTotal} landed sessions on the training window.`,
+    escalation: ok || findings.length === 0 ? null : passes(final.check) && !added ? `No rule could stop ${findings.map((f) => f.wasteRule).join(", ")} without pausing landed sessions on the training window. The owner must decide.` : final.check.widening ? `A passing policy was not found. Counterexample: ${final.check.widening}` : `A passing policy was not found: it would pause ${final.check.landedBlocked} of ${final.check.landedTotal} landed sessions on the training window.`,
   };
 }
 

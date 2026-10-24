@@ -2,7 +2,7 @@
 
 Generated from `feature-status.json` by `npm run desk -- status` and checked by `tests/desk/feature-status.test.ts`. The specification is `02-feature-list.md`, which was written as design; this page says how much of it exists.
 
-**52 built, 50 partial, 27 absent** of 129.
+**53 built, 49 partial, 27 absent** of 129.
 
 How to read a status. *Built*: the core of the feature as specified exists and a test, a `desk prove` check or a verification record exercises it. *Partial*: a real part exists and the missing part is named. *Absent*: no code was found. A status is a judgement made by reading and searching, which is why every row cites the files it rests on. A built feature can still be shallow; the "missing" column says so where known.
 
@@ -19,7 +19,7 @@ How to read a status. *Built*: the core of the feature as specified exists and a
 | DF-009 Pre-run estimate | built | `src/desk/estimate/estimate.ts`, `src/desk/estimate/from-ledger.ts`, `src/desk/gate/mcp.ts`, `src/desk/gate/cli.ts`, `tests/desk/estimate.test.ts`, `tests/desk/gate/mcp-estimate.test.ts`, `docs/verification/estimate-2026-10-24.md` | types come from branch prefixes, ticket keys and labels, none of which this machine's real history has, so a type-specific estimate has only met constructed tasks; the scorecard is one person's rolling backtest |
 | DF-010 Alerts on the owner's schedule | built | `src/desk/alerts/engine.ts`, `src/desk/alerts/rules.ts`, `src/desk/alerts/deliver.ts`, `src/desk/alerts/command.ts`, `src/desk/ledger/db.ts`, `tests/desk/alerts.test.ts`, `docs/verification/alerts-2026-10-24.md` | no desktop notification was shown on a real desktop and no webhook posted to a real service (stand-ins only); caps and pauses are tested through the rules, not a live gate |
 | DF-011 Weekly review | built | `src/desk/review/review.ts`, `src/desk/ui/client/screens/week.js`, `src/desk/ui/queries.ts`, `src/desk/cli.ts`, `tests/desk/review.test.ts`, `tests/desk/ui/server.test.ts`, `docs/verification/weekly-review-and-questions-2026-10-25.md` | the approvals block is empty until the approval metrics (DF-049) exist; the calibration line waits for DF-034; a suggestion's effect is read from the logs or an upper bound, not tested by acting on it |
-| DF-012 Month close and the next-month decision | partial | `src/desk/propose/run.ts`, `src/desk/dossier/command.ts`, `tests/desk/propose.test.ts` | a month-close screen and its brief |
+| DF-012 Month close and the next-month decision | built | `src/desk/close/command.ts`, `src/desk/close/month-bill.ts`, `src/desk/verify/computations.ts`, `tests/desk/close.test.ts`, `docs/verification/month-close-2026-10-25.md` | no approval step for the month bill itself; invoices in other currencies are not reconciled; the long-prompt tier is checked per row, not per call |
 | DF-013 Ask the Desk | built | `src/desk/ask/ask.ts`, `tests/desk/ask.test.ts`, `tests/desk/ask-ops.test.ts` | - |
 | DF-014 Scene 0: the question | partial | `src/desk/demo.ts` | the demo is eight beats, not the scene set specified |
 | DF-015 Scene 1: the bill opens on the biggest waste block | partial | `src/desk/demo.ts` | the demo is eight beats, not the scene set specified |

@@ -66,6 +66,7 @@ import { parseAmount } from "./billing/amounts.ts";
 import { estimateTask, pastTasks, renderEstimate } from "./estimate/estimate.ts";
 import { buildGauge, gaugeLine, renderGauge } from "./gauge/gauge.ts";
 import { buildReview, renderReview, weekRange } from "./review/review.ts";
+import { closeCommand } from "./close/command.ts";
 import { gaugeCachePath, newestMtimeMs, watchLogs, writeGaugeCache } from "./gauge/watch.ts";
 import { backfillClaudeCodeFields } from "./ledger/backfill.ts";
 import { costVersions, listRepricings, renderRepricing, repriceLedger } from "./pricing/reprice.ts";
@@ -150,6 +151,8 @@ const { values, positionals } = parseOrExit({
     currency: { type: "string" },
     period: { type: "string" },
     month: { type: "string" },
+    sign: { type: "boolean", default: false },
+    "ask-approval": { type: "boolean", default: false },
     by: { type: "string" },
     preview: { type: "boolean", default: false },
     call: { type: "string" },
@@ -198,15 +201,39 @@ const sampleMode = values.sample || process.env.SAMPLE_MODE === "true";
 const pricesPath = values.prices ?? (sampleMode ? DEFAULT_SNAPSHOT : LIVE_SNAPSHOT);
 const ledgerPath = sampleMode && !process.argv.includes("--db") && command !== "card" ? join(values.out, "ledger.db") : values.db;
 // Commands that read the sample ledger build it first when it is not there, so `--sample` works from a fresh clone.
-if (sampleMode && ["propose", "silos", "ask", "ui", "verify-answer", "bench", "seats", "calibrate", "regret", "lessons"].includes(command) && !existsSync(ledgerPath)) {
+if (sampleMode && ["propose", "silos", "ask", "ui", "verify-answer", "bench", "seats", "calibrate", "regret", "lessons", "close"].includes(command) && !existsSync(ledgerPath)) {
   await runCard({ mode: "sample", claudeDir: "", dbPath: "", pricesPath: pricesPath, outDir: values["card-dir"], sampleDir: values.out, days: 14, hours: 5, repos: [], color: false, onProgress: (m) => console.error(m) });
 }
 const db = command === "card" || command === "status" || command === "lab" ? openLedger(":memory:") : openLedger(ledgerPath);
 
 if (command === "help") {
   console.log(helpText());
+} else if (command === "close") {
+  if (!sampleMode && !values["no-ingest"] && existsSync(values["claude-dir"])) {
+    const files = findJsonlLogs(values["claude-dir"]);
+    console.error(`Reading what is new in ${files.length} log file${files.length === 1 ? "" : "s"}...`);
+    await ingestClaudeCode(db, files, loadSnapshot(pricesPath));
+  }
+  loadDotenv(".env");
+  const closed = await closeCommand({
+    dbPath: ledgerPath,
+    pricesPath,
+    pricesDir: "data/prices",
+    ...(values.month ? { month: values.month } : {}),
+    now: new Date(),
+    ...(values.policy?.[0] ? { policyPath: values.policy[0] } : {}),
+    sign: values.sign,
+    askApproval: values["ask-approval"],
+    canaryRunsPath: sampleMode ? SAMPLE_RUNS : OWN_RUNS,
+    sample: sampleMode,
+    dossierDir: sampleMode ? join(values.out, "dossiers") : DOSSIER_PATHS.outDir,
+    propose: { minUsd: values["min-usd"], cassetteDir: values.cassettes, record: values.record, sampleMode, personFromBranch: values["person-from-branch"], outDir: sampleMode ? join(values.out, "proposals") : "data/desk/proposals", env: process.env },
+    proposeDossier: DOSSIER_PATHS,
+    regretPath: regretPath(),
+  });
+  console.log(closed.text);
+  if (!closed.ok) process.exitCode = 1;
 } else if (command === "review") {
-  refreshTasks(db, { useLabels: !sampleMode, markerPath: defaultMarkerPath() });
   if (values.week !== undefined) weekRange(values.week, 0); // a week that is not a week is refused before anything else is said
   const last = (db.prepare("SELECT MAX(ts) t FROM model_call").get() as { t: string | null }).t;
   if (last === null) console.log("Nothing to review: the ledger has no call. Run desk ingest first.");
