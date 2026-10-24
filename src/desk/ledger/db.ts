@@ -221,7 +221,41 @@ CREATE TABLE reported_model_usage (
 );
 `;
 
-const MIGRATIONS: readonly string[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4];
+// A second tool's logs (Codex), and the plan-limit readings those logs carry. A source's kind was limited to the first tool by a CHECK that
+// SQLite cannot widen in place, so the table is rebuilt. That has to be done with reference checking off, and the references are checked
+// again before the migration commits (see `migrate`).
+const FOREIGN_KEYS_OFF = "-- desk:foreign-keys-off";
+const SCHEMA_V5 = `${FOREIGN_KEYS_OFF}
+
+CREATE TABLE ingest_source_v5 (
+  id INTEGER PRIMARY KEY,
+  kind TEXT NOT NULL CHECK (kind IN ('claude_code', 'codex')),
+  path TEXT NOT NULL UNIQUE,
+  size_bytes INTEGER NOT NULL CHECK (size_bytes >= 0),
+  offset_bytes INTEGER NOT NULL CHECK (offset_bytes >= 0),
+  last_ingested_at TEXT NOT NULL
+);
+INSERT INTO ingest_source_v5 SELECT id, kind, path, size_bytes, offset_bytes, last_ingested_at FROM ingest_source;
+DROP TABLE ingest_source;
+ALTER TABLE ingest_source_v5 RENAME TO ingest_source;
+
+-- What a tool itself says about the plan's rate limit: percent used in a window, and when the window resets.
+CREATE TABLE limit_sample (
+  tool TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  ts TEXT NOT NULL,
+  kind TEXT NOT NULL CHECK (kind IN ('primary', 'secondary')),
+  window_minutes INTEGER NOT NULL CHECK (window_minutes > 0),
+  used_percent REAL NOT NULL CHECK (used_percent >= 0),
+  resets_at INTEGER NOT NULL,
+  plan_type TEXT,
+  limit_id TEXT,
+  PRIMARY KEY (tool, session_id, ts, kind)
+);
+CREATE INDEX limit_sample_window ON limit_sample (tool, kind, resets_at, ts);
+`;
+
+const MIGRATIONS: readonly string[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5];
 
 /** The schema version this build writes: the number of migrations. A reader compares a ledger's `user_version` with it. */
 export const SCHEMA_VERSION = MIGRATIONS.length;
@@ -233,7 +267,13 @@ export function openLedger(path: string): Ledger {
   if (path !== ":memory:") mkdirSync(dirname(path), { recursive: true });
   const db = new DatabaseSync(path);
   db.exec("PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 10000;");
-  migrate(db);
+  try {
+    migrate(db);
+  } catch (error) {
+    // A ledger that cannot be used must not stay open: on Windows an open file cannot be moved or deleted.
+    db.close();
+    throw error;
+  }
   return db;
 }
 
@@ -246,15 +286,23 @@ function migrate(db: Ledger): void {
   while (version < MIGRATIONS.length) {
     const sql = MIGRATIONS[version];
     if (sql === undefined) throw new Error("missing migration");
+    const offDuring = sql.startsWith(FOREIGN_KEYS_OFF);
+    if (offDuring) db.exec("PRAGMA foreign_keys = OFF");
     db.exec("BEGIN");
     try {
       db.exec(sql);
+      if (offDuring) {
+        const broken = db.prepare("PRAGMA foreign_key_check").all();
+        if (broken.length > 0) throw new Error(`migration ${version + 1} left ${broken.length} broken reference(s)`);
+      }
       version += 1;
       db.exec(`PRAGMA user_version = ${version}`);
       db.exec("COMMIT");
     } catch (error) {
       db.exec("ROLLBACK");
       throw error;
+    } finally {
+      if (offDuring) db.exec("PRAGMA foreign_keys = ON");
     }
   }
 }

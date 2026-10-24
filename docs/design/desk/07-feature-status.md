@@ -2,20 +2,20 @@
 
 Generated from `feature-status.json` by `npm run desk -- status` and checked by `tests/desk/feature-status.test.ts`. The specification is `02-feature-list.md`, which was written as design; this page says how much of it exists.
 
-**42 built, 54 partial, 33 absent** of 129.
+**42 built, 56 partial, 31 absent** of 129.
 
 How to read a status. *Built*: the core of the feature as specified exists and a test, a `desk prove` check or a verification record exercises it. *Partial*: a real part exists and the missing part is named. *Absent*: no code was found. A status is a judgement made by reading and searching, which is why every row cites the files it rests on. A built feature can still be shallow; the "missing" column says so where known.
 
 | Feature | Status | Evidence | Missing |
 |---|---|---|---|
-| DF-001 First run and source discovery | partial | `src/desk/ingest/discover.ts`, `tests/desk/discover.test.ts` | adapter capability declarations (there is one adapter) |
+| DF-001 First run and source discovery | partial | `src/desk/ingest/discover.ts`, `src/desk/ingest/codex.ts`, `tests/desk/discover.test.ts` | adapter capability declarations; two adapters (Claude Code, Codex) |
 | DF-002 Morning brief | partial | `src/desk/ui/client/screens/brief.js`, `tests/desk/ui/server.test.ts` | quota runway, overnight pauses and denials, a single recommended action by rule, every figure clickable to its rows |
 | DF-003 Live gauge (terminal and status line) | absent | none | no gauge or status-line command |
-| DF-004 Month bill | partial | `src/desk/ui/client/screens/bill.js`, `src/desk/cost/cost.ts`, `tests/desk/cost.test.ts` | a reported cost class, generic invoice import, allocation of idle and shared spend |
+| DF-004 Month bill | partial | `src/desk/ui/client/screens/bill.js`, `src/desk/cost/cost.ts`, `src/desk/reconcile/reconcile.ts`, `tests/desk/cost.test.ts`, `tests/desk/reconcile.test.ts` | the cost Claude Code recorded for itself is stored in a separate table and reconciled by `desk reconcile`, but the Bill screen does not show it beside the estimate; generic invoice import; allocation of idle and shared spend |
 | DF-005 Session view and the waste-block explanation | partial | `src/desk/autopsy/engine.ts`, `src/desk/ui/client/screens/sessions.js`, `tests/desk/autopsy.test.ts` | a stop point and rule for each waste block, the first-break cascade |
 | DF-006 Outcomes screen and the owner-question queue | partial | `src/desk/ui/client/screens/outcomes.js`, `src/desk/outcomes/link.ts`, `tests/desk/outcomes.test.ts` | the owner-question queue |
 | DF-007 Daily canary run and canary card | partial | `src/desk/canary/command.ts`, `src/desk/ui/client/screens/canary.js`, `tests/desk/canary/canary.test.ts` | a scheduled daily run; the pack is a fixed generic one |
-| DF-008 Quota runway across plans | absent | none | no quota runway |
+| DF-008 Quota runway across plans | partial | `src/desk/limits/fit.ts`, `src/desk/ledger/ingest-codex.ts`, `tests/desk/limits.test.ts` | the plan's percent used and reset time are read from Codex logs and fitted to tokens with an interval (desk limits), but there is no screen, no runway at the current burn, and no source for Claude Code (its statusline readings have not been captured) |
 | DF-009 Pre-run estimate | partial | `src/desk/gate/estimate.ts`, `tests/desk/gate/gate.test.ts` | P10/P50/P90 by task type, a mid-session warning, a `desk estimate` command |
 | DF-010 Alerts on the owner's schedule | absent | none | no alerts or notifications |
 | DF-011 Weekly review | absent | none | no weekly review |
@@ -28,12 +28,12 @@ How to read a status. *Built*: the core of the feature as specified exists and a
 | DF-018 Scene 4: the argument, the diff and the wow sentence | partial | `src/desk/demo.ts` | the argument, diff and wow sentence scene as specified |
 | DF-019 Judge-proof demo mode | partial | `src/desk/prove/run.ts`, `src/desk/demo.ts` | judge-proof mode is sample mode plus `desk prove`, not a separate mode |
 | DF-020 Claude Code log adapter | built | `src/desk/ingest/claude-code.ts`, `tests/desk/ingest.test.ts` | - |
-| DF-021 Codex log adapter | absent | none | no Codex reader |
+| DF-021 Codex log adapter | partial | `src/desk/ingest/codex.ts`, `src/desk/ledger/ingest-codex.ts`, `tests/desk/codex-parse.test.ts`, `tests/desk/codex-ingest.test.ts`, `docs/verification/codex-reader-and-limit-fit-2026-10-24.md` | calls come from growth of the cumulative total (merged requests are marked, a forked session's replayed history is left out); a negative counter is clamped to zero and not flagged; OpenAI models have no price rows, so calls are unpriced |
 | DF-022 OpenTelemetry GenAI ingest and the `desk.*` namespace | absent | none | no OpenTelemetry ingest and no desk.* namespace |
 | DF-023 Gateway spend-log adapter | absent | none | no gateway spend-log adapter |
 | DF-024 Invoice and usage-export import | partial | `src/desk/silo/facts.ts`, `src/sponsors/zetaris/silo-port.ts`, `tests/desk/silo.test.ts` | invoices arrive only through the Zetaris silo; there is no generic import |
 | DF-025 Price book | built | `src/desk/pricing/pricebook.ts`, `tests/desk/cost.test.ts` | a second price source, retirement dates |
-| DF-026 Per-call cost formula and surcharges | partial | `src/desk/cost/cost.ts`, `tests/desk/cost.test.ts` | fast, flex and long-context surcharges |
+| DF-026 Per-call cost formula and surcharges | partial | `src/desk/cost/cost.ts`, `src/desk/pricing/pricebook.ts`, `tests/desk/cost.test.ts`, `tests/desk/price-tiers.test.ts` | Claude Haiku 5.5 is priced by prompt length (over 100,000 tokens) from Anthropic's page; fast-mode, batch and US-only (1.1x) surcharges are not applied, and the logs do not say which applied |
 | DF-027 Provenance classes, reconciliation and allocation | partial | `src/desk/silo/facts.ts`, `src/desk/cost/cost.ts` | a reported class, idle and shared allocation |
 | DF-028 Unpriced handling | built | `src/desk/cost/cost.ts`, `tests/desk/cost.test.ts` | - |
 | DF-029 Repricing as superseding events | partial | `src/desk/ledger/db.ts`, `src/desk/ledger/ingest.ts` | repricing replaces a cost event by re-ingest; it is not recorded as a superseding event |

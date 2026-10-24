@@ -247,7 +247,7 @@ export async function ingestClaudeCode(
   }
 }
 
-function recomputeCosts(db: Ledger, snapshot: PriceSnapshot, callIds: ReadonlySet<string>, report: IngestReport): void {
+export function recomputeCosts(db: Ledger, snapshot: PriceSnapshot, callIds: ReadonlySet<string>, report: Pick<IngestReport, "unpricedCalls" | "unpricedModels">): void {
   if (callIds.size === 0) return;
   const load = db.prepare(
     `SELECT call_id, model, input_tokens, output_tokens, cache_read_tokens, cache_write_5m_tokens, cache_write_1h_tokens FROM model_call WHERE call_id = ?`,
@@ -288,7 +288,7 @@ function recomputeCosts(db: Ledger, snapshot: PriceSnapshot, callIds: ReadonlySe
   }
 }
 
-function updateSessionSpans(db: Ledger, sessionIds: ReadonlySet<string>): void {
+export function updateSessionSpans(db: Ledger, sessionIds: ReadonlySet<string>): void {
   if (sessionIds.size === 0) return;
   const update = db.prepare(
     `UPDATE session SET started_at = (SELECT MIN(ts) FROM model_call WHERE session_id = ?), ended_at = (SELECT MAX(ts) FROM model_call WHERE session_id = ?)

@@ -38,6 +38,8 @@ import { routeCommand } from "./route/command.ts";
 import { calibrateCommand } from "./calibrate/command.ts";
 import { renderFeatureStatus, summariseFeatures, type FeatureRow } from "./status/features.ts";
 import { openCodeAgent } from "./lab/agents.ts";
+import { ingestCodex } from "./ledger/ingest-codex.ts";
+import { fitLimit, observeWindows, renderLimitFit } from "./limits/fit.ts";
 import { reconcile, renderReconciliation, summariseReconciliation } from "./reconcile/reconcile.ts";
 import { auditTask, renderAudit, writeExpected } from "./lab/audit.ts";
 import { readRecords, runBatch } from "./lab/batch.ts";
@@ -63,6 +65,7 @@ const { values, positionals } = parseArgs({
   options: {
     db: { type: "string", default: "data/desk/ledger.db" },
     "claude-dir": { type: "string", default: join(homedir(), ".claude", "projects") },
+    "codex-dir": { type: "string", default: join(homedir(), ".codex", "sessions") },
     prices: { type: "string" },
     since: { type: "string" },
     until: { type: "string" },
@@ -128,7 +131,21 @@ if (sampleMode && ["propose", "silos", "ask", "ui", "verify-answer", "bench", "s
 }
 const db = command === "card" || command === "status" || command === "lab" ? openLedger(":memory:") : openLedger(ledgerPath);
 
-if (command === "ingest") {
+if (command === "ingest" && values.agent === "codex") {
+  const files = existsSync(values["codex-dir"]) ? findJsonlLogs(values["codex-dir"]) : [];
+  const r = await ingestCodex(db, files, loadSnapshot(pricesPath));
+  console.log(`read ${r.files} Codex files (${r.unchangedFiles} unchanged, ${r.skippedFiles} with no session)`);
+  console.log(`calls: ${r.callsNew} new, ${r.mergedRequests} stand for more than one request; ${r.replayedCalls} replayed from a parent session left out (${r.replayedTokens} tokens); ${r.limitSamples} plan-limit readings`);
+  if (r.unpricedCalls > 0) console.log(`unpriced: ${r.unpricedCalls} calls on ${Object.entries(r.unpricedModels).map(([m, why]) => `${m} (${why})`).join(", ")}`);
+} else if (command === "limits") {
+  const rows = db.prepare("SELECT COUNT(*) AS n FROM limit_sample WHERE tool = ?").get(values.agent ?? "codex") as { n: number };
+  if (rows.n === 0) console.log("No plan-limit readings in this ledger. Read Codex logs first: desk ingest --agent codex.");
+  else {
+    for (const [kind, label] of [["primary", "5-hour"], ["secondary", "weekly"]] as const) {
+      console.log(renderLimitFit(fitLimit(observeWindows(db, { tool: values.agent ?? "codex", kind })), label));
+    }
+  }
+} else if (command === "ingest") {
   const files = findJsonlLogs(values["claude-dir"]);
   const started = Date.now();
   const r = await ingestClaudeCode(db, files, loadSnapshot(pricesPath));
@@ -443,7 +460,7 @@ ${t.pass} PASS, ${t.fail} FAIL, ${t.notRun} NOT RUN. NOT RUN is not a pass: it n
   console.log(`logs: ${sampleLogsDir(values.out)}`);
   console.log(`repos: ${sampleReposDir(values.out)}`);
 } else {
-  console.error(`unknown command "${command}". Use: card | status | forget | egress | propose | silos | ask | remember | verify-answer | gate | approve | ui | canary | bench | seats | route | calibrate | regret | lessons | prove | demo | ingest | bill | autopsy | landing | replay | tunnel | sample build`);
+  console.error(`unknown command "${command}". Use: card | status | forget | egress | limits | propose | silos | ask | remember | verify-answer | gate | approve | ui | canary | bench | seats | route | calibrate | regret | lessons | prove | demo | ingest | bill | autopsy | landing | replay | tunnel | sample build`);
   process.exitCode = 2;
 }
 db.close();

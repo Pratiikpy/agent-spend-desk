@@ -21,7 +21,7 @@ export interface ForgetReport {
   calls: number;
 }
 
-const BY_SESSION = ["tool_result", "human_prompt", "session_outcome", "session_commit", "reported_cost", "reported_model_usage"] as const;
+const BY_SESSION = ["tool_result", "human_prompt", "session_outcome", "session_commit", "reported_cost", "reported_model_usage", "limit_sample"] as const;
 
 export function forgetPreview(db: Ledger, scope: ForgetScope): ForgetReport {
   const ids = chooseSessions(db, scope);

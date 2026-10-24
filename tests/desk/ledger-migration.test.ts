@@ -1,0 +1,63 @@
+import { DatabaseSync } from "node:sqlite";
+import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+
+import { OLDEST_READABLE_VERSION, openLedger, SCHEMA_VERSION } from "../../src/desk/ledger/db.ts";
+import { ingestClaudeCode } from "../../src/desk/ledger/ingest.ts";
+import { assistantLine, TempDir, testSnapshot } from "./helpers.ts";
+
+let dir: TempDir;
+beforeEach(() => {
+  dir = new TempDir();
+});
+afterEach(() => dir.dispose());
+
+describe("the ledger schema", () => {
+  it("is at version 5 and a reader can use version 3 and later", () => {
+    expect(SCHEMA_VERSION).toBe(5);
+    expect(OLDEST_READABLE_VERSION).toBe(3);
+  });
+
+  it("upgrades a version 4 ledger without losing a row or breaking a reference, and then takes a Codex source", async () => {
+    const path = join(dir.path, "old.db");
+    // Build a ledger with real rows, then put it back at version 4 with the old narrower table.
+    const first = openLedger(path);
+    await ingestClaudeCode(first, [dir.file("a.jsonl", [assistantLine({ id: "m1", session: "s1", ts: "2026-10-20T10:00:00Z", output: 10 }), assistantLine({ id: "m2", session: "s1", ts: "2026-10-20T10:01:00Z", output: 20 })])], testSnapshot());
+    const before = { sources: first.prepare("SELECT * FROM ingest_source").all(), calls: first.prepare("SELECT call_id, source_id, output_tokens FROM model_call ORDER BY call_id").all() };
+    first.exec("PRAGMA foreign_keys = OFF; DROP TABLE limit_sample; PRAGMA user_version = 4;");
+    first.exec(`
+      CREATE TABLE ingest_source_old (id INTEGER PRIMARY KEY, kind TEXT NOT NULL CHECK (kind IN ('claude_code')), path TEXT NOT NULL UNIQUE, size_bytes INTEGER NOT NULL CHECK (size_bytes >= 0), offset_bytes INTEGER NOT NULL CHECK (offset_bytes >= 0), last_ingested_at TEXT NOT NULL);
+      INSERT INTO ingest_source_old SELECT id, kind, path, size_bytes, offset_bytes, last_ingested_at FROM ingest_source;
+      DROP TABLE ingest_source;
+      ALTER TABLE ingest_source_old RENAME TO ingest_source;
+    `);
+    expect(() => first.prepare("INSERT INTO ingest_source (kind, path, size_bytes, offset_bytes, last_ingested_at) VALUES ('codex', 'x', 0, 0, 't')").run()).toThrow(/CHECK/);
+    first.close();
+
+    const upgraded = openLedger(path);
+    try {
+      expect((upgraded.prepare("PRAGMA user_version").get() as { user_version: number }).user_version).toBe(5);
+      expect(upgraded.prepare("SELECT * FROM ingest_source").all()).toEqual(before.sources);
+      expect(upgraded.prepare("SELECT call_id, source_id, output_tokens FROM model_call ORDER BY call_id").all()).toEqual(before.calls);
+      expect(upgraded.prepare("PRAGMA foreign_key_check").all()).toEqual([]);
+      expect(upgraded.prepare("PRAGMA integrity_check").get()).toEqual({ integrity_check: "ok" });
+      upgraded.prepare("INSERT INTO ingest_source (kind, path, size_bytes, offset_bytes, last_ingested_at) VALUES ('codex', 'y', 0, 0, 't')").run();
+      expect(() => upgraded.prepare("INSERT INTO ingest_source (kind, path, size_bytes, offset_bytes, last_ingested_at) VALUES ('other', 'z', 0, 0, 't')").run()).toThrow(/CHECK/);
+      // the table that existed before the upgrade still enforces its reference to the source
+      expect(() => upgraded.prepare("DELETE FROM ingest_source WHERE id = ?").run((before.sources[0] as { id: number }).id)).toThrow(/FOREIGN KEY/);
+    } finally {
+      upgraded.close();
+    }
+  });
+
+  it("opens a fresh ledger at the newest version and refuses one from a newer build", () => {
+    const fresh = openLedger(":memory:");
+    expect((fresh.prepare("PRAGMA user_version").get() as { user_version: number }).user_version).toBe(5);
+    fresh.close();
+    const path = join(dir.path, "future.db");
+    const f = new DatabaseSync(path);
+    f.exec("PRAGMA user_version = 99");
+    f.close();
+    expect(() => openLedger(path)).toThrow(/newer than this build/);
+  });
+});
