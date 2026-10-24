@@ -142,6 +142,14 @@ const { values, positionals } = parseArgs({
 });
 
 const command = positionals[0] ?? "card";
+
+const NO_LIMIT_READINGS = "No plan-limit readings in this ledger. Codex: desk ingest --agent codex. Claude Code: desk statusline install, then desk ingest --agent statusline.";
+const toolName = (tool: string): string => (tool === "claude_code" ? "Claude Code" : tool === "codex" ? "Codex" : tool);
+/** The tools that have plan-limit readings: the one named with --agent, or every one that has any. */
+function toolsWithLimits(ledger: ReturnType<typeof openLedger>, agent: string | undefined): string[] {
+  const all = (ledger.prepare("SELECT DISTINCT tool FROM limit_sample ORDER BY tool").all() as unknown as { tool: string }[]).map((r) => r.tool);
+  return agent === undefined ? all : all.filter((t) => t === agent);
+}
 const sampleMode = values.sample || process.env.SAMPLE_MODE === "true";
 const pricesPath = values.prices ?? (sampleMode ? DEFAULT_SNAPSHOT : LIVE_SNAPSHOT);
 const ledgerPath = sampleMode && !process.argv.includes("--db") && command !== "card" ? join(values.out, "ledger.db") : values.db;
@@ -197,29 +205,29 @@ ${sensitivity}`);
   console.log(`calls: ${r.callsNew} new, ${r.mergedRequests} stand for more than one request; ${r.replayedCalls} replayed from a parent session left out (${r.replayedTokens} tokens); ${r.limitSamples} plan-limit readings`);
   if (r.unpricedCalls > 0) console.log(`unpriced: ${r.unpricedCalls} calls on ${Object.entries(r.unpricedModels).map(([m, why]) => `${m} (${why})`).join(", ")}`);
 } else if (command === "limits") {
-  const rows = db.prepare("SELECT COUNT(*) AS n FROM limit_sample WHERE tool = ?").get(values.agent ?? "codex") as { n: number };
-  if (rows.n === 0) console.log("No plan-limit readings for that tool in this ledger. Codex: desk ingest --agent codex. Claude Code: desk statusline install, then desk ingest --agent statusline; use --agent claude_code here.");
-  else {
-    // Each plan and window length is its own limit: a free plan's monthly window and a paid plan's five-hour window are not pooled.
-    for (const g of limitGroups(db, values.agent ?? "codex")) {
-      const obs = observeWindows(db, { tool: values.agent ?? "codex", windowMinutes: g.windowMinutes, planType: g.planType });
+  const tools = toolsWithLimits(db, values.agent);
+  if (tools.length === 0) console.log(NO_LIMIT_READINGS);
+  // Each plan and window length is its own limit: a free plan's monthly window and a paid plan's five-hour window are not pooled.
+  for (const tool of tools) {
+    for (const g of limitGroups(db, tool)) {
+      const obs = observeWindows(db, { tool, windowMinutes: g.windowMinutes, planType: g.planType });
       const fit = fitLimit(obs);
-      console.log(renderLimitFit(fit, groupLabel(g)));
+      console.log(renderLimitFit(fit, `${toolName(tool)}, ${groupLabel(g)}`));
       if (!fit.abstained) console.log(renderLeaveOneOut(leaveOneOut(obs)));
     }
   }
 } else if (command === "runway") {
-  const tool = values.agent ?? "codex";
   const at = values.at ? new Date(values.at) : new Date();
   if (Number.isNaN(at.getTime())) throw new Error("--at must be a date and time such as 2026-10-24T12:00:00Z");
-  const name = tool === "claude_code" ? "Claude Code" : tool === "codex" ? "Codex" : tool;
-  // The plan in use is the plan of the newest reading; every window length that plan has is shown.
-  const groups = limitGroups(db, tool, at);
-  const current = groups[0];
-  if (!current) console.log("No plan-limit readings for that tool in this ledger. Codex: desk ingest --agent codex. Claude Code: desk statusline install, then desk ingest --agent statusline; use --agent claude_code here.");
-  else {
+  const tools = toolsWithLimits(db, values.agent);
+  if (tools.length === 0) console.log(NO_LIMIT_READINGS);
+  for (const tool of tools) {
+    // The plan in use is the plan of the newest reading; every window length that plan has is shown.
+    const groups = limitGroups(db, tool, at);
+    const current = groups[0];
+    if (!current) continue;
     for (const g of groups.filter((x) => x.planType === current.planType).sort((a, b) => a.windowMinutes - b.windowMinutes)) {
-      console.log(renderRunway(runwayFromLedger(db, { tool, windowMinutes: g.windowMinutes, planType: g.planType, now: at }), `${name}, ${groupLabel(g)}`));
+      console.log(renderRunway(runwayFromLedger(db, { tool, windowMinutes: g.windowMinutes, planType: g.planType, now: at }), `${toolName(tool)}, ${groupLabel(g)}`));
     }
   }
 } else if (command === "ingest") {
