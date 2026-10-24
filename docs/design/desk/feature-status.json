@@ -46,7 +46,7 @@
     { "id": "DF-042", "status": "partial", "evidence": ["src/desk/route/replay.ts", "src/desk/route/command.ts"], "missing": "canary tasks only, not real tool-using tasks" },
     { "id": "DF-043", "status": "absent", "evidence": [], "missing": "no language surcharge or locale route experiment" },
     { "id": "DF-044", "status": "built", "evidence": ["src/desk/policy/parse.ts", "src/desk/policy/evaluate.ts", "tests/desk/policy.test.ts"], "missing": "" },
-    { "id": "DF-045", "status": "partial", "evidence": ["src/desk/policy/types.ts", "src/desk/gate/gate.ts"], "missing": "windows are day and month only; no per-session, per-model or velocity limits" },
+    { "id": "DF-045", "status": "built", "evidence": ["src/desk/policy/types.ts", "src/desk/policy/evaluate.ts", "src/desk/policy/parse.ts", "src/desk/policy/doc.ts", "src/desk/policy/restrict.ts", "src/desk/gate/gate.ts", "src/desk/gate/ledger.ts", "policies/velocity-and-session.yaml", "tests/desk/gate/windows.test.ts", "docs/verification/cap-windows-2026-10-25.md"], "missing": "run only against a controllable clock; a cap per model counts the model asked for, not the one a route rule sends it to; sliding windows count by settle time" },
     { "id": "DF-046", "status": "built", "evidence": ["src/desk/gate/gate.ts", "src/desk/gate/ledger.ts", "tests/desk/gate/gate.test.ts", "tests/desk/gate/bypass.test.ts", "docs/verification/gate-enforcement.md"], "missing": "" },
     { "id": "DF-047", "status": "built", "evidence": ["src/desk/policy/restrict.ts", "src/desk/prove/fuzz.ts", "tests/desk/policy.test.ts"], "missing": "" },
     { "id": "DF-048", "status": "built", "evidence": ["src/desk/replay/policy-replay.ts", "tests/desk/replay.test.ts"], "missing": "" },

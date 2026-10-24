@@ -1,0 +1,25 @@
+version: 1
+rules:
+  - id: allow-claude
+    kind: permit
+    when: { model: { in: ["claude-*"] } }
+    # The person's whole day: ask at 80%, refuse past the cap.
+    cap: { window: day, max_usd: "150.00", warn_at: 0.5, ask_at: 0.8 }
+
+  - id: velocity
+    kind: permit
+    when: {}
+    # A runaway loop shows as speed before it shows as a day total: no more than $25 in any ten minutes.
+    cap: { window: 10m, max_usd: "25.00", warn_at: 0.5, ask_at: 0.8 }
+
+  - id: per-session
+    kind: permit
+    when: {}
+    # One session cannot spend more than $60, however the day is going.
+    cap: { window: session, max_usd: "60.00", warn_at: 0.5, ask_at: 0.8 }
+
+  - id: per-model
+    kind: permit
+    when: { model: { in: ["claude-opus-*"] } }
+    # Each opus model has its own $90 a day; spend on other models does not count against it.
+    cap: { window: day, per: model, max_usd: "90.00", warn_at: 0.5, ask_at: 0.8 }

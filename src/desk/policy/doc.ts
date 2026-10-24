@@ -15,7 +15,7 @@ export function condToDoc(c: Policy["rules"][number]["when"]): Record<string, un
   const out: Record<string, unknown> = {};
   for (const [dim, set] of Object.entries(c.finite)) out[dim] = { in: set };
   for (const [dim, iv] of Object.entries(c.numeric)) {
-    const key = dim === "recoverable_micros" ? "recoverable_usd" : dim === "day_spend_after_micros" ? "day_spend_after_usd" : "month_spend_after_usd";
+    const key = dim.replace(/_micros$/, "_usd");
     const o: Record<string, string> = {};
     if (Number.isFinite(iv.lo)) o[iv.loOpen ? "gt" : "gte"] = usdString(iv.lo);
     if (Number.isFinite(iv.hi)) o[iv.hiOpen ? "lt" : "lte"] = usdString(iv.hi);
@@ -30,7 +30,7 @@ export function usdString(micros: number): string {
 
 export function ruleToDoc(r: Policy["rules"][number]): Record<string, unknown> {
   const doc: Record<string, unknown> = { id: r.id, kind: r.kind, when: condToDoc(r.when) };
-  if (r.kind === "permit" && r.cap) doc["cap"] = { window: r.cap.window, max_usd: usdString(r.cap.maxMicros), warn_at: r.cap.warnAt, ask_at: r.cap.askAt };
+  if (r.kind === "permit" && r.cap) doc["cap"] = { window: r.cap.window, ...(r.cap.per === undefined || r.cap.per === "person" ? {} : { per: r.cap.per }), max_usd: usdString(r.cap.maxMicros), warn_at: r.cap.warnAt, ask_at: r.cap.askAt };
   if (r.kind === "forbid") doc["action"] = r.action;
   if (r.kind === "route") doc["route"] = { model_map: r.modelMap };
   return doc;

@@ -1,5 +1,6 @@
 import { askThresholdMicros, evaluate, routeOf } from "./evaluate.ts";
-import { FINITE_DIMS, NUMERIC_DIMS, VERDICT_ORDER, type Condition, type FiniteDim, type NumericDim, type Policy, type Request, type Verdict } from "./types.ts";
+import { numericOf } from "./types.ts";
+import { capDim, FINITE_DIMS, NUMERIC_DIMS, VERDICT_ORDER, type Condition, type FiniteDim, type NumericDim, type Policy, type Request, type Verdict } from "./types.ts";
 
 export const OTHER = "\u0000other";
 
@@ -82,8 +83,7 @@ function numericCuts(dim: NumericDim, policies: readonly Policy[]): number[] | n
     }
     for (const r of p.rules) {
       if (r.kind !== "permit" || !r.cap) continue;
-      const capDim: NumericDim = r.cap.window === "day" ? "day_spend_after_micros" : "month_spend_after_micros";
-      if (capDim !== dim) continue;
+      if (capDim(r.cap) !== dim) continue;
       used = true;
       cuts.add(r.cap.maxMicros + 1);
       cuts.add(askThresholdMicros(r.cap));
@@ -159,8 +159,21 @@ export function describeWidening(w: Widening): string {
   const r = w.request;
   const bits: string[] = [];
   for (const dim of FINITE_DIMS) if (r[dim] !== OTHER) bits.push(`${dim.replace("_", " ")} ${r[dim]}`);
-  if (r.day_spend_after_micros > 0) bits.push(`${(r.day_spend_after_micros / 1_000_000).toFixed(2)} USD of spend that day`);
-  if (r.month_spend_after_micros > 0) bits.push(`${(r.month_spend_after_micros / 1_000_000).toFixed(2)} USD of spend that month`);
+  const WORDS: Record<string, string> = {
+    day_spend_after_micros: "spend that day",
+    month_spend_after_micros: "spend that month",
+    session_spend_after_micros: "spend in the session",
+    spend_10m_after_micros: "spend in the last 10 minutes",
+    spend_1h_after_micros: "spend in the last hour",
+    model_day_spend_after_micros: "spend on that model that day",
+    model_month_spend_after_micros: "spend on that model that month",
+    project_day_spend_after_micros: "spend on that project that day",
+    project_month_spend_after_micros: "spend on that project that month",
+  };
+  for (const [dim, words] of Object.entries(WORDS)) {
+    const v = numericOf(r, dim as NumericDim);
+    if (v > 0) bits.push(`${(v / 1_000_000).toFixed(2)} USD of ${words}`);
+  }
   const where = bits.length > 0 ? bits.join(", ") : "any request";
   return `${where}: was ${w.was}, now ${w.now}`;
 }

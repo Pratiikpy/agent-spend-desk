@@ -1,6 +1,6 @@
 import { parse as parseYaml } from "yaml";
 
-import { FINITE_DIMS, NUMERIC_DIMS, type Approval, type Cap, type Condition, type FiniteDim, type Interval, type NumericDim, type Policy, type Rule } from "./types.ts";
+import { FINITE_DIMS, NUMERIC_DIMS, type Approval, type Cap, type CapPer, type CapWindow, type Condition, type FiniteDim, type Interval, type NumericDim, type Policy, type Rule } from "./types.ts";
 
 export class PolicyError extends Error {
   constructor(message: string) {
@@ -56,12 +56,9 @@ function parseCondition(raw: unknown, scopes: ReadonlyMap<string, readonly strin
       const set = obj(value, `${what} ${key}`)["in"];
       if (!Array.isArray(set) || set.length === 0 || set.some((x) => typeof x !== "string")) throw new PolicyError(`${what}: ${key} needs "in: [non-empty list of strings]"`);
       cond.finite[key as FiniteDim] = intersect(cond.finite[key as FiniteDim], set as string[]);
-    } else if (key === "recoverable_usd") {
-      cond.numeric.recoverable_micros = parseInterval(value, "recoverable_micros");
-    } else if (key === "day_spend_after_usd") {
-      cond.numeric.day_spend_after_micros = parseInterval(value, "day_spend_after_micros");
-    } else if (key === "month_spend_after_usd") {
-      cond.numeric.month_spend_after_micros = parseInterval(value, "month_spend_after_micros");
+    } else if (USD_KEYS.has(key)) {
+      const dim = USD_KEYS.get(key) as NumericDim;
+      cond.numeric[dim] = parseInterval(value, dim);
     } else if ((NUMERIC_DIMS as readonly string[]).includes(key)) {
       cond.numeric[key as NumericDim] = parseInterval(value, key as NumericDim);
     } else {
@@ -75,14 +72,24 @@ function intersect(a: readonly string[] | undefined, b: readonly string[]): read
   return a === undefined ? [...b] : a.filter((x) => b.includes(x));
 }
 
+/** The condition key a person writes for each numeric dimension: the same name with dollars for micro-dollars. */
+const USD_KEYS = new Map<string, NumericDim>(NUMERIC_DIMS.map((d) => [d.replace(/_micros$/, "_usd"), d] as const));
+
+const WINDOWS: readonly CapWindow[] = ["day", "month", "session", "10m", "1h"];
+const PERS: readonly CapPer[] = ["person", "model", "project"];
+
 function parseCap(raw: unknown, what: string): Cap {
   const o = obj(raw, `${what} cap`);
   const window = o["window"];
-  if (window !== "day" && window !== "month") throw new PolicyError(`${what}: cap window must be day or month`);
+  if (typeof window !== "string" || !(WINDOWS as readonly string[]).includes(window)) throw new PolicyError(`${what}: cap window must be one of ${WINDOWS.join(", ")}`);
+  const perRaw = o["per"];
+  if (perRaw !== undefined && (typeof perRaw !== "string" || !(PERS as readonly string[]).includes(perRaw))) throw new PolicyError(`${what}: cap per must be one of ${PERS.join(", ")}`);
+  const per = (perRaw ?? "person") as CapPer;
+  if (per !== "person" && window !== "day" && window !== "month") throw new PolicyError(`${what}: a cap per ${per} has a day or a month window, not ${window}`);
   const warnAt = o["warn_at"] === undefined ? 0.5 : Number(o["warn_at"]);
   const askAt = o["ask_at"] === undefined ? 0.8 : Number(o["ask_at"]);
   if (!(warnAt > 0 && warnAt <= askAt && askAt <= 1)) throw new PolicyError(`${what}: need 0 < warn_at <= ask_at <= 1`);
-  return { window, maxMicros: usdToMicros(o["max_usd"], `${what} max_usd`), warnAt, askAt };
+  return { window: window as CapWindow, ...(per === "person" ? {} : { per }), maxMicros: usdToMicros(o["max_usd"], `${what} max_usd`), warnAt, askAt };
 }
 
 export function parsePolicy(raw: unknown): Policy {

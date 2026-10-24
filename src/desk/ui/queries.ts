@@ -21,6 +21,7 @@ import { loadAutopsyCalls } from "../autopsy/load.ts";
 import { wasteEventsOf } from "../waste/load.ts";
 import { delegationTrees } from "../delegation/tree.ts";
 import { overheadView } from "../overhead/view.ts";
+import { capLabel } from "../policy/types.ts";
 import { buildCard } from "../card/build.ts";
 import type { Ledger } from "../ledger/db.ts";
 import { landingBreakdown } from "../outcomes/breakdown.ts";
@@ -1035,7 +1036,7 @@ function describeRule(r: Policy["rules"][number]): string {
       return `${name} ${[lo, hi].filter(Boolean).join(" and ")}`;
     })];
   const when = dims.length === 0 ? "every request" : dims.join("; ");
-  if (r.kind === "permit") return `permit ${when}${r.cap ? `, ${r.cap.window} cap ${(r.cap.maxMicros / 1_000_000).toFixed(2)} USD` : ""}`;
+  if (r.kind === "permit") return `permit ${when}${r.cap ? `, ${capLabel(r.cap)} cap ${(r.cap.maxMicros / 1_000_000).toFixed(2)} USD` : ""}`;
   if (r.kind === "forbid") return `forbid ${when}, then ${r.action}`;
   return `route ${when}: ${Object.entries(r.modelMap).map(([a, b]) => `${a} to ${b}`).join(", ")}`;
 }

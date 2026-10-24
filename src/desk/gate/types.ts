@@ -123,6 +123,18 @@ export interface BudgetStanding {
   remainingMicros: Micros | null;
 }
 
+/** One cap that is not the person's day or month: a session, a stretch of the last minutes, a model or a project. */
+export interface ScopedStanding {
+  rule: string;
+  /** "session", "last 10 minutes", "day per model", and so on. */
+  window: string;
+  /** What the window would hold with this request in it, and what the cap allows. */
+  spentMicros: Micros;
+  limitMicros: Micros;
+  /** The limit less that figure: what is left once this request is counted. */
+  remainingMicros: Micros;
+}
+
 export interface GateDecision {
   verdict: Verdict;
   /** True when the gate could not evaluate and is refusing as a precaution. */
@@ -142,6 +154,8 @@ export interface GateDecision {
   expiresAt: string | null;
   routedModel: string;
   standing: BudgetStanding[];
+  /** The caps on a session, a stretch of recent minutes, a model or a project that apply to this request, with what each has left. */
+  scoped?: ScopedStanding[];
   policyVersion: number | null;
   approvalRequest: { approval_request_id: number; action_digest: string } | null;
   basis: Record<string, unknown>;

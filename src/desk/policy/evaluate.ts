@@ -1,4 +1,4 @@
-import { FINITE_DIMS, NUMERIC_DIMS, type Cap, type Condition, type Decision, type Interval, type Policy, type Request, type Verdict } from "./types.ts";
+import { capDim, capLabel, FINITE_DIMS, numericOf, NUMERIC_DIMS, type Cap, type Condition, type Decision, type Interval, type Policy, type Request, type Verdict } from "./types.ts";
 
 /** `*` matches any run of characters; everything else is literal. Used for model patterns such as claude-*. */
 export function globMatch(pattern: string, value: string): boolean {
@@ -34,7 +34,7 @@ export function matches(cond: Condition, req: Request): boolean {
   }
   for (const dim of NUMERIC_DIMS) {
     const interval = cond.numeric[dim];
-    if (interval !== undefined && !inInterval(interval, req[dim])) return false;
+    if (interval !== undefined && !inInterval(interval, numericOf(req, dim))) return false;
   }
   return true;
 }
@@ -45,7 +45,7 @@ export function askThresholdMicros(cap: Cap): number {
 }
 
 function capVerdict(cap: Cap, req: Request): Verdict {
-  const spend = cap.window === "day" ? req.day_spend_after_micros : req.month_spend_after_micros;
+  const spend = numericOf(req, capDim(cap));
   if (spend > cap.maxMicros) return "deny";
   if (spend >= askThresholdMicros(cap)) return "ask";
   return "allow";
@@ -77,7 +77,8 @@ export function evaluate(policy: Policy, req: Request): Decision {
     matched.push(rule.id);
     if (rule.cap) {
       const v = capVerdict(rule.cap, req);
-      if (v !== "allow") reasons.push(`cap ${rule.id}: ${v}`);
+      // A cap on the person's day or month reads as it always did; any other window or scope says which it is.
+      if (v !== "allow") reasons.push(`cap ${rule.id}: ${v}${capDim(rule.cap) === "day_spend_after_micros" || capDim(rule.cap) === "month_spend_after_micros" ? "" : ` (${capLabel(rule.cap)})`}`);
       if (v === "deny" || (v === "ask" && verdict === "allow")) verdict = v;
     }
   }

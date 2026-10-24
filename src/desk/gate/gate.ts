@@ -6,7 +6,7 @@ import { canonicalJson, hashJson } from "../../runtime/canonical.ts";
 import { NULL_TRACE, type Trace } from "../agents/trace.ts";
 import type { Micros } from "../money.ts";
 import { evaluate, matches, routeOf } from "../policy/evaluate.ts";
-import type { Policy, Request, Verdict } from "../policy/types.ts";
+import { capDim, capLabel, NUMERIC_DIMS, numericOf, type NumericDim, type OptionalNumericDim, type Policy, type Request, type Verdict } from "../policy/types.ts";
 import type { PriceSnapshot } from "../pricing/pricebook.ts";
 import { worstCaseReservation } from "./estimate.ts";
 import { DEFAULT_RESERVATION_TTL_MS, GateLedger, sigValid } from "./ledger.ts";
@@ -14,6 +14,7 @@ import { readTranscriptDelta, resolveTranscript } from "./observe.ts";
 import type { PolicySource, PolicyView } from "./policy-source.ts";
 import { ensureGateSchema } from "./schema.ts";
 import {
+  type ScopedStanding,
   GateError,
   type BudgetRef,
   type BudgetStanding,
@@ -215,10 +216,63 @@ export class Gate {
     const out: Record<WindowKind, Micros | null> = { day: null, month: null };
     for (const rule of policy.rules) {
       if (rule.kind !== "permit" || rule.cap === undefined || !matches(rule.when, req)) continue;
-      const cur = out[rule.cap.window];
-      out[rule.cap.window] = cur === null ? rule.cap.maxMicros : Math.min(cur, rule.cap.maxMicros);
+      // The person's day and month are budgets of their own. Every other window is read from the events when the request comes (see scopedDims).
+      const dim = capDim(rule.cap);
+      const w: WindowKind | null = dim === "day_spend_after_micros" ? "day" : dim === "month_spend_after_micros" ? "month" : null;
+      if (w === null) continue;
+      const cur = out[w];
+      out[w] = cur === null ? rule.cap.maxMicros : Math.min(cur, rule.cap.maxMicros);
     }
     return out;
+  }
+
+  /**
+   * The spend windows the policy talks about besides the person's day and month, as each would stand with this request in it: a session, the last ten minutes
+   * or hour, one model's day or month, one project's day or month. Only the ones some rule reads are computed. They are summed from the gate's events, so a
+   * window is the same after a restart, and a reservation that is still open counts against it.
+   */
+  private scopedDims(policy: Policy, g: GateRequest, nowIso: string, reserve: Micros): Partial<Record<OptionalNumericDim, number>> {
+    const used = new Set<NumericDim>();
+    const conds = [...policy.rules.map((r) => r.when), ...policy.approvals.map((a) => a.when)];
+    for (const c of conds) for (const d of Object.keys(c.numeric) as NumericDim[]) used.add(d);
+    for (const r of policy.rules) if (r.kind === "permit" && r.cap) used.add(capDim(r.cap));
+    const now = this.ledger.now();
+    const sinceMinutes = (m: number): string => new Date(now - m * 60_000).toISOString();
+    const dayStart = `${dayKey(nowIso)}T00:00:00.000Z`;
+    const monthStart = `${monthKey(nowIso)}-01T00:00:00.000Z`;
+    const out: Partial<Record<OptionalNumericDim, number>> = {};
+    const total = (f: Parameters<GateLedger["scopedTotals"]>[0]): number => {
+      const t = this.ledger.scopedTotals(f);
+      return t.spent + t.reserved + reserve;
+    };
+    const p = g.person;
+    for (const dim of NUMERIC_DIMS) {
+      if (!used.has(dim)) continue;
+      switch (dim) {
+        case "session_spend_after_micros": out[dim] = total({ person: p, sessionId: g.session_id }); break;
+        case "spend_10m_after_micros": out[dim] = total({ person: p, sinceIso: sinceMinutes(10) }); break;
+        case "spend_1h_after_micros": out[dim] = total({ person: p, sinceIso: sinceMinutes(60) }); break;
+        case "model_day_spend_after_micros": out[dim] = total({ person: p, model: g.model, sinceIso: dayStart }); break;
+        case "model_month_spend_after_micros": out[dim] = total({ person: p, model: g.model, sinceIso: monthStart }); break;
+        case "project_day_spend_after_micros": out[dim] = total({ person: p, project: g.project, sinceIso: dayStart }); break;
+        case "project_month_spend_after_micros": out[dim] = total({ person: p, project: g.project, sinceIso: monthStart }); break;
+        default: break;
+      }
+    }
+    return out;
+  }
+
+  /** The caps on a session, recent minutes, a model or a project that bind this request, each with what it would hold and what is left, the tightest first. */
+  private scopedStanding(policy: Policy, req: Request): ScopedStanding[] {
+    const out: ScopedStanding[] = [];
+    for (const rule of policy.rules) {
+      if (rule.kind !== "permit" || rule.cap === undefined || !matches(rule.when, req)) continue;
+      const dim = capDim(rule.cap);
+      if (dim === "day_spend_after_micros" || dim === "month_spend_after_micros") continue;
+      const used = numericOf(req, dim);
+      out.push({ rule: rule.id, window: capLabel(rule.cap), spentMicros: used, limitMicros: rule.cap.maxMicros, remainingMicros: Math.max(0, rule.cap.maxMicros - used) });
+    }
+    return out.sort((a, b) => a.remainingMicros - b.remainingMicros || a.rule.localeCompare(b.rule));
   }
 
   private budgetsFor(person: string, atIso: string, limits: Record<WindowKind, Micros | null>, enforced: boolean): BudgetRef[] {
@@ -229,8 +283,9 @@ export class Gate {
     }));
   }
 
-  private requestFor(g: GateRequest, daySpend: Micros, monthSpend: Micros): Request {
+  private requestFor(g: GateRequest, daySpend: Micros, monthSpend: Micros, scoped: Partial<Record<OptionalNumericDim, number>> = {}): Request {
     return {
+      ...scoped,
       project: g.project,
       person: g.person,
       agent: g.agent,
@@ -245,7 +300,7 @@ export class Gate {
   }
 
   /** What is left in the person's day and month, under the caps that apply to the named project, model and agent. */
-  budgetLeft(raw: unknown): { person: string; asOf: string; standing: BudgetStanding[]; policyVersion: number } {
+  budgetLeft(raw: unknown): { person: string; asOf: string; standing: BudgetStanding[]; scoped: ScopedStanding[]; policyVersion: number } {
     const o = asObject(raw, "request");
     const person = optStr(o, "person") ?? this.person;
     const view = this.policyView();
@@ -254,11 +309,13 @@ export class Gate {
     const nowIso = this.ledger.nowIso();
     const totalsDay = this.ledger.budgetTotals(budgetId(person, "day", nowIso));
     const totalsMonth = this.ledger.budgetTotals(budgetId(person, "month", nowIso));
-    const limits = this.limitsFor(view.policy, this.requestFor(g, totalsDay.spent + totalsDay.reserved, totalsMonth.spent + totalsMonth.reserved));
+    const req = this.requestFor(g, totalsDay.spent + totalsDay.reserved, totalsMonth.spent + totalsMonth.reserved, this.scopedDims(view.policy, g, nowIso, 0));
+    const limits = this.limitsFor(view.policy, req);
     const refs = this.budgetsFor(person, nowIso, limits, true);
     return {
       person,
       asOf: nowIso,
+      scoped: this.scopedStanding(view.policy, req),
       policyVersion: view.version,
       standing: refs.map((b) => {
         const t = b.window === "day" ? totalsDay : totalsMonth;
@@ -399,7 +456,8 @@ export class Gate {
     if (!Number.isSafeInteger(dayAfter) || !Number.isSafeInteger(monthAfter)) {
       return this.denyEarly(g, "amount_overflow", "the amounts involved do not fit in a safe integer", true, view.version, key);
     }
-    const preq = this.requestFor(g, dayAfter, monthAfter);
+    const preq = this.requestFor(g, dayAfter, monthAfter, this.scopedDims(view.policy, g, nowIso, reserve));
+    const scopedNow = this.scopedStanding(view.policy, preq);
     const verdict = evaluate(view.policy, preq);
     const limits = this.limitsFor(view.policy, preq);
     const mode = this.mode();
@@ -440,14 +498,14 @@ export class Gate {
 
     if (!enforced) {
       const refs = this.budgetsFor(g.person, nowIso, limits, false);
-      const d = this.writeAuthorized(g, key, budgetSet, view, refs, reserve, routedModel, [...reasons, `emergency switch open until ${bypass.expiresAt}`], [], null, "bypass", false, est.ok ? est.basis : {}, digest, standing(refs));
+      const d = this.writeAuthorized(g, key, budgetSet, view, refs, reserve, routedModel, [...reasons, `emergency switch open until ${bypass.expiresAt}`], [], null, "bypass", false, est.ok ? est.basis : {}, digest, standing(refs), scopedNow);
       this.ledger.append({ kind: "bypass_allowed", reservation_id: d.reservationId, idempotency_key: key, session_id: g.session_id, person: g.person, model: g.model, reason_code: "bypass", reason: `would have been ${verdict.verdict}: ${verdict.reasons.join("; ") || "no objection"}`, basis: { wouldBe: verdict.verdict } });
       return d;
     }
 
     if (finalVerdict === "allow") {
       const refs = this.budgetsFor(g.person, nowIso, limits, true);
-      return this.writeAuthorized(g, key, budgetSet, view, refs, reserve, routedModel, reasons, verdict.matched, verdict.action ?? null, reasonCode, false, est.ok ? est.basis : {}, digest, standing(refs));
+      return this.writeAuthorized(g, key, budgetSet, view, refs, reserve, routedModel, reasons, verdict.matched, verdict.action ?? null, reasonCode, false, est.ok ? est.basis : {}, digest, standing(refs), scopedNow);
     }
 
     if (shadow) {
@@ -468,7 +526,7 @@ export class Gate {
         basis: { matched: verdict.matched, action: verdict.action ?? null },
       });
       const refs = this.budgetsFor(g.person, nowIso, limits, false);
-      return this.writeAuthorized(g, key, budgetSet, view, refs, reserve, routedModel, [...reasons, "shadow mode: allowed, would have been " + finalVerdict], verdict.matched, verdict.action ?? null, `shadow_${reasonCode}`, true, est.ok ? est.basis : {}, digest, standing(refs));
+      return this.writeAuthorized(g, key, budgetSet, view, refs, reserve, routedModel, [...reasons, "shadow mode: allowed, would have been " + finalVerdict], verdict.matched, verdict.action ?? null, `shadow_${reasonCode}`, true, est.ok ? est.basis : {}, digest, standing(refs), scopedNow);
     }
 
     if (finalVerdict === "ask") {
@@ -491,7 +549,7 @@ export class Gate {
       this.trace.emit({ event: "desk.authorize", why: "rule", detail: { verdict: "ask", reasonCode, eventId: row.id, model: g.model, reservedMicros: reserve } });
       return {
         verdict: "ask", failed: false, shadow: false, reasonCode, reasons, matched: verdict.matched, action: null, reservationId: null, idempotencyKey: key,
-        idempotent: false, reservedMicros: 0, expiresAt: null, routedModel, standing: standing(this.budgetsFor(g.person, nowIso, limits, true)), policyVersion: view.version,
+        idempotent: false, reservedMicros: 0, expiresAt: null, routedModel, standing: standing(this.budgetsFor(g.person, nowIso, limits, true)), ...(scopedNow.length > 0 ? { scoped: scopedNow } : {}), policyVersion: view.version,
         approvalRequest: { approval_request_id: row.id, action_digest: digest }, basis: {},
       };
     }
@@ -516,7 +574,7 @@ export class Gate {
     this.trace.emit({ event: "desk.authorize", why: "rule", detail: { verdict: "deny", reasonCode, eventId: row.id, model: g.model, reservedMicros: reserve, matched: verdict.matched } });
     return {
       verdict: "deny", failed: false, shadow: false, reasonCode, reasons, matched: verdict.matched, action: verdict.action ?? null, reservationId: null, idempotencyKey: key,
-      idempotent: false, reservedMicros: 0, expiresAt: null, routedModel, standing: standing(this.budgetsFor(g.person, nowIso, limits, true)), policyVersion: view.version,
+      idempotent: false, reservedMicros: 0, expiresAt: null, routedModel, standing: standing(this.budgetsFor(g.person, nowIso, limits, true)), ...(scopedNow.length > 0 ? { scoped: scopedNow } : {}), policyVersion: view.version,
       approvalRequest: null, basis: {},
     };
   }
@@ -524,11 +582,12 @@ export class Gate {
   private writeAuthorized(
     g: GateRequest, key: string, budgetSet: string, view: PolicyView, refs: BudgetRef[], reserve: Micros, routedModel: string,
     reasons: string[], matched: string[], action: string | null, reasonCode: string, shadow: boolean, estimateBasis: Record<string, unknown>, digest: string, standing: BudgetStanding[],
+    scoped: ScopedStanding[] = [],
   ): GateDecision {
     const expiresAt = new Date(this.ledger.now() + this.ttl(g)).toISOString();
     const decision: GateDecision = {
       verdict: "allow", failed: false, shadow, reasonCode, reasons, matched, action, reservationId: null, idempotencyKey: key, idempotent: false,
-      reservedMicros: reserve, expiresAt, routedModel, standing, policyVersion: view.version, approvalRequest: null, basis: estimateBasis,
+      reservedMicros: reserve, expiresAt, routedModel, standing, ...(scoped.length > 0 ? { scoped } : {}), policyVersion: view.version, approvalRequest: null, basis: estimateBasis,
     };
     const row = this.ledger.append({
       kind: "authorized",

@@ -2,7 +2,7 @@
 
 Generated from `feature-status.json` by `npm run desk -- status` and checked by `tests/desk/feature-status.test.ts`. The specification is `02-feature-list.md`, which was written as design; this page says how much of it exists.
 
-**69 built, 38 partial, 22 absent** of 129.
+**70 built, 37 partial, 22 absent** of 129.
 
 How to read a status. *Built*: the core of the feature as specified exists and a test, a `desk prove` check or a verification record exercises it. *Partial*: a real part exists and the missing part is named. *Absent*: no code was found. A status is a judgement made by reading and searching, which is why every row cites the files it rests on. A built feature can still be shallow; the "missing" column says so where known.
 
@@ -52,7 +52,7 @@ How to read a status. *Built*: the core of the feature as specified exists and a
 | DF-042 Cheaper-route swap with reproduction gate and paired interval | partial | `src/desk/route/replay.ts`, `src/desk/route/command.ts` | canary tasks only, not real tool-using tasks |
 | DF-043 Language surcharge and the locale route experiment | absent | none | no language surcharge or locale route experiment |
 | DF-044 Spend policy language | built | `src/desk/policy/parse.ts`, `src/desk/policy/evaluate.ts`, `tests/desk/policy.test.ts` | - |
-| DF-045 Caps, windows and override resolution | partial | `src/desk/policy/types.ts`, `src/desk/gate/gate.ts` | windows are day and month only; no per-session, per-model or velocity limits |
+| DF-045 Caps, windows and override resolution | built | `src/desk/policy/types.ts`, `src/desk/policy/evaluate.ts`, `src/desk/policy/parse.ts`, `src/desk/policy/doc.ts`, `src/desk/policy/restrict.ts`, `src/desk/gate/gate.ts`, `src/desk/gate/ledger.ts`, `policies/velocity-and-session.yaml`, `tests/desk/gate/windows.test.ts`, `docs/verification/cap-windows-2026-10-25.md` | run only against a controllable clock; a cap per model counts the model asked for, not the one a route rule sends it to; sliding windows count by settle time |
 | DF-046 Reservation ledger and integrity job | built | `src/desk/gate/gate.ts`, `src/desk/gate/ledger.ts`, `tests/desk/gate/gate.test.ts`, `tests/desk/gate/bypass.test.ts`, `docs/verification/gate-enforcement.md` | - |
 | DF-047 Restrict-only check with a counterexample | built | `src/desk/policy/restrict.ts`, `src/desk/prove/fuzz.ts`, `tests/desk/policy.test.ts` | - |
 | DF-048 Policy replay before a change | built | `src/desk/replay/policy-replay.ts`, `tests/desk/replay.test.ts` | - |

@@ -188,6 +188,39 @@ export class GateLedger {
     return { id: authorized.id, authorized, budgets: this.budgetsOf(authorized.id), state, settled, overage, closing: settled ?? voided ?? expired };
   }
 
+  /**
+   * What one person has spent and has reserved, narrowed to a session, a model or a project and to the time since an instant, summed over the events so that a
+   * window survives a restart and cannot drift from the record. A reservation counts while it is open, whatever its age.
+   */
+  scopedTotals(f: { person: string; sessionId?: string; model?: string; project?: string; sinceIso?: string }): { spent: number; reserved: number } {
+    const where: string[] = ["e.person = ?"];
+    const args: (string | number)[] = [f.person];
+    if (f.sessionId !== undefined) {
+      where.push("e.session_id = ?");
+      args.push(f.sessionId);
+    }
+    if (f.model !== undefined) {
+      where.push("e.model = ?");
+      args.push(f.model);
+    }
+    if (f.project !== undefined) {
+      where.push("e.project = ?");
+      args.push(f.project);
+    }
+    const filter = where.join(" AND ");
+    const since = f.sinceIso === undefined ? "" : " AND e.ts >= ?";
+    const spent = this.db
+      .prepare(`SELECT COALESCE(SUM(e.amount_micros), 0) AS s FROM gate_event e WHERE e.kind IN ('settled', 'overage', 'observed') AND ${filter}${since}`)
+      .get(...args, ...(f.sinceIso === undefined ? [] : [f.sinceIso])) as SqlRow;
+    const reserved = this.db
+      .prepare(
+        `SELECT COALESCE(SUM(e.amount_micros), 0) AS s FROM gate_event e WHERE e.kind = 'authorized' AND ${filter}
+           AND NOT EXISTS (SELECT 1 FROM gate_event c WHERE c.reservation_id = e.id AND c.id <> e.id AND c.kind IN ('settled', 'voided', 'expired'))`,
+      )
+      .get(...args) as SqlRow;
+    return { spent: Number(spent["s"]), reserved: Number(reserved["s"]) };
+  }
+
   /** Spent and reserved for one budget, summed over events so they cannot drift from the record. */
   budgetTotals(budgetId: string): BudgetTotals {
     const meta = this.db
