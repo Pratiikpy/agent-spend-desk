@@ -1,6 +1,6 @@
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { parseArgs } from "node:util";
+import { parseOrExit } from "./args.ts";
 
 import { findJsonlLogs } from "./ingest/discover.ts";
 import { renderAutopsyText } from "./autopsy/card.ts";
@@ -70,7 +70,7 @@ if (process.argv[2] === "gate") {
   process.exit(await runGateCli(process.argv.slice(3)));
 }
 
-const { values, positionals } = parseArgs({
+const { values, positionals } = parseOrExit({
   allowPositionals: true,
   options: {
     db: { type: "string", default: "data/desk/ledger.db" },
@@ -164,6 +164,8 @@ if (command === "help") {
 } else if (command === "retention") {
   if (positionals[1] === "schedule") {
     console.log(scheduleSnippets(process.cwd(), process.platform));
+  } else if (sampleMode) {
+    console.log("Retention checks how old your own Claude Code log files are. The constructed sample's logs are generated when it is built, so there is nothing to check; run it without --sample on your own machine.");
   } else {
     const setting = readCleanupDays(join(homedir(), ".claude", "settings.json"));
     console.log(renderRetention(retentionReport({ files: scanLogs(values["claude-dir"]), db, retentionDays: setting.days, retentionSource: setting.source, now: new Date(), horizonDays: Number(values.horizon) })));

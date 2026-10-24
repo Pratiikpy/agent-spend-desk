@@ -1,7 +1,7 @@
 import { DatabaseSync } from "node:sqlite";
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
-import { parseArgs } from "node:util";
+import { parseOrUsage, UsageError } from "../args.ts";
 
 import { loadDotenv } from "../env.ts";
 import { loadSnapshot } from "../pricing/pricebook.ts";
@@ -59,6 +59,22 @@ function flatReserves(pairs: readonly string[] | undefined): Record<string, numb
   return out;
 }
 
+const GATE_OPTIONS = {
+  policy: { type: "string" },
+  db: { type: "string", default: DEFAULT_DB },
+  prices: { type: "string", default: DEFAULT_PRICES },
+  port: { type: "string", default: String(DEFAULT_PORT) },
+  "shadow-for": { type: "string", default: DEFAULT_SHADOW },
+  person: { type: "string" },
+  "transcript-root": { type: "string", multiple: true },
+  for: { type: "string" },
+  upstream: { type: "string" },
+  reserve: { type: "string", multiple: true },
+  price: { type: "string", multiple: true },
+} as const;
+
+const parseGateArgs = (rest: readonly string[]) => parseOrUsage({ args: [...rest], options: GATE_OPTIONS, allowPositionals: false });
+
 /** Run a `gate` subcommand. Returns the process exit code. */
 export async function runGateCli(argv: readonly string[], env: Record<string, string | undefined> = process.env): Promise<number> {
   if (argv.length === 0 || argv[0] === "help") {
@@ -66,23 +82,14 @@ export async function runGateCli(argv: readonly string[], env: Record<string, st
     return argv.length === 0 ? 2 : 0;
   }
   const [command, ...rest] = argv;
-  const { values } = parseArgs({
-    args: [...rest],
-    options: {
-      policy: { type: "string" },
-      db: { type: "string", default: DEFAULT_DB },
-      prices: { type: "string", default: DEFAULT_PRICES },
-      port: { type: "string", default: String(DEFAULT_PORT) },
-      "shadow-for": { type: "string", default: DEFAULT_SHADOW },
-      person: { type: "string" },
-      "transcript-root": { type: "string", multiple: true },
-      for: { type: "string" },
-      upstream: { type: "string" },
-      reserve: { type: "string", multiple: true },
-      price: { type: "string", multiple: true },
-    },
-    allowPositionals: false,
-  });
+  let values: ReturnType<typeof parseGateArgs>["values"];
+  try {
+    values = parseGateArgs(rest).values;
+  } catch (e) {
+    if (!(e instanceof UsageError)) throw e;
+    console.error(`desk gate: ${e.message}. "desk gate help" prints the usage.`);
+    return 2;
+  }
   loadDotenv(".env", env);
   const dbPath = values.db ?? DEFAULT_DB;
 
