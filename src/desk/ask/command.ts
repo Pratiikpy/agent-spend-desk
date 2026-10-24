@@ -51,6 +51,11 @@ export function renderAnswer(r: AskResult, trace: MemoryTrace): string {
     } else if (e.event === "revision.applied") out.push("  revision applied");
     else if (e.event === "fallback.used") out.push(`  fallback: ${(e.detail as { reason: string }).reason}`);
   }
+  const receipts = trace.events.flatMap((e) => {
+    const id = e.event === "desk.model" ? (e.detail as { nightshift_receipt?: unknown }).nightshift_receipt : undefined;
+    return typeof id === "string" ? [id] : [];
+  });
+  if (receipts.length > 0) out.push(`  served by Meterless Nightshift: ${receipts.length} model call${receipts.length === 1 ? "" : "s"}, receipts ${receipts.join(", ")}`);
   out.push(`  answer ${r.answerId} (check it again with: desk verify-answer ${r.answerId})`);
   return out.join("\n");
 }

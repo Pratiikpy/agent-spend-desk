@@ -40,10 +40,22 @@ export interface ToolCall {
   arguments: Record<string, unknown>;
 }
 
+/** What Meterless Nightshift writes beside a reply it routed (schema meterless.compute_receipt.v1); the evidence that it served the call. */
+export interface NightshiftReceipt {
+  id: string;
+  decisionId?: string;
+  routedModel?: string;
+  provider?: string;
+  kind?: string;
+  latencyMs?: number;
+}
+
 export interface ModelResponse {
   content: string;
   toolCalls: ToolCall[];
   servedBy: "nightshift" | "nvidia" | "cassette" | "other";
+  /** Present only when the reply carried a Nightshift compute receipt. */
+  receipt?: NightshiftReceipt;
   servedModel: string;
   source: "live" | "cassette";
   usage: { inputTokens: number; outputTokens: number; reasoningTokens: number } | null;
@@ -86,18 +98,36 @@ export interface OpenAiConfig {
   fetchImpl?: typeof fetch;
 }
 
-function servedByFor(baseUrl: string): ModelResponse["servedBy"] {
+function isNvidiaHost(baseUrl: string): boolean {
   try {
-    const host = new URL(baseUrl).hostname;
-    if (host === "localhost" || host === "127.0.0.1" || host === "[::1]" || host.endsWith(".local")) return "nightshift";
-    if (host.endsWith("nvidia.com")) return "nvidia";
+    return new URL(baseUrl).hostname.endsWith("nvidia.com");
   } catch {
-    /* fall through */
+    return false;
   }
-  return "other";
 }
 
-/** An OpenAI-compatible chat endpoint: NVIDIA's API or a local Meterless Nightshift URL. Only the three settings differ. */
+/** The receipt Nightshift attaches to a reply, or undefined for anything that is not exactly that. Never throws. */
+export function readNightshiftReceipt(meterless: unknown): NightshiftReceipt | undefined {
+  if (meterless === null || typeof meterless !== "object" || Array.isArray(meterless)) return undefined;
+  const m = meterless as Record<string, unknown>;
+  if (m["schema"] !== "meterless.compute_receipt.v1") return undefined;
+  const id = m["receipt_id"];
+  if (typeof id !== "string" || id === "") return undefined;
+  const str = (v: unknown): string | undefined => (typeof v === "string" && v !== "" ? v : undefined);
+  const route = m["winning_route"] !== null && typeof m["winning_route"] === "object" ? (m["winning_route"] as Record<string, unknown>) : {};
+  const usage = m["usage"] !== null && typeof m["usage"] === "object" ? (m["usage"] as Record<string, unknown>) : {};
+  const latency = usage["latency_ms"];
+  return {
+    id,
+    ...(str(m["decision_id"]) ? { decisionId: str(m["decision_id"]) as string } : {}),
+    ...(str(m["routed_model"]) ? { routedModel: str(m["routed_model"]) as string } : {}),
+    ...(str(route["provider"]) ? { provider: str(route["provider"]) as string } : {}),
+    ...(str(route["kind"]) ? { kind: str(route["kind"]) as string } : {}),
+    ...(typeof latency === "number" && Number.isFinite(latency) ? { latencyMs: latency } : {}),
+  };
+}
+
+/** An OpenAI-compatible chat endpoint: NVIDIA's API or a Meterless Nightshift URL. Only the three settings differ. Nightshift is claimed only when its receipt is in the reply. */
 export class OpenAiPort implements ModelPort {
   private readonly cfg: Required<Omit<OpenAiConfig, "fetchImpl">> & { fetchImpl: typeof fetch };
   constructor(cfg: OpenAiConfig) {
@@ -179,6 +209,7 @@ export class OpenAiPort implements ModelPort {
   private read(raw: unknown): ModelResponse {
     const o = raw as {
       model?: unknown;
+      meterless?: unknown;
       choices?: { message?: { content?: unknown; reasoning_content?: unknown; tool_calls?: { id?: unknown; function?: { name?: unknown; arguments?: unknown } }[] } }[];
       usage?: { prompt_tokens?: number; completion_tokens?: number; completion_tokens_details?: { reasoning_tokens?: number } };
     };
@@ -209,7 +240,9 @@ export class OpenAiPort implements ModelPort {
     const usage = o.usage
       ? { inputTokens: o.usage.prompt_tokens ?? 0, outputTokens: o.usage.completion_tokens ?? 0, reasoningTokens: o.usage.completion_tokens_details?.reasoning_tokens ?? 0 }
       : null;
-    return { content, toolCalls, servedBy: servedByFor(this.cfg.baseUrl), servedModel: typeof o.model === "string" ? o.model : this.cfg.model, source: "live", usage };
+    const receipt = isNvidiaHost(this.cfg.baseUrl) ? undefined : readNightshiftReceipt(o.meterless);
+    const servedBy: ModelResponse["servedBy"] = receipt ? "nightshift" : isNvidiaHost(this.cfg.baseUrl) ? "nvidia" : "other";
+    return { content, toolCalls, servedBy, ...(receipt ? { receipt } : {}), servedModel: typeof o.model === "string" ? o.model : this.cfg.model, source: "live", usage };
   }
 }
 
@@ -244,7 +277,7 @@ export class RecordingPort implements ModelPort {
   async complete(request: ModelRequest, deadlineMs: number): Promise<ModelResponse> {
     const response = await this.inner.complete(request, deadlineMs);
     const key = requestKey(request);
-    const file: CassetteFile = { key, recordedAt: this.now(), role: request.role, response: { content: response.content, toolCalls: response.toolCalls, servedBy: response.servedBy, servedModel: response.servedModel, usage: response.usage } };
+    const file: CassetteFile = { key, recordedAt: this.now(), role: request.role, response: { content: response.content, toolCalls: response.toolCalls, servedBy: response.servedBy, ...(response.receipt ? { receipt: response.receipt } : {}), servedModel: response.servedModel, usage: response.usage } };
     writeFileSync(join(this.dir, `${request.role}-${key}.json`), JSON.stringify(file, null, 2));
     return response;
   }
@@ -289,7 +322,15 @@ export async function callModel(port: ModelPort, request: ModelRequest, ctx: Cal
       event: "desk.model",
       why: "computed",
       role: request.role,
-      detail: { served_by: r.servedBy, served_model: r.servedModel, served_from: r.source, ms: Date.now() - started, usage: r.usage, tool_calls: r.toolCalls.map((t) => t.name) },
+      detail: {
+        served_by: r.servedBy,
+        served_model: r.servedModel,
+        served_from: r.source,
+        ...(r.receipt ? { nightshift_receipt: r.receipt.id, ...(r.receipt.decisionId ? { nightshift_decision: r.receipt.decisionId } : {}) } : {}),
+        ms: Date.now() - started,
+        usage: r.usage,
+        tool_calls: r.toolCalls.map((t) => t.name),
+      },
     });
     return r;
   } catch (e) {

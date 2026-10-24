@@ -193,7 +193,63 @@ describe("OpenAI-compatible port", () => {
     const { port } = mk([reply()]);
     const r = await port.complete(req, 5000);
     expect(r).toMatchObject({ content: "hi", servedBy: "nvidia", servedModel: "private/nvidia/nemotron-3.5-super-120b-a12b", source: "live", usage: { inputTokens: 5, outputTokens: 2 } });
-    expect((await mk([reply()], "http://localhost:11434/v1").port.complete(req, 5000)).servedBy).toBe("nightshift");
+    // An address on this machine is not evidence of Nightshift: any local server (Ollama, LM Studio) looks the same.
+    const local = await mk([reply()], "http://localhost:11434/v1").port.complete(req, 5000);
+    expect(local.servedBy).toBe("other");
+    expect(local.receipt).toBeUndefined();
+  });
+
+  it("calls a reply Nightshift's only when it carries Nightshift's compute receipt, wherever the endpoint is", async () => {
+    const receipt = { schema: "meterless.compute_receipt.v1", receipt_id: "rcpt_req_ab12", decision_id: "req_ab12", requested_model: "m", routed_model: "nvidia/m", winning_route: { provider: "nvidia", kind: "cloud" }, usage: { latency_ms: 381 } };
+    for (const url of ["http://127.0.0.1:8088/v1", "http://192.168.0.55:8088/v1"]) {
+      const r = await mk([reply({ meterless: receipt })], url).port.complete(req, 5000);
+      expect(r.servedBy).toBe("nightshift");
+      expect(r.receipt).toEqual({ id: "rcpt_req_ab12", decisionId: "req_ab12", routedModel: "nvidia/m", provider: "nvidia", kind: "cloud", latencyMs: 381 });
+    }
+    // The receipt is the evidence; the same receipt on NVIDIA's own host would be a forgery of the claim, not a route.
+    expect((await mk([reply({ meterless: receipt })]).port.complete(req, 5000)).servedBy).toBe("nvidia");
+  });
+
+  it("ignores a receipt that is not what Nightshift writes, and never fails a call because of one", async () => {
+    const bad = [
+      { schema: "something.else", receipt_id: "rcpt_1" },
+      { schema: "meterless.compute_receipt.v1" },
+      { schema: "meterless.compute_receipt.v1", receipt_id: 7 },
+      "text",
+      null,
+      [],
+    ];
+    for (const meterless of bad) {
+      const r = await mk([reply({ meterless })], "http://127.0.0.1:8088/v1").port.complete(req, 5000);
+      expect(r.content).toBe("hi");
+      expect(r.servedBy).toBe("other");
+      expect(r.receipt).toBeUndefined();
+    }
+  });
+
+  it("keeps the receipt in a recording and returns it on replay, still labelled as a cassette", async () => {
+    const dir = new TempDir();
+    try {
+      const cassettes = join(dir.path, "c2");
+      mkdirSync(cassettes);
+      const receipt = { schema: "meterless.compute_receipt.v1", receipt_id: "rcpt_req_zz", decision_id: "req_zz", routed_model: "nvidia/m" };
+      const live = mk([reply({ meterless: receipt })], "http://127.0.0.1:8088/v1").port;
+      const recorded = await new RecordingPort(live, cassettes, () => "2026-10-24T00:00:00Z").complete(req, 1000);
+      const replayed = await new CassettePort(cassettes).complete(req);
+      expect(recorded.servedBy).toBe("nightshift");
+      expect(replayed).toMatchObject({ servedBy: "cassette", source: "cassette", receipt: { id: "rcpt_req_zz", decisionId: "req_zz", routedModel: "nvidia/m" } });
+    } finally {
+      dir.dispose();
+    }
+  });
+
+  it("writes the receipt id into the trace line of the call", async () => {
+    const receipt = { schema: "meterless.compute_receipt.v1", receipt_id: "rcpt_req_tr", decision_id: "req_tr", routed_model: "nvidia/m" };
+    const trace = new MemoryTrace();
+    const port = mk([reply({ meterless: receipt })], "http://127.0.0.1:8088/v1").port;
+    await callModel(port, req, { budget: new Budget(ASK_LIVE), trace });
+    const line = trace.events.find((e) => e.event === "desk.model");
+    expect(line?.detail).toMatchObject({ served_by: "nightshift", nightshift_receipt: "rcpt_req_tr", nightshift_decision: "req_tr" });
   });
 
   it("retries a 500 with jittered pauses and then succeeds", async () => {
