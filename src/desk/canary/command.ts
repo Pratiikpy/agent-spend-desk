@@ -11,7 +11,7 @@ export const OWN_RUNS = "data/desk/canary/runs.jsonl";
 const pts = (x: number): string => `${x >= 0 ? "+" : "-"}${Math.abs(x * 100).toFixed(1)} points`;
 const pct = (x: number): string => `${(x * 100).toFixed(0)}%`;
 
-const WORDS: Record<Verdict["verdict"], string> = {
+export const WORDS: Record<Verdict["verdict"], string> = {
   regressed: "Regressed",
   improved: "Improved",
   steady: "Steady",
@@ -19,7 +19,7 @@ const WORDS: Record<Verdict["verdict"], string> = {
   harness_or_platform: "The platform or the harness moved, not the model",
 };
 
-const REASONS: Record<string, string> = {
+export const REASONS: Record<string, string> = {
   too_early: "too early to call",
   too_few_tasks: "too few tasks have scores",
   no_comparison: "nothing to compare yet",

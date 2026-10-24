@@ -2,14 +2,14 @@
 
 Generated from `feature-status.json` by `npm run desk -- status` and checked by `tests/desk/feature-status.test.ts`. The specification is `02-feature-list.md`, which was written as design; this page says how much of it exists.
 
-**53 built, 49 partial, 27 absent** of 129.
+**55 built, 47 partial, 27 absent** of 129.
 
 How to read a status. *Built*: the core of the feature as specified exists and a test, a `desk prove` check or a verification record exercises it. *Partial*: a real part exists and the missing part is named. *Absent*: no code was found. A status is a judgement made by reading and searching, which is why every row cites the files it rests on. A built feature can still be shallow; the "missing" column says so where known.
 
 | Feature | Status | Evidence | Missing |
 |---|---|---|---|
 | DF-001 First run and source discovery | partial | `src/desk/ingest/discover.ts`, `src/desk/ingest/codex.ts`, `src/desk/ingest/opencode.ts`, `tests/desk/discover.test.ts` | adapter capability declarations; three adapters (Claude Code, Codex, OpenCode), none for Gemini CLI, Cline or Cursor; the Copilot CLI local store holds turns and no token counts (checked 2026-10-24), so it cannot be read |
-| DF-002 Morning brief | partial | `src/desk/ui/client/screens/brief.js`, `tests/desk/ui/server.test.ts` | quota runway, overnight pauses and denials, a single recommended action by rule, every figure clickable to its rows |
+| DF-002 Morning brief | built | `src/desk/ui/queries.ts`, `src/desk/ui/client/screens/brief.js`, `src/desk/ui/localday.ts`, `src/desk/canary/card.ts`, `src/desk/gate/readout.ts`, `tests/desk/ui/brief.test.ts`, `docs/verification/approvals-and-brief-2026-10-25.md` | figures are recomputed from rows through the Sessions screen, not from a signed dossier; the cause shares link to the day's sessions, not to the calls of each cause; the overnight gate section has been tried on a constructed gate database only |
 | DF-003 Live gauge (terminal and status line) | built | `src/desk/gauge/gauge.ts`, `src/desk/gauge/watch.ts`, `src/desk/statusline/main.ts`, `src/desk/statusline/statusline.ts`, `tests/desk/gauge.test.ts`, `tests/desk/gauge-watch.test.ts`, `tests/desk/ingest-unchanged.test.ts`, `docs/verification/gauge-2026-10-24.md` | no status line reading has come from a real Claude Code session, so the Claude plan percent is NOT VERIFIED against the real tool; no menu-bar widget (the specification leaves it out) |
 | DF-004 Month bill | partial | `src/desk/ui/client/screens/bill.js`, `src/desk/cost/cost.ts`, `src/desk/reconcile/reconcile.ts`, `tests/desk/cost.test.ts`, `tests/desk/reconcile.test.ts` | the cost Claude Code recorded for itself is stored in a separate table and reconciled by `desk reconcile`, but the Bill screen does not show it beside the estimate; generic invoice import; allocation of idle and shared spend |
 | DF-005 Session view and the waste-block explanation | partial | `src/desk/autopsy/engine.ts`, `src/desk/ui/client/screens/sessions.js`, `tests/desk/autopsy.test.ts` | a stop point and rule for each waste block, the first-break cascade |
@@ -56,7 +56,7 @@ How to read a status. *Built*: the core of the feature as specified exists and a
 | DF-046 Reservation ledger and integrity job | built | `src/desk/gate/gate.ts`, `src/desk/gate/ledger.ts`, `tests/desk/gate/gate.test.ts`, `tests/desk/gate/bypass.test.ts`, `docs/verification/gate-enforcement.md` | - |
 | DF-047 Restrict-only check with a counterexample | built | `src/desk/policy/restrict.ts`, `src/desk/prove/fuzz.ts`, `tests/desk/policy.test.ts` | - |
 | DF-048 Policy replay before a change | built | `src/desk/replay/policy-replay.ts`, `tests/desk/replay.test.ts` | - |
-| DF-049 Approval echo card and approval-habit metrics | partial | `src/desk/dossier/approval.ts`, `tests/desk/dossier/happy.test.ts` | approval-habit metrics |
+| DF-049 Approval echo card and approval-habit metrics | built | `src/desk/approvals/habit.ts`, `src/desk/approvals/command.ts`, `src/desk/dossier/approval.ts`, `src/desk/dossier/policy-change.ts`, `tests/desk/approvals.test.ts`, `docs/verification/approvals-and-brief-2026-10-25.md` | per-call gate approvals are not in the habit record, only dossier approvals |
 | DF-050 Shadow mode and the emergency gate switch | built | `src/desk/gate/gate.ts`, `src/desk/gate/cli.ts`, `tests/desk/gate/gate.test.ts` | - |
 | DF-051 Pause with checkpoint | partial | `src/desk/gate/gate.ts` | pause is a refusal; no checkpoint is written for a resume |
 | DF-052 Enforcement-surface ladder and notify-only labels | partial | `src/desk/gate/gate.ts`, `docs/verification/gate-enforcement.md` | a ladder of enforcement surfaces with notify-only labels |

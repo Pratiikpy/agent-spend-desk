@@ -165,9 +165,15 @@ describe("the weekly review", () => {
     const r = buildReview({ db, snapshot: testSnapshot(), range: W43 });
     expect(r.questions).toEqual({ open: 0, costliest: [] });
     expect(r.approvals).toBeNull();
-    expect(renderReview(r)).toMatch(/Not read: name the gate with --policy FILE/);
-    const withApprovals = buildReview({ db, snapshot: testSnapshot(), range: W43, approvals: { decisions: 4, approved: 3, denied: 1, medianSecondsToDecide: 6, quickShare: 0.5 } });
-    expect(renderReview(withApprovals)).toMatch(/4 decisions \(3 approved, 1 denied\); median time to decide 6 s; 50% approved within 10 seconds of being asked, faster than the evidence can be read\./);
+    expect(renderReview(r)).toMatch(/Not read: no approval record exists yet/);
+    const withApprovals = buildReview({ db, snapshot: testSnapshot(), range: W43, approvals: { decisions: 4, approved: 3, denied: 1, deniedBecause: { denied_by_approver: 1 }, medianSecondsToDecide: 6, quickShare: 0.5, withoutEvidenceShare: 2 / 3, unanswered: 1, waiting: 0, refusedResponses: { digest_mismatch: 2 } } });
+    const text = renderReview(withApprovals);
+    expect(text).toMatch(/4 decisions in the week: 3 approved, 1 denied \(1 denied by approver\)\./);
+    expect(text).toMatch(/Median time from the card being shown to the decision: 6 seconds\./);
+    expect(text).toMatch(/50% of approvals came within 10 seconds of the card being shown: faster than it can be read\./);
+    expect(text).toMatch(/67% of approvals were given without the evidence being opened first/);
+    expect(text).toMatch(/1 request ran out of time with no answer\./);
+    expect(text).toMatch(/Responses refused: 2 digest mismatch\./);
     db.close();
   });
 

@@ -25,6 +25,7 @@ export const COMMANDS: readonly CommandHelp[] = [
 
   { name: "gauge", group: "Costs and limits", summary: "What the last few hours cost, how fast, where it went and where your plan windows stand; --line for a status line, --watch to keep it fresh." },
   { name: "estimate", group: "Costs and limits", summary: "Before a large task: the cost range of similar past tasks and how many there were, or no estimate when fewer than ten are similar." },
+  { name: "approvals", group: "Costs and limits", summary: "What is waiting for your approval, how fast and how carefully past ones were decided; `show <id>` opens the evidence, `deny <id>` says no." },
   { name: "close", group: "Costs and limits", summary: "Close a month: spend, invoices, canary, a replay and drafted change, and a signed month dossier a stranger can check offline." },
   { name: "review", group: "Costs and limits", summary: "The weekly review: what the week cost, what it bought, how the forecasts did, what drifted, and at most three changes worth making." },
   { name: "bill", group: "Costs and limits", summary: "The month bill: estimated spend by day, model and project, and the kind of figure each dollar is." },

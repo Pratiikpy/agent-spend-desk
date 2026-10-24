@@ -1,8 +1,14 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { DatabaseSync } from "node:sqlite";
 
 import { computeReconciliations } from "../billing/reconcile.ts";
 import { openQuestions } from "../outcomes/questions.ts";
+import { approvalHabit, renderHabit, type ApprovalHabit } from "../approvals/habit.ts";
+import { canaryCard, type CanaryCard } from "../canary/card.ts";
+import { OWN_RUNS, SAMPLE_RUNS } from "../canary/command.ts";
+import { nightLine, readGateNight } from "../gate/readout.ts";
+import { addDays, isDate, localDate, localDayRange } from "./localday.ts";
 import { buildReview, weekLabel, weekRange } from "../review/review.ts";
 import { defaultMarkerPath, readMarkers } from "../tasks/markers.ts";
 import { analyseCalls, buildAutopsy, CAUSES, type Autopsy, type AutopsyCall, type Cause, type PerCall } from "../autopsy/engine.ts";
@@ -37,6 +43,14 @@ export interface UiContext {
   ledgerName: string;
   env: Readonly<Record<string, string | undefined>>;
   nowMs: () => number;
+  /** The approval record (dossier database), read for how approvals were made; null in the sample, which has none. */
+  dossierDbPath?: string | null;
+  /** The owner's time zone: "yesterday" is the calendar day that just ended there. Default UTC. */
+  timeZone?: string;
+  /** The gate's database, read for what it paused or denied; null when the gate is not running here. */
+  gateDbPath?: string | null;
+  /** Where the canary's stored runs are; default the Desk's own. */
+  canaryRunsPath?: string;
   /** A second source of list prices to check ours against, when one is on disk. */
   otherPrices?: { label: string; fetchedAt: string; models: Readonly<Record<string, ForeignRow>> } | null;
 }
@@ -373,42 +387,127 @@ export function autopsy(ctx: UiContext, hours: number, days: number): object {
 
 // ---------------------------------------------------------------------------------------------- brief
 
-export function brief(ctx: UiContext): object {
+/** A source whose last successful read is older than this is shown as stale on the brief. */
+const STALE_SOURCE_HOURS = 36;
+const SOURCE_LABEL: Record<string, string> = { claude_code: "Claude Code logs", codex: "Codex logs", opencode: "OpenCode logs", statusline: "Claude Code status line" };
+
+/** The calendar day the brief is about, in the owner's zone: yesterday, or the last day with calls when yesterday has none. */
+function briefDay(ctx: UiContext, tz: string, lastIso: string, forDay: string | null): { day: string; requested: string | null; today: boolean } {
+  const lastLocal = localDate(Date.parse(lastIso), tz);
+  if (forDay !== null) {
+    // A day the owner asked for is shown as asked, with or without calls.
+    const r = localDayRange(forDay, tz);
+    const n = one<{ n: number }>(ctx.db, "SELECT COUNT(*) n FROM model_call WHERE ts >= ? AND ts < ?", new Date(r.startMs).toISOString(), new Date(r.endMs).toISOString())?.n ?? 0;
+    return { day: forDay, requested: n === 0 ? forDay : null, today: forDay >= localDate(ctx.nowMs(), tz) && ctx.mode !== "sample" };
+  }
+  if (ctx.mode === "sample") {
+    // A sample is dated in the future of any real clock, so it is briefed on its own last full day.
+    const recent = all<{ day: string; n: number }>(ctx.db, "SELECT substr(ts, 1, 10) day, COUNT(*) n FROM model_call GROUP BY day ORDER BY day DESC LIMIT 15");
+    const earlier = recent.slice(1).map((r) => r.n).sort((a, b) => a - b);
+    const typical = earlier.length === 0 ? 0 : earlier[Math.floor(earlier.length / 2)]!;
+    return { day: recent.length > 1 && recent[0]!.n < 0.3 * typical ? recent[1]!.day : recent[0]!.day, requested: null, today: false };
+  }
+  const todayLocal = localDate(ctx.nowMs(), tz);
+  const wanted = addDays(todayLocal, -1);
+  const r = localDayRange(wanted, tz);
+  const n = one<{ n: number }>(ctx.db, "SELECT COUNT(*) n FROM model_call WHERE ts >= ? AND ts < ?", new Date(r.startMs).toISOString(), new Date(r.endMs).toISOString())?.n ?? 0;
+  if (n > 0) return { day: wanted, requested: null, today: false };
+  return { day: lastLocal, requested: wanted, today: lastLocal >= todayLocal };
+}
+
+/** Each source the ledger has read, when it was last read successfully, and whether that is too long ago to trust the brief for it. */
+function sourceFreshness(ctx: UiContext): { id: string; label: string; lastReadAt: string; ageHours: number; stale: boolean }[] {
+  // The last run of each reader, whether or not it found anything new: a source that did not change is not a source that was not read.
+  return all<{ kind: string; last: string | null }>(ctx.db, "SELECT kind, MAX(finished_at) last FROM ingest_run GROUP BY kind ORDER BY kind")
+    .filter((r) => r.last !== null)
+    .map((r) => {
+      const ageHours = Math.max(0, (ctx.nowMs() - Date.parse(r.last as string)) / 3_600_000);
+      return { id: r.kind, label: SOURCE_LABEL[r.kind] ?? r.kind, lastReadAt: r.last as string, ageHours: Math.round(ageHours * 10) / 10, stale: ctx.mode !== "sample" && ageHours > STALE_SOURCE_HOURS };
+    });
+}
+
+/**
+ * The one thing worth doing, by rule. A canary that regressed (or whose platform moved) since the run before comes first, because
+ * it touches every task. Otherwise the cause with the most dollars a change could recover, but only when it is measured on the
+ * owner's own windows; an upper bound with no history behind it is not a recommendation. With neither, nothing is recommended
+ * and the reason is said.
+ */
+export function chooseAction(canary: CanaryCard, fix: { cause: string; fix: string; basis: string; addressableMicros: number; interval: { lowMicros: number; highMicros: number } | null; windowsUsed: number; note: string } | null): { action: object | null; why: string } {
+  if (canary.state === "ok" && canary.changed && (canary.verdict === "regressed" || canary.verdict === "harness_or_platform")) {
+    return {
+      action: {
+        kind: "canary",
+        title: canary.verdict === "regressed" ? "The canary says the model regressed" : "The platform or the harness moved: the canary cannot tell the model from it",
+        detail: `${canary.words}, since ${canary.previous?.words.toLowerCase()} the run before: ${canary.because}.`,
+        screen: "canary",
+      },
+      why: "",
+    };
+  }
+  if (fix === null) return { action: null, why: "No cause is large enough to call out a fix." };
+  if (fix.basis !== "own_history" || fix.interval === null) {
+    return { action: null, why: `The largest candidate (${fix.cause.replaceAll("_", " ")}, at most $${(fix.addressableMicros / 1e6).toFixed(2)}) is an upper bound with too little of your own history behind it, so it is not recommended yet.` };
+  }
+  if (fix.addressableMicros < 1_000_000) return { action: null, why: "The largest measured candidate is under $1.00 a window: not worth a change." };
+  return { action: { kind: "fix", cause: fix.cause, fix: fix.fix, basis: fix.basis, addressableMicros: fix.addressableMicros, interval: fix.interval, windowsUsed: fix.windowsUsed, note: fix.note, screen: "autopsy" }, why: "" };
+}
+
+export function brief(ctx: UiContext, forDay: string | null = null): object {
   const empty = emptyState(ctx);
   if (empty) return empty;
+  if (forDay !== null && !isDate(forDay)) throw new BadParam("day must be a date such as 2026-10-24");
+  const tz = ctx.timeZone ?? "UTC";
   const lastIso = one<{ b: string }>(ctx.db, "SELECT MAX(ts) b FROM model_call")!.b;
-  // The brief is about a whole day. If the last day in the ledger is a stub (far fewer calls than the days before it,
-  // because the logs end partway through), brief the day before instead of comparing a morning with a full day.
-  const recent = all<{ day: string; n: number }>(ctx.db, "SELECT substr(ts, 1, 10) day, COUNT(*) n FROM model_call GROUP BY day ORDER BY day DESC LIMIT 15");
-  const lastDay = recent[0]!;
-  const earlier = recent.slice(1).map((r) => r.n).sort((a, b) => a - b);
-  const typical = earlier.length === 0 ? 0 : earlier[Math.floor(earlier.length / 2)]!;
-  const day = recent.length > 1 && lastDay.n < 0.3 * typical ? recent[1]!.day : lastDay.day;
-  const dayStart = `${day}T00:00:00.000Z`;
-  const dayEnd = `${day}T23:59:59.999Z`;
-  const prevDay = new Date(Date.parse(dayStart) - DAY).toISOString().slice(0, 10);
+  const picked = briefDay(ctx, tz, lastIso, forDay);
+  const day = picked.day;
+  const range = localDayRange(day, tz);
+  const prevDay = addDays(day, -1);
+  const prevRange = localDayRange(prevDay, tz);
+  // A window is half open, [start, end); the queries below take an inclusive end, so end is one millisecond earlier.
+  const dayStart = new Date(range.startMs).toISOString();
+  const dayEnd = new Date(range.endMs - 1).toISOString();
   const t = tally(ctx.db, dayStart, dayEnd);
-  const prev = tally(ctx.db, `${prevDay}T00:00:00.000Z`, `${prevDay}T23:59:59.999Z`);
+  const prev = tally(ctx.db, new Date(prevRange.startMs).toISOString(), new Date(prevRange.endMs - 1).toISOString());
   const landing = landingBreakdown(ctx.db, dayStart, dayEnd);
   const { autopsy: a } = autopsyFor(ctx, dayStart, dayEnd);
   const byProject = all<{ project_path: string | null; micros: number }>(
     ctx.db,
     `SELECT s.project_path, SUM(c.total_micros) micros FROM model_call m JOIN session s ON s.session_id = m.session_id
-     JOIN cost_event c ON c.call_id = m.call_id AND c.class = 'estimated' WHERE m.ts >= ? AND m.ts <= ? GROUP BY s.project_path ORDER BY micros DESC LIMIT 20`,
+     JOIN cost_event c ON c.call_id = m.call_id AND c.class = 'estimated' WHERE m.ts >= ? AND m.ts <= ? GROUP BY s.project_path ORDER BY micros DESC LIMIT 500`,
     dayStart,
     dayEnd,
   );
   const projects = new Map<string, number>();
   for (const p of byProject) projects.set(projectName(p.project_path), (projects.get(projectName(p.project_path)) ?? 0) + p.micros);
-  const byModel = all<{ model: string; micros: number | null; calls: number }>(ctx.db, "SELECT model, SUM(estimated_micros) micros, SUM(calls) calls FROM v_cost_by_day_model WHERE day = ? GROUP BY model ORDER BY micros DESC", day);
-  // The one recommended action: the largest measured fix from the whole ledger, else the largest cause of the day.
+  const byModel = all<{ model: string; micros: number | null; calls: number }>(
+    ctx.db,
+    "SELECT m.model model, SUM(c.total_micros) micros, COUNT(*) calls FROM model_call m JOIN cost_event c ON c.call_id = m.call_id WHERE m.ts >= ? AND m.ts <= ? GROUP BY m.model ORDER BY micros DESC LIMIT 12",
+    dayStart,
+    dayEnd,
+  );
+  // The recommended action, by rule: see chooseAction.
   const calls = loadAutopsyCalls(ctx.db, ctx.snapshot, new Date(Date.parse(lastIso) - 14 * DAY).toISOString(), lastIso);
   const card = buildCard({ calls, mode: ctx.mode, hours: 5, days: 14, ingest: { malformedLines: 0, truncatedTails: 0, usageConflicts: 0, logFilesFound: 1, searchedPaths: [] }, landingKnown: hasLinks(ctx.db) });
   const fix = "empty" in card ? null : (card.fixes[0] ?? null);
+  const canary = canaryCard(ctx.mode === "sample" ? SAMPLE_RUNS : (ctx.canaryRunsPath ?? OWN_RUNS), Math.min(ctx.nowMs(), range.endMs), ctx.mode === "sample", day);
+  const chosen = chooseAction(canary, fix);
+  // The gate's night is the briefed day up to now, or to the end of that day when it is a day in the past.
+  const night = readGateNight(ctx.gateDbPath ?? null, dayStart, new Date(Math.min(ctx.nowMs() + 1000, range.endMs)).toISOString());
+  const before = one<{ t: string | null }>(ctx.db, "SELECT MAX(ts) t FROM model_call WHERE ts < ?", dayStart)?.t ?? null;
+  const after = one<{ t: string | null }>(ctx.db, "SELECT MIN(ts) t FROM model_call WHERE ts >= ?", new Date(range.endMs).toISOString())?.t ?? null;
   return {
     state: "ok",
+    snapshotId: ctx.snapshot.snapshotId,
     day,
+    timeZone: tz,
+    window: { from: dayStart, to: dayEnd },
     previousDay: prevDay,
+    /** The nearest days with calls on either side of this one, for stepping through; null at the ends of the ledger. */
+    earlierDay: before === null ? null : localDate(Date.parse(before), tz),
+    laterDay: after === null ? null : localDate(Date.parse(after), tz),
+    /** Set when yesterday had no call: the brief shows the last day that did, and says so. */
+    noCallOn: picked.requested,
+    dayIsToday: picked.today,
     spend: t,
     previousSpend: prev,
     projects: [...projects].map(([project, micros]) => ({ project, micros })).sort((x, y) => y.micros - x.micros),
@@ -416,7 +515,12 @@ export function brief(ctx: UiContext): object {
     landing: { rows: landingRows(landing), totalMicros: landing.totalMicros, linked: hasLinks(ctx.db) },
     causes: causeRows(a).slice(0, 5),
     runway: runwayRows(ctx),
-    action: fix ? { cause: fix.cause, fix: fix.fix, basis: fix.basis, addressableMicros: fix.addressableMicros, interval: fix.interval, windowsUsed: fix.windowsUsed, note: fix.note } : null,
+    gate: night === null ? { state: "not_read", note: "The gate is not running here, so there is nothing to say about pauses or denials. `desk gate serve` starts it." } : { state: "ok", line: nightLine(night), ...night },
+    canary,
+    sources: sourceFreshness(ctx),
+    lastCallAt: lastIso,
+    action: chosen.action,
+    noActionBecause: chosen.action === null ? chosen.why : null,
   };
 }
 
@@ -447,21 +551,81 @@ function runwayRows(ctx: UiContext): object[] {
 
 const SORTS: Record<string, string> = { cost: "micros DESC", recent: "start DESC", calls: "calls DESC" };
 
-export function sessions(ctx: UiContext, span: Span, sort: string, limit: number, offset: number): object {
+/** What a link from another screen narrows the session list to: a window of its own, one project, one model, one landing state. */
+export interface SessionFilter {
+  from?: string;
+  to?: string;
+  project?: string;
+  model?: string;
+  /** A landing state, or `landed` for merged and kept together. */
+  state?: string;
+}
+
+const LANDING_STATES = ["unlinked", "committed", "merged", "kept", "reverted"];
+
+export function parseSessionFilter(p: URLSearchParams): SessionFilter {
+  const f: SessionFilter = {};
+  const iso = (name: "from" | "to"): void => {
+    const v = p.get(name);
+    if (v === null || v === "") return;
+    if (v.length > 40 || Number.isNaN(Date.parse(v))) throw new BadParam(`${name} must be a date and time such as 2026-10-24T00:00:00.000Z`);
+    f[name] = new Date(Date.parse(v)).toISOString();
+  };
+  iso("from");
+  iso("to");
+  if ((f.from === undefined) !== (f.to === undefined)) throw new BadParam("give both from and to, or neither");
+  for (const name of ["project", "model"] as const) {
+    const v = p.get(name);
+    if (v === null || v === "") continue;
+    if (v.length > 200) throw new BadParam(`${name} is too long`);
+    f[name] = v;
+  }
+  const state = p.get("state");
+  if (state !== null && state !== "") {
+    if (state !== "landed" && !LANDING_STATES.includes(state)) throw new BadParam(`state must be landed or one of ${LANDING_STATES.join(", ")}`);
+    f.state = state;
+  }
+  return f;
+}
+
+export function sessions(ctx: UiContext, span: Span, sort: string, limit: number, offset: number, filter: SessionFilter = {}): object {
   const empty = emptyState(ctx);
   if (empty) return empty;
   const order = SORTS[sort];
   if (!order) throw new BadParam("sort must be cost, recent or calls");
-  const total = one<{ n: number }>(ctx.db, "SELECT COUNT(DISTINCT session_id) n FROM model_call WHERE ts >= ? AND ts <= ?", span.sinceIso, span.untilIso)?.n ?? 0;
+  const since = filter.from ?? span.sinceIso;
+  const until = filter.to ?? span.untilIso;
+  const where = ["m.ts >= ?", "m.ts <= ?"];
+  const args: (string | number)[] = [since, until];
+  if (filter.model !== undefined) {
+    where.push("m.model = ?");
+    args.push(filter.model);
+  }
+  if (filter.project !== undefined) {
+    const paths = all<{ project_path: string | null }>(ctx.db, "SELECT DISTINCT project_path FROM session").map((r) => r.project_path).filter((pth) => projectName(pth) === filter.project);
+    const named = paths.filter((x): x is string => x !== null);
+    const clauses: string[] = [];
+    if (named.length > 0) clauses.push(`s.project_path IN (${named.map(() => "?").join(",")})`);
+    if (paths.includes(null)) clauses.push("s.project_path IS NULL");
+    where.push(clauses.length === 0 ? "0" : `(${clauses.join(" OR ")})`);
+    args.push(...named);
+  }
+  if (filter.state !== undefined) {
+    if (filter.state === "landed") where.push("COALESCE(o.state, 'unlinked') IN ('kept', 'merged')");
+    else {
+      where.push("COALESCE(o.state, 'unlinked') = ?");
+      args.push(filter.state);
+    }
+  }
+  const from = "model_call m JOIN session s ON s.session_id = m.session_id LEFT JOIN cost_event c ON c.call_id = m.call_id LEFT JOIN session_outcome o ON o.session_id = m.session_id";
+  const total = one<{ n: number }>(ctx.db, `SELECT COUNT(DISTINCT m.session_id) n FROM ${from} WHERE ${where.join(" AND ")}`, ...args)?.n ?? 0;
+  const spend = one<{ micros: number | null }>(ctx.db, `SELECT SUM(c.total_micros) micros FROM ${from} WHERE ${where.join(" AND ")}`, ...args)?.micros ?? 0;
   const rows = all<{ session_id: string; project_path: string | null; start: string; end: string; calls: number; micros: number | null; unpriced: number; sub: number; state: string | null; conf: string | null; commits: number | null }>(
     ctx.db,
     `SELECT m.session_id, s.project_path, MIN(m.ts) start, MAX(m.ts) end, COUNT(*) calls, SUM(c.total_micros) micros,
             SUM(CASE WHEN c.class = 'unpriced' THEN 1 ELSE 0 END) unpriced, SUM(m.is_sidechain) sub, o.state, o.best_confidence conf, o.commits
-     FROM model_call m JOIN session s ON s.session_id = m.session_id LEFT JOIN cost_event c ON c.call_id = m.call_id
-     LEFT JOIN session_outcome o ON o.session_id = m.session_id
-     WHERE m.ts >= ? AND m.ts <= ? GROUP BY m.session_id ORDER BY ${order}, m.session_id LIMIT ? OFFSET ?`,
-    span.sinceIso,
-    span.untilIso,
+     FROM ${from} WHERE ${where.join(" AND ")} GROUP BY m.session_id ORDER BY ${order}, m.session_id LIMIT ? OFFSET ?`,
+    ...args,
     limit,
     offset,
   );
@@ -471,6 +635,9 @@ export function sessions(ctx: UiContext, span: Span, sort: string, limit: number
     limit,
     offset,
     sort,
+    /** What the rows add up to, so a figure that linked here can be checked against them. */
+    spendMicros: spend,
+    filter: { ...filter, from: filter.from ?? null, to: filter.to ?? null },
     rows: rows.map((r) => ({ id: r.session_id, project: projectName(r.project_path), start: r.start, end: r.end, calls: r.calls, micros: r.micros ?? 0, unpricedCalls: r.unpriced, subagentCalls: r.sub, state: r.state ?? "unlinked", confidence: r.conf, commits: r.commits ?? 0 })),
   };
 }
@@ -602,6 +769,21 @@ function questionView(ctx: UiContext): object {
   };
 }
 
+/** How approvals were made in a period, read from the approval record; null when there is none to read. */
+export function readHabit(path: string | null, startMs: number, endMs: number, nowMs: number): ApprovalHabit | null {
+  if (path === null || !existsSync(path)) return null;
+  try {
+    const d = new DatabaseSync(path, { readOnly: true });
+    try {
+      return approvalHabit(d, new Date(startMs).toISOString(), new Date(endMs).toISOString(), new Date(nowMs).toISOString());
+    } finally {
+      d.close();
+    }
+  } catch {
+    return null;
+  }
+}
+
 /** The weekly review as the screen shows it: the review, the weeks the ledger covers (newest first, at most eight) and the dates of the one shown. */
 export function week(ctx: UiContext, label: string | null): object {
   const empty = emptyState(ctx);
@@ -623,8 +805,9 @@ export function week(ctx: UiContext, label: string | null): object {
   }
   if (!weeks.includes(range.label)) weeks.push(range.label);
   weeks.sort().reverse();
-  const review = buildReview({ db: ctx.db, snapshot: ctx.snapshot, range, markers: ctx.mode === "own_logs" ? readMarkers(defaultMarkerPath()) : [] });
-  return { state: "ok", weeks, review: { ...review, week: { label: review.week.label, start: new Date(review.week.startMs).toISOString().slice(0, 10), end: new Date(review.week.endMs - 1).toISOString().slice(0, 10) } } };
+  const habit = readHabit(ctx.dossierDbPath ?? null, range.startMs, range.endMs, ctx.nowMs());
+  const review = buildReview({ db: ctx.db, snapshot: ctx.snapshot, range, markers: ctx.mode === "own_logs" ? readMarkers(defaultMarkerPath()) : [], approvals: habit });
+  return { state: "ok", weeks, review: { ...review, approvalLines: habit === null ? [] : renderHabit(habit, "in the week"), week: { label: review.week.label, start: new Date(review.week.startMs).toISOString().slice(0, 10), end: new Date(review.week.endMs - 1).toISOString().slice(0, 10) } } };
 }
 
 export function outcomes(ctx: UiContext, span: Span): object {

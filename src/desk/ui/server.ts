@@ -11,6 +11,7 @@ import { OLDEST_READABLE_VERSION, openLedger, SCHEMA_VERSION, type Ledger } from
 import { parsePortkey } from "../pricing/compare.ts";
 import { loadSnapshot } from "../pricing/pricebook.ts";
 import * as q from "./queries.ts";
+import { systemTimeZone } from "./localday.ts";
 import { askScreen, canaryScreen, dossiersScreen, silosScreen, type ExtraPaths } from "./extra.ts";
 import { evidenceScreen } from "./evidence.ts";
 
@@ -47,6 +48,14 @@ export interface UiOptions {
   nowMs?: () => number;
   /** A saved copy of another source's price file (see scripts/fetch-portkey-prices.ts). The Bill screen shows a range where it disagrees with ours. */
   otherPricesPath?: string;
+  /** The approval record the Week screen reads how approvals were made from. Default: the Desk's own, in own-logs mode; none in the sample. */
+  dossierDbPath?: string | null;
+  /** The owner's time zone for "yesterday". Default: the machine's own in own-logs mode, UTC in the sample. */
+  timeZone?: string;
+  /** The gate's database, read for what it paused or denied overnight. Default data/desk/gate.db in own-logs mode, none in the sample. */
+  gateDbPath?: string | null;
+  /** Where the canary's runs are stored; default the Desk's own. */
+  canaryRunsPath?: string;
 }
 
 export interface UiServer {
@@ -150,6 +159,10 @@ export async function startUiServer(opts: UiOptions): Promise<UiServer> {
     env: opts.env ?? process.env,
     nowMs: opts.nowMs ?? Date.now,
     otherPrices: opts.otherPricesPath ? readOtherPrices(opts.otherPricesPath) : null,
+    dossierDbPath: opts.dossierDbPath === undefined ? (opts.mode === "own_logs" ? "data/desk/dossier.db" : null) : opts.dossierDbPath,
+    timeZone: opts.timeZone ?? (opts.mode === "own_logs" ? systemTimeZone() : "UTC"),
+    gateDbPath: opts.gateDbPath === undefined ? (opts.mode === "own_logs" ? "data/desk/gate.db" : null) : opts.gateDbPath,
+    ...(opts.canaryRunsPath ? { canaryRunsPath: opts.canaryRunsPath } : {}),
   };
   const token = opts.token ?? randomBytes(24).toString("hex");
   const statics = staticMap();
@@ -165,13 +178,13 @@ export async function startUiServer(opts: UiOptions): Promise<UiServer> {
       case "/api/meta":
         return { ...(q.meta(ctx) as object), ledgerProblem: problem };
       case "/api/brief":
-        return withProblem(q.brief(ctx));
+        return withProblem(q.brief(ctx, p.get("day")));
       case "/api/bill":
         return withProblem(q.bill(ctx, q.parseRange(p.get("range"), db)));
       case "/api/autopsy":
         return withProblem(q.autopsy(ctx, q.parseInt0(p.get("hours"), "hours", 5, 1, 168), q.parseInt0(p.get("days"), "days", 14, 1, 365)));
       case "/api/sessions":
-        return withProblem(q.sessions(ctx, q.parseRange(p.get("range"), db), p.get("sort") ?? "cost", q.parseInt0(p.get("limit"), "limit", 50, 1, 200), q.parseInt0(p.get("offset"), "offset", 0, 0, 10_000_000)));
+        return withProblem(q.sessions(ctx, q.parseRange(p.get("range"), db), p.get("sort") ?? "cost", q.parseInt0(p.get("limit"), "limit", 50, 1, 200), q.parseInt0(p.get("offset"), "offset", 0, 0, 10_000_000), q.parseSessionFilter(p)));
       case "/api/session":
         return withProblem(q.session(ctx, p.get("id") ?? ""));
       case "/api/week":

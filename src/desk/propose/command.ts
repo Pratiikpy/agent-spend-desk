@@ -86,6 +86,7 @@ export async function proposeCommand(o: ProposeCommandOptions): Promise<string> 
           tenant: "local",
           period: { from: day(sessions[0]!.startMs), to: day(sessions[sessions.length - 1]!.startMs) },
           createdAt: new Date().toISOString(),
+          unresolvedEvasions: result.hardened.unresolved,
         });
         const issued = issueApproval(pack, o.dossier);
         if (o.regretPath) recordProposal(o.regretPath, { requestId: issued.requestId, current, result, sessions });

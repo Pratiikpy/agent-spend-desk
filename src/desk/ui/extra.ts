@@ -148,12 +148,12 @@ export function dossiersScreen(paths: ExtraPaths): object {
       }
     }
   }
-  const pending: { requestId: string; claims: string[]; ruleIds: string[] }[] = [];
+  const pending: { requestId: string; claims: string[]; ruleIds: string[]; unresolved: number | null }[] = [];
   if (existsSync(paths.pendingDir)) {
     for (const id of readdirSync(paths.pendingDir)) {
       try {
-        const pack = JSON.parse(readFileSync(join(paths.pendingDir, id, "pack.json"), "utf8")) as { card?: { claims?: string[] }; ruleIdsAdded?: string[] };
-        if (!existsSync(join(paths.dossiersDir, id.slice(0, 8)))) pending.push({ requestId: id, claims: pack.card?.claims ?? [], ruleIds: pack.ruleIdsAdded ?? [] });
+        const pack = JSON.parse(readFileSync(join(paths.pendingDir, id, "pack.json"), "utf8")) as { card?: { claims?: string[]; unresolved_evasions?: unknown[] }; ruleIdsAdded?: string[] };
+        if (!existsSync(join(paths.dossiersDir, id.slice(0, 8)))) pending.push({ requestId: id, claims: pack.card?.claims ?? [], ruleIds: pack.ruleIdsAdded ?? [], unresolved: pack.card?.unresolved_evasions?.length ?? null });
       } catch {
         /* a half-written request is not listed */
       }

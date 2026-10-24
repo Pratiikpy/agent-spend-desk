@@ -1,7 +1,9 @@
+import type { Evasion } from "../agents/attacker.ts";
 import { ClaimLedger, type Claim } from "../agents/claims.ts";
 import { folderName } from "../engines/label.ts";
 import { formatUsd } from "../money.ts";
 import { policyToDoc } from "../policy/doc.ts";
+import { evaluate } from "../policy/evaluate.ts";
 import type { Policy } from "../policy/types.ts";
 import { restrictCheck } from "../policy/restrict.ts";
 import { replayPolicy, type ReplaySession } from "../replay/policy-replay.ts";
@@ -26,6 +28,8 @@ export interface PolicyChangeInput {
   tenant: string;
   period: { from: string; to: string };
   createdAt: string;
+  /** What the Attacker found that the proposal still allows; they go on the card as typed fields. */
+  unresolvedEvasions?: readonly Evasion[];
 }
 
 export interface PolicyChangePack {
@@ -119,6 +123,11 @@ export function buildPolicyChangePack(input: PolicyChangeInput): PolicyChangePac
     dollars_affected_micros: heldResult.savedMicros,
     tasks_affected: heldResult.paused.length,
     claims: accepted,
+    // An evasion the proposed policy would deny is not unresolved, so only requests it allows or merely asks about are listed.
+    unresolved_evasions: (input.unresolvedEvasions ?? []).flatMap((e) => {
+      const verdict = evaluate(input.proposed, e.request).verdict;
+      return verdict === "allow" || verdict === "ask" ? [{ source: e.source, dimension: e.dimension, waste_rule: e.request.waste_rule, recoverable_micros: e.request.recoverable_micros, action: e.request.action, verdict }] : [];
+    }),
   };
   return {
     log: log.rows,

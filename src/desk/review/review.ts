@@ -8,6 +8,7 @@ import { landingBreakdown } from "../outcomes/breakdown.ts";
 import { openQuestions } from "../outcomes/questions.ts";
 import type { PriceSnapshot } from "../pricing/pricebook.ts";
 import { taskType } from "../estimate/estimate.ts";
+import { renderHabit, type ApprovalHabit } from "../approvals/habit.ts";
 import { identify, type TaskMarker, type TaskMethod } from "../tasks/identity.ts";
 
 /**
@@ -91,14 +92,7 @@ export interface Suggestion {
   note: string;
 }
 
-export interface ApprovalHabit {
-  decisions: number;
-  approved: number;
-  denied: number;
-  medianSecondsToDecide: number | null;
-  /** The share approved within ten seconds of being asked, which is faster than the evidence can be read. */
-  quickShare: number | null;
-}
+export type { ApprovalHabit };
 
 export interface WeeklyReview {
   week: WeekRange;
@@ -318,9 +312,8 @@ export function renderReview(r: WeeklyReview, markdown = false): string {
   for (const d of r.drift) out.push(`  ${d.text}`);
 
   out.push(h("Approvals"));
-  if (r.approvals === null) out.push("  Not read: name the gate with --policy FILE to include how approvals were made.");
-  else if (r.approvals.decisions === 0) out.push("  No approval was asked for in the week.");
-  else out.push(`  ${r.approvals.decisions} decisions (${r.approvals.approved} approved, ${r.approvals.denied} denied); median time to decide ${r.approvals.medianSecondsToDecide === null ? "n/a" : `${Math.round(r.approvals.medianSecondsToDecide)} s`}; ${r.approvals.quickShare === null ? "" : `${Math.round(r.approvals.quickShare * 100)}% approved within 10 seconds of being asked, faster than the evidence can be read.`}`.trimEnd());
+  if (r.approvals === null) out.push("  Not read: no approval record exists yet (desk approvals), or the gate was not named.");
+  else out.push(...renderHabit(r.approvals, "in the week").map((l) => `  ${l}`));
 
   out.push(h("Changes worth making (at most three)"));
   if (r.suggestions.length === 0) out.push("  None: no rule shows a saving in this week's calls.");

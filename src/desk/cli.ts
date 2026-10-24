@@ -67,6 +67,8 @@ import { estimateTask, pastTasks, renderEstimate } from "./estimate/estimate.ts"
 import { buildGauge, gaugeLine, renderGauge } from "./gauge/gauge.ts";
 import { buildReview, renderReview, weekRange } from "./review/review.ts";
 import { closeCommand } from "./close/command.ts";
+import { approvalsCommand } from "./approvals/command.ts";
+import { readHabit } from "./ui/queries.ts";
 import { gaugeCachePath, newestMtimeMs, watchLogs, writeGaugeCache } from "./gauge/watch.ts";
 import { backfillClaudeCodeFields } from "./ledger/backfill.ts";
 import { costVersions, listRepricings, renderRepricing, repriceLedger } from "./pricing/reprice.ts";
@@ -241,7 +243,8 @@ if (command === "help") {
     // The week asked for, else the last complete one; a ledger that ends before it is shown the week it ends in. A sample is dated in the future, so its week is where the sample ends.
     let range = weekRange(values.week, sampleMode ? Date.parse(last) + 7 * 86_400_000 : Date.now());
     if (values.week === undefined && Date.parse(last) < range.startMs) range = weekRange(undefined, Date.parse(last) + 7 * 86_400_000);
-    console.log(renderReview(buildReview({ db, snapshot: loadSnapshot(pricesPath), range, markers: sampleMode ? [] : readMarkers(defaultMarkerPath()) }), values.markdown));
+    const habit = sampleMode ? null : readHabit(DOSSIER_PATHS.dbPath, range.startMs, range.endMs, Date.now());
+    console.log(renderReview(buildReview({ db, snapshot: loadSnapshot(pricesPath), range, markers: sampleMode ? [] : readMarkers(defaultMarkerPath()), approvals: habit }), values.markdown));
   }
 } else if (command === "questions") {
   const sub = positionals[1];
@@ -506,6 +509,10 @@ written: ${r.files.join(", ")}`);
   console.log(await rememberCommand({ memoryDir: values["memory-dir"], text: positionals.slice(1).join(" "), outcome: values.outcome }));
 } else if (command === "verify-answer") {
   console.log(await verifyAnswerCommand(ledgerPath, positionals[1] ?? "", values["memory-dir"]));
+} else if (command === "approvals") {
+  const r = approvalsCommand(positionals[1], positionals[2], { dbPath: DOSSIER_PATHS.dbPath }, process.argv.includes("--days") ? { days: Number(values.days) } : {});
+  console.log(r.text);
+  if (!r.ok) process.exitCode = 1;
 } else if (command === "approve") {
   const r = approve(positionals[1] ?? "", positionals[2] ?? "", DOSSIER_PATHS);
   if (r.ok) recordApproval(regretPath(), positionals[1] ?? "");

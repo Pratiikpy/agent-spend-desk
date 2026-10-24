@@ -75,6 +75,8 @@ export function approve(requestId: string, digest: string, paths: DossierPaths, 
   try {
     const svc = new ApprovalService(db, sg, now);
     const chain = pack.log.length > 0 ? pack.log[pack.log.length - 1]!.row_hash : "empty";
+    // Whether the evidence was opened before the decision is part of the monthly approval record; say so while it can still be done.
+    const opened = (db.prepare("SELECT evidence_opened_at AS at FROM approval_request WHERE approval_request_id = ?").get(requestId) as { at: string | null } | undefined)?.at ?? null;
     const outcome = svc.respond({ approvalRequestId: requestId, actionDigest: digest, decision: "approve" }, { approver: "owner", verified: true }, { policyVersion: pack.currentId, chainVersion: chain });
     if (outcome.status === "refused") return { ok: false, text: `Not approved: ${outcome.reason.replaceAll("_", " ")}. Nothing was changed.` };
     if (outcome.status === "denied") return { ok: false, text: `Not approved: ${outcome.reason.replaceAll("_", " ")}. Nothing was changed.` };
@@ -94,7 +96,7 @@ export function approve(requestId: string, digest: string, paths: DossierPaths, 
     const pinsFile = join(paths.outDir, `${requestId.slice(0, 8)}.pins.json`);
     writeFileSync(pinsFile, JSON.stringify(pinsFor(sg), null, 2) + "\n");
     const report = verifyBundle(built.files, { pins: pinsFor(sg) });
-    return { ok: report.overall === "PASS", dir, text: `Approved. Dossier written to ${dir}\n\n${formatReport(report, dir)}\n\nCheck it again, offline, with: node src/desk/verify/main.ts ${dir} --pins ${pinsFile}` };
+    return { ok: report.overall === "PASS", dir, text: `Approved. Dossier written to ${dir}\n\n${formatReport(report, dir)}\n\nCheck it again, offline, with: node src/desk/verify/main.ts ${dir} --pins ${pinsFile}${opened === null ? `\n\nThis was approved without the evidence being opened first; the monthly approval record (desk approvals) counts it. desk approvals show <id> opens the evidence before the next one.` : ""}` };
   } finally {
     db.close();
   }

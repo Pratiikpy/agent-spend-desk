@@ -92,8 +92,8 @@ export async function render(ctx) {
       "Approvals",
       "how they were made",
       r.approvals === null
-        ? h("p", { class: "note" }, "Not read. Start the screens with the gate named (desk ui --policy FILE) to include approval times.")
-        : h("p", null, r.approvals.decisions === 0 ? "No approval was asked for in the week." : `${int(r.approvals.decisions)} decisions: ${int(r.approvals.approved)} approved, ${int(r.approvals.denied)} denied; median time to decide ${r.approvals.medianSecondsToDecide === null ? "n/a" : `${Math.round(r.approvals.medianSecondsToDecide)} s`}.${r.approvals.quickShare === null ? "" : ` ${pct(r.approvals.quickShare)} were approved within 10 seconds of being asked, faster than the evidence can be read.`}`),
+        ? h("p", { class: "note" }, "Not read: no approval record exists yet. `desk approvals` shows what is waiting and how decisions were made.")
+        : h("div", null, ...r.approvalLines.map((l) => h("p", null, l))),
     ),
     section(
       "Changes worth making",

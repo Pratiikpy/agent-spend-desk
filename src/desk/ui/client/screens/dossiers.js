@@ -23,6 +23,7 @@ export async function render(ctx) {
             h("h3", null, "A policy change is waiting for approval"),
             h("ul", { class: "list" }, ...p.claims.map((c) => h("li", null, c))),
             h("p", { class: "note" }, `Rules added: ${p.ruleIds.join(", ") || "none"}.`),
+            p.unresolved === null ? null : h("p", { class: p.unresolved > 0 ? "" : "note" }, p.unresolved > 0 ? `The attacker found ${p.unresolved} request${p.unresolved === 1 ? "" : "s"} this policy still allows. desk approvals show ${p.requestId.slice(0, 8)} lists them.` : "The attacker found no request the policy still allows."),
             h("p", { class: "note" }, "Approve by echoing the action digest printed when the request was issued:"),
             h("pre", { class: "src" }, `desk approve ${p.requestId} <action digest>`),
           ),

@@ -16,21 +16,37 @@ export async function render(ctx) {
   return id ? detail(ctx, id) : list(ctx);
 }
 
+// What a link from another screen narrowed this list to. The same narrowing is sent to the API and kept by the sort and the pager.
+const FILTERS = ["from", "to", "project", "model", "state"];
+const FILTER_LABEL = { project: "project", model: "model", state: "landing state" };
+
 async function list(ctx) {
   const sort = ctx.params.get("sort") || "cost";
   const offset = Number(ctx.params.get("offset") || "0");
-  const d = await ctx.api("/api/sessions", { range: ctx.range, sort, limit: "50", offset: String(offset) });
+  const filter = {};
+  for (const k of FILTERS) if (ctx.params.get(k)) filter[k] = ctx.params.get(k);
+  const d = await ctx.api("/api/sessions", { range: ctx.range, sort, limit: "50", offset: String(offset), ...filter });
   if (d.state === "empty") return h("div", null, head("Sessions", "No sessions yet"), emptyState(d));
   const sel = h("select", { id: "sort", "aria-label": "Sort sessions" }, h("option", { value: "cost" }, "Most expensive"), h("option", { value: "recent" }, "Most recent"), h("option", { value: "calls" }, "Most calls"));
   sel.value = sort;
-  sel.addEventListener("change", () => ctx.navigate("sessions", { sort: sel.value, range: ctx.range }));
+  sel.addEventListener("change", () => ctx.navigate("sessions", { sort: sel.value, range: ctx.range, ...filter }));
   const pager = h(
     "div",
     { class: "controls" },
-    offset > 0 ? h("a", { class: "btn", href: ctx.link("sessions", { sort, range: ctx.range, offset: String(Math.max(0, offset - d.limit)) }) }, "Newer") : null,
-    offset + d.limit < d.total ? h("a", { class: "btn", href: ctx.link("sessions", { sort, range: ctx.range, offset: String(offset + d.limit) }) }, "More") : null,
-    h("span", { class: "muted mono" }, `${int(offset + 1)} to ${int(Math.min(d.total, offset + d.limit))} of ${int(d.total)}`),
+    offset > 0 ? h("a", { class: "btn", href: ctx.link("sessions", { sort, range: ctx.range, ...filter, offset: String(Math.max(0, offset - d.limit)) }) }, "Newer") : null,
+    offset + d.limit < d.total ? h("a", { class: "btn", href: ctx.link("sessions", { sort, range: ctx.range, ...filter, offset: String(offset + d.limit) }) }, "More") : null,
+    h("span", { class: "muted mono" }, d.total === 0 ? "none" : `${int(offset + 1)} to ${int(Math.min(d.total, offset + d.limit))} of ${int(d.total)}`),
   );
+  const narrowed = Object.keys(filter).length > 0;
+  const chips = narrowed
+    ? h(
+        "p",
+        { class: "controls" },
+        filter.from ? pill(`${stamp(filter.from)} to ${stamp(filter.to)}`, "") : null,
+        ...Object.keys(FILTER_LABEL).filter((k) => filter[k]).map((k) => pill(`${FILTER_LABEL[k]}: ${k === "state" ? STATE_LABEL[filter[k]] || (filter[k] === "landed" ? "merged or kept" : filter[k]) : filter[k]}`, "")),
+        h("a", { class: "btn", href: ctx.link("sessions", { sort, range: ctx.range }) }, "Show all"),
+      )
+    : null;
   return h(
     "div",
     null,
@@ -38,6 +54,8 @@ async function list(ctx) {
     section(
       "List",
       "estimated",
+      chips,
+      narrowed ? h("p", { class: "note" }, `These ${int(d.total)} session${d.total === 1 ? "" : "s"} add up to ${usd(d.spendMicros)}, the figure you came from.`) : null,
       h("div", { class: "controls" }, h("label", null, "Sort", sel)),
       table(
         "Sessions",

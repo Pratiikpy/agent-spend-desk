@@ -252,3 +252,20 @@ describe("files written to disk", () => {
     writeFileSync(join(ps.outDir, "marker"), "x");
   });
 });
+
+describe("the approval card carries the evasions the proposal leaves open", () => {
+  const input = { current: CURRENT, proposed: PROPOSED, trainingSessions: TRAIN, heldOutSessions: HELD, tenant: "local", period: { from: "2026-09-01", to: "2026-10-05" }, createdAt: "2026-10-06T00:00:00.000Z" };
+  const evading = { source: "probe" as const, dimension: "recoverable_micros", why: "a free-text reason from a model that must never reach the card", request: { project: "p", person: "q", agent: "a", model: "m", task_type: "code", waste_rule: "C-LOOP-1", action: "call", recoverable_micros: usd(1.99), day_spend_after_micros: 0, month_spend_after_micros: 0 } };
+  const denied = { ...evading, request: { ...evading.request, recoverable_micros: usd(9) } };
+
+  it("lists a request the proposed policy still allows, as typed fields and no words from the attacker", () => {
+    const pack = buildPolicyChangePack({ ...input, unresolvedEvasions: [evading] });
+    expect(pack.card.unresolved_evasions).toEqual([{ source: "probe", dimension: "recoverable_micros", waste_rule: "C-LOOP-1", recoverable_micros: usd(1.99), action: "call", verdict: "allow" }]);
+    expect(JSON.stringify(pack.card)).not.toContain("free-text reason");
+  });
+
+  it("leaves out a request the proposed policy would in fact deny, and says none when there are none", () => {
+    expect(buildPolicyChangePack({ ...input, unresolvedEvasions: [denied] }).card.unresolved_evasions).toEqual([]);
+    expect(buildPolicyChangePack(input).card.unresolved_evasions).toEqual([]);
+  });
+});

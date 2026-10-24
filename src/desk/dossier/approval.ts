@@ -34,6 +34,21 @@ export function auditedSentences(sentences: readonly Sentence[], ledger: ClaimLe
   return auditSentences(sentences, ledger).accepted.map((s) => s.text);
 }
 
+/**
+ * A request the Policy Attacker found that the proposed policy still allows, with the typed fields of the request and nothing the
+ * attacker wrote in words: the replay evidence is the request itself and the verdict the proposed policy gives it.
+ */
+export interface UnresolvedEvasion {
+  source: "probe" | "model";
+  /** The dimension of a forbid rule the request steps around, when known. */
+  dimension: string | null;
+  waste_rule: string;
+  recoverable_micros: number;
+  action: string;
+  /** What the proposed policy says to the request. Always allow or ask: a deny would not be an evasion. */
+  verdict: "allow" | "ask";
+}
+
 export interface ApprovalCard {
   diff: unknown;
   replay: { paused: number; landed_blocked: number; saved_micros: number } | null;
@@ -42,6 +57,8 @@ export interface ApprovalCard {
   tasks_affected: number;
   /** Auditor-accepted sentences only; see auditedSentences. */
   claims: string[];
+  /** Evasions the Attacker found and the proposal does not close. Absent on a card issued before the Desk listed them. */
+  unresolved_evasions?: UnresolvedEvasion[];
 }
 
 export interface ApprovalRequest {
@@ -96,6 +113,11 @@ function assertCard(card: ApprovalCard): void {
     if (!Number.isSafeInteger(card[k]) || card[k] < 0) throw new RangeError(`card.${k} must be a non-negative safe integer`);
   }
   if (!Array.isArray(card.claims) || card.claims.some((c) => typeof c !== "string")) throw new TypeError("card.claims must be Auditor-accepted sentences");
+  for (const e of card.unresolved_evasions ?? []) {
+    if (!Number.isSafeInteger(e.recoverable_micros) || e.recoverable_micros < 0) throw new RangeError("an unresolved evasion needs a non-negative safe integer recoverable_micros");
+    if (e.verdict !== "allow" && e.verdict !== "ask") throw new TypeError("an unresolved evasion's verdict must be allow or ask");
+    if (typeof e.waste_rule !== "string" || typeof e.action !== "string" || (e.dimension !== null && typeof e.dimension !== "string")) throw new TypeError("an unresolved evasion carries typed fields only");
+  }
   canonicalJson(card);
 }
 
