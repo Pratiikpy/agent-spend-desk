@@ -104,6 +104,7 @@ Three of Meterless's open reference engines run in this process under Apache-2.0
 |---|---|
 | `desk card` (default) | The limit-autopsy card on your own logs or the sample |
 | `desk ingest`, `desk bill`, `desk autopsy`, `desk landing` | The pieces of the card on their own: read logs, price them, split a window, tie spend to git |
+| `desk pr [--base ref] [--head ref] [--markdown]` | What the agent work behind one change cost: reads new logs, ties the change's commits to sessions, counts each session in proportion to its commits that are in the change, and prints a description to paste into the pull request. On this repository's last eight commits it found one session, $29.21 counted of $200.80, tied by file overlap (a medium tie) |
 | `desk replay`, `desk tunnel` | Replay a policy on a month; resample months to give a range and a chance of blocking landed work |
 | `desk propose` | Draft, check, attack, harden and replay a spend policy; `--dossier` writes the signed bundle |
 | `desk approve` | The approval echo and the signature |

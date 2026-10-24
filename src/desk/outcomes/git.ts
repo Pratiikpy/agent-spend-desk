@@ -99,3 +99,18 @@ export function relativeTo(root: string, absolute: string): string | null {
   if (rel === "" || rel.startsWith("..") || resolve(rel) === rel) return null;
   return rel.split(sep).join("/");
 }
+
+/** The commits on `head` that are not on `base`, oldest first, merge commits left out: the commits of a change. */
+export function commitsInRange(root: string, base: string, head: string): string[] {
+  try {
+    const out = git(root, ["rev-list", "--reverse", "--no-merges", `${base}..${head}`]).trim();
+    return out === "" ? [] : out.split("\n");
+  } catch (error) {
+    throw new Error(`cannot list the commits in ${base}..${head}: ${(error as Error).message.split("\n")[0]}`);
+  }
+}
+
+/** The branch the repository's other branches are measured against, as a ref a person can read (origin's head, else main, master or trunk). */
+export function baseRef(root: string): string {
+  return defaultRef(root);
+}

@@ -39,7 +39,7 @@ How to read a status. *Built*: the core of the feature as specified exists and a
 | DF-029 Repricing as superseding events | partial | `src/desk/ledger/db.ts`, `src/desk/ledger/ingest.ts` | repricing replaces a cost event by re-ingest; it is not recorded as a superseding event |
 | DF-030 Task identity | partial | `src/desk/outcomes/link.ts` | a task identity beyond the session |
 | DF-031 Attribution with confidence | built | `src/desk/outcomes/attribute.ts`, `src/desk/calibrate/attribution.ts`, `tests/desk/calibration.test.ts`, `tests/desk/outcomes.test.ts` | - |
-| DF-032 Landing lattice | built | `src/desk/outcomes/attribute.ts`, `src/desk/outcomes/breakdown.ts`, `tests/desk/outcomes.test.ts` | - |
+| DF-032 Landing lattice | built | `src/desk/outcomes/attribute.ts`, `src/desk/outcomes/breakdown.ts`, `src/desk/pr/cost.ts`, `tests/desk/outcomes.test.ts`, `tests/desk/pr-cost.test.ts` | - |
 | DF-033 Waste classes | partial | `src/desk/autopsy/engine.ts`, `tests/desk/autopsy.test.ts` | classes beyond the ones the sample plants (truncation re-reads, reflection loops, edit-failure loops) |
 | DF-034 Threshold calibration on the owner's history | absent | none | no calibration of thresholds on the owner's history |
 | DF-035 Forecasts with a scorecard | partial | `src/desk/replay/wind-tunnel.ts`, `src/desk/calibrate/windtunnel.ts`, `tests/desk/calibration.test.ts` | a forecast of the owner's month with a running scorecard; the tunnel's range is a screen whose coverage was measured at 73% |

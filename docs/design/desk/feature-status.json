@@ -33,7 +33,7 @@
     { "id": "DF-029", "status": "partial", "evidence": ["src/desk/ledger/db.ts", "src/desk/ledger/ingest.ts"], "missing": "repricing replaces a cost event by re-ingest; it is not recorded as a superseding event" },
     { "id": "DF-030", "status": "partial", "evidence": ["src/desk/outcomes/link.ts"], "missing": "a task identity beyond the session" },
     { "id": "DF-031", "status": "built", "evidence": ["src/desk/outcomes/attribute.ts", "src/desk/calibrate/attribution.ts", "tests/desk/calibration.test.ts", "tests/desk/outcomes.test.ts"], "missing": "" },
-    { "id": "DF-032", "status": "built", "evidence": ["src/desk/outcomes/attribute.ts", "src/desk/outcomes/breakdown.ts", "tests/desk/outcomes.test.ts"], "missing": "" },
+    { "id": "DF-032", "status": "built", "evidence": ["src/desk/outcomes/attribute.ts", "src/desk/outcomes/breakdown.ts", "src/desk/pr/cost.ts", "tests/desk/outcomes.test.ts", "tests/desk/pr-cost.test.ts"], "missing": "" },
     { "id": "DF-033", "status": "partial", "evidence": ["src/desk/autopsy/engine.ts", "tests/desk/autopsy.test.ts"], "missing": "classes beyond the ones the sample plants (truncation re-reads, reflection loops, edit-failure loops)" },
     { "id": "DF-034", "status": "absent", "evidence": [], "missing": "no calibration of thresholds on the owner's history" },
     { "id": "DF-035", "status": "partial", "evidence": ["src/desk/replay/wind-tunnel.ts", "src/desk/calibrate/windtunnel.ts", "tests/desk/calibration.test.ts"], "missing": "a forecast of the owner's month with a running scorecard; the tunnel's range is a screen whose coverage was measured at 73%" },

@@ -8,7 +8,8 @@ import { buildAutopsy, heaviestWindow } from "./autopsy/engine.ts";
 import { loadAutopsyCalls } from "./autopsy/load.ts";
 import { openLedger } from "./ledger/db.ts";
 import { landingBreakdown } from "./outcomes/breakdown.ts";
-import { findRepoRoot } from "./outcomes/git.ts";
+import { baseRef, commitsInRange, findRepoRoot } from "./outcomes/git.ts";
+import { prCost, renderPr } from "./pr/cost.ts";
 import { linkOutcomes } from "./outcomes/link.ts";
 import { ingestClaudeCode } from "./ledger/ingest.ts";
 import { formatUsd } from "./money.ts";
@@ -128,6 +129,10 @@ const { values, positionals } = parseArgs({
     second: { type: "string" },
     portkey: { type: "string" },
     horizon: { type: "string", default: "7" },
+    base: { type: "string" },
+    head: { type: "string" },
+    markdown: { type: "boolean", default: false },
+    "no-ingest": { type: "boolean", default: false },
     at: { type: "string" },
     "opencode-db": { type: "string", default: join(homedir(), ".local", "share", "opencode", "opencode.db") },
     defects: { type: "string", default: "0" },
@@ -360,6 +365,17 @@ ${t.pass} PASS, ${t.fail} FAIL, ${t.notRun} NOT RUN. NOT RUN is not a pass: it n
   } else {
     console.log(renderAutopsyText(buildAutopsy(calls, window.startMs, window.endMs)));
   }
+} else if (command === "pr") {
+  const root = findRepoRoot(values.repo?.[0] ?? process.cwd());
+  if (!root) throw new Error("not inside a git repository; run it in the repository or pass --repo <folder>");
+  const base = values.base ?? baseRef(root);
+  const head = values.head ?? "HEAD";
+  const shas = commitsInRange(root, base, head);
+  // Read what is new in the agents' logs and in the repository, so the change is tied to sessions that ended a minute ago.
+  if (!values["no-ingest"]) await ingestClaudeCode(db, findJsonlLogs(values["claude-dir"]), loadSnapshot(pricesPath));
+  linkOutcomes(db, [root], Date.now());
+  const result = prCost(db, root, shas);
+  console.log(values.markdown ? renderPr(result) : renderPr(result).replaceAll("**", "").replace(/^### /, ""));
 } else if (command === "landing") {
   let repos = values.repo ?? [];
   if (repos.length === 0) {
@@ -534,7 +550,7 @@ ${t.pass} PASS, ${t.fail} FAIL, ${t.notRun} NOT RUN. NOT RUN is not a pass: it n
   console.log(`logs: ${sampleLogsDir(values.out)}`);
   console.log(`repos: ${sampleReposDir(values.out)}`);
 } else {
-  console.error(`unknown command "${command}". Use: card | status | forget | egress | limits | runway | statusline | prices | retention | propose | silos | ask | remember | verify-answer | gate | approve | ui | canary | bench | seats | route | calibrate | regret | lessons | prove | demo | ingest | bill | autopsy | landing | replay | tunnel | sample build`);
+  console.error(`unknown command "${command}". Use: card | status | forget | egress | limits | runway | pr | statusline | prices | retention | propose | silos | ask | remember | verify-answer | gate | approve | ui | canary | bench | seats | route | calibrate | regret | lessons | prove | demo | ingest | bill | autopsy | landing | replay | tunnel | sample build`);
   process.exitCode = 2;
 }
 db.close();
