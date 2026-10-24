@@ -40,6 +40,17 @@ const NEEDS: readonly Need[] = [
     say: "The question asks what a percentage change would be worth. Add a percent_of step over a spend step with group none and the percentage, so code works out the amount.",
   },
   {
+    asks: /\bmedian\b/i,
+    ops: ["median_day"],
+    say: "The question asks for a median day. Use a median_day step (days active counts only days with any spend, all counts every day of the range), so code finds the median.",
+  },
+  {
+    asks: /\b(how many|number of|count of)\s+(\w+\s+)?sessions\b/i,
+    unless: /\b(expensive|costliest|priciest|most|top|highest)\b/i,
+    ops: ["count_sessions"],
+    say: "The question asks how many sessions started. Use a count_sessions step over the range, so code does the counting.",
+  },
+  {
     asks: /\bin thousands\b/i,
     ops: ["in_thousands"],
     say: "The question asks for the amount in thousands of dollars. Add an in_thousands step over a spend step with group none, so code does the conversion.",

@@ -81,6 +81,8 @@ const SPECIALIST: Record<StepOp, Specialist> = {
   percent_of: "accountant",
   in_thousands: "accountant",
   days_above: "accountant",
+  median_day: "accountant",
+  count_sessions: "accountant",
   changes_before: "historian",
   recall: "memory",
   range_digest: "range_reader",
@@ -96,6 +98,8 @@ const ENGINE_OF: Record<StepOp, EngineName | null> = {
   percent_of: null,
   in_thousands: null,
   days_above: null,
+  median_day: null,
+  count_sessions: null,
   changes_before: "world_model",
   recall: "hmem",
   range_digest: "markovian",
@@ -162,6 +166,10 @@ async function execute(step: Step, ctx: RunContext): Promise<Outcome> {
       return inThousands(step, ctx);
     case "days_above":
       return daysAbove(step, ctx);
+    case "median_day":
+      return medianDay(step, ctx);
+    case "count_sessions":
+      return countSessions(step, ctx);
     case "changes_before":
       return changesBefore(step, ctx);
     case "range_digest":
@@ -358,7 +366,8 @@ function compare(step: Extract<Step, { op: "compare" }>, ctx: RunContext): Outco
     claims.push(say`Both periods cost ${usd(ma)}.`);
     meta.push(num(usd(ma), "estimated"));
   } else {
-    claims.push(say`The second period cost ${usd(Math.abs(diff))} ${word(diff > 0 ? "more" : "less")} than the first.`);
+    // The higher period comes first, so a reader asked "first or second?" gets the answer in the opening words.
+    claims.push(say`The ${word(diff > 0 ? "second" : "first")} period cost ${usd(Math.abs(diff))} more than the ${word(diff > 0 ? "first" : "second")}.`);
     meta.push(num(usd(Math.abs(diff)), "computed"));
   }
   if (ma > 0 && diff !== 0) {
@@ -434,6 +443,48 @@ function daysAbove(step: Extract<Step, { op: "days_above" }>, ctx: RunContext): 
   const data: Json = { from: step.from, to: step.to, thresholdMicros: threshold, daysWithSpend: rows.length, daysAbove: n };
   const claims = [say`The number of days with spend above the threshold was ${count(n)}.`, say`The threshold was ${usd(threshold)}.`];
   return { data, rowCount: rows.length, claims, meta: [num(count(n), "computed"), num(usd(threshold), "computed")] };
+}
+
+/** The median daily spend: the middle day, or the mean of the two middle days when the count is even. */
+function medianDay(step: Extract<Step, { op: "median_day" }>, ctx: RunContext): Outcome {
+  const { since, until } = rangeBounds(step.from, step.to);
+  const rows = ctx.db
+    .prepare(
+      `SELECT substr(m.ts, 1, 10) AS d, SUM(c.total_micros) AS s FROM model_call m JOIN cost_event c ON c.call_id = m.call_id
+       WHERE c.class = 'estimated' AND m.ts >= ? AND m.ts < ? GROUP BY d ORDER BY d`,
+    )
+    .all(since, until) as unknown as { d: string; s: number }[];
+  if (rows.length === 0) return emptyRange(ctx, step.from, step.to, "priced model calls");
+  const values = rows.map((r) => r.s);
+  let counted = values.length;
+  const cov = ctx.coverage;
+  if (step.days === "all" && cov) {
+    // Days the ledger does not cover are days nobody recorded, not days with no spend, so only covered days are added as zeros.
+    const from = step.from > cov.start ? step.from : cov.start;
+    const to = step.to < cov.end ? step.to : cov.end;
+    const covered = from <= to ? daysBetween(from, to) + 1 : 0;
+    for (let i = values.length; i < covered; i += 1) values.push(0);
+    counted = values.length;
+  }
+  values.sort((a, b) => a - b);
+  const mid = values.length % 2 === 1 ? (values[(values.length - 1) / 2] as number) : ((values[values.length / 2 - 1] as number) + (values[values.length / 2] as number)) / 2;
+  const micros = Math.round(mid);
+  const data: Json = { from: step.from, to: step.to, days: step.days, daysCounted: counted, medianMicros: micros };
+  const how = step.days === "all" ? "counting every day the ledger covers in the range" : "counting only days with any spend";
+  const claims = [say`The median daily spend, ${word(how)}, was ${usd(micros)}, an estimate from logged tokens.`, say`That median is over ${count(counted)} days.`];
+  return { data, rowCount: rows.length, claims, meta: [num(usd(micros), "estimated"), num(count(counted), "computed")] };
+}
+
+/** How many sessions started in a range. A session starts at its first logged model call. */
+function countSessions(step: Extract<Step, { op: "count_sessions" }>, ctx: RunContext): Outcome {
+  const cov = ctx.coverage;
+  if (!cov || step.to < cov.start || step.from > cov.end) return emptyRange(ctx, step.from, step.to, "model calls");
+  const row = ctx.db
+    .prepare("SELECT COUNT(*) AS n FROM (SELECT session_id, MIN(substr(ts, 1, 10)) AS d FROM model_call GROUP BY session_id) WHERE d >= ? AND d <= ?")
+    .get(step.from, step.to) as { n: number };
+  const data: Json = { from: step.from, to: step.to, sessionsStarted: row.n };
+  const claims = [say`${count(row.n)} ${word(row.n === 1 ? "session" : "sessions")} started between ${date(step.from)} and ${date(step.to)}; a session starts at its first logged model call.`];
+  return { data, rowCount: 1, claims, meta: [num(count(row.n), "computed")] };
 }
 
 /* ------------------------------------------------------------------ historian (World Model) */

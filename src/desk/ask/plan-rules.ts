@@ -58,6 +58,17 @@ export function rulePlan(question: string, cov: Coverage, knownModels: readonly 
     return { program: { steps }, intent: "landing" };
   }
 
+  if (/\bmedian\b/.test(q) && /\b(spend|spent|cost|costs|daily|day)\b/.test(q)) {
+    const all = /\bevery day\b|\ball days\b|\beach day\b|\bincluding (days|empty|zero)\b/.test(q) && !/\bonly days\b|\bdays with (any )?(spend|cost)\b|\bactive days\b/.test(q);
+    steps.push({ id: "s1", op: "median_day", from: period.from, to: period.to, days: all ? "all" : "active" });
+    return { program: { steps }, intent: "median_day" };
+  }
+
+  if (/\b(how many|number of|count of)\s+(\w+\s+)?sessions\b/.test(q) && !/\b(most expensive|costliest|priciest|top|highest)\b/.test(q)) {
+    steps.push({ id: "s1", op: "count_sessions", from: period.from, to: period.to });
+    return { program: { steps }, intent: "count_sessions" };
+  }
+
   if (/\b(most expensive|costliest|priciest|biggest|top|highest)\b[^?]*\b(sessions?|runs?|tasks?)\b|\bsessions?\b[^?]*\b(most expensive|costliest|top|highest)\b/.test(q)) {
     const n = /\btop (\d{1,2})\b/.exec(q);
     const words: Record<string, number> = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10 };
@@ -72,7 +83,13 @@ export function rulePlan(question: string, cov: Coverage, knownModels: readonly 
   if (named || byModel) {
     const known = named ? knownModels.find((m) => m.toLowerCase() === named.toLowerCase()) : undefined;
     if (named && (known || /\d/.test(named))) {
-      steps.push({ id: "s1", op: "spend", from: period.from, to: period.to, group: "none", model: known ?? named.slice(0, 80) });
+      const model = known ?? named.slice(0, 80);
+      steps.push({ id: "s1", op: "spend", from: period.from, to: period.to, group: "none", model });
+      if (/\b(share|percentage|percent|proportion|fraction)\b/.test(q)) {
+        steps.push({ id: "s2", op: "spend", from: period.from, to: period.to, group: "none" });
+        steps.push({ id: "s3", op: "share", part: "s1", whole: "s2" });
+        return { program: { steps }, intent: "share_model" };
+      }
       return { program: { steps }, intent: "spend_model" };
     }
     steps.push({ id: "s1", op: "spend", from: period.from, to: period.to, group: "model" });

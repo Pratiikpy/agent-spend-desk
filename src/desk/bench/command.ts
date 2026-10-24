@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 
 import { openLedger } from "../ledger/db.ts";
 import { choosePort } from "../propose/command.ts";
-import { BENCH_SEED, BENCH_SEED_B, BENCH_SEED_C, buildQuestions, questionSetHash, type QuestionSet } from "./questions.ts";
+import { BENCH_SEED, BENCH_SEED_B, BENCH_SEED_C, BENCH_SEED_D, buildQuestions, questionSetHash, type QuestionSet } from "./questions.ts";
 import { ARMS, CATEGORIES, formatReport, readResults, runBench, writeQuestionSet, type BenchRow } from "./run.ts";
 import type { ArmId } from "./arms.ts";
 
@@ -14,11 +14,14 @@ export const RESULTS_FILE_A_V2 = "docs/verification/benchmark/results-v2.jsonl";
 export const QUESTIONS_FILE_B = "docs/verification/benchmark/set-b/questions.json";
 export const RESULTS_FILE_C = "docs/verification/learning/train-c/results.jsonl";
 export const QUESTIONS_FILE_C = "docs/verification/learning/train-c/questions.json";
+export const RESULTS_FILE_D = "docs/verification/benchmark/set-d/results.jsonl";
+export const QUESTIONS_FILE_D = "docs/verification/benchmark/set-d/questions.json";
 
 /** Each set records into its own folder: a reply recorded for one set must never overwrite what the other set replays. */
 export const CASSETTES_A = "data/sample/bench-cassettes";
 export const CASSETTES_B = "data/sample/bench-cassettes-b";
 export const CASSETTES_C = "data/sample/learning-cassettes-c";
+export const CASSETTES_D = "data/sample/bench-cassettes-d";
 
 /**
  * The rows of set A that today's Desk can be held to: the first two arms from the preregistered file, and the Desk from the
@@ -38,7 +41,9 @@ export const filesFor = (set: QuestionSet): { results: string; questions: string
     ? { results: RESULTS_FILE_B, questions: QUESTIONS_FILE_B, seed: BENCH_SEED_B, cassettes: CASSETTES_B }
     : set === "C"
       ? { results: RESULTS_FILE_C, questions: QUESTIONS_FILE_C, seed: BENCH_SEED_C, cassettes: CASSETTES_C }
-      : { results: RESULTS_FILE, questions: QUESTIONS_FILE, seed: BENCH_SEED, cassettes: CASSETTES_A };
+      : set === "D"
+        ? { results: RESULTS_FILE_D, questions: QUESTIONS_FILE_D, seed: BENCH_SEED_D, cassettes: CASSETTES_D }
+        : { results: RESULTS_FILE, questions: QUESTIONS_FILE, seed: BENCH_SEED, cassettes: CASSETTES_A };
 
 export interface BenchCommandOptions {
   sub: string;
@@ -59,8 +64,8 @@ export interface BenchCommandOptions {
 export async function benchCommand(o: BenchCommandOptions): Promise<string> {
   const db = openLedger(o.dbPath);
   try {
-    const set: QuestionSet = o.set === "B" ? "B" : o.set === "C" ? "C" : "A";
-    if (o.set !== undefined && o.set !== "A" && o.set !== "B" && o.set !== "C") return `--set is A, B or C, not ${o.set}.`;
+    const set: QuestionSet = o.set === "B" ? "B" : o.set === "C" ? "C" : o.set === "D" ? "D" : "A";
+    if (o.set !== undefined && o.set !== "A" && o.set !== "B" && o.set !== "C" && o.set !== "D") return `--set is A, B, C or D, not ${o.set}.`;
     const files = filesFor(set);
     const questions = buildQuestions(db, files.seed, set);
     const results = o.results ?? files.results;

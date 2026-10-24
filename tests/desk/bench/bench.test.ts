@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { ledgerSummary, runA0, runA1, runA2 } from "../../../src/desk/bench/arms.ts";
-import { BENCH_SEED_B, buildQuestions, questionSetHash, truthFrom, type Question } from "../../../src/desk/bench/questions.ts";
+import { BENCH_SEED, BENCH_SEED_B, BENCH_SEED_C, BENCH_SEED_D, buildQuestions, questionSetHash, seedOf, truthFrom, type Question } from "../../../src/desk/bench/questions.ts";
 import { formatReport, passK, readResults, runBench, TRIAL_TEMPERATURE, type BenchRow } from "../../../src/desk/bench/run.ts";
 import { figuresIn, score } from "../../../src/desk/bench/score.ts";
 import { ModelError, type ModelPort, type ModelRequest, type ModelResponse } from "../../../src/desk/agents/model.ts";
@@ -95,6 +95,71 @@ describe("the second question set and repeated trials", () => {
     const sorted = t.daily({ from: mf!, to: mt! }).map((d) => d.micros).sort((x, y) => x - y);
     const mid = sorted.length % 2 ? sorted[(sorted.length - 1) / 2]! : (sorted[sorted.length / 2 - 1]! + sorted[sorted.length / 2]!) / 2;
     expect(med.expect.kind === "answer" && (med.expect.required[0] as { value: number }).value).toBeCloseTo(mid / 1_000_000, 2);
+  });
+
+  it("has a fourth set, fresh for the Desk's third version: six new shapes and four it now has steps for, the same every time", () => {
+    const d = buildQuestions(db, BENCH_SEED_D, "D");
+    expect(d).toHaveLength(60);
+    expect(new Set(d.map((q) => q.id)).size).toBe(60);
+    for (const c of ["lookup", "multi_hop", "counterfactual", "unanswerable", "adversarial", "numeric"]) expect(d.filter((q) => q.category === c)).toHaveLength(10);
+    expect(d.filter((q) => q.novel)).toHaveLength(6);
+    for (const other of [BENCH_SEED, BENCH_SEED_B, BENCH_SEED_C]) expect(questionSetHash(d)).not.toBe(questionSetHash(buildQuestions(db, other, other === BENCH_SEED_B ? "B" : other === BENCH_SEED_C ? "C" : "A")));
+    expect(questionSetHash(buildQuestions(db, BENCH_SEED_D, "D"))).toBe(questionSetHash(d));
+    expect(seedOf("D")).toBe(BENCH_SEED_D);
+  });
+
+  it("computes each new shape from the ledger's own rows", () => {
+    const d = buildQuestions(db, BENCH_SEED_D, "D");
+    const range = (q: Question): [string, string] => {
+      const m = /between (\d{4}-\d{2}-\d{2}) and (\d{4}-\d{2}-\d{2})/.exec(q.text)!;
+      return [m[1]!, m[2]!];
+    };
+    const dayRows = (from: string, to: string): { d: string; s: number }[] =>
+      db.prepare("SELECT substr(m.ts, 1, 10) AS d, SUM(c.total_micros) AS s FROM model_call m JOIN cost_event c ON c.call_id = m.call_id WHERE c.class = 'estimated' AND substr(m.ts, 1, 10) >= ? AND substr(m.ts, 1, 10) <= ? GROUP BY d ORDER BY d").all(from, to) as unknown as { d: string; s: number }[];
+    const days = (from: string, to: string): number => (Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000 + 1;
+    const req = (q: Question) => (q.expect.kind === "answer" ? q.expect.required : []);
+
+    const lowest = d.find((q) => q.novel && /lowest spend/.test(q.text))!;
+    const [lf, lt] = range(lowest);
+    const low = dayRows(lf, lt).reduce((a, b) => (b.s < a.s ? b : a));
+    expect(req(lowest)[0]).toMatchObject({ type: "word", value: low.d });
+    expect((req(lowest)[1] as { value: number }).value).toBeCloseTo(low.s / 1_000_000, 2);
+
+    const none = d.find((q) => q.novel && /no spend at all/.test(q.text))!;
+    const [nf, nt] = range(none);
+    expect((req(none)[0] as { value: number }).value).toBe(days(nf, nt) - dayRows(nf, nt).length);
+
+    const weekend = d.find((q) => q.novel && /weekend/.test(q.text))!;
+    const [wf, wt] = range(weekend);
+    const wk = dayRows(wf, wt).filter((r) => [0, 6].includes(new Date(`${r.d}T00:00:00Z`).getUTCDay())).reduce((a, r) => a + r.s, 0);
+    expect((req(weekend)[0] as { value: number }).value).toBeCloseTo(wk / 1_000_000, 2);
+
+    const perCall = d.find((q) => q.novel && /average cost per model call/.test(q.text))!;
+    const [pf, pt] = range(perCall);
+    const rows = db.prepare("SELECT SUM(c.total_micros) AS s, COUNT(*) AS n FROM model_call m JOIN cost_event c ON c.call_id = m.call_id WHERE c.class = 'estimated' AND substr(m.ts, 1, 10) >= ? AND substr(m.ts, 1, 10) <= ?").get(pf, pt) as { s: number; n: number };
+    expect((req(perCall)[0] as { value: number }).value).toBeCloseTo(rows.s / rows.n / 1_000_000, 4);
+
+    const ratio = d.find((q) => q.novel && /ratio/.test(q.text))!;
+    const [rf, rt] = range(ratio);
+    const byModel = db.prepare("SELECT m.model AS k, SUM(c.total_micros) AS s FROM model_call m JOIN cost_event c ON c.call_id = m.call_id WHERE c.class = 'estimated' AND m.model NOT LIKE '<%' AND substr(m.ts, 1, 10) >= ? AND substr(m.ts, 1, 10) <= ? GROUP BY m.model").all(rf, rt) as unknown as { k: string; s: number }[];
+    const named = [...req(ratio)].find((r) => r.type === "number")!;
+    const spendOf = (name: string): number => byModel.find((x) => x.k === name)?.s ?? 0;
+    const [x, y] = [...ratio.text.matchAll(/spend on ([\w.-]+)/g)].map((m) => m[1]!);
+    expect((named as { value: number }).value).toBeCloseTo(spendOf(x!) / spendOf(y!), 2);
+
+    const second = d.find((q) => q.novel && /second-highest/.test(q.text))!;
+    const [sf, st] = range(second);
+    const ranked = (db.prepare("SELECT m.model AS k, SUM(c.total_micros) AS s FROM model_call m JOIN cost_event c ON c.call_id = m.call_id WHERE c.class = 'estimated' AND m.model NOT LIKE '<%' AND substr(m.ts, 1, 10) >= ? AND substr(m.ts, 1, 10) <= ? GROUP BY m.model ORDER BY s DESC").all(sf, st) as unknown as { k: string; s: number }[]);
+    expect(req(second)[0]).toMatchObject({ type: "text", value: ranked[1]!.k });
+    expect((req(second)[1] as { value: number }).value).toBeCloseTo(ranked[1]!.s / 1_000_000, 2);
+  });
+
+  it("scores a model name by the name being stated, case aside", () => {
+    const d = buildQuestions(db, BENCH_SEED_D, "D");
+    const second = d.find((q) => q.novel && /second-highest/.test(q.text))!;
+    const [name, amount] = second.expect.kind === "answer" ? [(second.expect.required[0] as { value: string }).value, (second.expect.required[1] as { value: number }).value] : ["", 0];
+    expect(score(second, `Model \`${name.toUpperCase()}\` cost $${amount.toFixed(2)}.`).exact).toBe(true);
+    expect(score(second, `Model other-model cost $${amount.toFixed(2)}.`).exact).toBe(false);
   });
 
   it("runs each trial as a sampled draw with its own recording, and keeps trials apart", async () => {

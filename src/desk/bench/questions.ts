@@ -17,8 +17,13 @@ export const BENCH_SEED = 20261023;
 export const BENCH_SEED_B = 20261024;
 /** The third set is for learning from mistakes: the first set's templates, new parameters. It is never used to score the Desk. */
 export const BENCH_SEED_C = 20261025;
-export type QuestionSet = "A" | "B" | "C";
-export const seedOf = (set: QuestionSet): number => (set === "B" ? BENCH_SEED_B : set === "C" ? BENCH_SEED_C : BENCH_SEED);
+/**
+ * The fourth set, for the Desk's third version. Sets A and B were read to find that version's defects, so neither can test it;
+ * this one was written before the third version was run on it and is held out for it entirely.
+ */
+export const BENCH_SEED_D = 20261027;
+export type QuestionSet = "A" | "B" | "C" | "D";
+export const seedOf = (set: QuestionSet): number => (set === "B" ? BENCH_SEED_B : set === "C" ? BENCH_SEED_C : set === "D" ? BENCH_SEED_D : BENCH_SEED);
 
 export type Category = "lookup" | "multi_hop" | "counterfactual" | "unanswerable" | "adversarial" | "numeric";
 
@@ -26,7 +31,9 @@ export type Category = "lookup" | "multi_hop" | "counterfactual" | "unanswerable
 export type Item =
   | { type: "usd"; value: number; label: string }
   | { type: "number"; value: number; decimals: number; label: string }
-  | { type: "word"; value: string; label: string };
+  | { type: "word"; value: string; label: string }
+  /** A name (a model, say) that the answer must state, case aside. */
+  | { type: "text"; value: string; label: string };
 
 export type Expectation =
   | {
@@ -47,7 +54,7 @@ export interface Question {
   split: "dev" | "held_out";
   text: string;
   expect: Expectation;
-  /** Asked in a template the Desk's tools were not built around. Set B only. */
+  /** Asked in a template the Desk's tools were not built around. Sets B and D. */
   novel?: true;
 }
 
@@ -306,6 +313,80 @@ export function buildQuestions(db: Ledger, seed: number = BENCH_SEED, set: Quest
       const sorted = t.daily(r).map((d) => d.micros).sort((x, y) => x - y);
       const mid = sorted.length % 2 === 1 ? sorted[(sorted.length - 1) / 2]! : (sorted[sorted.length / 2 - 1]! + sorted[sorted.length / 2]!) / 2;
       swap(i, { category: "numeric", text: `What was the median daily spend ${both(r)}, counting only days with any spend? Give the dollar amount to the cent.`, expect: { kind: "answer", required: [usd(usdOf(mid), "median day")], allowed: [sorted.length] } });
+    }
+    {
+      const r = randomRange(rng, t.coverage, 5, 20);
+      swap(59, { category: "numeric", text: `How many sessions started ${both(r)}?`, expect: { kind: "answer", required: [{ type: "number", value: t.sessionsStarted(r), decimals: 0, label: "sessions" }], allowed: [daysIn(r)] } });
+    }
+  }
+
+  if (set === "D") {
+    // Ten questions in places where the first three sets had templates the Desk's tools were built around. Four are shapes the
+    // third version has steps for (the busiest day, the gap between two models, the median day, a count of sessions). Six are
+    // shapes nothing was built for (the lowest day, a ratio of two models, days with no spend, a weekend total, an average cost
+    // per call, the second-highest model). The six can be missed: that is what they measure.
+    const swap = (i: number, q: Omit<Question, "id" | "split">, novel = false): void => void (out[i] = novel ? { ...q, novel: true } : q);
+    const distinctSpend = (r: Range): { name: string; micros: number }[] => t.models.map((name) => ({ name, micros: t.spend(r, name).micros })).filter((x) => x.micros > 0).sort((a, b) => b.micros - a.micros || a.name.localeCompare(b.name));
+
+    {
+      const r = randomRange(rng, t.coverage, 8, 30);
+      const days = t.daily(r);
+      const best = days.reduce((a, b) => (b.micros > a.micros ? b : a));
+      swap(8, { category: "lookup", text: `Which single day ${both(r)} had the highest spend, and how much was it? Give the date and the dollar amount.`, expect: { kind: "answer", required: [{ type: "word", value: best.day, label: "day" }, usd(usdOf(best.micros), "day spend")], allowed: days.map((d) => usdOf(d.micros)) } });
+    }
+    {
+      const r = randomRange(rng, t.coverage, 8, 30);
+      const days = t.daily(r);
+      const low = days.reduce((a, b) => (b.micros < a.micros ? b : a));
+      swap(9, { category: "lookup", text: `Which single day ${both(r)} had the lowest spend among days with any spend, and how much was it? Give the date and the dollar amount.`, expect: { kind: "answer", required: [{ type: "word", value: low.day, label: "day" }, usd(usdOf(low.micros), "day spend")], allowed: days.map((d) => usdOf(d.micros)) } }, true);
+    }
+    {
+      const r = randomRange(rng, t.coverage, 10, 40);
+      const [big, small] = t.spend(r, t.models[0]).micros >= t.spend(r, t.models[1]).micros ? [t.models[0]!, t.models[1]!] : [t.models[1]!, t.models[0]!];
+      const a = t.spend(r, big).micros;
+      const b = t.spend(r, small).micros;
+      swap(18, { category: "multi_hop", text: `How much more did ${big} cost than ${small} ${both(r)}? Give the dollar amount.`, expect: { kind: "answer", required: [usd(usdOf(a - b), "difference")], allowed: [usdOf(a), usdOf(b)] } });
+    }
+    {
+      let r = randomRange(rng, t.coverage, 10, 40);
+      let ranked = distinctSpend(r);
+      for (let attempt = 0; ranked.length < 2 && attempt < 200; attempt += 1) {
+        r = randomRange(rng, t.coverage, 10, 40);
+        ranked = distinctSpend(r);
+      }
+      const [x, y] = [ranked[0]!, ranked[1]!];
+      swap(19, { category: "multi_hop", text: `What was the ratio of spend on ${x.name} to spend on ${y.name} ${both(r)}? Answer to two decimals.`, expect: { kind: "answer", required: [{ type: "number", value: round(x.micros / y.micros, 2), decimals: 2, label: "ratio" }], allowed: [usdOf(x.micros), usdOf(y.micros)] } }, true);
+    }
+    {
+      const r = randomRange(rng, t.coverage, 14, 40);
+      const days = t.daily(r);
+      const weekend = days.filter((d) => [0, 6].includes(new Date(`${d.day}T00:00:00Z`).getUTCDay())).reduce((a, d) => a + d.micros, 0);
+      swap(54, { category: "numeric", text: `How much was spent on weekends (Saturdays and Sundays) ${both(r)}? Give the dollar amount.`, expect: { kind: "answer", required: [usd(usdOf(weekend), "weekend spend")], allowed: [usdOf(t.spend(r).micros)] } }, true);
+    }
+    {
+      let r = randomRange(rng, t.coverage, 10, 40);
+      let ranked = distinctSpend(r);
+      for (let attempt = 0; ranked.length < 2 && attempt < 200; attempt += 1) {
+        r = randomRange(rng, t.coverage, 10, 40);
+        ranked = distinctSpend(r);
+      }
+      const second = ranked[1]!;
+      swap(55, { category: "numeric", text: `Which model had the second-highest spend ${both(r)}? Give the model name and its spend.`, expect: { kind: "answer", required: [{ type: "text", value: second.name, label: "model" }, usd(usdOf(second.micros), "model spend")], allowed: ranked.map((x) => usdOf(x.micros)) } }, true);
+    }
+    {
+      const r = randomRange(rng, t.coverage, 9, 21);
+      const sorted = t.daily(r).map((d) => d.micros).sort((x, y) => x - y);
+      const mid = sorted.length % 2 === 1 ? sorted[(sorted.length - 1) / 2]! : (sorted[sorted.length / 2 - 1]! + sorted[sorted.length / 2]!) / 2;
+      swap(56, { category: "numeric", text: `What was the median daily spend ${both(r)}, counting only days with any spend? Give the dollar amount to the cent.`, expect: { kind: "answer", required: [usd(usdOf(mid), "median day")], allowed: [sorted.length] } });
+    }
+    {
+      const r = randomRange(rng, t.coverage, 10, 40);
+      swap(57, { category: "numeric", text: `How many days ${both(r)} had no spend at all?`, expect: { kind: "answer", required: [{ type: "number", value: daysIn(r) - t.daily(r).length, decimals: 0, label: "days" }], allowed: [daysIn(r)] } }, true);
+    }
+    {
+      const r = randomRange(rng, t.coverage, 3, 20);
+      const s = t.spend(r);
+      swap(58, { category: "numeric", text: `What was the average cost per model call ${both(r)}? Answer in dollars to four decimals.`, expect: { kind: "answer", required: [{ type: "number", value: round(s.micros / s.calls / 1_000_000, 4), decimals: 4, label: "per call" }], allowed: [usdOf(s.micros), s.calls] } }, true);
     }
     {
       const r = randomRange(rng, t.coverage, 5, 20);

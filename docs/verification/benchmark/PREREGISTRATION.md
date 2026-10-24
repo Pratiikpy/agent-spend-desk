@@ -111,3 +111,35 @@ The first learning run (`docs/verification/learning/report-first-run.json`) made
 The change: a held-out question that is shown no precedent keeps its round-0 result and is not asked again; only questions that receive a precedent are run. The comparison then isolates what the lessons did. This is a change to the measurement, made after seeing a result, so the first run's report stays in the repository beside the repeat, and the table says that the repeat differs by this rule.
 
 Predictions for the repeat, written now: the held-out count rises by two (Q12 and Q13) and by no more than four; the paired interval for the change includes zero; nothing changes on the 7 new-template questions.
+
+## Addendum 6: the Desk v3 and a fourth question set, written before either was run on it
+
+Sets A and B were read to find the Desk v2.1's defects, so neither can test a Desk changed because of them. This addendum is committed before anything is run on set D, and set D's questions are generated from a seed nobody has used.
+
+What changed in the Desk (v3), each in answer to a miss visible in `RESULTS-v2.md`:
+
+1. **Two typed steps.** `median_day` (the median daily spend, over days with any spend or over every day the ledger covers in the range) and `count_sessions` (how many sessions started in a range, a session starting at its first logged model call). Set B's Q57, Q58 (median) and Q60 (sessions) had no step to compute them.
+2. **A spend step for one model counts as one total** whether the Planner grouped it by none or by model. A `share` step whose part was a spend step with `group: "model"` and a model named was refused by the schema, which sent Q12 and Q13 to the rule planner.
+3. **The rule planner plans a share** (a model spend, the same range's total, and a `share` step), a median day and a session count, so the fallback is no longer wrong by construction on those questions.
+4. **The plan critic** asks for a `median_day` step when the question asks for a median, and for `count_sessions` when it asks how many sessions started.
+5. **A comparison names the higher period first** ("The first period cost $51.60 more than the second"), where it used to say "The second period cost $51.60 less than the first". The scorer's reading of Q18 (the first of the words first and second that appears) was wrong for the Desk's answer only because of that wording.
+6. **The figure asked for comes first.** When the last step works a figure out of earlier steps, its sentence is placed before the totals it rests on.
+7. The Planner's prompt describes the new steps.
+
+The Planner's tool schema and prompt are part of the key of every recorded model reply, so every recorded Desk reply of sets A and B and of the learning run is recorded again on v3. The v2 and v2.1 recordings and results are kept as history in `docs/verification/benchmark/pre-v3/`. The tables of sets A and B are then reported for v3 as post hoc, beside the preregistered ones, never in place of them.
+
+**Set D** (`set-d/questions.json`, seed 20261027, hash `sha256:d8bccd58b4c830debb3635e3095c0c76012752392e9f20e679eb1ad6c2932209`): sixty questions in the same six categories of ten. Fifty come from the first sets' templates with new parameters. Ten replace template questions: four are shapes the Desk v3 now has steps for (the busiest day, the gap between two models, the median day, how many sessions started) and six are shapes nothing was built for (the lowest day, a ratio of two models, days with no spend, a weekend total, an average cost per call, the second-highest model). The six can be missed; that is what they measure. The scorer is unchanged except for one new item type, `text` (a model name the answer must state, case aside), used by the second-highest-model question; the other sets' hashes do not change. All of set D is held out for the v3; its dev and held-out labels carry no meaning here.
+
+**Arms.** A0 and A1 are unchanged (same prompts, same five read-only tools). A2 is the Desk v3. The same Nemotron model (`nvidia/nemotron-3.5-super-vl-120b-a12b`) serves all three, now through Meterless Nightshift on the author's machine with NVIDIA's API as its provider; every live reply carries a Nightshift receipt id in its recording. Each arm answers each question once greedily and three more times at temperature 0.7.
+
+**Predictions, written now.**
+
+1. The Desk v3 answers at least 48 of set D's 60 questions exactly (greedy run).
+2. On the six new shapes the Desk v3 answers at most 3 exactly.
+3. On the four shapes it now has steps for, it answers at least 3 exactly.
+4. The tool agent A1 answers fewer questions exactly than the Desk v3 by at least 5.
+5. The Desk v3's pass^3 on set D is at least 75%.
+6. The Desk v3 follows none of the five hidden instructions and accepts none of the five false premises.
+7. The Desk v3 abstains correctly on all ten unanswerable questions.
+
+A prediction that fails is reported with the others. If reading set D's misses leads to a change, set D is no longer held out for the changed version, and the report says so and shows the first figure beside the later one.
