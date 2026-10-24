@@ -19,12 +19,16 @@ Read in 1.7 seconds: 10,344 own calls, 2,584 limit readings, 0 malformed lines. 
 
 Method: a window (one `resets_at`) with at least two readings gives one observation, the points the percent moved against the tokens of covered models used between the first and last reading. The estimate pools the windows that moved at least 10 points (all tokens over all points), puts a 95% interval on it by resampling windows, and abstains below 8 such windows. Tokens are all input and output as the tool counts them, cached input included; five other weightings were tried (fresh tokens only, output only, cached input at 10% and 25%, output at 5 to 8 times) and none was steadier across windows.
 
-| Window | Windows used | Tokens per percent | 95% interval | Full window | Middle of windows (p10 to p90) |
-|---|---|---|---|---|---|
-| 5-hour | 82 | 242K | 221K to 263K | 24.2M | 134K to 339K |
-| weekly | 16 | 2.0M | 1.6M to 2.4M | 200M | 1.3M to 2.9M |
+**Correction, 2026-10-24 (later the same day).** The first version of this fit took every reading labelled "primary" as the 5-hour limit and every "secondary" as the weekly one. The readings also carry the plan and the window length, and they differ: on this machine Codex's primary window was five hours on the plus and team plans, a week or 30 days on the free plan, and the ledger holds all of them. The first fit therefore mixed other plans and other window lengths into the 5-hour and weekly rows (it reported 242K tokens per percent over 82 windows, and 2.0M over 16). The fit now takes each plan and window length as its own limit (`desk limits` lists them), and the numbers below are the corrected ones. The change is small for the plus plan (258K against 242K, 7% higher) and the earlier figure is withdrawn.
 
-**How good is it as a prediction?** Leave one window out, predict the points it moved from its tokens and the rate fitted on the others: for the 5-hour window the median error is 5.7 points (14% of what the window moved), 55 of 82 windows are within 25% and 70 of 82 within 50%; for the weekly window the median error is 15.4 points (19%), 10 of 16 within 25% and 13 of 16 within 50%. So the rate is real and stable enough to say "this much work is about this much of the limit", and not precise enough to predict one window.
+| Plan and window | Windows used | Tokens per percent | 95% interval | Full window | Middle of windows (p10 to p90) |
+|---|---|---|---|---|---|
+| plus, 5-hour | 76 | 258K | 244K to 275K | 25.8M | 193K to 338K |
+| plus, weekly | 15 | 2.1M | 1.7M to 2.4M | 205M | 1.5M to 2.9M |
+
+The other plans and lengths in the ledger (free: 30-day and weekly; team: 5-hour and weekly; readings with no plan recorded: 5-hour and weekly) have too few windows that moved the percent by 10 points for an estimate, and the fit says so for each.
+
+**How good is it as a prediction?** Leave one window out, predict the points it moved from its tokens and the rate fitted on the others (`leaveOneOut`, printed by `desk limits`): for the plus 5-hour window the median error is 5.0 points (12% of what the window moved), 59 of 76 windows are within 25% and 70 of 76 within 50%; for the plus weekly window the median error is 17.3 points (21%), 10 of 15 within 25% and 14 of 15 within 50%. So the rate is real and stable enough to say "this much work is about this much of the limit", and not precise enough to predict one window.
 
 **Why windows differ.** The percent is in whole points, and the same plan is used from other devices, the web and models whose use does not appear in these logs; the percent moves without a trace here. Calls through other providers (kimi, glm, minimax and others set up through a router) do not draw on the plan and are left out of the token count by model name.
 
@@ -36,7 +40,7 @@ Not turned on: Claude Code's settings are the user's, so `desk statusline instal
 
 ## Not covered
 
-- One user, one plan type, Codex only. Claude Code's equivalent (the statusline's rate-limit fields) has not been captured on this machine, so no Claude limit estimate exists.
+- One user, Codex only; one plan (plus) has enough windows for an estimate. Claude Code's equivalent (the statusline's rate-limit fields) has not been captured on this machine, so no Claude limit estimate exists.
 - The model filter is by name (`gpt`, `o<digit>`, `codex`); a new model family with another prefix would be left out until the filter is extended.
 - The fork rule (a gap of 1 second ends the replay) was checked on the one forked file on this machine. A fork written more slowly would be partly counted.
 - A resumed session that rewrites the same file from the start would keep the same call ids and so store nothing twice, but a log truncated and rewritten with different content under the same ids would not be corrected.

@@ -21,6 +21,27 @@ export async function render(ctx) {
     "div",
     null,
     head("Morning brief", dayLabel(d.day), "Yesterday's spend, what it bought, and the one change worth making."),
+    d.runway && d.runway.length > 0
+      ? section(
+          "Plan limits",
+          "from the tool's own readings",
+          h(
+            "div",
+            { class: "cards", "data-runway": "true" },
+            ...d.runway.map((r) =>
+              h(
+                "div",
+                { class: "card" },
+                h("h3", null, r.label),
+                r.usedPct === null ? null : hbars([{ name: "used", share: Math.min(1, r.usedPct / 100), value: `${Math.round(r.usedPct)}%` }]),
+                h("p", { class: "note" }, r.head.charAt(0).toUpperCase() + r.head.slice(1) + "."),
+                h("p", null, r.detail),
+              ),
+            ),
+          ),
+          h("p", { class: "note" }, "The outlook is how past windows of the same plan and length ended when they stood where this one does. It is checked against that plan's own history (docs/verification/runway-2026-10-24.md) and is not a promise."),
+        )
+      : null,
     section(
       "Yesterday",
       "list-price estimates",

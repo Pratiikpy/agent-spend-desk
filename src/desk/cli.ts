@@ -45,7 +45,8 @@ import { ingestCodex } from "./ledger/ingest-codex.ts";
 import { ingestOpenCode } from "./ledger/ingest-opencode.ts";
 import { ingestStatusline } from "./ledger/ingest-statusline.ts";
 import { gauge, installSnippet, readSamples, statuslineLogPath } from "./statusline/statusline.ts";
-import { fitLimit, observeWindows, renderLimitFit } from "./limits/fit.ts";
+import { fitLimit, groupLabel, leaveOneOut, limitGroups, observeWindows, renderLeaveOneOut, renderLimitFit } from "./limits/fit.ts";
+import { renderRunway, runwayFromLedger } from "./limits/runway.ts";
 import { reconcile, renderReconciliation, summariseReconciliation } from "./reconcile/reconcile.ts";
 import { auditTask, renderAudit, writeExpected } from "./lab/audit.ts";
 import { readRecords, runBatch } from "./lab/batch.ts";
@@ -127,6 +128,7 @@ const { values, positionals } = parseArgs({
     second: { type: "string" },
     portkey: { type: "string" },
     horizon: { type: "string", default: "7" },
+    at: { type: "string" },
     "opencode-db": { type: "string", default: join(homedir(), ".local", "share", "opencode", "opencode.db") },
     defects: { type: "string", default: "0" },
     "timeout-sec": { type: "string", default: "900" },
@@ -190,8 +192,26 @@ ${sensitivity}`);
   const rows = db.prepare("SELECT COUNT(*) AS n FROM limit_sample WHERE tool = ?").get(values.agent ?? "codex") as { n: number };
   if (rows.n === 0) console.log("No plan-limit readings for that tool in this ledger. Codex: desk ingest --agent codex. Claude Code: desk statusline install, then desk ingest --agent statusline; use --agent claude_code here.");
   else {
-    for (const [kind, label] of [["primary", "5-hour"], ["secondary", "weekly"]] as const) {
-      console.log(renderLimitFit(fitLimit(observeWindows(db, { tool: values.agent ?? "codex", kind })), label));
+    // Each plan and window length is its own limit: a free plan's monthly window and a paid plan's five-hour window are not pooled.
+    for (const g of limitGroups(db, values.agent ?? "codex")) {
+      const obs = observeWindows(db, { tool: values.agent ?? "codex", windowMinutes: g.windowMinutes, planType: g.planType });
+      const fit = fitLimit(obs);
+      console.log(renderLimitFit(fit, groupLabel(g)));
+      if (!fit.abstained) console.log(renderLeaveOneOut(leaveOneOut(obs)));
+    }
+  }
+} else if (command === "runway") {
+  const tool = values.agent ?? "codex";
+  const at = values.at ? new Date(values.at) : new Date();
+  if (Number.isNaN(at.getTime())) throw new Error("--at must be a date and time such as 2026-10-24T12:00:00Z");
+  const name = tool === "claude_code" ? "Claude Code" : tool === "codex" ? "Codex" : tool;
+  // The plan in use is the plan of the newest reading; every window length that plan has is shown.
+  const groups = limitGroups(db, tool, at);
+  const current = groups[0];
+  if (!current) console.log("No plan-limit readings for that tool in this ledger. Codex: desk ingest --agent codex. Claude Code: desk statusline install, then desk ingest --agent statusline; use --agent claude_code here.");
+  else {
+    for (const g of groups.filter((x) => x.planType === current.planType).sort((a, b) => a.windowMinutes - b.windowMinutes)) {
+      console.log(renderRunway(runwayFromLedger(db, { tool, windowMinutes: g.windowMinutes, planType: g.planType, now: at }), `${name}, ${groupLabel(g)}`));
     }
   }
 } else if (command === "ingest") {
@@ -262,7 +282,7 @@ written: ${r.files.join(", ")}`);
   console.log(r.text);
   if (!r.ok) process.exitCode = 1;
 } else if (command === "ui") {
-  const ui = await startUiServer({ ledgerPath: ledgerPath, pricesPath: pricesPath, policiesDir: "policies", port: Number(values.port), mode: sampleMode ? "sample" : "own_logs", otherPricesPath: values.portkey ?? "data/prices/portkey-anthropic-2026-10-24.json" });
+  const ui = await startUiServer({ ledgerPath: ledgerPath, pricesPath: pricesPath, policiesDir: "policies", port: Number(values.port), mode: sampleMode ? "sample" : "own_logs", ...(values.at ? { nowMs: () => new Date(values.at as string).getTime() } : {}), otherPricesPath: values.portkey ?? "data/prices/portkey-anthropic-2026-10-24.json" });
   console.log(`desk ui is running. Open this address (it carries a one-time token):
   ${ui.url}
 Ctrl+C stops it.`);
@@ -514,7 +534,7 @@ ${t.pass} PASS, ${t.fail} FAIL, ${t.notRun} NOT RUN. NOT RUN is not a pass: it n
   console.log(`logs: ${sampleLogsDir(values.out)}`);
   console.log(`repos: ${sampleReposDir(values.out)}`);
 } else {
-  console.error(`unknown command "${command}". Use: card | status | forget | egress | limits | statusline | prices | retention | propose | silos | ask | remember | verify-answer | gate | approve | ui | canary | bench | seats | route | calibrate | regret | lessons | prove | demo | ingest | bill | autopsy | landing | replay | tunnel | sample build`);
+  console.error(`unknown command "${command}". Use: card | status | forget | egress | limits | runway | statusline | prices | retention | propose | silos | ask | remember | verify-answer | gate | approve | ui | canary | bench | seats | route | calibrate | regret | lessons | prove | demo | ingest | bill | autopsy | landing | replay | tunnel | sample build`);
   process.exitCode = 2;
 }
 db.close();

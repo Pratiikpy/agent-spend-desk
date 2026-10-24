@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { fitLimit, observeWindows, renderLimitFit } from "../../src/desk/limits/fit.ts";
+import { fitLimit, groupLabel, leaveOneOut, limitGroups, observeWindows, renderLimitFit, type WindowObservation } from "../../src/desk/limits/fit.ts";
 import { openLedger, type Ledger } from "../../src/desk/ledger/db.ts";
 import { ingestCodex } from "../../src/desk/ledger/ingest-codex.ts";
 import { codexLines } from "./codex-fixtures.ts";
@@ -142,5 +142,83 @@ describe("reading the fit", () => {
 
   it("says plainly when it abstained", () => {
     expect(renderLimitFit(fitLimit([], { seed: 1 }), "weekly")).toMatch(/no estimate/i);
+  });
+});
+
+describe("how well the fitted rate predicts a window it has not seen", () => {
+  const win = (i: number, dPct: number, tokens: number): WindowObservation => ({ kind: "primary", resetsAt: 1000 + i, windowMinutes: 300, firstTs: "2026-09-01T00:00:00.000Z", lastTs: "2026-09-01T04:00:00.000Z", firstPct: 0, lastPct: dPct, dPct, tokens, calls: 10 });
+
+  it("is exact when every window moves the percent in proportion to its tokens", () => {
+    const obs = Array.from({ length: 10 }, (_, i) => win(i, 10 + i * 5, (10 + i * 5) * 200_000));
+    const r = leaveOneOut(obs);
+    expect(r).toMatchObject({ windows: 10, medianAbsPoints: 0, withinQuarter: 10, withinHalf: 10 });
+  });
+
+  it("leaves each window out of its own prediction", () => {
+    // Nine windows at 100K per point and one at 400K per point: the odd one must be predicted from the nine, not from itself.
+    const obs = [...Array.from({ length: 9 }, (_, i) => win(i, 20, 2_000_000)), win(9, 20, 8_000_000)];
+    const r = leaveOneOut(obs);
+    expect(r.windows).toBe(10);
+    expect(r.withinQuarter).toBe(9);
+    expect(r.worstAbsPoints).toBeCloseTo(60, 6); // predicted 80 points for a window that moved 20
+  });
+
+  it("uses only the windows the fit itself would use", () => {
+    const obs = [win(0, 3, 600_000), win(1, 20, 4_000_000), win(2, 30, 6_000_000), win(3, 40, 8_000_000)];
+    expect(leaveOneOut(obs).windows).toBe(3);
+  });
+
+  it("has nothing to say with fewer than three usable windows", () => {
+    expect(leaveOneOut([win(0, 20, 4_000_000), win(1, 30, 6_000_000)])).toMatchObject({ windows: 2, medianAbsPoints: null, medianRelative: null });
+    expect(leaveOneOut([])).toMatchObject({ windows: 0, medianAbsPoints: null });
+  });
+});
+
+describe("limits of different plans and window lengths", () => {
+  let db: Ledger;
+  beforeEach(() => {
+    db = openLedger(":memory:");
+    db.prepare("INSERT INTO session (session_id, tool) VALUES ('codex:s', 'codex')").run();
+  });
+  afterEach(() => db.close());
+
+  const put = (ts: string, pct: number, resetsAt: number, minutes: number, plan: string | null, kind = "primary"): void => {
+    db.prepare("INSERT INTO limit_sample (tool, session_id, ts, kind, window_minutes, used_percent, resets_at, plan_type, limit_id) VALUES ('codex', 'codex:s', ?, ?, ?, ?, ?, ?, 'codex')").run(ts, kind, minutes, pct, resetsAt, plan);
+  };
+
+  it("lists each plan and window length as its own limit, newest first", () => {
+    put("2026-06-01T00:00:00.000Z", 1, 100, 300, "plus");
+    put("2026-06-01T01:00:00.000Z", 2, 100, 300, "plus");
+    put("2026-06-01T00:00:00.000Z", 1, 200, 10_080, "plus", "secondary");
+    put("2026-10-01T00:00:00.000Z", 1, 300, 43_200, "free");
+    put("2026-07-01T00:00:00.000Z", 1, 400, 300, null);
+    const g = limitGroups(db, "codex");
+    expect(g.map((x) => [x.planType, x.windowMinutes, x.samples])).toEqual([["free", 43_200, 1], [null, 300, 1], ["plus", 300, 2], ["plus", 10_080, 1]]);
+    expect(groupLabel(g[0] as (typeof g)[number])).toBe("free plan, 30-day window");
+    expect(groupLabel(g[1] as (typeof g)[number])).toBe("unknown plan, 5-hour window");
+  });
+
+  it("does not pool a free plan's month with a paid plan's five hours, though both are labelled primary", () => {
+    for (let n = 0; n < 3; n += 1) {
+      put(`2026-06-0${n + 1}T00:00:00.000Z`, 0, 1000 + n, 300, "plus");
+      put(`2026-06-0${n + 1}T01:00:00.000Z`, 10, 1000 + n, 300, "plus");
+    }
+    put("2026-07-01T00:00:00.000Z", 0, 9000, 43_200, "free");
+    put("2026-07-01T01:00:00.000Z", 40, 9000, 43_200, "free");
+    expect(observeWindows(db, { tool: "codex", kind: "primary" })).toHaveLength(4);
+    expect(observeWindows(db, { tool: "codex", windowMinutes: 300, planType: "plus" })).toHaveLength(3);
+    expect(observeWindows(db, { tool: "codex", windowMinutes: 43_200, planType: "free" })).toHaveLength(1);
+    expect(observeWindows(db, { tool: "codex", windowMinutes: 300, planType: null })).toHaveLength(0);
+    expect(() => observeWindows(db, { tool: "codex" })).toThrow(/kind or a window length/);
+  });
+
+  it("keeps two windows that reset at the same moment apart when they carry different labels", () => {
+    put("2026-06-01T00:00:00.000Z", 0, 500, 300, "plus", "primary");
+    put("2026-06-01T01:00:00.000Z", 5, 500, 300, "plus", "primary");
+    put("2026-06-01T00:00:00.000Z", 0, 500, 10_080, "plus", "secondary");
+    put("2026-06-01T01:00:00.000Z", 1, 500, 10_080, "plus", "secondary");
+    const w = observeWindows(db, { tool: "codex", kind: "primary" });
+    expect(w).toHaveLength(1);
+    expect(w[0]?.dPct).toBe(5);
   });
 });

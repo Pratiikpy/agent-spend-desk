@@ -7,6 +7,8 @@ import { buildCard } from "../card/build.ts";
 import type { Ledger } from "../ledger/db.ts";
 import { landingBreakdown } from "../outcomes/breakdown.ts";
 import { reconcile, summariseReconciliation, type ReconcileRow } from "../reconcile/reconcile.ts";
+import { groupLabel, limitGroups } from "../limits/fit.ts";
+import { renderRunway, runwayDetail, runwayFromLedger, runwayHead } from "../limits/runway.ts";
 import { comparePrices, type ForeignRow } from "../pricing/compare.ts";
 import type { PriceSnapshot } from "../pricing/pricebook.ts";
 import { costBand, priceSensitivity } from "../pricing/sensitivity.ts";
@@ -345,8 +347,32 @@ export function brief(ctx: UiContext): object {
     models: byModel,
     landing: { rows: landingRows(landing), totalMicros: landing.totalMicros, linked: hasLinks(ctx.db) },
     causes: causeRows(a).slice(0, 5),
+    runway: runwayRows(ctx),
     action: fix ? { cause: fix.cause, fix: fix.fix, basis: fix.basis, addressableMicros: fix.addressableMicros, interval: fix.interval, windowsUsed: fix.windowsUsed, note: fix.note } : null,
   };
+}
+
+/** Plan windows that were read within this long are shown on the brief; a tool not used for longer than this is left out of it. */
+const RUNWAY_RECENT_DAYS = 7;
+const RUNWAY_TOOLS = [["claude_code", "Claude Code"], ["codex", "Codex"]] as const;
+
+/** For each tool with plan-limit readings, the windows of the plan in use: where each stands, and whether it will last until its reset. */
+function runwayRows(ctx: UiContext): object[] {
+  const has = one<{ n: number }>(ctx.db, "SELECT COUNT(*) AS n FROM sqlite_master WHERE type = 'table' AND name = 'limit_sample'");
+  if (!has || has.n === 0) return [];
+  const now = new Date(ctx.nowMs());
+  const out: object[] = [];
+  for (const [tool, name] of RUNWAY_TOOLS) {
+    const groups = limitGroups(ctx.db, tool, now);
+    const current = groups[0];
+    if (!current || now.getTime() - Date.parse(current.lastTs) > RUNWAY_RECENT_DAYS * DAY) continue;
+    for (const g of groups.filter((x) => x.planType === current.planType).sort((a, b) => a.windowMinutes - b.windowMinutes)) {
+      const label = `${name}, ${groupLabel(g)}`;
+      const r = runwayFromLedger(ctx.db, { tool, windowMinutes: g.windowMinutes, planType: g.planType, now });
+      out.push({ label, ...r, resetsAt: r.resetsAt === null ? null : r.resetsAt.toISOString(), head: runwayHead(r), detail: runwayDetail(r), text: renderRunway(r, label) });
+    }
+  }
+  return out;
 }
 
 // ---------------------------------------------------------------------------------------------- sessions
