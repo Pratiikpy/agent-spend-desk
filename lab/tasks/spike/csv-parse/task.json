@@ -1,0 +1,10 @@
+{
+  "schema": "desk.lab.task.v1",
+  "id": "csv-parse",
+  "title": "Parse CSV text",
+  "kind": "feature",
+  "prompt": "Implement `parseCsv(text, options)` in `src/csv.js` (it is a stub that throws). It returns an array of rows, each row an array of strings. `options.delimiter` is a single character, default `,`; if it is not a string of length one, or is a double quote, `\\n` or `\\r`, throw `RangeError('delimiter must be one character other than a quote or a line break')`. If `text` is not a string throw `TypeError('text must be a string')`. Rules (RFC 4180): fields are separated by the delimiter; a row ends at `\\n` or `\\r\\n`, while a lone `\\r` is not a line break and stays in the field; nothing is trimmed. A field that starts with `\"` is quoted: it can contain the delimiter, line breaks (kept exactly as written) and `\"\"` for one literal quote, and it ends at the next single `\"`. An empty field is the empty string. A leading byte order mark (`\\uFEFF`) is removed before parsing. The final line break does not start another row, so `'a,b\\n'` is `[['a','b']]`; empty `text` returns `[]`; a blank line anywhere else is a row with one empty string, `['']`; a trailing delimiter gives a trailing empty field. Errors are `SyntaxError`s: input that ends inside a quoted field gives `unterminated quoted field`; a `\"` inside an unquoted field gives `unexpected quote at position <p>`; and any character other than a delimiter, a line break or the end of the input directly after a closing quote gives `unexpected character at position <p>`. `<p>` is the 0-based index of the offending character in the text after the byte order mark has been removed. Run `npm test` to check your work.",
+  "test": { "files": ["test/visible.test.js", "test/hidden.test.js"], "timeoutSec": 60 },
+  "protected": ["test"],
+  "origin": { "type": "handwritten", "licence": "MIT (this repository)", "note": "Spike task. Behaviour follows RFC 4180 with explicit error messages so that failure behaviour is fully specified." }
+}

@@ -16,7 +16,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SKIP_DIRS = {".git", "node_modules", ".venv", "venv", "__pycache__", ".pytest_cache", "logs", "dist", "build"}
-SKIP_PREFIXES = ("docs/event/", "research/", "data/desk/")
+SKIP_PREFIXES = ("docs/event/", "research/", "data/desk/", "data/lab/")
 SUSPECT_SUFFIXES = {
     ".zip", ".tar", ".gz", ".tgz", ".7z", ".rar", ".parquet", ".bin", ".pt", ".pth",
     ".safetensors", ".ckpt", ".onnx", ".gguf", ".mp4", ".mov", ".avi", ".wav", ".mp3", ".db", ".sqlite",

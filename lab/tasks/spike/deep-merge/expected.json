@@ -1,0 +1,24 @@
+{
+  "fail_to_pass": [
+    "no sources gives an empty object, and null or undefined sources are skipped",
+    "undefined skips the key, null overwrites it",
+    "an object replaces a primitive and a primitive replaces an object",
+    "the result shares no object or array with any source",
+    "a source is not changed even when later sources merge into the same keys",
+    "dates, maps, functions and class instances are kept by reference",
+    "a class instance is not merged into, it replaces",
+    "prototype pollution through __proto__ does nothing",
+    "nested __proto__, constructor and prototype keys are ignored at every depth",
+    "blocked keys inside arrays of objects are dropped too",
+    "objects with a null prototype count as plain",
+    "a source that is not a plain object is refused",
+    "a cycle is refused wherever it is",
+    "the same object used twice without a cycle is fine",
+    "only own enumerable string keys are read",
+    "merges nested objects with later sources winning",
+    "arrays are replaced, not joined",
+    "does not change its sources"
+  ],
+  "pass_to_pass": [],
+  "total": 18
+}

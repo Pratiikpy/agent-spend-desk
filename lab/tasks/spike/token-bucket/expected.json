@@ -1,0 +1,19 @@
+{
+  "fail_to_pass": [
+    "fractional tokens accrue",
+    "a failed take removes nothing",
+    "asking for more than the capacity is always refused",
+    "waitMs is zero when the tokens are there and rounds up otherwise",
+    "waitMs is infinite for more than the capacity and waiting that long works",
+    "a clock that moves backwards loses nothing and gains nothing",
+    "the bucket starts counting from the moment it was created",
+    "n is checked first and a bad n changes nothing",
+    "the constructor validates its arguments",
+    "without an injected clock it uses Date.now",
+    "starts full and spends tokens",
+    "refills over time",
+    "never holds more than its capacity"
+  ],
+  "pass_to_pass": [],
+  "total": 13
+}

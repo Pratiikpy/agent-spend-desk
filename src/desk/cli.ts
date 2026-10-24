@@ -13,7 +13,7 @@ import { linkOutcomes } from "./outcomes/link.ts";
 import { ingestClaudeCode } from "./ledger/ingest.ts";
 import { formatUsd } from "./money.ts";
 import { loadSnapshot } from "./pricing/pricebook.ts";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { parsePolicyYaml } from "./policy/parse.ts";
 import { replaySessionsFromLedger } from "./replay/from-ledger.ts";
 import { replayPolicy } from "./replay/policy-replay.ts";
@@ -36,10 +36,22 @@ import { benchCommand } from "./bench/command.ts";
 import { seatsCommand } from "./seats/command.ts";
 import { routeCommand } from "./route/command.ts";
 import { calibrateCommand } from "./calibrate/command.ts";
+import { renderFeatureStatus, summariseFeatures, type FeatureRow } from "./status/features.ts";
+import { openCodeAgent } from "./lab/agents.ts";
+import { reconcile, renderReconciliation, summariseReconciliation } from "./reconcile/reconcile.ts";
+import { auditTask, renderAudit, writeExpected } from "./lab/audit.ts";
+import { readRecords, runBatch } from "./lab/batch.ts";
+import { renderSummary, summarise as summariseRuns } from "./lab/stats.ts";
+import { loadTasks, type LabTask } from "./lab/task.ts";
+import { forgetLedger, forgetPreview } from "./security/forget.ts";
+import { summariseEgress } from "./security/egress.ts";
 
 const regretPath = (): string => (sampleMode ? join(values.out, "regret.db") : "data/desk/regret.db");
 const DOSSIER_PATHS = { dbPath: "data/desk/dossier.db", pendingDir: "data/desk/pending", outDir: "data/desk/dossiers" };
+// The dated snapshot the sample, the benchmark and the recorded replays were built on; it is never edited.
 const DEFAULT_SNAPSHOT = "data/prices/anthropic-litellm-2026-10-22.json";
+// The snapshot for real logs: the same list prices plus the prompt-length tier Anthropic lists for Claude Haiku 5.5.
+const LIVE_SNAPSHOT = "data/prices/anthropic-2026-10-24.json";
 
 // The gate has its own flags, so it takes the arguments before the general parser sees them.
 if (process.argv[2] === "gate") {
@@ -51,7 +63,7 @@ const { values, positionals } = parseArgs({
   options: {
     db: { type: "string", default: "data/desk/ledger.db" },
     "claude-dir": { type: "string", default: join(homedir(), ".claude", "projects") },
-    prices: { type: "string", default: DEFAULT_SNAPSHOT },
+    prices: { type: "string" },
     since: { type: "string" },
     until: { type: "string" },
     hours: { type: "string", default: "5" },
@@ -90,22 +102,36 @@ const { values, positionals } = parseArgs({
     only: { type: "string" },
     results: { type: "string" },
     concurrency: { type: "string" },
+    project: { type: "string" },
+    before: { type: "string" },
+    all: { type: "boolean", default: false },
+    yes: { type: "boolean", default: false },
+    tasks: { type: "string", default: "lab/tasks/spike" },
+    task: { type: "string" },
+    write: { type: "boolean", default: false },
+    repeats: { type: "string" },
+    agent: { type: "string" },
+    "lab-out": { type: "string", default: "data/lab" },
+    name: { type: "string" },
+    debug: { type: "boolean", default: false },
+    "timeout-sec": { type: "string", default: "900" },
   },
 });
 
 const command = positionals[0] ?? "card";
 const sampleMode = values.sample || process.env.SAMPLE_MODE === "true";
+const pricesPath = values.prices ?? (sampleMode ? DEFAULT_SNAPSHOT : LIVE_SNAPSHOT);
 const ledgerPath = sampleMode && !process.argv.includes("--db") && command !== "card" ? join(values.out, "ledger.db") : values.db;
 // Commands that read the sample ledger build it first when it is not there, so `--sample` works from a fresh clone.
 if (sampleMode && ["propose", "silos", "ask", "ui", "verify-answer", "bench", "seats", "calibrate", "regret", "lessons"].includes(command) && !existsSync(ledgerPath)) {
-  await runCard({ mode: "sample", claudeDir: "", dbPath: "", pricesPath: values.prices, outDir: values["card-dir"], sampleDir: values.out, days: 14, hours: 5, repos: [], color: false });
+  await runCard({ mode: "sample", claudeDir: "", dbPath: "", pricesPath: pricesPath, outDir: values["card-dir"], sampleDir: values.out, days: 14, hours: 5, repos: [], color: false });
 }
-const db = command === "card" ? openLedger(":memory:") : openLedger(ledgerPath);
+const db = command === "card" || command === "status" || command === "lab" ? openLedger(":memory:") : openLedger(ledgerPath);
 
 if (command === "ingest") {
   const files = findJsonlLogs(values["claude-dir"]);
   const started = Date.now();
-  const r = await ingestClaudeCode(db, files, loadSnapshot(values.prices));
+  const r = await ingestClaudeCode(db, files, loadSnapshot(pricesPath));
   const seconds = ((Date.now() - started) / 1000).toFixed(1);
   console.log(`read ${r.files} files, ${r.linesRead} lines in ${seconds}s`);
   console.log(`calls: ${r.callsNew} new, ${r.callsMerged} extra content-block lines merged, ${r.usageConflicts} input/cache conflicts, ${r.outputRegressions} output regressions`);
@@ -116,7 +142,7 @@ if (command === "ingest") {
     mode: sampleMode ? "sample" : "own_logs",
     claudeDir: values["claude-dir"],
     dbPath: values.db,
-    pricesPath: values.prices,
+    pricesPath: pricesPath,
     outDir: values["card-dir"],
     sampleDir: values.out,
     days: Number(values.days),
@@ -133,7 +159,7 @@ written: ${r.files.join(", ")}`);
   console.log(
     await proposeCommand({
       dbPath: ledgerPath,
-      pricesPath: values.prices,
+      pricesPath: pricesPath,
       policyPath: values.policy?.[0] ?? "policies/daily-cap.yaml",
       ...(values.split ? { split: values.split } : {}),
       minUsd: values["min-usd"],
@@ -170,7 +196,7 @@ written: ${r.files.join(", ")}`);
   console.log(r.text);
   if (!r.ok) process.exitCode = 1;
 } else if (command === "ui") {
-  const ui = await startUiServer({ ledgerPath: ledgerPath, pricesPath: values.prices, policiesDir: "policies", port: Number(values.port), mode: sampleMode ? "sample" : "own_logs" });
+  const ui = await startUiServer({ ledgerPath: ledgerPath, pricesPath: pricesPath, policiesDir: "policies", port: Number(values.port), mode: sampleMode ? "sample" : "own_logs" });
   console.log(`desk ui is running. Open this address (it carries a one-time token):
   ${ui.url}
 Ctrl+C stops it.`);
@@ -193,13 +219,13 @@ Ctrl+C stops it.`);
 ${t.pass} PASS, ${t.fail} FAIL, ${t.notRun} NOT RUN. NOT RUN is not a pass: it names a check the spec asks for that is not built or not recorded.`);
   process.exitCode = t.exit;
 } else if (command === "demo") {
-  await demo({ sampleDir: values.out, prices: values.prices, cassetteDir: values.cassettes, out: (t) => console.log(t) });
+  await demo({ sampleDir: values.out, prices: pricesPath, cassetteDir: values.cassettes, out: (t) => console.log(t) });
 } else if (command === "seats") {
   loadDotenv(".env");
-  console.log(await seatsCommand({ dbPath: ledgerPath, pricesPath: values.prices, cassetteDir: values.cassettes, sampleMode, record: values.record, env: process.env, windowDays: Number(values.window), ...(values["as-of"] ? { asOf: values["as-of"] } : {}) }));
+  console.log(await seatsCommand({ dbPath: ledgerPath, pricesPath: pricesPath, cassetteDir: values.cassettes, sampleMode, record: values.record, env: process.env, windowDays: Number(values.window), ...(values["as-of"] ? { asOf: values["as-of"] } : {}) }));
 } else if (command === "regret") {
   loadDotenv(".env");
-  console.log(await regretCommand({ dbPath: ledgerPath, pricesPath: values.prices, policyPath: values.policy?.[0] ?? "policies/daily-cap.yaml", cassetteDir: values.cassettes, sampleMode, record: values.record, env: process.env, personFromBranch: values["person-from-branch"], regretPath: regretPath(), minUsd: values["min-usd"], ...(values.backtest ? { backtest: values.backtest } : {}) }));
+  console.log(await regretCommand({ dbPath: ledgerPath, pricesPath: pricesPath, policyPath: values.policy?.[0] ?? "policies/daily-cap.yaml", cassetteDir: values.cassettes, sampleMode, record: values.record, env: process.env, personFromBranch: values["person-from-branch"], regretPath: regretPath(), minUsd: values["min-usd"], ...(values.backtest ? { backtest: values.backtest } : {}) }));
 } else if (command === "lessons") {
   loadDotenv(".env");
   console.log(
@@ -238,7 +264,7 @@ ${t.pass} PASS, ${t.fail} FAIL, ${t.notRun} NOT RUN. NOT RUN is not a pass: it n
   }
   console.log(`estimated list-price total: ${formatUsd(total)}  (an estimate from logged tokens, not a bill)`);
 } else if (command === "autopsy") {
-  const snapshot = loadSnapshot(values.prices);
+  const snapshot = loadSnapshot(pricesPath);
   const until = values.until ?? new Date().toISOString();
   const since = values.since ?? new Date(Date.parse(until) - Number(values.days) * 86_400_000).toISOString();
   const calls = loadAutopsyCalls(db, snapshot, since, until);
@@ -276,7 +302,7 @@ ${t.pass} PASS, ${t.fail} FAIL, ${t.notRun} NOT RUN. NOT RUN is not a pass: it n
 } else if (command === "replay" || command === "tunnel") {
   const since = values.since ?? "0000-00-00";
   const until = values.until ?? "9999-99-99";
-  const sessions = replaySessionsFromLedger(db, loadSnapshot(values.prices), since, until, { personFromBranch: sampleMode || values["person-from-branch"] });
+  const sessions = replaySessionsFromLedger(db, loadSnapshot(pricesPath), since, until, { personFromBranch: sampleMode || values["person-from-branch"] });
   for (const file of values.policy ?? []) {
     const policy = parsePolicyYaml(readFileSync(file, "utf8"));
     if (command === "replay") {
@@ -302,6 +328,110 @@ ${t.pass} PASS, ${t.fail} FAIL, ${t.notRun} NOT RUN. NOT RUN is not a pass: it n
       }
     }
   }
+} else if (command === "reconcile") {
+  const tolerance = process.argv.includes("--tolerance") ? Number(values.tolerance) : 0.02;
+  const rows = reconcile(db, { tolerance });
+  console.log(renderReconciliation(rows, summariseReconciliation(rows), { tolerance }));
+} else if (command === "lab") {
+  const sub = positionals[1] ?? "audit";
+  if (sub === "audit") {
+    const all = loadTasks(values.tasks);
+    const picked = values.task ? all.filter((t) => t.id === values.task) : all;
+    if (picked.length === 0) {
+      console.error(values.task ? `no task named ${values.task} in ${values.tasks}` : `no tasks in ${values.tasks}`);
+      process.exitCode = 2;
+    } else {
+      const results = picked.map((t) => auditTask(t));
+      console.log(renderAudit(results));
+      if (values.write) {
+        for (const [i, r] of results.entries()) if (r.ok && r.expected) writeExpected(picked[i] as LabTask, r.expected);
+        console.log(`wrote expected.json for ${results.filter((r) => r.ok).length} task(s)`);
+      }
+      if (results.some((r) => !r.ok)) process.exitCode = 1;
+    }
+  } else if (sub === "run") {
+    loadDotenv(".env");
+    const base = process.env["MODEL_BASE_URL"] ?? process.env["NVIDIA_BASE_URL"];
+    const key = process.env["MODEL_API_KEY"] ?? process.env["NVIDIA_API_KEY"];
+    const model = process.env["NEMOTRON_MODEL"];
+    if (!base || !key || !model) {
+      console.error("model not configured: set MODEL_BASE_URL, MODEL_API_KEY and NEMOTRON_MODEL in .env");
+      process.exitCode = 2;
+    } else if (!values.name) {
+      console.error("give the batch a name with --name (it names the output folder and the run ids)");
+      process.exitCode = 2;
+    } else {
+      const all = loadTasks(values.tasks);
+      const picked = values.task ? all.filter((t) => values.task?.split(",").includes(t.id)) : all;
+      const agent = openCodeAgent({ cacheDir: join(values["lab-out"], "agent-cache"), debug: values.debug });
+      const done = await runBatch({
+        name: values.name,
+        tasks: picked,
+        repeats: Number(values.repeats ?? 1),
+        arm: values.arm ?? "baseline",
+        agent,
+        model,
+        seed: Number(values.seed ?? 20261024),
+        outDir: join(values["lab-out"], values.name),
+        timeoutMs: Number(values["timeout-sec"]) * 1000,
+        concurrency: Number(values.concurrency ?? 1),
+        endpoint: { upstream: base, apiKey: key },
+        log: (line) => console.log(line),
+        retryInfra: values.yes,
+      });
+      const recorded = readRecords(join(values["lab-out"], values.name, "runs.jsonl"));
+      console.log(`${done.length} runs this time; ${recorded.length} recorded in all`);
+      console.log(renderSummary(summariseRuns(recorded)));
+    }
+  } else if (sub === "report") {
+    if (!values.name) {
+      console.error("give the batch name with --name");
+      process.exitCode = 2;
+    } else {
+      const recorded = readRecords(join(values["lab-out"], values.name, "runs.jsonl"));
+      console.log(recorded.length === 0 ? "no runs recorded under that name" : renderSummary(summariseRuns(recorded)));
+    }
+  } else {
+    console.error("Use: lab audit | lab run --name <batch> | lab report --name <batch>");
+    process.exitCode = 2;
+  }
+} else if (command === "forget") {
+  const scope = { ...(values.project ? { project: values.project } : {}), ...(values.before ? { before: values.before } : {}), ...(values.all ? { all: true } : {}) };
+  try {
+    const would = forgetPreview(db, scope);
+    if (!values.yes) {
+      console.log(`forget would remove ${would.sessions} sessions and ${would.calls} model calls from ${ledgerPath}${values.all ? ", the cards and the egress log" : ""}. Nothing was changed. Add --yes to do it.`);
+    } else {
+      const done = forgetLedger(db, scope);
+      if (values.all) {
+        rmSync(values["card-dir"], { recursive: true, force: true });
+        rmSync(process.env["DESK_EGRESS_LOG"] ?? "data/desk/egress.jsonl", { force: true });
+      }
+      console.log(`forgot ${done.sessions} sessions and ${done.calls} model calls from ${ledgerPath}${values.all ? "; removed the cards and the egress log" : ""}. The file was compacted, so removed text is not left in free pages.`);
+    }
+  } catch (e) {
+    console.error(e instanceof Error ? e.message : String(e));
+    process.exitCode = 2;
+  }
+} else if (command === "egress") {
+  const s = summariseEgress(process.env["DESK_EGRESS_LOG"] ?? "data/desk/egress.jsonl");
+  if (s.requests === 0) console.log("No request has left this machine for a model since the egress log began (or it does not exist yet). Offline and sample runs send nothing.");
+  else {
+    console.log(`${s.requests} requests to a model, ${(s.bytes / 1024).toFixed(1)} KiB in all, from ${s.first} to ${s.last}; ${s.redactions} secret-shaped strings masked before sending.`);
+    for (const h of s.hosts) console.log(`  ${h.host}: ${h.requests} requests, ${(h.bytes / 1024).toFixed(1)} KiB`);
+    console.log(`  by role: ${s.roles.map((r) => `${r.role} ${r.requests}`).join(", ")}`);
+    console.log("  The log holds a size and a hash for each request, never the text.");
+  }
+} else if (command === "status") {
+  const rows = (JSON.parse(readFileSync("docs/design/desk/feature-status.json", "utf8")) as { features: FeatureRow[] }).features;
+  const listing = [...readFileSync("docs/design/desk/02-feature-list.md", "utf8").matchAll(/^### (DF-\d{3}) (.+)$/gm)].map((m) => ({ id: m[1] as string, title: (m[2] as string).trim() }));
+  const sum = summariseFeatures(rows);
+  if (positionals[1] === "write") {
+    writeFileSync("docs/design/desk/07-feature-status.md", renderFeatureStatus(rows, listing));
+    console.log(`wrote docs/design/desk/07-feature-status.md: ${sum.built} built, ${sum.partial} partial, ${sum.absent} absent of ${rows.length}`);
+  } else {
+    console.log(`${sum.built} built, ${sum.partial} partial, ${sum.absent} absent of ${rows.length} specified features. The table is docs/design/desk/feature-status.json; "desk status write" writes the page.`);
+  }
 } else if (command === "sample") {
   if (positionals[1] !== "build") {
     console.error("Use: sample build [--out dir] [--seed n] [--months n]");
@@ -313,7 +443,7 @@ ${t.pass} PASS, ${t.fail} FAIL, ${t.notRun} NOT RUN. NOT RUN is not a pass: it n
   console.log(`logs: ${sampleLogsDir(values.out)}`);
   console.log(`repos: ${sampleReposDir(values.out)}`);
 } else {
-  console.error(`unknown command "${command}". Use: card | propose | silos | ask | remember | verify-answer | gate | approve | ui | canary | bench | seats | route | calibrate | regret | lessons | prove | demo | ingest | bill | autopsy | landing | replay | tunnel | sample build`);
+  console.error(`unknown command "${command}". Use: card | status | forget | egress | propose | silos | ask | remember | verify-answer | gate | approve | ui | canary | bench | seats | route | calibrate | regret | lessons | prove | demo | ingest | bill | autopsy | landing | replay | tunnel | sample build`);
   process.exitCode = 2;
 }
 db.close();

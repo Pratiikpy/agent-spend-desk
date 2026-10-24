@@ -1,0 +1,21 @@
+{
+  "fail_to_pass": [
+    "prerelease precedence follows the specification chain",
+    "numeric prerelease identifiers compare as numbers",
+    "a numeric identifier is lower than an alphanumeric one",
+    "alphanumeric identifiers compare in ASCII order",
+    "more identifiers are higher when the shared ones are equal",
+    "build metadata is ignored",
+    "very long numbers do not lose precision",
+    "isValid accepts the forms the specification lists",
+    "isValid refuses malformed versions without throwing",
+    "compare throws a TypeError naming the first invalid argument",
+    "sortVersions returns a new ascending array and keeps equal versions in input order",
+    "sortVersions validates its input",
+    "orders by major, minor and patch as numbers",
+    "a release is higher than its own prerelease",
+    "isValid accepts a plain version and refuses a short one"
+  ],
+  "pass_to_pass": [],
+  "total": 15
+}

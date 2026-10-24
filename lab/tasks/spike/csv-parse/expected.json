@@ -1,0 +1,23 @@
+{
+  "fail_to_pass": [
+    "CRLF and LF both end a row, and a final line break adds no row",
+    "a doubled quote inside a quoted field is one quote",
+    "a quoted field keeps line breaks exactly as written",
+    "empty fields are empty strings, including quoted ones and trailing ones",
+    "a blank line is a row with one empty string",
+    "a lone carriage return is not a line break",
+    "nothing is trimmed",
+    "a leading byte order mark is removed",
+    "a custom delimiter works and the comma becomes ordinary text",
+    "an invalid delimiter or text is refused",
+    "input that ends inside a quoted field is an error",
+    "a quote inside an unquoted field is an error with its position",
+    "a character after a closing quote is an error with its position",
+    "a large input is parsed in reasonable time",
+    "splits simple rows and fields",
+    "reads a quoted field containing a comma",
+    "empty text has no rows"
+  ],
+  "pass_to_pass": [],
+  "total": 17
+}

@@ -1,0 +1,10 @@
+{
+  "schema": "desk.lab.task.v1",
+  "id": "paginate-cursor",
+  "title": "Fix cursor pagination",
+  "kind": "bugfix",
+  "prompt": "The list endpoint's pagination in `src/paginate.js` and `src/cursor.js` has bugs: pages repeat or skip items when items are deleted between requests, the last page is followed by an empty page, and bad cursors crash with confusing errors. Fix it to this contract. `items` is an array of objects with a unique integer `id`, sorted by ascending `id`. `page(items, { limit, cursor })` returns `{ items, nextCursor }`. `limit` defaults to 10, values above 100 are lowered to 100, and a limit that is not a positive integer throws `RangeError('limit must be a positive integer')` (checked before the cursor). The page holds the items whose `id` is greater than the cursor's id (all items when there is no cursor), at most `limit` of them, in order. `nextCursor` is `encodeCursor(id of the last item on the page)` if at least one more item follows that last item, otherwise `null` (so a final full page has `nextCursor: null` and there is no empty trailing page). Because the cursor holds an id and not a position, deleting or adding items between requests must not make a page skip or repeat anything. `encodeCursor(id)` returns the base64url encoding, without padding, of the JSON text `{\"id\":<id>}`; `decodeCursor(cursor)` returns the id. `decodeCursor` throws `Error('invalid cursor')` for anything that is not exactly such a string: not a string, an empty string, characters outside the base64url alphabet (including `=` padding and whitespace), JSON that is invalid, is not an object with only an integer `id`, or an `id` that is not a safe integer. `page` throws that same error for a bad cursor, and treats `undefined` and `null` as no cursor. Run `npm test` to check your work.",
+  "test": { "files": ["test/visible.test.js", "test/hidden.test.js"], "timeoutSec": 60 },
+  "protected": ["test"],
+  "origin": { "type": "handwritten", "licence": "MIT (this repository)", "note": "Spike task. Position-based cursor replaced by an id-based one; defects are spread across two files." }
+}

@@ -1,0 +1,23 @@
+{
+  "fail_to_pass": [
+    "an entry is live one millisecond before its ttl and expired exactly at it",
+    "get does not extend the expiry",
+    "setting an existing key replaces the value and restarts the expiry",
+    "a per-call ttl overrides the default",
+    "peek does not refresh recency, get does",
+    "has does not refresh recency and is true for a stored undefined value",
+    "expired entries are removed before a live one is evicted",
+    "size and keys leave out expired entries and keys run from least to most recently used",
+    "delete reports whether a live entry was removed",
+    "a capacity of one keeps only the newest entry",
+    "replacing a key at full capacity evicts nothing",
+    "set returns the cache",
+    "the constructor and set validate their arguments",
+    "without an injected clock it uses Date.now",
+    "get returns what set stored",
+    "an entry expires after its ttl",
+    "the least recently used entry is evicted when the capacity is exceeded"
+  ],
+  "pass_to_pass": [],
+  "total": 17
+}

@@ -1,0 +1,10 @@
+{
+  "schema": "desk.lab.task.v1",
+  "id": "ttl-lru-cache",
+  "title": "LRU cache with expiry",
+  "kind": "feature",
+  "prompt": "Implement class `TtlLruCache` in `src/cache.js` (the constructor is a stub that throws). `new TtlLruCache({ capacity, ttlMs, now })`: `capacity` must be a positive integer, else throw `RangeError('capacity must be a positive integer')`; `ttlMs` must be a positive finite number, else throw `RangeError('ttlMs must be a positive number')`; `now` is an optional function returning the time in milliseconds (default `Date.now`) and is the only source of time. Methods: `set(key, value, ttlMs)` stores the entry so that it expires `ttlMs` after `now()` at the moment of the call (the per-call `ttlMs` if given, which is validated like the constructor's, else the default), makes it the most recently used, and returns the cache so calls can be chained; setting an existing key replaces its value and expiry. An entry is expired when `now()` is greater than or equal to its expiry time. `get(key)` returns the value, or `undefined` for a missing or expired key; a hit makes the entry the most recently used but does not extend its expiry; an expired entry is removed when found. `peek(key)` is like `get` but does not change recency. `has(key)` is true when a live entry exists, even if its value is `undefined`, and does not change recency. `delete(key)` removes the entry and returns true only if a live entry was removed. `size` (a getter) is the number of live entries. `keys()` returns the live keys from least recently used to most recently used. When `set` leaves the cache above `capacity`, first remove every expired entry, and only if it is still above `capacity` remove the least recently used live entry. Run `npm test` to check your work.",
+  "test": { "files": ["test/visible.test.js", "test/hidden.test.js"], "timeoutSec": 60 },
+  "protected": ["test"],
+  "origin": { "type": "handwritten", "licence": "MIT (this repository)", "note": "Spike task. Combines the usual LRU contract with an injected clock; the purge-before-evict rule is the detail most implementations get wrong." }
+}

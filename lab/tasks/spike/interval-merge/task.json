@@ -1,0 +1,10 @@
+{
+  "schema": "desk.lab.task.v1",
+  "id": "interval-merge",
+  "title": "Merge overlapping intervals",
+  "kind": "feature",
+  "prompt": "Implement `mergeIntervals(intervals)` in `src/intervals.js` (it is a stub that throws). The input is an array of `[start, end]` pairs of finite numbers. Return a new array of merged intervals sorted by start. Intervals that overlap or touch (the next start is less than or equal to the current end) are merged into one, and an interval inside another does not shrink it. Zero-length intervals such as `[3, 3]` are valid and are kept. The input array and its inner arrays must not be changed, and the returned arrays must be new arrays. An empty input returns `[]`. Validate the whole input before merging, in input order, and report the first problem only: if `intervals` is not an array throw `TypeError('intervals must be an array')`; if an element is not an array of exactly two finite numbers throw `TypeError('invalid interval at index <i>')`; if an element has a start greater than its end throw `RangeError('invalid interval at index <i>')`, where `<i>` is the element's position in the input. Run `npm test` to check your work.",
+  "test": { "files": ["test/visible.test.js", "test/hidden.test.js"], "timeoutSec": 60 },
+  "protected": ["test"],
+  "origin": { "type": "handwritten", "licence": "MIT (this repository)", "note": "Spike task. The behaviour is the textbook merge-intervals problem with an explicit validation contract." }
+}

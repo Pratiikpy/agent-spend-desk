@@ -1,0 +1,25 @@
+{
+  "fail_to_pass": [
+    "slashes at either end and doubled slashes do not matter",
+    "the root route matches / and the empty string",
+    "a failed static branch falls back to a parameter",
+    "a failed parameter branch falls back to a wildcard",
+    "precedence is decided segment by segment from the left",
+    "a wildcard needs at least one segment and captures the rest joined by a slash",
+    "parameters are percent-decoded and so are static comparisons",
+    "malformed percent-encoding anywhere in the path gives no match",
+    "several parameters are captured under their own names",
+    "matching is case sensitive and handlers can be any value",
+    "a route with the same shape is a duplicate, whatever its parameter names",
+    "routes that differ only after a shared parameter are not duplicates and keep their own names",
+    "bad patterns are refused",
+    "a parameter named like an object property is an ordinary parameter",
+    "a path segment that looks like an object property does not match by accident",
+    "match with something that is not a string finds nothing",
+    "matches a static route",
+    "captures a parameter",
+    "a static segment wins over a parameter"
+  ],
+  "pass_to_pass": [],
+  "total": 19
+}

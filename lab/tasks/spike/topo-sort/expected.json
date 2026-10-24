@@ -1,0 +1,23 @@
+{
+  "fail_to_pass": [
+    "ready nodes are taken in ascending order, and a newly ready node waits its turn",
+    "a node that becomes ready is ordered among the ready nodes by name",
+    "a chain is ordered by dependency whatever the names",
+    "repeated dependencies are ignored",
+    "the input is not changed",
+    "an empty graph gives an empty list",
+    "a cycle lists its nodes in ascending order",
+    "a self-dependency is a cycle",
+    "nodes that depend on a cycle are listed too",
+    "nodes the cycle depends on, and unrelated nodes, are not listed",
+    "a graph is not a cycle just because two nodes share a dependency",
+    "a graph that is not a plain object is refused",
+    "dependencies must be arrays of strings, reported for the first bad node in key order",
+    "a larger graph is ordered correctly",
+    "puts dependencies first",
+    "includes nodes that only appear as dependencies",
+    "reports a cycle"
+  ],
+  "pass_to_pass": [],
+  "total": 17
+}

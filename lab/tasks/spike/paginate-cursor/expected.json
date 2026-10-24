@@ -1,0 +1,22 @@
+{
+  "fail_to_pass": [
+    "a final full page has no cursor and there is no empty page after it",
+    "a limit equal to the number of items returns everything with no cursor",
+    "the default limit is 10 and the largest is 100",
+    "a limit that is not a positive integer is refused before the cursor is looked at",
+    "the cursor is the id of the last item shown, so deleting items does not skip anything",
+    "items added before the cursor do not repeat anything",
+    "a cursor to an id that no longer exists still works",
+    "a cursor is base64url of {\"id\":n} without padding",
+    "a bad cursor is an invalid cursor error, from page and from decodeCursor"
+  ],
+  "pass_to_pass": [
+    "no items gives an empty page and no cursor",
+    "undefined and null cursors mean the first page",
+    "walking every page returns every item once",
+    "the first page holds the first items and offers a cursor",
+    "following the cursor reaches the next page",
+    "a short last page has no cursor"
+  ],
+  "total": 15
+}

@@ -1,0 +1,20 @@
+{
+  "fail_to_pass": [
+    "a half rounds up even where floating point would land just below it",
+    "a negative half rounds away from zero and zero is never negative",
+    "each line is discounted and rounded on its own",
+    "tax is rounded once, on the subtotal",
+    "amounts print with separators, two decimals and the minus sign first",
+    "formats a large amount with a thousands separator"
+  ],
+  "pass_to_pass": [
+    "percentages with two decimals are exact",
+    "quantity multiplies the unit price before the discount",
+    "a full cart adds up",
+    "an empty cart is zero",
+    "converts dollars to cents",
+    "a plain percentage of an amount",
+    "a cart with one line and no discount or tax"
+  ],
+  "total": 13
+}

@@ -1,0 +1,10 @@
+{
+  "schema": "desk.lab.task.v1",
+  "id": "deep-merge",
+  "title": "Safe deep merge",
+  "kind": "feature",
+  "prompt": "Implement `merge(...sources)` in `src/merge.js` (it is a stub that throws). It returns a new object built by merging the sources left to right, so later sources win. A plain object is one whose prototype is `Object.prototype` or `null`. Rules: (1) When both the result so far and a source have a plain object under the same key, merge them recursively; in every other case the source's value replaces the existing one. (2) Arrays are never merged: an array in a source replaces whatever was there, and arrays are copied (deeply, by these same rules) so the result shares no array or plain object with any source. (3) A source value of `undefined` is skipped, it does not overwrite and does not create the key; `null` is a value and does overwrite. (4) Values that are neither plain objects nor arrays (dates, maps, class instances, functions, primitives) are placed in the result as they are, by reference. (5) The keys `__proto__`, `constructor` and `prototype` are ignored at every depth, in every source, so merging `JSON.parse('{\"__proto__\":{\"polluted\":true}}')` must change nothing and must not pollute `Object.prototype`. (6) Sources that are `null` or `undefined` are skipped; any other source that is not a plain object throws `TypeError('sources must be plain objects')`. (7) A plain object or array that contains itself, directly or through other objects, anywhere in a source throws `TypeError('circular reference')`; the same object appearing twice without a cycle is fine. (8) Sources must not be changed. Only a source's own enumerable string keys are read. With no sources, return `{}`. Run `npm test` to check your work.",
+  "test": { "files": ["test/visible.test.js", "test/hidden.test.js"], "timeoutSec": 60 },
+  "protected": ["test"],
+  "origin": { "type": "handwritten", "licence": "MIT (this repository)", "note": "Spike task. A deep merge with a prototype-pollution guard and cycle detection, the kind of utility whose security properties are easy to get subtly wrong." }
+}

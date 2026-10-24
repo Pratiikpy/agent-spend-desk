@@ -1,0 +1,10 @@
+{
+  "schema": "desk.lab.task.v1",
+  "id": "cart-totals",
+  "title": "Fix cents-off cart totals",
+  "kind": "bugfix",
+  "prompt": "Customers report that cart totals are sometimes a cent off, and that totals over a thousand dollars print wrongly. The code is in `src/money.js`, `src/pricing.js` and `src/cart.js`. Fix it so that it follows these rules. Money is handled as whole cents (integers). `toCents(amount)` converts a number with at most two decimals, such as 19.99, to cents. A percentage (a discount or a tax rate) is a number with at most two decimal places, such as 12.5 or 8.25. `percentOf(cents, percent)` returns that share of `cents` as whole cents, rounded half away from zero (so 0.5 becomes 1 and -0.5 becomes -1); it must be exact, with no floating-point error turning a half into something else, and it must never return -0. In a cart, each line is unit price times quantity; each line's discount is `percentOf(lineCents, discountPercent)`, rounded per line, not on the total; the subtotal is the sum of every line's cents minus its discount; the tax is `percentOf(subtotalCents, taxPercent)`, rounded once on the subtotal, not per line; the total is the subtotal plus the tax. `formatCents(cents)` prints dollars with a thousands separator and two decimals, `$1,234.56`, and a negative amount as `-$0.05` (the minus sign comes before the dollar sign). Keep the existing function names and the shape of what `Cart#summary()` returns. Run `npm test` to check your work.",
+  "test": { "files": ["test/visible.test.js", "test/hidden.test.js"], "timeoutSec": 60 },
+  "protected": ["test"],
+  "origin": { "type": "handwritten", "licence": "MIT (this repository)", "note": "Spike task. Four planted defects across three files: float rounding of halves, negative halves, tax rounded per line, and money formatting." }
+}

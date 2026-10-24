@@ -1,0 +1,18 @@
+{
+  "fail_to_pass": [
+    "intervals that touch are merged",
+    "an interval inside another does not shrink it",
+    "zero-length intervals are kept and merge when they touch",
+    "negative and fractional values work",
+    "the input and its inner arrays are not changed",
+    "a start greater than its end throws a RangeError naming the first bad index",
+    "a malformed element throws a TypeError naming its index",
+    "input that is not an array throws a TypeError",
+    "the first problem in input order is the one reported",
+    "merges overlapping intervals",
+    "returns an empty list for no intervals",
+    "sorts the result by start"
+  ],
+  "pass_to_pass": [],
+  "total": 12
+}

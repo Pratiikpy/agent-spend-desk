@@ -1,0 +1,7 @@
+'use strict';
+
+function mergeIntervals(intervals) {
+  throw new Error('not implemented');
+}
+
+module.exports = { mergeIntervals };

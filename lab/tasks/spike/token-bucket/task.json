@@ -1,0 +1,10 @@
+{
+  "schema": "desk.lab.task.v1",
+  "id": "token-bucket",
+  "title": "Token bucket rate limiter",
+  "kind": "feature",
+  "prompt": "Implement class `TokenBucket` in `src/bucket.js` (the constructor is a stub that throws). `new TokenBucket({ capacity, refillPerSec, now })`: `capacity` must be a positive integer, else throw `RangeError('capacity must be a positive integer')`; `refillPerSec` must be a positive finite number, else throw `RangeError('refillPerSec must be a positive number')`; `now` is an optional function returning milliseconds (default `Date.now`) and is the only source of time. The bucket starts full. Tokens accrue continuously at `refillPerSec` tokens per second, fractional tokens count, and the total never exceeds `capacity`. The elapsed time used for a refill is `max(0, now() - lastReading)` where `lastReading` is the previous reading of `now()`, and the new reading always replaces it, so if the clock moves backwards no tokens are lost or gained and later refills count from the new, lower reading. Methods: `available()` returns the current number of tokens (possibly fractional). `tryTake(n = 1)` removes `n` tokens and returns `true` if at least `n` are available, otherwise returns `false` and removes nothing; `n > capacity` always returns `false`. `waitMs(n = 1)` returns how many milliseconds must pass until `n` tokens are available, rounded up to a whole millisecond: `0` if they are available now, `Infinity` if `n > capacity`. For both methods `n` must be a positive integer, else throw `RangeError('n must be a positive integer')`; this check comes first, before anything else, and a failed check does not change the bucket. Run `npm test` to check your work.",
+  "test": { "files": ["test/visible.test.js", "test/hidden.test.js"], "timeoutSec": 60 },
+  "protected": ["test"],
+  "origin": { "type": "handwritten", "licence": "MIT (this repository)", "note": "Spike task. A standard token-bucket limiter with an injected clock and explicit clock-regression behaviour." }
+}

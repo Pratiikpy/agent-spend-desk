@@ -1,0 +1,10 @@
+{
+  "schema": "desk.lab.task.v1",
+  "id": "topo-sort",
+  "title": "Deterministic dependency ordering",
+  "kind": "feature",
+  "prompt": "Implement `topoSort(graph)` in `src/topo.js` (it is a stub that throws). `graph` is a plain object that maps a node name to an array of the node names it depends on. Return an array of every node, including nodes that appear only as someone's dependency, in an order where each node comes after all of its dependencies. Whenever more than one node is ready at the same time, take them in ascending order by plain string comparison (`<`), so for example `{ d: ['a'], a: [], b: [], c: [] }` gives `['a','b','c','d']`: `d` is taken as soon as `a` is placed, but it is only chosen when it is the smallest ready node. Repeated dependencies are ignored. The input must not be changed. If `graph` is not a plain object (null, an array, or a non-object) throw `TypeError('graph must be an object')`; if any value is not an array of strings throw `TypeError('dependencies of <node> must be an array of strings')` for the first such node in the object's key order. If the graph has a cycle (a node that depends on itself is a cycle) throw `Error('cycle detected among: a, b, c')`, where the names are every node that could not be placed, that is the nodes on a cycle and the nodes that depend on them directly or indirectly, sorted ascending and joined with `', '`; nodes that the cycle depends on, and unrelated nodes, are not listed. An empty graph returns `[]`. Run `npm test` to check your work.",
+  "test": { "files": ["test/visible.test.js", "test/hidden.test.js"], "timeoutSec": 60 },
+  "protected": ["test"],
+  "origin": { "type": "handwritten", "licence": "MIT (this repository)", "note": "Spike task. Kahn's algorithm with a deterministic tie-break and a fully specified cycle report." }
+}
