@@ -52,6 +52,9 @@ export interface LineOptions {
   toolInputs?: unknown[];
   sidechain?: boolean;
   omitCacheSplit?: boolean;
+  /** The client version the log line carries (default 9.9.9). */
+  version?: string;
+  stop?: string;
 }
 
 /** One log line in the structure real Claude Code session logs have (checked on a real log). */
@@ -83,13 +86,13 @@ export function assistantLine(o: LineOptions): string {
     apiBlockIndex: o.block ?? 0,
     cwd: "/work/project",
     gitBranch: "main",
-    version: "9.9.9",
+    version: o.version ?? "9.9.9",
     message: {
       id: o.id,
       type: "message",
       role: "assistant",
       model: o.model ?? "claude-opus-5",
-      stop_reason: "end_turn",
+      stop_reason: o.stop ?? "end_turn",
       content,
       usage,
     },

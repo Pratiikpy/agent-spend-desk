@@ -455,7 +455,7 @@ ${sensitivity}`);
 } else if (command === "ingest" && values.backfill) {
   requireLocation(values["claude-dir"], "Claude Code keeps its logs in ~/.claude/projects", "--claude-dir");
   const r = await backfillClaudeCodeFields(db, findJsonlLogs(values["claude-dir"]));
-  console.log(`read ${r.files} files, ${r.callsSeen} calls; filled inference_geo on ${r.inferenceGeoFilled} calls and the hash and truncation mark of ${r.resultFactsFilled} tool results. Nothing else was changed. Run desk prices reprice to price calls that say US-only.`);
+  console.log(`read ${r.files} files, ${r.callsSeen} calls; filled inference_geo on ${r.inferenceGeoFilled} calls, the hash and truncation mark of ${r.resultFactsFilled} tool results, the client version of ${r.toolVersionFilled} calls and ${r.compactionsFilled} compactions. Nothing else was changed. Run desk prices reprice to price calls that say US-only.`);
 } else if (command === "ingest") {
   requireLocation(values["claude-dir"], "Claude Code keeps its logs in ~/.claude/projects", "--claude-dir");
   const files = findJsonlLogs(values["claude-dir"]);

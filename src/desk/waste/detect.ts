@@ -32,7 +32,7 @@ const CONTINUING = new Set(["stop_sequence", "max_tokens", "pause_turn"]);
 /** What the Desk adds to a call that the autopsy's own record does not carry. */
 export interface CallFacts {
   /** The tool results of this call's tool uses: the name and input of the use, a hash of what it said (folded), and whether the tool said it cut its output short. */
-  results: { name: string; inputHash: string; resultHash: string | null; truncated: boolean; isError: boolean }[];
+  results: { name: string; inputHash: string; resultHash: string | null; truncated: boolean; isError: boolean; chars?: number }[];
   /** The files this call's tool uses edited. */
   editedPaths: string[];
 }

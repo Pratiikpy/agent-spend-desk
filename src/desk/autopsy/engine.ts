@@ -53,6 +53,10 @@ export interface AutopsyCall {
   /** Null when the model has no price: the tokens are counted but no cost is invented. */
   micros: { input: number; output: number; read: number; write5m: number; write1h: number } | null;
   tools: AutopsyToolUse[];
+  /** The client version the log line carries, when it does. */
+  toolVersion?: string | null;
+  /** A compaction the log records in this call's own thread between the previous call and this one. */
+  compactedBefore?: { preTokens: number; postTokens: number | null; trigger: string } | null;
   /** Why the model stopped, when the log says: `end_turn` hands control back, `tool_use` asks for a tool. Null when the record is incomplete. */
   stopReason?: string | null;
   /** Characters of tool results that the previous call's tools returned to this call. */
@@ -63,7 +67,12 @@ export interface AutopsyCall {
   msSinceHumanPrompt: number | null;
 }
 
-export type MissReason = "ttl_expired" | "model_switch" | "prefix_changed";
+/**
+ * Why a cache that should have been read was written again. Read from what the log records: a compaction, a change of model, a pause
+ * longer than the cache lives, a change of client version. `prefix_changed` is what is left when none of those explains it: the prompt text
+ * is never kept, so a changed tool definition or system prompt cannot be seen and is not guessed at.
+ */
+export type MissReason = "compaction" | "model_switch" | "ttl_expired" | "client_update" | "prefix_changed";
 
 export interface MissEvent {
   callId: string;
@@ -73,6 +82,10 @@ export interface MissEvent {
   tokens: number;
   /** Cost of the rewritten context minus what a cache hit would have cost. */
   savingMicros: number;
+  /** The compaction behind a `compaction` miss, as the log records it. */
+  compaction?: { preTokens: number; postTokens: number | null; trigger: string };
+  /** The two client versions around a `client_update` miss. */
+  versions?: { from: string; to: string };
 }
 
 export interface CauseTotals {
@@ -152,8 +165,11 @@ export function analyseThread(calls: readonly AutopsyCall[]): Map<string, PerCal
         if (lost > 0) {
           const gap = call.tsMs - prev.tsMs;
           const ttl = prev.tokens.write1h >= prev.tokens.write5m && prev.tokens.write1h > 0 ? CONFIG.oneHourMs : CONFIG.fiveMinutesMs;
-          const reason: MissReason = prev.model !== call.model ? "model_switch" : gap > ttl ? "ttl_expired" : "prefix_changed";
-          result.miss = { callId: call.callId, sessionId: call.sessionId, tsMs: call.tsMs, reason, tokens: lost, savingMicros: 0 };
+          const updated = !!call.toolVersion && !!prev.toolVersion && call.toolVersion !== prev.toolVersion;
+          // A compaction rewrites the start of the prompt whatever the pause or the model, so it is named first; a change of model is next, then a
+          // pause past the cache's life (a cache that has expired would have been lost by any client), and only then a change of client version.
+          const reason: MissReason = call.compactedBefore ? "compaction" : prev.model !== call.model ? "model_switch" : gap > ttl ? "ttl_expired" : updated ? "client_update" : "prefix_changed";
+          result.miss = { callId: call.callId, sessionId: call.sessionId, tsMs: call.tsMs, reason, tokens: lost, savingMicros: 0, ...(reason === "compaction" && call.compactedBefore ? { compaction: call.compactedBefore } : {}), ...(reason === "client_update" ? { versions: { from: prev.toolVersion as string, to: call.toolVersion as string } } : {}) };
         }
       }
     }

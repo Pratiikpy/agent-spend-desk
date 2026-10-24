@@ -252,7 +252,7 @@ export function explainBlock(block: Block, thread: readonly AutopsyCall[], missB
     const o = block.observed ?? {};
     cascade = { firstBreak: null, steps: [], confidence: "high", why: "The agent that started this one had made its last call before these, and you did not prompt in between." };
     rule = { id: block.rule, params: { orphan_after_minutes: Number(o["orphan_after_minutes"] ?? 10) }, observed: { minutes_after_parent: Number(o["minutes_after_parent"] ?? 0), calls: n } };
-    why = `a delegated agent's call ${Number(o["minutes_after_parent"] ?? 0)} minutes after the agent that started it made its last (the rule acts after ${Number(o["orphan_after_minutes"] ?? 10)})`;
+    why = `a delegated agent's call ${Number(o["minutes_after_parent"] ?? 0)} minutes after the agent that started it made its last (the rule acts after ${Number(o["orphan_after_minutes"] ?? 30)})`;
     sentences.push({ text: `A delegated agent went on calling the model for ${n} call${n === 1 ? "" : "s"}, starting ${Number(o["minutes_after_parent"] ?? 0)} minutes after the agent that started it had stopped.`, basis: "model_call timestamps of the session's main thread and the delegated thread" });
   } else {
     const m = missByCall.get(first.callId);
@@ -266,15 +266,33 @@ export function explainBlock(block: Block, thread: readonly AutopsyCall[], missB
       params: { read_below_share_of_previous_context: CONFIG.missBelowShare, not_shrunk_below_share: CONFIG.shrinkBelowShare },
       observed: { reason, lost_tokens: m?.tokens ?? 0, minutes_since_previous_call: Math.round(gap / 60_000), cache_lifetime_minutes: ttl / 60_000 },
     };
-    why = reason === "ttl_expired" ? `the call came ${minutes(gap)} after the one before, past the ${ttl / 60_000}-minute life of the cache` : reason === "model_switch" ? "the model changed from the call before, and a cache belongs to one model" : "the context was about as large as before but almost none of it was read from the cache";
-    const opaque = reason === "prefix_changed";
+    const pre = m?.compaction;
+    const sizes = pre ? `${pre.preTokens.toLocaleString("en-US")} tokens before${pre.postTokens === null ? "" : ` and ${pre.postTokens.toLocaleString("en-US")} after`}` : "";
+    why =
+      reason === "compaction"
+        ? `the agent compacted its conversation just before this call (${pre?.trigger === "manual" ? "you asked for it" : pre?.trigger === "auto" ? "it started on its own" : "the log records it"}), which rewrites the start of the prompt, so the cache began again`
+        : reason === "ttl_expired"
+          ? `the call came ${minutes(gap)} after the one before, past the ${ttl / 60_000}-minute life of the cache`
+          : reason === "model_switch"
+            ? "the model changed from the call before, and a cache belongs to one model"
+            : reason === "client_update"
+              ? `the client changed from ${m?.versions?.from ?? "one version"} to ${m?.versions?.to ?? "another"} between the two calls, with no pause, compaction or change of model to explain the lost cache`
+              : "the context was about as large as before but almost none of it was read from the cache";
+    const opaque = reason === "prefix_changed" || reason === "client_update";
     cascade = {
       firstBreak: null,
       steps: [],
       confidence: opaque ? "low" : "high",
-      why: opaque ? "Something earlier in the prompt changed, which made the cache start over. The logs do not say what, so this cause is a guess from the shape of the tokens." : "The cause is read from the timestamps and the model names, not guessed.",
+      why:
+        reason === "client_update"
+          ? "The client's version changed and nothing else the log records explains the lost cache. A new client can change the opening of every prompt, so this is the likely cause, not a proven one."
+          : opaque
+            ? "Something earlier in the prompt changed, which made the cache start over. The logs do not say what, so this cause is a guess from the shape of the tokens."
+            : reason === "compaction"
+              ? `The log records the compaction itself${sizes === "" ? "" : `: the context held ${sizes}`}. The cause is read from that record, not guessed.`
+              : "The cause is read from the timestamps and the model names, not guessed.",
     };
-    sentences.push({ text: `${(m?.tokens ?? 0).toLocaleString("en-US")} tokens were written to the cache again that an unchanged prefix would have read, ${reason === "ttl_expired" ? `${minutes(gap)} after the call before` : reason === "model_switch" ? "after a change of model" : "with no change of model or long pause to explain it"}.`, basis: "model_call token counts and timestamps of this call and the one before it" });
+    sentences.push({ text: `${(m?.tokens ?? 0).toLocaleString("en-US")} tokens were written to the cache again that an unchanged prefix would have read, ${reason === "ttl_expired" ? `${minutes(gap)} after the call before` : reason === "model_switch" ? "after a change of model" : reason === "compaction" ? `right after a compaction${sizes === "" ? "" : ` (${sizes})`}` : reason === "client_update" ? `after the client changed from ${m?.versions?.from ?? "one version"} to ${m?.versions?.to ?? "another"}` : "with no change of model or long pause to explain it"}.`, basis: "model_call token counts and timestamps of this call and the one before it" });
   }
 
   sentences.push({ text: `The rule ${block.rule} would have acted at this call: ${why}. Stopping there would have saved ${usd(saving)}${block.unpricedCalls > 0 ? ` (and ${block.unpricedCalls} call${block.unpricedCalls === 1 ? "" : "s"} on a model with no price, counted and not priced)` : ""}, assuming nothing the agent did later was needed.`, basis: "the cost of this call and every later call of the block, at the price snapshot of each" });

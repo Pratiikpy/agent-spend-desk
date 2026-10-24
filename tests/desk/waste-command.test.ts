@@ -66,3 +66,45 @@ describe("desk waste", () => {
     expect(r.text).toContain("None of the rules fired.");
   });
 });
+
+describe("desk waste, context bloat across compactions", () => {
+  const boundary = (ts: string, pre: number, post: number): string =>
+    JSON.stringify({ type: "system", subtype: "compact_boundary", isSidechain: false, sessionId: "sess-b", timestamp: ts, compactMetadata: { trigger: "auto", preTokens: pre, postTokens: post, durationMs: 5000 } });
+  const line = (id: string, ts: string, tool?: string, input?: unknown): string => assistantLine({ id, session: "sess-b", ts, output: 1_000, write5m: 100_000, ...(tool ? { tools: [tool], toolInputs: [input] } : {}) });
+
+  async function build(scanRepo: boolean): Promise<Ledger> {
+    const path = join(work, scanRepo ? "scanned.jsonl" : "unscanned.jsonl");
+    writeFileSync(path, [line("b1", at(1), "Read", { file_path: "src/a.ts" }), line("b2", at(5)), boundary(at(10), 500_000, 40_000), line("b3", at(11), "Read", { file_path: "src/a.ts" })].join("\n") + "\n");
+    const l = openLedger(":memory:");
+    await ingestClaudeCode(l, [path], loadSnapshot(PRICES));
+    if (scanRepo) l.prepare("INSERT INTO repo (repo_id, root, default_ref, scanned_at) VALUES (1, '/work/project', 'main', '2026-10-21T00:00:00.000Z')").run();
+    return l;
+  }
+
+  it("bills a phase that threw away more than the threshold in a repository with no commit then, and says what it cost at least", async () => {
+    const l = await build(true);
+    const r = wasteCommand(l, loadSnapshot(PRICES), "2026-10-01T00:00:00Z", "2026-10-31T00:00:00Z");
+    expect(r.phases).toHaveLength(1);
+    expect(r.phases[0]).toMatchObject({ churnTokens: 460_000, landing: "none", flagged: true });
+    expect(r.phases[0]!.rereads).toHaveLength(1);
+    expect(r.text).toContain("C-BLOAT  context bloat across compactions: 1 compaction, 1 of them threw away more than 50,000 tokens.");
+    expect(r.text).toMatch(/1 phase in 1 session in a repository with no commit in that time: 460,000 tokens thrown away, at least \$\d+\.\d\d at the price of writing a token to the cache once\./);
+    expect(r.text).toContain("1 file read again within 3 calls of a compaction");
+    expect(r.text).toContain("not added to them");
+    l.close();
+  });
+
+  it("counts the same phase and bills nothing when the session ran outside a repository the ledger scanned", async () => {
+    const l = await build(false);
+    const r = wasteCommand(l, loadSnapshot(PRICES), "2026-10-01T00:00:00Z", "2026-10-31T00:00:00Z");
+    expect(r.phases[0]).toMatchObject({ churnTokens: 460_000, landing: "unknown", flagged: false, wasteMicros: null });
+    expect(r.text).toContain("none of those is billed: nothing is known to have landed nothing.");
+    expect(r.text).toContain("not billed: 1 ran outside a repository the ledger scanned.");
+    l.close();
+  });
+
+  it("says no compaction was recorded when the calls hold none", () => {
+    const r = wasteCommand(db, loadSnapshot(PRICES), "2026-10-01T00:00:00Z", "2026-10-31T00:00:00Z");
+    expect(r.text).toContain("C-BLOAT  context bloat across compactions: no compaction recorded in these calls.");
+  });
+});

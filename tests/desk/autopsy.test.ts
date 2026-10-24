@@ -25,6 +25,8 @@ interface Spec {
   prompt?: boolean;
   sincePrompt?: number | null;
   unpriced?: boolean;
+  version?: string;
+  compacted?: { preTokens: number; postTokens: number | null; trigger: string };
 }
 
 function call(s: Spec): AutopsyCall {
@@ -46,6 +48,8 @@ function call(s: Spec): AutopsyCall {
     micros: s.unpriced ? null : { input: c.input, output: c.output, read: c.cacheRead, write5m: c.cacheWrite5m, write1h: c.cacheWrite1h },
     tools: (s.tools ?? []).map(([name, inputHash]) => ({ name, inputHash, resultIsError: s.errors ?? true })),
     toolResultChars: s.toolResultChars ?? 0,
+    toolVersion: s.version ?? null,
+    compactedBefore: s.compacted ?? null,
     humanPromptBefore: s.prompt ?? false,
     msSinceHumanPrompt: s.sincePrompt === undefined ? 1 * MIN : s.sincePrompt === null ? null : s.sincePrompt * MIN,
   };
@@ -103,6 +107,28 @@ describe("limit autopsy", () => {
       call({ t: 2, read: 0, write5m: 40_200, model: "claude-sonnet-5-5" }),
     ]);
     expect(a.missEvents.map((e) => e.reason)).toEqual(["model_switch", "prefix_changed"]);
+  });
+
+  it("names a compaction the log records, with its sizes, ahead of every other cause", () => {
+    const compacted = { preTokens: 586_870, postTokens: 403_193, trigger: "auto" };
+    const a = run([
+      call({ t: 0, write5m: 40_000, output: 100, read: 0 }),
+      // The context shrank only a little, so it counts as a loss; a model change and a long pause are also present, but the compaction explains it.
+      call({ t: 30, read: 0, write5m: 39_000, model: "claude-sonnet-5-5", compacted }),
+    ]);
+    expect(a.missEvents).toHaveLength(1);
+    expect(a.missEvents[0]).toMatchObject({ reason: "compaction", compaction: compacted });
+  });
+
+  it("names a change of client version only when nothing else the log records explains the loss", () => {
+    const base = [call({ t: 0, write5m: 40_000, version: "2.1.100" })];
+    const update = run([...base, call({ t: 2, read: 0, write5m: 40_100, version: "2.1.101" })]);
+    expect(update.missEvents[0]).toMatchObject({ reason: "client_update", versions: { from: "2.1.100", to: "2.1.101" } });
+    // A pause past the cache's life explains it, whatever the version did.
+    expect(run([call({ t: 0, write5m: 40_000, version: "2.1.100" }), call({ t: 20, read: 0, write5m: 40_100, version: "2.1.101" })]).missEvents[0]!.reason).toBe("ttl_expired");
+    // The same version on both sides, or no version recorded, leaves it unexplained rather than guessed.
+    expect(run([call({ t: 0, write5m: 40_000, version: "2.1.100" }), call({ t: 2, read: 0, write5m: 40_100, version: "2.1.100" })]).missEvents[0]!.reason).toBe("prefix_changed");
+    expect(run([call({ t: 0, write5m: 40_000 }), call({ t: 2, read: 0, write5m: 40_100, version: "2.1.101" })]).missEvents[0]!.reason).toBe("prefix_changed");
   });
 
   it("does not count a compaction or restart as a cache miss", () => {

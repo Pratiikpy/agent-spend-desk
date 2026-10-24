@@ -22,6 +22,8 @@ export interface IngestReport {
   toolCalls: number;
   toolResults: number;
   humanPrompts: number;
+  /** Compactions the logs record (an agent summarising its conversation to make room). */
+  compactions: number;
   unpricedCalls: number;
   unpricedModels: Record<string, string>;
 }
@@ -74,6 +76,7 @@ export async function ingestClaudeCode(
     toolCalls: 0,
     toolResults: 0,
     humanPrompts: 0,
+    compactions: 0,
     unpricedCalls: 0,
     unpricedModels: {},
   };
@@ -94,12 +97,12 @@ export async function ingestClaudeCode(
   const insertCall = db.prepare(
     `INSERT INTO model_call (call_id, session_id, request_id, ts, model, is_sidechain, input_tokens, output_tokens, reasoning_tokens,
        cache_read_tokens, cache_write_5m_tokens, cache_write_1h_tokens, cache_ttl_basis, cache_split_mismatch, service_tier, speed,
-       stop_reason, is_api_error, tool_names, block_lines, usage_conflicts, source_id, inference_geo)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0, ?, ?)`,
+       stop_reason, is_api_error, tool_names, block_lines, usage_conflicts, source_id, inference_geo, tool_version)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0, ?, ?, ?)`,
   );
   const mergeCall = db.prepare(
     `UPDATE model_call SET input_tokens = ?, output_tokens = ?, reasoning_tokens = ?, cache_read_tokens = ?, cache_write_5m_tokens = ?,
-       cache_write_1h_tokens = ?, tool_names = ?, block_lines = ?, usage_conflicts = ?, inference_geo = COALESCE(inference_geo, ?) WHERE call_id = ?`,
+       cache_write_1h_tokens = ?, tool_names = ?, block_lines = ?, usage_conflicts = ?, inference_geo = COALESCE(inference_geo, ?), tool_version = COALESCE(tool_version, ?) WHERE call_id = ?`,
   );
 
   const insertToolCall = db.prepare(
@@ -109,6 +112,9 @@ export async function ingestClaudeCode(
     "INSERT OR REPLACE INTO tool_result (tool_use_id, session_id, ts, is_error, result_chars, result_hash, truncated) VALUES (?, ?, ?, ?, ?, ?, ?)",
   );
   const insertEdit = db.prepare("INSERT OR IGNORE INTO session_edit (tool_use_id, session_id, path, ts) VALUES (?, ?, ?, ?)");
+  const insertCompaction = db.prepare(
+    "INSERT OR IGNORE INTO session_compaction (session_id, ts, trigger, pre_tokens, post_tokens, duration_ms, source_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
+  );
   const insertPrompt = db.prepare("INSERT OR IGNORE INTO human_prompt (prompt_id, session_id, ts) VALUES (?, ?, ?)");
   const getReported = db.prepare("SELECT total_micros FROM reported_cost WHERE session_id = ? AND process_start_ms = ?");
   const putReported = db.prepare(
@@ -177,6 +183,10 @@ export async function ingestClaudeCode(
             seenAt(r.ts);
             report.toolResults += 1;
           }
+        } else if (outcome.kind === "compaction") {
+          const c = outcome.compaction;
+          report.compactions += Number(insertCompaction.run(c.sessionId, c.ts, c.trigger, c.preTokens, c.postTokens, c.durationMs, sourceId).changes);
+          seenAt(c.ts);
         } else if (outcome.kind === "human_prompt") {
           insertPrompt.run(outcome.prompt.promptId, outcome.prompt.sessionId, outcome.prompt.ts);
           seenAt(outcome.prompt.ts);
@@ -211,7 +221,7 @@ export async function ingestClaudeCode(
         call.callId, call.sessionId, call.requestId, call.ts, call.model, call.isSidechain ? 1 : 0, call.inputTokens, call.outputTokens,
         call.reasoningTokens, call.cacheReadTokens, call.cacheWrite5mTokens, call.cacheWrite1hTokens, call.cacheTtlBasis,
         call.cacheSplitMismatch ? 1 : 0, call.serviceTier, call.speed, call.stopReason, call.isApiError ? 1 : 0,
-        JSON.stringify([...new Set(call.toolNames)]), sourceId, call.inferenceGeo,
+        JSON.stringify([...new Set(call.toolNames)]), sourceId, call.inferenceGeo, maskStored(call.toolVersion),
       );
       report.callsNew += 1;
       recordToolUses(call);
@@ -238,7 +248,7 @@ export async function ingestClaudeCode(
     const tools = [...new Set([...(JSON.parse(existing.tool_names) as string[]), ...call.toolNames])];
     const conflicts = existing.usage_conflicts + (differs ? 1 : 0);
     if (inputOrCacheChanged) report.usageConflicts += 1;
-    mergeCall.run(next.input, next.output, next.reasoning, next.read, next.w5, next.w1, JSON.stringify(tools), existing.block_lines + 1, conflicts, call.inferenceGeo, call.callId);
+    mergeCall.run(next.input, next.output, next.reasoning, next.read, next.w5, next.w1, JSON.stringify(tools), existing.block_lines + 1, conflicts, call.inferenceGeo, maskStored(call.toolVersion), call.callId);
     report.callsMerged += 1;
     recordToolUses(call);
   }

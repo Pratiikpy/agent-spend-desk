@@ -47,6 +47,8 @@ export function renderAutopsyText(a: Autopsy): string {
   lines.push("What I could not know:");
   lines.push("- Tool-output tokens are estimated from the length of tool results (about 4 characters per token).");
   lines.push("- How your plan limit maps to tokens is not published; these are shares of estimated cost, not of your limit.");
+  const unexplained = a.missEvents.filter((e) => e.reason === "prefix_changed").length;
+  if (unexplained > 0) lines.push(`- ${unexplained} cache miss${unexplained === 1 ? " has" : "es have"} no cause the log records: no compaction, change of model, long pause or change of client version. A changed tool definition or system prompt would look like this; prompt text is never kept, so it cannot be named.`);
   if (a.unpricedCalls > 0) lines.push(`- ${a.unpricedCalls} calls (${a.unpricedTokens} tokens) are on models with no price and are not in the total.`);
   return lines.join("\n");
 }

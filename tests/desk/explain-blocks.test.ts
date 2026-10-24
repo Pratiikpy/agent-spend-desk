@@ -20,6 +20,8 @@ interface Spec {
   model?: string;
   results?: number;
   sinceHuman?: number | null;
+  version?: string;
+  compacted?: { preTokens: number; postTokens: number | null; trigger: string };
 }
 
 function call(s: Spec): AutopsyCall {
@@ -33,6 +35,8 @@ function call(s: Spec): AutopsyCall {
     tokens: { input: 10, output: 100, reasoning: 0, read: s.read ?? 5_000, write5m: s.write5m ?? 100, write1h: 0 },
     micros: { input: 0, output: s.cost ?? 1_000_000, read: 0, write5m: 0, write1h: 0 },
     tools: s.tools ?? [],
+    toolVersion: s.version ?? null,
+    compactedBefore: s.compacted ?? null,
     toolResultChars: s.results ?? 50,
     humanPromptBefore: s.prompt ?? false,
     msSinceHumanPrompt: s.sinceHuman === undefined ? s.minute * MIN : s.sinceHuman,
@@ -166,6 +170,34 @@ describe("cache misses: one call that rewrote a context the cache held", () => {
     expect(unexplained.rule.observed["reason"]).toBe("prefix_changed");
     expect(unexplained.cascade).toMatchObject({ confidence: "low" });
     expect(unexplained.cascade.why).toMatch(/The logs do not say what/);
+  });
+});
+
+describe("cache misses the log itself explains", () => {
+  const base = [call({ id: "m0", minute: 0, prompt: true, read: 90_000, write5m: 1_000, version: "2.1.100" }), call({ id: "m1", minute: 1, read: 91_000, write5m: 1_000, version: "2.1.100" })];
+
+  it("reads a compaction from the log's own record, with its sizes, and says the cause is not guessed", () => {
+    const e = run([...base, call({ id: "m2", minute: 2, read: 100, write5m: 90_000, version: "2.1.100", compacted: { preTokens: 586_870, postTokens: 403_193, trigger: "auto" } })]).explain(0);
+    expect(e.rule.observed["reason"]).toBe("compaction");
+    expect(e.stop.why).toBe("the agent compacted its conversation just before this call (it started on its own), which rewrites the start of the prompt, so the cache began again");
+    expect(e.cascade.confidence).toBe("high");
+    expect(e.cascade.why).toBe("The log records the compaction itself: the context held 586,870 tokens before and 403,193 after. The cause is read from that record, not guessed.");
+    expect(e.sentences[0]!.text).toContain("right after a compaction (586,870 tokens before and 403,193 after)");
+  });
+
+  it("says a compaction you asked for was one you asked for, and copes with a log that gives no size after", () => {
+    const e = run([...base, call({ id: "m2", minute: 2, read: 100, write5m: 90_000, version: "2.1.100", compacted: { preTokens: 500_000, postTokens: null, trigger: "manual" } })]).explain(0);
+    expect(e.stop.why).toContain("(you asked for it)");
+    expect(e.cascade.why).toContain("the context held 500,000 tokens before.");
+    expect(e.cascade.why).not.toContain("after.");
+  });
+
+  it("names a client update as the likely cause, not a proven one", () => {
+    const e = run([...base, call({ id: "m2", minute: 2, read: 100, write5m: 90_000, version: "2.1.101" })]).explain(0);
+    expect(e.rule.observed["reason"]).toBe("client_update");
+    expect(e.stop.why).toBe("the client changed from 2.1.100 to 2.1.101 between the two calls, with no pause, compaction or change of model to explain the lost cache");
+    expect(e.cascade.confidence).toBe("low");
+    expect(e.cascade.why).toMatch(/likely cause, not a proven one/);
   });
 });
 

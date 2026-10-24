@@ -452,7 +452,24 @@ ALTER TABLE tool_result ADD COLUMN result_hash TEXT;
 ALTER TABLE tool_result ADD COLUMN truncated INTEGER NOT NULL DEFAULT 0 CHECK (truncated IN (0, 1));
 `;
 
-const MIGRATIONS: readonly string[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8, SCHEMA_V9, SCHEMA_V10, SCHEMA_V11, SCHEMA_V12, SCHEMA_V13, SCHEMA_V14];
+// A compaction is the moment an agent summarised its conversation to make room: the log says when, what started it, and how many tokens the context held
+// before and after (DF-096, DF-089). The client version of each call lets a cache that was lost after an update be told apart from one that was not.
+const SCHEMA_V15 = `
+CREATE TABLE session_compaction (
+  session_id TEXT NOT NULL,
+  ts TEXT NOT NULL,
+  trigger TEXT NOT NULL,
+  pre_tokens INTEGER NOT NULL CHECK (pre_tokens >= 0),
+  post_tokens INTEGER CHECK (post_tokens IS NULL OR post_tokens >= 0),
+  duration_ms INTEGER CHECK (duration_ms IS NULL OR duration_ms >= 0),
+  -- The log file it was read from: a delegated agent compacts its own context, apart from the agent that started it.
+  source_id INTEGER REFERENCES ingest_source (id),
+  PRIMARY KEY (session_id, ts)
+);
+ALTER TABLE model_call ADD COLUMN tool_version TEXT;
+`;
+
+const MIGRATIONS: readonly string[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8, SCHEMA_V9, SCHEMA_V10, SCHEMA_V11, SCHEMA_V12, SCHEMA_V13, SCHEMA_V14, SCHEMA_V15];
 
 /** The schema version this build writes: the number of migrations. A reader compares a ledger's `user_version` with it. */
 export const SCHEMA_VERSION = MIGRATIONS.length;

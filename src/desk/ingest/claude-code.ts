@@ -66,6 +66,16 @@ export interface ParsedToolResult {
   truncated: boolean;
 }
 
+/** A compaction the log records: when, what started it, and the tokens the context held before and after. Nothing the summary said is read. */
+export interface ParsedCompaction {
+  sessionId: string;
+  ts: string;
+  trigger: string;
+  preTokens: number;
+  postTokens: number | null;
+  durationMs: number | null;
+}
+
 export interface ParsedHumanPrompt {
   promptId: string;
   sessionId: string;
@@ -104,6 +114,7 @@ export type LineOutcome =
   | { kind: "cost_state"; state: ParsedCostState }
   | { kind: "tool_results"; results: ParsedToolResult[] }
   | { kind: "human_prompt"; prompt: ParsedHumanPrompt }
+  | { kind: "compaction"; compaction: ParsedCompaction }
   | { kind: "ignored" }
   | { kind: "malformed"; reason: string };
 
@@ -171,6 +182,7 @@ export function parseClaudeCodeLine(line: string): LineOutcome {
   if (!isObject(d)) return { kind: "malformed", reason: "not-an-object" };
   if (d["type"] === "user") return parseUserLine(d);
   if (d["type"] === "cost-state") return parseCostState(d);
+  if (d["type"] === "system" && d["subtype"] === "compact_boundary") return parseCompaction(d);
   if (d["type"] !== "assistant") return { kind: "ignored" };
   const message = d["message"];
   if (!isObject(message)) return { kind: "malformed", reason: "assistant-without-message" };
@@ -315,6 +327,21 @@ function textLength(content: unknown): number {
     return n;
   }
   return 0;
+}
+
+const wholeOrNull = (v: unknown): number | null => (typeof v === "number" && Number.isInteger(v) && v >= 0 ? v : null);
+
+function parseCompaction(d: Record<string, unknown>): LineOutcome {
+  const meta = d["compactMetadata"];
+  const sessionId = text(d["sessionId"]) ?? text(d["session_id"]);
+  const ts = text(d["timestamp"]);
+  if (!sessionId) return { kind: "malformed", reason: "compaction-without-session" };
+  if (!ts || Number.isNaN(Date.parse(ts))) return { kind: "malformed", reason: "compaction-without-timestamp" };
+  if (!isObject(meta)) return { kind: "malformed", reason: "compaction-without-metadata" };
+  const preTokens = wholeOrNull(meta["preTokens"]);
+  if (preTokens === null) return { kind: "malformed", reason: "compaction-without-token-count" };
+  const trigger = text(meta["trigger"]) ?? "unknown";
+  return { kind: "compaction", compaction: { sessionId, ts, trigger: trigger.slice(0, 40), preTokens, postTokens: wholeOrNull(meta["postTokens"]), durationMs: wholeOrNull(meta["durationMs"]) } };
 }
 
 function parseUserLine(d: Record<string, unknown>): LineOutcome {

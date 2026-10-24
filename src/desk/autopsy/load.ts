@@ -11,6 +11,7 @@ interface CallRow {
   model: string;
   is_sidechain: number;
   stop_reason: string | null;
+  tool_version: string | null;
   input_tokens: number;
   output_tokens: number;
   reasoning_tokens: number;
@@ -37,7 +38,7 @@ export function loadAutopsyCalls(db: Ledger, snapshot: PriceSnapshot, sinceIso: 
   const sidArgs = sid === undefined ? [] : [sid];
   const rows = db
     .prepare(
-      `SELECT m.call_id, m.source_id, m.session_id, m.ts, m.model, m.is_sidechain, m.stop_reason, m.input_tokens, m.output_tokens, m.reasoning_tokens,
+      `SELECT m.call_id, m.source_id, m.session_id, m.ts, m.model, m.is_sidechain, m.stop_reason, m.tool_version, m.input_tokens, m.output_tokens, m.reasoning_tokens,
               m.cache_read_tokens, m.cache_write_5m_tokens, m.cache_write_1h_tokens, c.class, c.input_micros, c.output_micros,
               c.cache_read_micros, c.cache_write_5m_micros, c.cache_write_1h_micros
        FROM model_call m LEFT JOIN cost_event c ON c.call_id = m.call_id
@@ -79,6 +80,18 @@ export function loadAutopsyCalls(db: Ledger, snapshot: PriceSnapshot, sinceIso: 
     promptsBySession.set(p.session_id, list);
   }
 
+  // Compactions the logs record, by the log file they were read from: a delegated agent compacts its own context.
+  const compactionsByThread = new Map<string, { tsMs: number; preTokens: number; postTokens: number | null; trigger: string }[]>();
+  const compactionRows = db
+    .prepare(`SELECT source_id, session_id, ts, trigger, pre_tokens, post_tokens FROM session_compaction WHERE ts >= ? AND ts <= ?${sid === undefined ? "" : " AND session_id = ?"} ORDER BY ts`)
+    .all(sinceIso, untilIso, ...sidArgs) as unknown as { source_id: number | null; session_id: string; ts: string; trigger: string; pre_tokens: number; post_tokens: number | null }[];
+  for (const c of compactionRows) {
+    const key = String(c.source_id ?? c.session_id);
+    const list = compactionsByThread.get(key) ?? [];
+    list.push({ tsMs: Date.parse(c.ts), preTokens: c.pre_tokens, postTokens: c.post_tokens, trigger: c.trigger });
+    compactionsByThread.set(key, list);
+  }
+
   const lastPromptAtOrBefore = (prompts: number[] | undefined, t: number): number | null => {
     if (!prompts) return null;
     let lo = 0;
@@ -101,6 +114,7 @@ export function loadAutopsyCalls(db: Ledger, snapshot: PriceSnapshot, sinceIso: 
     const thread = String(r.source_id ?? r.session_id);
     const prev = prevInThread.get(thread);
     prevInThread.set(thread, { id: r.call_id, tsMs });
+    const compactedBefore = prev ? (compactionsByThread.get(thread) ?? []).find((c) => c.tsMs > prev.tsMs && c.tsMs <= tsMs) : undefined;
     const lastPrompt = lastPromptAtOrBefore(promptsBySession.get(r.session_id), tsMs);
     const humanBefore = prev ? lastPrompt !== null && lastPrompt > prev.tsMs : lastPrompt !== null;
     const resolved = resolvePrice(snapshot, r.model);
@@ -131,6 +145,8 @@ export function loadAutopsyCalls(db: Ledger, snapshot: PriceSnapshot, sinceIso: 
             }
           : null,
       stopReason: r.stop_reason ?? null,
+      toolVersion: r.tool_version,
+      compactedBefore: compactedBefore ? { preTokens: compactedBefore.preTokens, postTokens: compactedBefore.postTokens, trigger: compactedBefore.trigger } : null,
       tools: toolsByCall.get(r.call_id) ?? [],
       toolResultChars: prev ? (resultCharsByCall.get(prev.id) ?? 0) : 0,
       humanPromptBefore: humanBefore,
