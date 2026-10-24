@@ -265,7 +265,7 @@ const Close: React.FC<{ caps: string[] }> = ({ caps }) => (
 
 export const scenesB: SceneDef[] = [
   {
-    id: "ask", kicker: "", Comp: Ask, min: 20,
+    id: "ask", kicker: "", Comp: Ask, min: 17,
     caps: [
       `I ask a question. The Planner writes a typed program, code runs it read-only, the Auditor checks every figure.`,
       `Switch the History engine off and ask again: the answer changes. That is the proof it does something.`,
@@ -274,32 +274,24 @@ export const scenesB: SceneDef[] = [
   {
     id: "bench", kicker: "", Comp: Bench,
     caps: [
-      `${bench.n} questions it never saw, pre-registered: one call, a tool agent, and the Desk, all on the same Nemotron model.`,
+      `${bench.n} unseen questions, pre-registered: one call, a tool agent and the Desk, on one Nemotron model.`,
       `The Desk answered ${bench.a2} exactly. The tool agent, ${bench.a1}. One call, ${bench.a0}.`,
-      `A fix found by reading the misses lifts the Desk to ${bench.a2post}. It is shown as post hoc, beside the first figure.`,
+      `A fix found by reading the misses lifts the Desk to ${bench.a2post}: post hoc, shown beside the first figure.`,
     ],
   },
   {
     id: "self", kicker: "", Comp: Self,
     caps: [
-      `The Desk also scores itself. Its 90% one-month range held the real month ${pctOf(self.windTunnel.inside, self.windTunnel.n)}% of the time.`,
-      `That is printed beside the range. So is what learning from mistakes moved: ${self.learning.to - self.learning.from} questions of ${self.learning.n}, no improvement claimed.`,
+      `The Desk also scores itself: its 90% one-month range held the real month ${pctOf(self.windTunnel.inside, self.windTunnel.n)}% of the time.`,
+      `Learning from mistakes moved ${self.learning.to - self.learning.from} of ${self.learning.n}: no improvement claimed.`,
     ],
   },
   {
-    id: "verify", kicker: "", Comp: Verify, min: 18,
+    id: "verify", kicker: "", Comp: Verify, min: 17,
     caps: [
-      `To apply the policy I echo the action digest. A dossier is signed with the rows its figures come from.`,
-      `A stranger verifies it on plain Node with the network off. Change one byte and it names the row.`,
-      `The same hook Claude Code calls blocked a real Bash call under a policy that permits nothing.`,
-    ],
-  },
-  {
-    id: "sponsors", kicker: "", Comp: Sponsors,
-    caps: [
-      `Where each sponsor sits. Zetaris is the data layer: three silos, one statement.`,
-      `Meterless holds memory and history. Each of its engines changes an answer when it is switched off.`,
-      `Nemotron runs every language role. Cursor is the required IDE, and the video claims only what its log records.`,
+      `To apply the policy I echo the action digest; the dossier carries the rows its figures come from.`,
+      `A stranger verifies it on plain Node, network off. Change one byte and it names the row.`,
+      `The same hook Claude Code calls blocked a real Bash call.`,
     ],
   },
   {

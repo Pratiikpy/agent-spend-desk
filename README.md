@@ -13,6 +13,22 @@ Built for the Open Agent Hackathon 2026, Track 3 (Reasoning Architecture), with 
 | ![The morning brief](docs/submission/deck/img/brief.png) | ![The canary calling a regression](docs/submission/deck/img/canary-top.png) | ![An answer checked by code](docs/submission/deck/img/ask.png) |
 | The brief | The canary: a regression called, control arm flat | Ask: every figure comes from a typed step |
 
+## The idea
+
+Most tools that watch AI spend show a number. desk. treats every number as a claim: it must carry the rows it came from, say what it could not know, and survive a test on data it never saw. The same discipline runs through the whole product. A figure is computed by code, never by the model. A policy is replayed on a month it was not drafted from, and the headline is the landed work it would have blocked. A regression is called only against a control arm. A conclusion is signed so that a stranger can verify it offline. Where it fell short of its own label (a "90%" range that held 73% of the time), it says so on screen.
+
+## One product, three tracks
+
+![The architecture: sources, data, reasoning, decisions, and where each track and each sponsor sits](docs/submission/deck/img/architecture.png)
+
+One primary track is judged, and we submit under **Track 3**. The same product also does the work of the other two, and the diagram shows where each lives.
+
+| Track | Where it lives in desk. | Try it |
+|---|---|---|
+| 1. Solving fragmented intelligence | Agent logs, plus invoices (files), CI (Postgres) and a seat roster (REST) joined by one Zetaris statement into one ledger. It shows where the sources disagree: invoices land 1.2% under the list-price estimate, and 60 of 644 landed sessions merged although the checks were red. | `desk silos`, `desk landing` |
+| 2. The agent that can explain why | Ask turns a question into a typed program that read-only specialists run, and an Auditor rejects any figure no claim supports. Every conclusion is a signed dossier that a stranger verifies offline; one changed byte names the row. | `desk ask`, `npm run desk-verify` |
+| 3. Reasoning architecture (primary) | Plan, critique, revise, replay: a Planner and its critic, specialists, an Auditor and Explainer, a Drafter, a restrict-only check and an Attacker, a canary with a control arm, Meterless engines as memory, Nemotron in every language role, and a pre-registered head-to-head against a tool agent. | `desk propose`, `desk bench report` |
+
 ## Try it
 
 Needs Node 22.19 or later. Nothing else for the sample.
@@ -209,6 +225,16 @@ Copy `.env.example` to `.env` and fill in what you have; nothing is required for
 
 `--sample` generates a constructed scenario from a seed (about 590 MB under `data/desk/`): 14 engineers, 987 sessions over two months as real-format Claude Code logs and real git repositories, with waste planted at known places (loops, idle polling, cache misses, sub-agent fan-out) and a tool-version and model-mix change on 14 October 2026. It is not a real team. `truth.json` records what was planted and the checks compare what desk. finds with it. Every source in the repository is described in `data/README.md`; `input_examples/` and `output_examples/` hold a cleaned session and a cleaned decision trace.
 
+## Where it goes
+
+From a desk to a gate for every agent. The ledger, the gate and the signed record exist today for one tool; the next steps are breadth, and none of them is built yet:
+
+- **Every tool, not one.** A gateway door and per-tool adapters, so Codex and Cursor sit behind the same reserve endpoint.
+- **Real tasks on a cheaper route.** Recorded tool results and a priced route, with a reproduction gate.
+- **Teams.** Roles, per-team caps and more than one approver.
+- **A better range.** A one-month range that holds as often as it says.
+- **Open formats.** The ledger and the dossier as a published standard that other desks can write.
+
 ## What is not built, and what is not verified
 
 - Not built: team mode (roles, per-team caps, more than one approver) and a CI check on policy changes; they are listed under "next" in the deck. Seat return, route replay, calibration, repeated-run reliability, the regret ledger and learning from mistakes are built, and their limits are in `docs/verification/`.
@@ -225,6 +251,6 @@ The design documents under `docs/`, the sponsor notes and the two guard scripts 
 
 ## More
 
-`docs/design/desk/` the architecture, register, feature list and requirements · `docs/verification/` what was run against the real thing · `docs/sponsors/` verified facts per sponsor · `docs/submission/` the deck (`desk-deck.pdf`), the demo video script, and the sponsor explanation · `scripts/demo-video/` the recorder that made the captioned demo video from real runs.
+`docs/design/desk/` the architecture, register, feature list and requirements · `docs/verification/` what was run against the real thing · `docs/sponsors/` verified facts per sponsor · `docs/submission/` the deck (`desk-deck.pdf`), the demo video script, and the sponsor explanation · `scripts/demo-video-motion/` the Remotion project that renders the captioned motion video, with every figure read from a real run or a result file (`scripts/demo-video/` is an older screen recorder, kept for reference).
 
 Licence: Apache-2.0. No secret is ever written to the repository; `python scripts/secret_scan.py` runs before every commit.

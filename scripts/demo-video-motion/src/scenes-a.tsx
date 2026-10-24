@@ -37,7 +37,6 @@ const Hook: React.FC<{ caps: string[] }> = ({ caps }) => {
 
 // 1. The product ------------------------------------------------------------------------------------------------------
 const Title: React.FC<{ caps: string[] }> = ({ caps }) => {
-  const cs = capStarts(caps);
   const verbs = ["explains the limit", "checks the agent every day", "tests a spend policy on a month it never saw", "signs what it concludes"];
   return (
     <Frame kicker="The product · Track 3, Reasoning Architecture" caps={caps}>
@@ -45,14 +44,14 @@ const Title: React.FC<{ caps: string[] }> = ({ caps }) => {
       <Reveal at={0.8}><div style={{ marginTop: 26, fontSize: 52, letterSpacing: "-0.03em", maxWidth: 1060 }}>A local desk for the person who pays for AI coding agents.</div></Reveal>
       <div style={{ position: "absolute", right: 0, top: 40, width: 560, display: "grid", gap: 14 }}>
         {[["Zetaris", "the data layer"], ["Meterless", "memory and history"], ["NVIDIA Nemotron", "every language role"], ["Cursor", "the required IDE"]].map(([h, s], i) => (
-          <Reveal key={h} at={cs[1] + 0.3 + i * 0.9} dx={30} dy={0}>
+          <Reveal key={h} at={2.4 + i * 0.5} dx={30} dy={0}>
             <Card style={{ padding: "14px 24px", display: "flex", justifyContent: "space-between", alignItems: "baseline" }}><span style={{ fontSize: 32, fontWeight: 600, letterSpacing: "-0.02em" }}>{h}</span><Mono size={20} color={C.graphite}>{s}</Mono></Card>
           </Reveal>
         ))}
       </div>
       <div style={{ marginTop: 44, display: "grid", gap: 14 }}>
         {verbs.map((v, i) => (
-          <Reveal key={v} at={2.2 + i * 0.7} dx={-30} dy={0}>
+          <Reveal key={v} at={1.4 + i * 0.5} dx={-30} dy={0}>
             <div style={{ display: "flex", alignItems: "center", gap: 22, fontSize: 40, letterSpacing: "-0.02em" }}>
               <span style={{ width: 54, height: 8, background: C.cipher, borderRadius: 4 }} />
               <span>It {v}.</span>
@@ -282,15 +281,13 @@ export const scenesA: SceneDef[] = [
   {
     id: "hook", kicker: "", Comp: Hook, min: 9,
     caps: [
-      `${autopsy.hours} hours in, the limit appears and I do not know why.`,
-      `It is a constructed scenario. Every figure on screen comes from it, through the same code that reads your own logs.`,
+      `${autopsy.hours} hours in, the limit appears and I do not know why. A constructed scenario; every figure comes from it.`,
     ],
   },
   {
-    id: "title", kicker: "", Comp: Title, min: 10,
+    id: "title", kicker: "", Comp: Title, min: 8,
     caps: [
-      `desk. is a local desk for whoever pays for AI coding agents.`,
-      `Organisational data through Zetaris. Memory and history from Meterless engines. Every language role on NVIDIA Nemotron.`,
+      `desk. is a local desk for whoever pays for AI coding agents: it explains, checks, tests and signs.`,
     ],
   },
   {
@@ -312,16 +309,16 @@ export const scenesA: SceneDef[] = [
   {
     id: "canary", kicker: "", Comp: Canary,
     caps: [
-      `The canary runs a ${canary.tasks}-task pack once a day on each arm. Here the primary arm's model was switched on day ${canary.switchDay}.`,
+      `The canary runs a ${canary.tasks}-task pack daily on each arm; the primary arm's model was switched on day ${canary.switchDay}.`,
       `The call comes with its interval, a flat control arm, and what it cannot say.`,
     ],
   },
   {
     id: "propose", kicker: "", Comp: Propose,
     caps: [
-      `Nemotron drafts a cap policy. Code checks that it only narrows the one in force.`,
+      `Nemotron drafts a cap policy; code checks it only narrows the one in force.`,
       `An Attacker looks for requests that step around it. Then it meets a month it never saw.`,
-      `${propose.blocked} of ${propose.landed} landed sessions would have been blocked. That is the headline, not the savings.`,
+      `${propose.blocked} of ${propose.landed} landed sessions would have been blocked: the headline, not the savings.`,
     ],
   },
 ];

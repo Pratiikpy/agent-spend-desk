@@ -3,16 +3,24 @@ import { AbsoluteFill, Sequence, interpolate, useCurrentFrame } from "remotion";
 import { C, FPS, Fonts, capsTotal } from "./kit";
 import { scenesA, type SceneDef } from "./scenes-a";
 import { scenesB } from "./scenes-b";
+import { scenesC } from "./scenes-c";
 
-export const scenes: SceneDef[] = [...scenesA, ...scenesB];
+// hook, title, architecture and tracks, the real screens, then the eight beats, the vision and the close
+const byId = (list: SceneDef[], id: string) => { const s = list.find((x) => x.id === id); if (!s) throw new Error(`scene ${id} missing`); return s; };
+export const scenes: SceneDef[] = [
+  byId(scenesA, "hook"), byId(scenesA, "title"), scenesC.architecture, scenesC.ui,
+  byId(scenesA, "autopsy"), byId(scenesA, "zetaris"), byId(scenesA, "canary"), byId(scenesA, "propose"),
+  byId(scenesB, "ask"), byId(scenesB, "bench"), byId(scenesB, "self"), byId(scenesB, "verify"),
+  scenesC.vision, byId(scenesB, "close"),
+];
 
 // A scene lasts as long as its captions take to read (plus a pause), or its own minimum if the animation needs more.
 export const sceneFrames = scenes.map((s) => Math.ceil(Math.max(s.min ?? 0, capsTotal(s.caps) + 0.8) * FPS));
 export const TOTAL_FRAMES = sceneFrames.reduce((a, b) => a + b, 0);
 
 // The submission asks for a video of one to four minutes; fail the build rather than render one outside it.
-if (TOTAL_FRAMES / FPS > 235 || TOTAL_FRAMES / FPS < 60) {
-  throw new Error(`The video would run ${(TOTAL_FRAMES / FPS).toFixed(1)} s, outside the 60 to 235 s window.`);
+if (TOTAL_FRAMES / FPS > 238 || TOTAL_FRAMES / FPS < 60) {
+  throw new Error(`The video would run ${(TOTAL_FRAMES / FPS).toFixed(1)} s, outside the 60 to 238 s window.`);
 }
 
 const Faded: React.FC<{ frames: number; children: React.ReactNode }> = ({ frames, children }) => {
