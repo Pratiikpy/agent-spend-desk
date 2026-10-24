@@ -42,6 +42,7 @@ import { calibrateCommand } from "./calibrate/command.ts";
 import { renderFeatureStatus, summariseFeatures, type FeatureRow } from "./status/features.ts";
 import { openCodeAgent } from "./lab/agents.ts";
 import { ingestCodex } from "./ledger/ingest-codex.ts";
+import { ingestOpenCode } from "./ledger/ingest-opencode.ts";
 import { ingestStatusline } from "./ledger/ingest-statusline.ts";
 import { gauge, installSnippet, readSamples, statuslineLogPath } from "./statusline/statusline.ts";
 import { fitLimit, observeWindows, renderLimitFit } from "./limits/fit.ts";
@@ -126,6 +127,7 @@ const { values, positionals } = parseArgs({
     second: { type: "string" },
     portkey: { type: "string" },
     horizon: { type: "string", default: "7" },
+    "opencode-db": { type: "string", default: join(homedir(), ".local", "share", "opencode", "opencode.db") },
     defects: { type: "string", default: "0" },
     "timeout-sec": { type: "string", default: "900" },
   },
@@ -172,6 +174,12 @@ ${sensitivity}`);
 } else if (command === "ingest" && values.agent === "statusline") {
   const r = ingestStatusline(db, readSamples(statuslineLogPath()));
   console.log(`read ${r.samples} status line samples; ${r.limitSamples} new plan-limit readings`);
+} else if (command === "ingest" && values.agent === "opencode") {
+  const r = await ingestOpenCode(db, values["opencode-db"], loadSnapshot(pricesPath));
+  const skipped = Object.entries(r.skipped).map(([why, n]) => `${n} ${why}`).join(", ");
+  console.log(`read ${r.messages} OpenCode messages; ${r.callsNew} new calls${skipped ? ` (left out: ${skipped})` : ""}`);
+  console.log(`reasoning tokens counted apart from output: ${r.reasoningInOutput.confirmed} confirmed by the message's step totals, ${r.reasoningInOutput.contradicted} contradicted, ${r.reasoningInOutput.unchecked} not checkable`);
+  if (r.unpricedCalls > 0) console.log(`unpriced: ${r.unpricedCalls} calls on ${Object.entries(r.unpricedModels).map(([m, why]) => `${m} (${why})`).join(", ")}`);
 } else if (command === "ingest" && values.agent === "codex") {
   const files = existsSync(values["codex-dir"]) ? findJsonlLogs(values["codex-dir"]) : [];
   const r = await ingestCodex(db, files, loadSnapshot(pricesPath));

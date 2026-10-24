@@ -255,7 +255,23 @@ CREATE TABLE limit_sample (
 CREATE INDEX limit_sample_window ON limit_sample (tool, kind, resets_at, ts);
 `;
 
-const MIGRATIONS: readonly string[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5];
+// A third tool's sessions (OpenCode, read from its database). The source kind is widened the same way as in version 5.
+const SCHEMA_V6 = `${FOREIGN_KEYS_OFF}
+
+CREATE TABLE ingest_source_v6 (
+  id INTEGER PRIMARY KEY,
+  kind TEXT NOT NULL CHECK (kind IN ('claude_code', 'codex', 'opencode')),
+  path TEXT NOT NULL UNIQUE,
+  size_bytes INTEGER NOT NULL CHECK (size_bytes >= 0),
+  offset_bytes INTEGER NOT NULL CHECK (offset_bytes >= 0),
+  last_ingested_at TEXT NOT NULL
+);
+INSERT INTO ingest_source_v6 SELECT id, kind, path, size_bytes, offset_bytes, last_ingested_at FROM ingest_source;
+DROP TABLE ingest_source;
+ALTER TABLE ingest_source_v6 RENAME TO ingest_source;
+`;
+
+const MIGRATIONS: readonly string[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6];
 
 /** The schema version this build writes: the number of migrations. A reader compares a ledger's `user_version` with it. */
 export const SCHEMA_VERSION = MIGRATIONS.length;

@@ -13,8 +13,8 @@ beforeEach(() => {
 afterEach(() => dir.dispose());
 
 describe("the ledger schema", () => {
-  it("is at version 5 and a reader can use version 3 and later", () => {
-    expect(SCHEMA_VERSION).toBe(5);
+  it("is at version 6 and a reader can use version 3 and later", () => {
+    expect(SCHEMA_VERSION).toBe(6);
     expect(OLDEST_READABLE_VERSION).toBe(3);
   });
 
@@ -36,7 +36,7 @@ describe("the ledger schema", () => {
 
     const upgraded = openLedger(path);
     try {
-      expect((upgraded.prepare("PRAGMA user_version").get() as { user_version: number }).user_version).toBe(5);
+      expect((upgraded.prepare("PRAGMA user_version").get() as { user_version: number }).user_version).toBe(6);
       expect(upgraded.prepare("SELECT * FROM ingest_source").all()).toEqual(before.sources);
       expect(upgraded.prepare("SELECT call_id, source_id, output_tokens FROM model_call ORDER BY call_id").all()).toEqual(before.calls);
       expect(upgraded.prepare("PRAGMA foreign_key_check").all()).toEqual([]);
@@ -50,9 +50,38 @@ describe("the ledger schema", () => {
     }
   });
 
+  it("upgrades a version 5 ledger, keeps its sources and calls, and then takes an OpenCode source", async () => {
+    const path = join(dir.path, "v5.db");
+    const first = openLedger(path);
+    await ingestClaudeCode(first, [dir.file("a.jsonl", [assistantLine({ id: "m1", session: "s1", ts: "2026-10-20T10:00:00Z", output: 10 })])], testSnapshot());
+    first.prepare("INSERT INTO ingest_source (kind, path, size_bytes, offset_bytes, last_ingested_at) VALUES ('codex', 'c.jsonl', 5, 5, 't')").run();
+    const before = { sources: first.prepare("SELECT * FROM ingest_source ORDER BY id").all(), calls: first.prepare("SELECT call_id, source_id FROM model_call").all() };
+    // Put it back at version 5 with the table as that version had it.
+    first.exec(`
+      PRAGMA foreign_keys = OFF;
+      CREATE TABLE ingest_source_old (id INTEGER PRIMARY KEY, kind TEXT NOT NULL CHECK (kind IN ('claude_code', 'codex')), path TEXT NOT NULL UNIQUE, size_bytes INTEGER NOT NULL CHECK (size_bytes >= 0), offset_bytes INTEGER NOT NULL CHECK (offset_bytes >= 0), last_ingested_at TEXT NOT NULL);
+      INSERT INTO ingest_source_old SELECT id, kind, path, size_bytes, offset_bytes, last_ingested_at FROM ingest_source;
+      DROP TABLE ingest_source;
+      ALTER TABLE ingest_source_old RENAME TO ingest_source;
+      PRAGMA user_version = 5;
+    `);
+    expect(() => first.prepare("INSERT INTO ingest_source (kind, path, size_bytes, offset_bytes, last_ingested_at) VALUES ('opencode', 'x', 0, 0, 't')").run()).toThrow(/CHECK/);
+    first.close();
+    const upgraded = openLedger(path);
+    try {
+      expect(upgraded.prepare("SELECT * FROM ingest_source ORDER BY id").all()).toEqual(before.sources);
+      expect(upgraded.prepare("SELECT call_id, source_id FROM model_call").all()).toEqual(before.calls);
+      expect(upgraded.prepare("PRAGMA foreign_key_check").all()).toEqual([]);
+      upgraded.prepare("INSERT INTO ingest_source (kind, path, size_bytes, offset_bytes, last_ingested_at) VALUES ('opencode', 'o.db', 0, 0, 't')").run();
+      expect(() => upgraded.prepare("INSERT INTO ingest_source (kind, path, size_bytes, offset_bytes, last_ingested_at) VALUES ('other', 'z', 0, 0, 't')").run()).toThrow(/CHECK/);
+    } finally {
+      upgraded.close();
+    }
+  });
+
   it("opens a fresh ledger at the newest version and refuses one from a newer build", () => {
     const fresh = openLedger(":memory:");
-    expect((fresh.prepare("PRAGMA user_version").get() as { user_version: number }).user_version).toBe(5);
+    expect((fresh.prepare("PRAGMA user_version").get() as { user_version: number }).user_version).toBe(6);
     fresh.close();
     const path = join(dir.path, "future.db");
     const f = new DatabaseSync(path);
