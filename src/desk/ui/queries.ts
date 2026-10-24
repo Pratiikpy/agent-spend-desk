@@ -185,6 +185,8 @@ export function bill(ctx: UiContext, span: Span): object {
   const empty = emptyState(ctx);
   if (empty) return empty;
   const t = tally(ctx.db, span.sinceIso, span.untilIso);
+  // Comparing the tool's own figure with the estimate reads every process once: do it once for the screen.
+  const reported = reportedInSpan(ctx, span);
   const { autopsy } = autopsyFor(ctx, span.sinceIso, span.untilIso);
   const landing = landingBreakdown(ctx.db, span.sinceIso, span.untilIso);
   const landed = landing.byState.kept.sessions + landing.byState.merged.sessions;
@@ -218,11 +220,11 @@ export function bill(ctx: UiContext, span: Span): object {
     totals: { ...t, pricedShare: t.pricedCalls + t.unpricedCalls === 0 ? 0 : t.pricedCalls / (t.pricedCalls + t.unpricedCalls) },
     classes: [
       { cls: "billed", calls: 0, note: "Invoices are not read on this screen. When Zetaris is connected the invoice figures are on Org data." },
-      reportedClass(reportedInSpan(ctx, span)),
+      reportedClass(reported),
       { cls: "estimated", calls: t.pricedCalls, micros: t.estimatedMicros, note: "List price times logged tokens." },
       { cls: "unpriced", calls: t.unpricedCalls, note: "Models with no price row: tokens counted, no dollars invented." },
     ],
-    reconciliation: reconciliationSummary(reportedInSpan(ctx, span)),
+    reconciliation: reconciliationSummary(reported),
     priceBand: priceBand(ctx, span, t.estimatedMicros),
     landing: { rows: landingRows(landing), totalMicros: landing.totalMicros, lowConfidenceMicros: landing.lowConfidenceMicros, linked: hasLinks(ctx.db) },
     costPerLandedSession: landed === 0 ? null : Math.round(landedMicros / landed),
