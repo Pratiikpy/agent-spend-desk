@@ -367,3 +367,41 @@ describe("the gateway: its own door", () => {
     expect(Object.keys(up.seen[0]!.headers).filter((h) => h.startsWith("x-desk-"))).toEqual([]);
   });
 });
+
+describe("the gateway: identity and phase for one agent run", () => {
+  it("uses the identity it was started with, whatever headers the caller sends", async () => {
+    const up = await upstream(ok());
+    const r = rig({ person: "lab-run-7" });
+    const g = await gateway(up.url, r, { identity: { person: "lab-run-7", session: "run-7", project: "lab", agent: "agent:opencode" } });
+    await post(g.url, chat(), { "x-desk-session": "someone-else", "x-desk-project": "other" });
+    const row = r.db.prepare("SELECT person, session_id, project, agent FROM gate_event WHERE kind = 'authorized'").get() as { person: string; session_id: string; project: string; agent: string };
+    expect(row).toEqual({ person: "lab-run-7", session_id: "run-7", project: "lab", agent: "agent:opencode" });
+  });
+
+  it("asks the phase function about each call, counting the calls of the session, and routes by what it names", async () => {
+    const up = await upstream(ok("claude-sonnet-5-5"));
+    const r = rig();
+    const seen: { callIndex: number; model: string; messages: number }[] = [];
+    const g = await gateway(up.url, r, {
+      taskTypeOf: (info: { callIndex: number; model: string; messages: number }) => {
+        seen.push({ callIndex: info.callIndex, model: info.model, messages: info.messages });
+        return info.callIndex < 2 ? "docs" : undefined;
+      },
+    });
+    for (let i = 0; i < 3; i += 1) await post(g.url, chat("claude-opus-5", { messages: Array.from({ length: i + 1 }, () => ({ role: "user", content: "x" })) }), { "x-desk-session": "s1" });
+    await post(g.url, chat("claude-opus-5"), { "x-desk-session": "s2" });
+    expect(seen.map((s) => s.callIndex)).toEqual([0, 1, 2, 0]);
+    expect(seen.map((s) => s.messages)).toEqual([1, 2, 3, 1]);
+    const models = up.seen.map((s) => (JSON.parse(s.body) as { model: string }).model);
+    expect(models).toEqual(["claude-sonnet-5-5", "claude-sonnet-5-5", "claude-opus-5", "claude-sonnet-5-5"]);
+  });
+
+  it("is refused closed if the phase function throws", async () => {
+    const up = await upstream(ok());
+    const r = rig();
+    const g = await gateway(up.url, r, { taskTypeOf: () => { throw new Error("classifier broke"); } });
+    const res = await post(g.url, chat());
+    expect(res.status).toBe(503);
+    expect(up.seen).toHaveLength(0);
+  });
+});

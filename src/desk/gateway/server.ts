@@ -67,6 +67,14 @@ export interface GatewayOptions {
   firstByteMs?: number;
   onEntry?: (e: GatewayEntry) => void;
   fetchImpl?: typeof fetch;
+  /** A fixed identity for every request, for a gateway that serves one agent run; it overrides the x-desk headers. */
+  identity?: { person?: string; session?: string; project?: string; agent?: string };
+  /**
+   * Names the task type of a call from what is known about it, so that routing and caps can differ by phase of a run: the
+   * call's place in its session (from 0), its model and the number of messages it carries. Returning nothing leaves the
+   * task type to the caller's x-desk-task-type header. If it throws, the call is refused (failed closed).
+   */
+  taskTypeOf?: (info: { callIndex: number; model: string; bodyBytes: number; messages: number }) => string | undefined;
 }
 
 export interface Gateway {
@@ -181,6 +189,7 @@ export async function startGateway(opts: GatewayOptions): Promise<Gateway> {
   const firstByteMs = opts.firstByteMs ?? 120_000;
   const stats: GatewayStats = { seen: 0, controlled: 0, allowed: 0, denied: 0, failedClosed: 0, unmetered: 0, unmeteredRefused: 0, settledAtWorstCase: 0, voided: 0, routed: 0 };
   const pending = new Set<Promise<void>>();
+  const callsBySession = new Map<string, number>();
   let port = 0;
 
   const server: Server = createServer((req, res) => {
@@ -324,13 +333,18 @@ export async function startGateway(opts: GatewayOptions): Promise<Gateway> {
     stats.controlled += 1;
     let decision: GateDecision;
     try {
+      const session = opts.identity?.session ?? header("x-desk-session") ?? "gateway";
+      const callIndex = callsBySession.get(session) ?? 0;
+      callsBySession.set(session, callIndex + 1);
+      const messages = Array.isArray(body["messages"]) ? body["messages"].length : 0;
+      const phase = opts.taskTypeOf?.({ callIndex, model, bodyBytes: raw.length, messages });
       decision = opts.gate.authorize({
-        session_id: header("x-desk-session") ?? "gateway",
-        person: opts.gate.person,
-        project: header("x-desk-project") ?? "unknown",
-        agent: header("x-desk-agent") ?? "agent:gateway",
+        session_id: session,
+        person: opts.identity?.person ?? opts.gate.person,
+        project: opts.identity?.project ?? header("x-desk-project") ?? "unknown",
+        agent: opts.identity?.agent ?? header("x-desk-agent") ?? "agent:gateway",
         model,
-        task_type: header("x-desk-task-type") ?? "unknown",
+        task_type: phase ?? header("x-desk-task-type") ?? "unknown",
         input_tokens: Math.ceil(raw.length / 3),
         max_tokens: typeof maxTokens === "number" && Number.isSafeInteger(maxTokens) && maxTokens >= 0 ? maxTokens : null,
         n,
