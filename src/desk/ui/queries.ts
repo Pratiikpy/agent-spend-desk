@@ -19,6 +19,7 @@ import { defaultMarkerPath, readMarkers } from "../tasks/markers.ts";
 import { analyseCalls, buildAutopsy, CAUSES, type Autopsy, type AutopsyCall, type Cause, type PerCall } from "../autopsy/engine.ts";
 import { loadAutopsyCalls } from "../autopsy/load.ts";
 import { wasteEventsOf } from "../waste/load.ts";
+import { delegationTrees } from "../delegation/tree.ts";
 import { buildCard } from "../card/build.ts";
 import type { Ledger } from "../ledger/db.ts";
 import { landingBreakdown } from "../outcomes/breakdown.ts";
@@ -676,6 +677,23 @@ const toolList = (raw: string): string[] => {
   }
 };
 
+/** The tree of agents a session started, as the screen shows it: the first rows in the order a reader walks it, and what the rest add up to. */
+function delegationBlock(ctx: UiContext, id: string): object | null {
+  const tree = delegationTrees(ctx.db, { sessionIds: [id] })[0];
+  if (!tree || tree.agents === 0) return null;
+  const shown = tree.nodes.slice(0, 40);
+  const rest = tree.nodes.slice(40);
+  const clean = (name: string | null): string | null => (name === null ? null : createRedactor().clean(name).slice(0, 60));
+  return {
+    agents: tree.agents,
+    maxDepth: tree.maxDepth,
+    totalMicros: tree.totalMicros,
+    unlinkedMicros: tree.unlinkedMicros,
+    nodes: shown.map((n) => ({ key: n.key, name: clean(n.name), depth: n.depth, calls: n.calls, unpricedCalls: n.unpricedCalls, directMicros: n.directMicros, cumulativeMicros: n.cumulativeMicros, children: n.children, flags: n.flags })),
+    more: rest.length === 0 ? null : { nodes: rest.length, directMicros: rest.reduce((s, n) => s + n.directMicros, 0) },
+  };
+}
+
 /** One waste block of one session, explained: where the rule would have stopped it, how it matched, how the failure unfolded, the lines behind it, each call's price and what the session landed. */
 export async function sessionBlock(ctx: UiContext, id: string, blockId: string): Promise<object> {
   if (id.length === 0 || id.length > 200 || blockId.length === 0 || blockId.length > 80) throw new BadParam("session id or block id is empty or too long");
@@ -843,6 +861,7 @@ export function session(ctx: UiContext, id: string): object {
     byCause,
     blocks: blocks.slice(0, 50).map((b) => ({ id: b.id, kind: b.kind, rule: b.rule, calls: b.calls.length, micros: b.totalMicros, unpricedCalls: b.unpricedCalls, confidence: b.confidence ?? "high", stopOffsetSec: Math.round((b.startMs - start) / 1000), durationSec: Math.round((b.endMs - b.startMs) / 1000) })),
     blockCount: blocks.length,
+    delegation: delegationBlock(ctx, id),
     landing: {
       state: outcome?.state ?? "unlinked",
       confidence: outcome?.best_confidence ?? null,

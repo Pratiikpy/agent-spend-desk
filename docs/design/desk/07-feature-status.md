@@ -2,7 +2,7 @@
 
 Generated from `feature-status.json` by `npm run desk -- status` and checked by `tests/desk/feature-status.test.ts`. The specification is `02-feature-list.md`, which was written as design; this page says how much of it exists.
 
-**67 built, 39 partial, 23 absent** of 129.
+**68 built, 38 partial, 23 absent** of 129.
 
 How to read a status. *Built*: the core of the feature as specified exists and a test, a `desk prove` check or a verification record exercises it. *Partial*: a real part exists and the missing part is named. *Absent*: no code was found. A status is a judgement made by reading and searching, which is why every row cites the files it rests on. A built feature can still be shallow; the "missing" column says so where known.
 
@@ -101,7 +101,7 @@ How to read a status. *Built*: the core of the feature as specified exists and a
 | DF-091 Quota-aware plan router | absent | none | no quota-aware plan router |
 | DF-092 Tool-output silent-truncation waste detector | built | `src/desk/ingest/claude-code.ts`, `src/desk/waste/detect.ts`, `src/desk/waste/command.ts`, `src/desk/explain/blocks.ts`, `tests/desk/waste.test.ts`, `tests/desk/result-facts.test.ts`, `docs/verification/waste-rules-2026-10-25.md` | the marker is a phrase the tool prints; a cut with no sentinel is invisible (no size clusters at a harness cap in 277,917 results, so a length rule would guess) |
 | DF-093 Earned-autonomy promotion and demotion matrix per workflow | absent | none | no earned-autonomy matrix |
-| DF-094 Multi-agent delegation handoff cost tree | partial | `src/desk/autopsy/engine.ts` | the sub-agent share is shown; there is no handoff cost tree |
+| DF-094 Multi-agent delegation handoff cost tree | built | `src/desk/delegation/tree.ts`, `src/desk/delegation/command.ts`, `src/desk/ingest/claude-code.ts`, `src/desk/ledger/db.ts`, `src/desk/ui/queries.ts`, `src/desk/ui/client/screens/sessions.js`, `tests/desk/delegation.test.ts`, `tests/desk/delegation-workflows.test.ts`, `tests/desk/delegation-notices.test.ts`, `tests/desk/ui/delegation-ui.test.ts`, `docs/verification/delegation-2026-10-25.md` | no OpenTelemetry gen_ai.handoff spans are read; Codex and OpenCode record no delegated agents; depth and loop flags seen only on constructed trees |
 | DF-095 Share-weighted idle and shared-overhead allocation engine | absent | none | no share-weighted idle allocation |
 | DF-096 Phase-based context-bloat accounting across compactions | built | `src/desk/waste/bloat.ts`, `src/desk/waste/load.ts`, `src/desk/waste/command.ts`, `src/desk/ingest/claude-code.ts`, `src/desk/ledger/db.ts`, `tests/desk/bloat.test.ts`, `tests/desk/waste-landing.test.ts`, `tests/desk/compaction-ingest.test.ts`, `docs/verification/compaction-2026-10-25.md` | billed only where the repository is scanned and quiet (13 of 338 phases here); the 85%-of-window and 2%-new-content forms of C-BLOAT are not built; commit coverage is what the last scan read |
 | DF-097 Replay workspace snapshot including untracked scratch files | absent | none | no workspace snapshot for replay |

@@ -55,6 +55,8 @@ export interface LineOptions {
   /** The client version the log line carries (default 9.9.9). */
   version?: string;
   stop?: string;
+  /** The agent id a delegated agent writes on every line of its own log. */
+  agent?: string;
 }
 
 /** One log line in the structure real Claude Code session logs have (checked on a real log). */
@@ -84,6 +86,7 @@ export function assistantLine(o: LineOptions): string {
     sessionId: o.session ?? "sess-1",
     requestId: `req_${o.id}`,
     apiBlockIndex: o.block ?? 0,
+    ...(o.agent ? { agentId: o.agent } : {}),
     cwd: "/work/project",
     gitBranch: "main",
     version: o.version ?? "9.9.9",

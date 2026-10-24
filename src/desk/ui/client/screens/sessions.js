@@ -96,6 +96,38 @@ function offset(sec) {
   return `+${Math.floor(s / 3600)}h ${String(Math.floor((s % 3600) / 60)).padStart(2, "0")}m`;
 }
 
+const FLAG_NOTE = { deep_delegation_risk: "deeper than five levels", delegation_loop: "a loop in the logs", unlinked_delegation: "no log names who started these" };
+
+function delegationLabel(n) {
+  if (n.key === "main") return "The main thread";
+  if (n.key === "unlinked") return "Agents no log names the starter of";
+  if (n.key.startsWith("wf:")) return `Workflow ${n.name || n.key.slice(3, 11)}`;
+  return `Agent ${n.key.slice(0, 8)}`;
+}
+
+function delegationSection(d) {
+  const t = d.delegation;
+  if (!t) return null;
+  return section(
+    "Delegation",
+    "who started which",
+    table(
+      "Agents",
+      [
+        { label: "Who", render: (n) => h("span", { class: `depth depth-${Math.min(n.depth, 6)}` }, delegationLabel(n)) },
+        { label: "Alone", num: true, render: (n) => usd(n.directMicros) },
+        { label: "With its agents", num: true, render: (n) => usd(n.cumulativeMicros) },
+        { label: "Calls", num: true, render: (n) => int(n.calls) },
+        { label: "Flags", render: (n) => n.flags.map((f) => FLAG_NOTE[f] || f).join("; ") },
+      ],
+      t.nodes,
+      { maxh: true },
+    ),
+    t.more ? h("p", { class: "note" }, `And ${int(t.more.nodes)} more, costing ${usd(t.more.directMicros)} on their own; they are counted in the totals.`) : null,
+    h("p", { class: "note" }, `${int(t.agents)} delegated agent${t.agents === 1 ? "" : "s"}, ${t.maxDepth} level${t.maxDepth === 1 ? "" : "s"} deep, ${usd(t.totalMicros)} in all.${t.unlinkedMicros > 0 ? ` ${usd(t.unlinkedMicros)} sits under agents no log names the starter of: the cost is counted, the link is unknown.` : ""}`),
+  );
+}
+
 function blocksSection(ctx, d) {
   if (!d.blocks || d.blocks.length === 0) return section("Waste blocks", "what a rule would have stopped", h("p", { class: "note" }, "No rule flags a block of calls in this session."));
   return section(
@@ -255,6 +287,7 @@ async function detail(ctx, id) {
       table("Causes", [{ label: "Cause", render: (r) => CAUSE_LABEL[r[0]] || r[0] }, { label: "Calls", num: true, render: (r) => int(r[1].calls) }, { label: "Spend", num: true, render: (r) => usd(r[1].micros) }], causes),
     ),
     blocksSection(ctx, d),
+    delegationSection(d),
     section(
       "Commits",
       d.landing.commits.length === 0 ? "none tied" : "how the link was made",

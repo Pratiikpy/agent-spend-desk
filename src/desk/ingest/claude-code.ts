@@ -109,12 +109,40 @@ export interface ParsedCostState {
   models: ParsedCostModel[];
 }
 
-export type LineOutcome =
+/** A delegated agent that a tool result names: the agent that started it is the one whose log holds the result. */
+export interface ParsedDelegation {
+  sessionId: string;
+  childAgentId: string;
+  ts: string;
+}
+
+/** A workflow run a tool result launched: a script that starts a batch of agents, whose agent logs sit in a folder named after the run. */
+export interface ParsedWorkflow {
+  sessionId: string;
+  runId: string;
+  /** The owner's own label for the script, cut short; its summary and the paths in the result are not read. */
+  name: string | null;
+  ts: string;
+}
+
+/** The run a delegated agent's log belongs to, from where the log sits: `.../subagents/workflows/<run>/agent-<id>.jsonl`. */
+export function workflowRunOfPath(path: string): string | null {
+  const m = /[\\/]workflows[\\/](wf_[A-Za-z0-9_-]{3,60})[\\/]/.exec(path);
+  return m ? (m[1] as string) : null;
+}
+
+export type LineOutcome = LineKind & {
+  /** The agent id the log line carries: set on every line a delegated agent writes, so the log file can be named after it. */
+  agentId?: string;
+};
+
+type LineKind =
   | { kind: "call"; call: ParsedCall }
   | { kind: "cost_state"; state: ParsedCostState }
-  | { kind: "tool_results"; results: ParsedToolResult[] }
+  | { kind: "tool_results"; results: ParsedToolResult[]; delegations?: ParsedDelegation[]; workflows?: ParsedWorkflow[] }
   | { kind: "human_prompt"; prompt: ParsedHumanPrompt }
   | { kind: "compaction"; compaction: ParsedCompaction }
+  | { kind: "delegation_notice"; delegations: ParsedDelegation[] }
   | { kind: "ignored" }
   | { kind: "malformed"; reason: string };
 
@@ -180,9 +208,16 @@ export function parseClaudeCodeLine(line: string): LineOutcome {
     return { kind: "malformed", reason: "invalid-json" };
   }
   if (!isObject(d)) return { kind: "malformed", reason: "not-an-object" };
+  const outcome: LineOutcome = parseObject(d);
+  const agentId = text(d["agentId"]);
+  return agentId !== null && outcome.kind !== "malformed" ? { ...outcome, agentId } : outcome;
+}
+
+function parseObject(d: Record<string, unknown>): LineKind {
   if (d["type"] === "user") return parseUserLine(d);
   if (d["type"] === "cost-state") return parseCostState(d);
   if (d["type"] === "system" && d["subtype"] === "compact_boundary") return parseCompaction(d);
+  if (d["type"] === "queue-operation" && d["operation"] === "enqueue") return parseTaskNotice(d);
   if (d["type"] !== "assistant") return { kind: "ignored" };
   const message = d["message"];
   if (!isObject(message)) return { kind: "malformed", reason: "assistant-without-message" };
@@ -329,6 +364,24 @@ function textLength(content: unknown): number {
   return 0;
 }
 
+const AGENT_ID = /^[0-9a-f]{8,40}$/i;
+const WORKFLOW_RUN = /^wf_[A-Za-z0-9_-]{3,60}$/;
+
+/**
+ * An older client does not put the agent's id in the result that launched it. It does queue a notice when the agent finishes, which names the agent
+ * and the tool use that launched it, in the log of the agent that started it. The notice is read for the id only.
+ */
+const TASK_AGENT_ID = /^a[0-9a-f]{16}$/;
+
+function parseTaskNotice(d: Record<string, unknown>): LineKind {
+  const content = d["content"];
+  const sessionId = text(d["sessionId"]) ?? text(d["session_id"]);
+  const ts = text(d["timestamp"]);
+  if (typeof content !== "string" || !content.startsWith("<task-notification>") || !sessionId || !ts || Number.isNaN(Date.parse(ts))) return { kind: "ignored" };
+  const m = /<task-id>([^<]{1,64})<\/task-id>/.exec(content);
+  return m && TASK_AGENT_ID.test(m[1] as string) ? { kind: "delegation_notice", delegations: [{ sessionId, childAgentId: m[1] as string, ts }] } : { kind: "ignored" };
+}
+
 const wholeOrNull = (v: unknown): number | null => (typeof v === "number" && Number.isInteger(v) && v >= 0 ? v : null);
 
 function parseCompaction(d: Record<string, unknown>): LineOutcome {
@@ -362,7 +415,13 @@ function parseUserLine(d: Record<string, unknown>): LineOutcome {
         }
       }
     }
-    if (results.length > 0) return { kind: "tool_results", results };
+    // A tool result that launched a delegated agent names its id in the structured result: the agent whose log holds this line started it.
+    const launched = d["toolUseResult"];
+    const childId = isObject(launched) ? text(launched["agentId"]) : null;
+    const delegations: ParsedDelegation[] = childId !== null && AGENT_ID.test(childId) ? [{ sessionId, childAgentId: childId, ts }] : [];
+    const runId = isObject(launched) && launched["taskType"] === "local_workflow" ? text(launched["runId"]) : null;
+    const workflows: ParsedWorkflow[] = runId !== null && WORKFLOW_RUN.test(runId) ? [{ sessionId, runId, name: (text((launched as Record<string, unknown>)["workflowName"]) ?? "").slice(0, 60) || null, ts }] : [];
+    if (results.length > 0) return { kind: "tool_results", results, ...(delegations.length > 0 ? { delegations } : {}), ...(workflows.length > 0 ? { workflows } : {}) };
   }
   // A human prompt is a user-role message in the main conversation that is not a tool result and
   // not synthetic meta text. Prompts inside a subagent log are written by the main agent, not a person.

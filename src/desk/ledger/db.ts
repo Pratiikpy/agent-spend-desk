@@ -469,7 +469,34 @@ CREATE TABLE session_compaction (
 ALTER TABLE model_call ADD COLUMN tool_version TEXT;
 `;
 
-const MIGRATIONS: readonly string[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8, SCHEMA_V9, SCHEMA_V10, SCHEMA_V11, SCHEMA_V12, SCHEMA_V13, SCHEMA_V14, SCHEMA_V15];
+// Who started a delegated agent (DF-094). A delegated agent writes its own log and carries an agent id; the agent that started it is the one whose log holds
+// the result that names that id. The task text is never read: only the id, which log it appeared in, and when.
+const SCHEMA_V16 = `
+ALTER TABLE ingest_source ADD COLUMN agent_id TEXT;
+CREATE TABLE delegation_edge (
+  session_id TEXT NOT NULL,
+  child_agent_id TEXT NOT NULL,
+  parent_source_id INTEGER REFERENCES ingest_source (id),
+  ts TEXT NOT NULL,
+  PRIMARY KEY (session_id, child_agent_id)
+);
+`;
+
+// A workflow is a script that starts a batch of agents: the agent logs sit in a folder named after the run, and the result that launched the run, in the log of
+// whichever agent started it, names the run (DF-094). The workflow's name is the owner's own label for the script; its summary is never read.
+const SCHEMA_V17 = `
+ALTER TABLE ingest_source ADD COLUMN workflow_run TEXT;
+CREATE TABLE workflow_run (
+  session_id TEXT NOT NULL,
+  run_id TEXT NOT NULL,
+  parent_source_id INTEGER REFERENCES ingest_source (id),
+  name TEXT,
+  ts TEXT NOT NULL,
+  PRIMARY KEY (session_id, run_id)
+);
+`;
+
+const MIGRATIONS: readonly string[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8, SCHEMA_V9, SCHEMA_V10, SCHEMA_V11, SCHEMA_V12, SCHEMA_V13, SCHEMA_V14, SCHEMA_V15, SCHEMA_V16, SCHEMA_V17];
 
 /** The schema version this build writes: the number of migrations. A reader compares a ledger's `user_version` with it. */
 export const SCHEMA_VERSION = MIGRATIONS.length;

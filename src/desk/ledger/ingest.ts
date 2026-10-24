@@ -1,7 +1,7 @@
 import { statSync } from "node:fs";
 
 import { priceCall } from "../cost/price-call.ts";
-import { parseClaudeCodeLine, type ParsedCall } from "../ingest/claude-code.ts";
+import { parseClaudeCodeLine, workflowRunOfPath, type ParsedCall } from "../ingest/claude-code.ts";
 import { readJsonlLines } from "../ingest/jsonl.ts";
 import { maskStored } from "../security/secrets.ts";
 import { type PriceSnapshot } from "../pricing/pricebook.ts";
@@ -24,6 +24,10 @@ export interface IngestReport {
   humanPrompts: number;
   /** Compactions the logs record (an agent summarising its conversation to make room). */
   compactions: number;
+  /** Delegated agents whose starter the logs name (the agent that started one is the agent whose log holds the result naming it). */
+  delegations: number;
+  /** Workflow runs the logs launch (a script that starts a batch of agents). */
+  workflows: number;
   unpricedCalls: number;
   unpricedModels: Record<string, string>;
 }
@@ -77,6 +81,8 @@ export async function ingestClaudeCode(
     toolResults: 0,
     humanPrompts: 0,
     compactions: 0,
+    delegations: 0,
+    workflows: 0,
     unpricedCalls: 0,
     unpricedModels: {},
   };
@@ -115,6 +121,10 @@ export async function ingestClaudeCode(
   const insertCompaction = db.prepare(
     "INSERT OR IGNORE INTO session_compaction (session_id, ts, trigger, pre_tokens, post_tokens, duration_ms, source_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
   );
+  const insertEdge = db.prepare("INSERT OR IGNORE INTO delegation_edge (session_id, child_agent_id, parent_source_id, ts) VALUES (?, ?, ?, ?)");
+  const nameSource = db.prepare("UPDATE ingest_source SET agent_id = ? WHERE id = ? AND agent_id IS NULL");
+  const insertRun = db.prepare("INSERT OR IGNORE INTO workflow_run (session_id, run_id, parent_source_id, name, ts) VALUES (?, ?, ?, ?, ?)");
+  const placeSource = db.prepare("UPDATE ingest_source SET workflow_run = ? WHERE id = ? AND workflow_run IS NULL");
   const insertPrompt = db.prepare("INSERT OR IGNORE INTO human_prompt (prompt_id, session_id, ts) VALUES (?, ?, ?)");
   const getReported = db.prepare("SELECT total_micros FROM reported_cost WHERE session_id = ? AND process_start_ms = ?");
   const putReported = db.prepare(
@@ -154,10 +164,17 @@ export async function ingestClaudeCode(
       // ensure a source row exists so calls can reference it
       putSource.run(file, stat.size, committedOffset, started);
       const sourceId = (getSource.get(file) as { id: number }).id;
+      let namedSource = false;
+      const run = workflowRunOfPath(file);
+      if (run !== null) placeSource.run(run, sourceId);
 
       for await (const line of readJsonlLines(file, offset)) {
         report.linesRead += 1;
         const outcome = parseClaudeCodeLine(line.text);
+        if (outcome.agentId !== undefined && !namedSource) {
+          nameSource.run(outcome.agentId, sourceId);
+          namedSource = true;
+        }
         if (outcome.kind === "malformed") {
           if (!line.terminated && outcome.reason === "invalid-json") {
             report.truncatedTails += 1;
@@ -178,11 +195,16 @@ export async function ingestClaudeCode(
             for (const m of s.models) putReportedModel.run(s.sessionId, s.processStartMs, m.model, m.inputTokens, m.outputTokens, m.thinkingTokens, m.cacheReadTokens, m.cacheWriteTokens, m.costMicros);
           }
         } else if (outcome.kind === "tool_results") {
+          for (const w of outcome.workflows ?? []) report.workflows += Number(insertRun.run(w.sessionId, w.runId, sourceId, w.name, w.ts).changes);
+          for (const dl of outcome.delegations ?? []) report.delegations += Number(insertEdge.run(dl.sessionId, dl.childAgentId, sourceId, dl.ts).changes);
           for (const r of outcome.results) {
             upsertToolResult.run(r.toolUseId, r.sessionId, r.ts, r.isError ? 1 : 0, r.resultChars, r.resultHash, r.truncated ? 1 : 0);
             seenAt(r.ts);
             report.toolResults += 1;
           }
+        } else if (outcome.kind === "delegation_notice") {
+          for (const dl of outcome.delegations) report.delegations += Number(insertEdge.run(dl.sessionId, dl.childAgentId, sourceId, dl.ts).changes);
+          seenAt(outcome.delegations[0]!.ts);
         } else if (outcome.kind === "compaction") {
           const c = outcome.compaction;
           report.compactions += Number(insertCompaction.run(c.sessionId, c.ts, c.trigger, c.preTokens, c.postTokens, c.durationMs, sourceId).changes);

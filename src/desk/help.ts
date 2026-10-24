@@ -29,6 +29,7 @@ export const COMMANDS: readonly CommandHelp[] = [
   { name: "close", group: "Costs and limits", summary: "Close a month: spend, invoices, canary, a replay and drafted change, and a signed month dossier a stranger can check offline." },
   { name: "review", group: "Costs and limits", summary: "The weekly review: what the week cost, what it bought, how the forecasts did, what drifted, and at most three changes worth making." },
   { name: "bill", group: "Costs and limits", summary: "The bill for a month or any dates: kinds of figure, what it bought, where it went; --export csv or json gives every line." },
+  { name: "delegation", group: "Costs and limits", summary: "Which agents started which: each delegated agent alone and with the agents it started, and the sessions that went too deep." },
   { name: "waste", group: "Costs and limits", summary: "Waste the extra rules find: the same error from new inputs, cut-short results repeated, file churn, bare calls, orphaned agents." },
   { name: "autopsy", group: "Costs and limits", summary: "Split a window of spend into causes: idle, loops, cache misses, and work that was needed." },
   { name: "limits", group: "Costs and limits", summary: "What a percent of your plan limit costs in tokens, per plan and window, with an interval, or why there is no estimate." },

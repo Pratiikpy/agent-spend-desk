@@ -77,6 +77,7 @@ import { readHabit } from "./ui/queries.ts";
 import { gaugeCachePath, newestMtimeMs, watchLogs, writeGaugeCache } from "./gauge/watch.ts";
 import { backfillClaudeCodeFields } from "./ledger/backfill.ts";
 import { wasteCommand } from "./waste/command.ts";
+import { delegationCommand } from "./delegation/command.ts";
 import { costVersions, listRepricings, renderRepricing, repriceLedger } from "./pricing/reprice.ts";
 import { refreshTasks } from "./tasks/assign.ts";
 import { taskCommand } from "./tasks/command.ts";
@@ -455,7 +456,7 @@ ${sensitivity}`);
 } else if (command === "ingest" && values.backfill) {
   requireLocation(values["claude-dir"], "Claude Code keeps its logs in ~/.claude/projects", "--claude-dir");
   const r = await backfillClaudeCodeFields(db, findJsonlLogs(values["claude-dir"]));
-  console.log(`read ${r.files} files, ${r.callsSeen} calls; filled inference_geo on ${r.inferenceGeoFilled} calls, the hash and truncation mark of ${r.resultFactsFilled} tool results, the client version of ${r.toolVersionFilled} calls and ${r.compactionsFilled} compactions. Nothing else was changed. Run desk prices reprice to price calls that say US-only.`);
+  console.log(`read ${r.files} files, ${r.callsSeen} calls; filled inference_geo on ${r.inferenceGeoFilled} calls, the hash and truncation mark of ${r.resultFactsFilled} tool results, the client version of ${r.toolVersionFilled} calls and ${r.compactionsFilled} compactions, ${r.delegationsFilled} delegations, ${r.workflowsFilled} workflow runs and the agent of ${r.agentsNamed} logs. Nothing else was changed. Run desk prices reprice to price calls that say US-only.`);
 } else if (command === "ingest") {
   requireLocation(values["claude-dir"], "Claude Code keeps its logs in ~/.claude/projects", "--claude-dir");
   const files = findJsonlLogs(values["claude-dir"]);
@@ -607,6 +608,12 @@ ${t.pass} PASS, ${t.fail} FAIL, ${t.notRun} NOT RUN. NOT RUN is not a pass: it n
     ...(values.export ? { exportAs: values.export as "csv" | "json" } : {}),
     ...(values.output ? { out: values.output } : {}),
   });
+  console.log(result.text);
+  if (!result.ok) process.exitCode = 1;
+} else if (command === "delegation") {
+  const until = values.until ?? new Date().toISOString();
+  const since = values.since ?? new Date(Date.parse(until) - Number(values.days) * 86_400_000).toISOString();
+  const result = delegationCommand(db, { sinceIso: since, untilIso: until, ...(values.session ? { session: values.session } : {}) });
   console.log(result.text);
   if (!result.ok) process.exitCode = 1;
 } else if (command === "waste") {
