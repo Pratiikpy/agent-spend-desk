@@ -308,3 +308,14 @@ describe("the bill's figures open the rows behind them too", () => {
     }
   });
 });
+
+describe("the Doctor screen says what each source can tell", () => {
+  it("lists every adapter with its nine capabilities, what was read for the ones read here, and the tools with no adapter", async () => {
+    const s = await serve(join(work, "main.db"), { timeZone: "UTC" });
+    const d = (await get(s, "/api/sources")).body;
+    expect(d.adapters.map((a: { id: string }) => a.id)).toEqual(["claude_code", "codex", "opencode", "litellm", "otel_genai", "statusline"]);
+    for (const a of d.adapters as { capabilities: unknown[] }[]) expect(a.capabilities).toHaveLength(9);
+    expect(d.adapters.find((a: { id: string }) => a.id === "litellm")).toMatchObject({ how: "import", command: "desk gateway import <file>", found: 0 });
+    expect(d.noAdapter.map((n: { tool: string }) => n.tool)).toContain("GitHub Copilot CLI");
+  });
+});

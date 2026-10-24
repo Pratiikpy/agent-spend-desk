@@ -40,7 +40,18 @@ export interface CodexCall {
   reasoningTokens: number;
   /** True when the cumulative total grew by more than the last request, so the call stands for two or more requests. */
   mergedRequests: boolean;
+  /**
+   * What is wrong with the reading this call comes from, when something is. `inconsistent_buckets`: a part of the cumulative count went down while
+   * the total went up, or more of the input was cached than the input grew by; the part is clamped to zero and the call is flagged, never silently
+   * repaired. `implausible_size`: more tokens than one request can hold arrived at once; the call is kept and flagged.
+   */
+  flags: CodexFlag[];
 }
+
+export type CodexFlag = "inconsistent_buckets" | "implausible_size";
+
+/** More than this many tokens in one reading is more than any request holds (the largest context windows are a few million). */
+export const IMPLAUSIBLE_TOKENS = 50_000_000;
 
 export interface CodexLimitSample {
   ts: string;
@@ -62,6 +73,8 @@ export interface CodexParse {
   replayedTokens: number;
   /** The session's own cumulative total_tokens at the last event, replay included: the tool's figure for itself. */
   totalTokens: number;
+  /** Times the cumulative total went down (a restart of the counter): the counting starts again from that reading, and the tokens between are not known. */
+  counterResets: number;
 }
 
 /** A forked session's replay is a burst of lines written within milliseconds; a gap longer than this ends it. */
@@ -101,6 +114,7 @@ export class CodexParser {
   private malformed = 0;
   private replayedCalls = 0;
   private replayedTokens = 0;
+  private counterResets = 0;
   private previous: Cumulative = { input: 0, cached: 0, output: 0, reasoning: 0, total: 0 };
   private model = "unknown";
   private replaying = false;
@@ -151,6 +165,7 @@ export class CodexParser {
       replayedCalls: this.replayedCalls,
       replayedTokens: this.replayedTokens,
       totalTokens: this.previous.total,
+      counterResets: this.counterResets,
     };
   }
 
@@ -185,10 +200,17 @@ export class CodexParser {
     const info = payload["info"];
     const usage = isObject(info) ? cumulative(info["total_token_usage"]) : null;
     let call: CodexCall | null = null;
-    if (usage !== null && usage.total > this.previous.total) {
+    if (usage !== null && usage.total < this.previous.total) {
+      // The counter started again. Reading on from the old high-water mark would count nothing until it caught up, so the new reading becomes the base.
+      this.counterResets += 1;
+      this.previous = usage;
+    } else if (usage !== null && usage.total > this.previous.total) {
       const dInput = Math.max(0, usage.input - this.previous.input);
       const dCached = Math.max(0, usage.cached - this.previous.cached);
       const dTotal = usage.total - this.previous.total;
+      const flags: CodexFlag[] = [];
+      if (usage.input < this.previous.input || usage.cached < this.previous.cached || usage.output < this.previous.output || usage.reasoning < this.previous.reasoning || dCached > dInput) flags.push("inconsistent_buckets");
+      if (dTotal > IMPLAUSIBLE_TOKENS) flags.push("implausible_size");
       const last = isObject(info) ? cumulative(info["last_token_usage"]) : null;
       const delta: Pick<CodexCall, "inputTokens" | "cachedInputTokens" | "outputTokens" | "reasoningTokens"> = {
         inputTokens: Math.max(0, dInput - dCached),
@@ -200,7 +222,7 @@ export class CodexParser {
         this.replayedCalls += 1;
         this.replayedTokens += dTotal;
       } else {
-        call = { callId: `codex:${this.session?.sessionId}:${this.calls.length + 1}`, ts, model: this.model, ...delta, mergedRequests: last !== null && last.total !== dTotal };
+        call = { callId: `codex:${this.session?.sessionId}:${this.calls.length + 1}`, ts, model: this.model, ...delta, mergedRequests: last !== null && last.total !== dTotal, flags };
         this.calls.push(call);
       }
       this.previous = usage;

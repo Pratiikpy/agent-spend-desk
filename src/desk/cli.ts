@@ -68,6 +68,9 @@ import { buildGauge, gaugeLine, renderGauge } from "./gauge/gauge.ts";
 import { buildReview, renderReview, weekRange } from "./review/review.ts";
 import { closeCommand } from "./close/command.ts";
 import { billCommand } from "./bill/command.ts";
+import { gatewayCommand } from "./gateway/command.ts";
+import { otelCommand } from "./otel/command.ts";
+import { discoverSources, renderSources } from "./adapters/registry.ts";
 import { plansView, renderPlans } from "./limits/plans.ts";
 import { approvalsCommand } from "./approvals/command.ts";
 import { readHabit } from "./ui/queries.ts";
@@ -518,6 +521,17 @@ written: ${r.files.join(", ")}`);
   console.log(await rememberCommand({ memoryDir: values["memory-dir"], text: positionals.slice(1).join(" "), outcome: values.outcome }));
 } else if (command === "verify-answer") {
   console.log(await verifyAnswerCommand(ledgerPath, positionals[1] ?? "", values["memory-dir"]));
+} else if (command === "sources") {
+  console.log(renderSources(discoverSources(process.env)));
+  console.log(String.fromCharCode(10) + "To try the Desk on a constructed month instead of your own logs: desk --sample");
+} else if (command === "otel") {
+  const r = otelCommand(db, positionals[1], positionals[2], loadSnapshot(pricesPath), { ...(values.since ? { since: values.since } : {}), ...(values.until ? { until: values.until } : {}), ...(values.output ? { output: values.output } : {}) });
+  console.log(r.text);
+  if (!r.ok) process.exitCode = 1;
+} else if (command === "gateway") {
+  const r = gatewayCommand(db, positionals[1], positionals[2], loadSnapshot(pricesPath));
+  console.log(r.text);
+  if (!r.ok) process.exitCode = 1;
 } else if (command === "approvals") {
   const r = approvalsCommand(positionals[1], positionals[2], { dbPath: DOSSIER_PATHS.dbPath }, process.argv.includes("--days") ? { days: Number(values.days) } : {});
   console.log(r.text);

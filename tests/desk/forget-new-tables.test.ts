@@ -25,6 +25,7 @@ function ledger(): Ledger {
   const models = { ...base.models, "claude-opus-5": { ...base.models["claude-opus-5"]!, outputPerMTokMicros: 30_000_000 } };
   repriceLedger(db, parseSnapshot({ ...base, snapshotId: "corrected", models, contentHash: hashModels(models) }), { reason: "test" });
   assignTasks(db, []);
+  db.prepare("INSERT INTO call_reported_cost (call_id, source, currency, amount_micros, observed_at) VALUES ('c1', 'litellm', 'USD', 5, 't'), ('c2', 'opencode', 'USD', 7, 't')").run();
   db.prepare("INSERT INTO owner_answer (session_id, repo_root, sha, answer, answered_at) VALUES ('s1', 'D:/work/shop', 'abc', 'yes', 't'), ('s2', 'D:/work/other', 'def', 'no', 't')").run();
   storeInvoice(db, readCsvInvoice("date,model,cost_usd\n2026-10-20,claude-opus-5,1.00\n", { sourceName: "i.csv" }));
   reconcileLedger(db);
@@ -45,6 +46,7 @@ describe("forgetting, with everything the later versions added", () => {
     expect(count(db, "task_session")).toBe(1);
     expect(count(db, "task")).toBe(1);
     expect(count(db, "owner_answer")).toBe(1);
+    expect(count(db, "call_reported_cost")).toBe(1); // what a source said a call cost goes with the call
     expect(count(db, "repricing")).toBe(1); // still explains the other project's cost
     db.close();
   });
@@ -61,7 +63,7 @@ describe("forgetting, with everything the later versions added", () => {
     const db = ledger();
     expect([count(db, "invoice"), count(db, "billed_line"), count(db, "reconciliation"), count(db, "alert_event"), count(db, "alert_state")].every((n) => n > 0)).toBe(true);
     forgetLedger(db, { all: true });
-    for (const t of ["session", "model_call", "cost_event", "cost_event_history", "repricing", "task", "task_session", "owner_answer", "invoice", "billed_line", "reconciliation", "alert_event", "alert_state"]) expect(count(db, t), t).toBe(0);
+    for (const t of ["session", "model_call", "cost_event", "cost_event_history", "repricing", "task", "task_session", "owner_answer", "call_reported_cost", "invoice", "billed_line", "reconciliation", "alert_event", "alert_state"]) expect(count(db, t), t).toBe(0);
     db.close();
   });
 });

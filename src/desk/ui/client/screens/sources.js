@@ -27,6 +27,25 @@ export async function render(ctx) {
       d.skipped.malformedLines + d.skipped.truncatedTails + d.skipped.usageConflicts > 0 ? h("p", { class: "note" }, `Skipped so far: ${int(d.skipped.malformedLines)} unreadable lines, ${int(d.skipped.truncatedTails)} unfinished last lines, ${int(d.skipped.usageConflicts)} usage conflicts.`) : null,
     ),
     section(
+      "What each source can tell",
+      "declared, not inferred",
+      h(
+        "div",
+        { class: "cards" },
+        ...d.adapters.map((a) =>
+          h(
+            "div",
+            { class: "card", "data-adapter": a.id },
+            h("h3", null, a.title),
+            h("p", { class: "note" }, a.how === "import" ? `Read when you import a file: ${a.command}` : a.found > 0 ? `${int(a.found)} file${a.found === 1 ? "" : "s"} read.` : "Nothing read yet."),
+            h("ul", { class: "list" }, ...a.capabilities.map((c) => h("li", null, pill(c.level === "yes" ? "yes" : c.level === "partial" ? "partly" : "no", c.level === "yes" ? "live" : c.level === "partial" ? "" : "risk"), ` ${c.title}: ${c.note}`))),
+          ),
+        ),
+      ),
+      h("p", { class: "note" }, "A source that does not carry something leaves a gap in the Desk, never a zero."),
+      d.noAdapter.length > 0 ? h("div", null, h("h3", null, "Tools with no adapter"), h("ul", { class: "list" }, ...d.noAdapter.map((n) => h("li", null, `${n.tool}: ${n.why}.`)))) : null,
+    ),
+    section(
       "Prices",
       "snapshot",
       h(

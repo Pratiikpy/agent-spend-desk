@@ -59,6 +59,7 @@ export function forgetLedger(db: Ledger, scope: ForgetScope): ForgetReport {
     for (const id of ids) {
       del("DELETE FROM session_edit WHERE session_id = ?", id);
       del("DELETE FROM tool_call WHERE session_id = ?", id);
+      del("DELETE FROM call_reported_cost WHERE call_id IN (SELECT call_id FROM model_call WHERE session_id = ?)", id);
       del("DELETE FROM cost_event_history WHERE call_id IN (SELECT call_id FROM model_call WHERE session_id = ?)", id);
       del("DELETE FROM cost_event WHERE call_id IN (SELECT call_id FROM model_call WHERE session_id = ?)", id);
       calls += del("DELETE FROM model_call WHERE session_id = ?", id);

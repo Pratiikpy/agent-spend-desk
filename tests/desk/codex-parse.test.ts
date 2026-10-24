@@ -130,3 +130,44 @@ describe("feeding lines one at a time", () => {
     expect(p.result()).toEqual(parseCodexLog(lines));
   });
 });
+
+describe("a counter that disagrees with itself", () => {
+  const T = (m: number): string => `2026-10-01T10:${String(m).padStart(2, "0")}:00.000Z`;
+
+  it("flags a part of the count that went down while the total went up, clamps it, and says so", () => {
+    const r = parseCodexLog([meta({ id: "n1" }), turn(T(0), "gpt-5.5"), count(T(1), { input: 1000, cached: 600, output: 50, reasoning: 20 }), count(T(2), { input: 2500, cached: 400, output: 120, reasoning: 40 })]);
+    expect(r.calls).toHaveLength(2);
+    expect(r.calls[0]!.flags).toEqual([]);
+    expect(r.calls[1]).toMatchObject({ inputTokens: 1500, cachedInputTokens: 0, outputTokens: 70, flags: ["inconsistent_buckets"] });
+  });
+
+  it("flags more cached input than the input grew by, and keeps the fresh input at zero, not below it", () => {
+    const r = parseCodexLog([meta({ id: "n2" }), turn(T(0), "gpt-5.5"), count(T(1), { input: 1000, cached: 0, output: 50, reasoning: 0 }), count(T(2), { input: 1100, cached: 900, output: 60, reasoning: 0 })]);
+    expect(r.calls[1]).toMatchObject({ inputTokens: 0, cachedInputTokens: 900, flags: ["inconsistent_buckets"] });
+  });
+
+  it("flags more tokens in one reading than a request can hold, and keeps the call", () => {
+    const r = parseCodexLog([meta({ id: "n3" }), turn(T(0), "gpt-5.5"), count(T(1), { input: 60_000_000, cached: 0, output: 50, reasoning: 0 })]);
+    expect(r.calls).toHaveLength(1);
+    expect(r.calls[0]).toMatchObject({ inputTokens: 60_000_000, flags: ["implausible_size"] });
+  });
+
+  it("starts counting again from a counter that restarted, instead of counting nothing until it catches up", () => {
+    const r = parseCodexLog([
+      meta({ id: "n4" }),
+      turn(T(0), "gpt-5.5"),
+      count(T(1), { input: 5000, cached: 0, output: 100, reasoning: 0 }),
+      count(T(2), { input: 700, cached: 0, output: 100, reasoning: 0 }), // the counter started again
+      count(T(3), { input: 1100, cached: 0, output: 150, reasoning: 0 }),
+    ]);
+    expect(r.counterResets).toBe(1);
+    expect(r.calls).toHaveLength(2); // the first, and the growth after the restart
+    expect(r.calls[1]).toMatchObject({ inputTokens: 400, outputTokens: 50, flags: [] });
+  });
+
+  it("leaves an ordinary session unflagged", () => {
+    const r = parseCodexLog([meta({ id: "n5" }), turn(T(0), "gpt-5.5"), count(T(1), { input: 1000, cached: 600, output: 50, reasoning: 20 }), count(T(2), { input: 2500, cached: 1800, output: 120, reasoning: 40 })]);
+    expect(r.calls.every((c) => c.flags.length === 0)).toBe(true);
+    expect(r.counterResets).toBe(0);
+  });
+});

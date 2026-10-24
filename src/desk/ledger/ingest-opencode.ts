@@ -51,6 +51,9 @@ export async function ingestOpenCode(db: Ledger, dbPath: string, snapshot: Price
        stop_reason, is_api_error, tool_names, block_lines, usage_conflicts, source_id)
      VALUES (?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, 0, 'assumed-5m', 0, NULL, NULL, ?, ?, ?, 1, 0, ?)`,
   );
+  // What OpenCode itself says a message cost is kept beside our estimate, never in place of it. A zero is not kept: OpenCode writes zero for a
+  // provider it does not price, which says nothing about what the call cost.
+  const putReported = db.prepare("INSERT OR REPLACE INTO call_reported_cost (call_id, source, currency, amount_micros, observed_at) VALUES (?, 'opencode', 'USD', ?, ?)");
   const inserted = new Set<string>();
   const sessions = new Set<string>();
   db.exec("BEGIN");
@@ -63,6 +66,7 @@ export async function ingestOpenCode(db: Ledger, dbPath: string, snapshot: Price
     }
     for (const c of read.calls) {
       const res = putCall.run(c.callId, c.sessionId, c.ts, c.model, c.isSidechain ? 1 : 0, c.inputTokens, c.outputTokens, c.reasoningTokens, c.cacheReadTokens, c.cacheWriteTokens, c.stopReason, c.isApiError ? 1 : 0, JSON.stringify(c.toolNames), sourceId);
+      if (c.reportedCost > 0) putReported.run(c.callId, Math.round(c.reportedCost * 1_000_000), started);
       if (Number(res.changes) > 0) {
         report.callsNew += 1;
         report.reasoningInOutput[c.reasoningInOutput] += 1;

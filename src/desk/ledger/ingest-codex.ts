@@ -20,6 +20,12 @@ export interface CodexIngestReport {
   replayedTokens: number;
   limitSamples: number;
   malformedLines: number;
+  /** Calls whose cumulative counts disagreed with themselves (a part went down, or more was cached than arrived): clamped, flagged, and counted here. */
+  inconsistentBuckets: number;
+  /** Calls with more tokens in one reading than any request holds: kept and flagged. */
+  implausibleSize: number;
+  /** Times a session's counter started again: the tokens between the last reading and the restart are not known. */
+  counterResets: number;
   unpricedCalls: number;
   unpricedModels: Record<string, string>;
 }
@@ -34,7 +40,7 @@ export interface CodexIngestReport {
 export async function ingestCodex(db: Ledger, files: readonly string[], snapshot: PriceSnapshot, now: () => Date = () => new Date()): Promise<CodexIngestReport> {
   const started = now().toISOString();
   recordSnapshot(db, snapshot);
-  const report: CodexIngestReport = { files: 0, unchangedFiles: 0, skippedFiles: 0, callsNew: 0, mergedRequests: 0, replayedCalls: 0, replayedTokens: 0, limitSamples: 0, malformedLines: 0, unpricedCalls: 0, unpricedModels: {} };
+  const report: CodexIngestReport = { files: 0, unchangedFiles: 0, skippedFiles: 0, callsNew: 0, mergedRequests: 0, replayedCalls: 0, replayedTokens: 0, limitSamples: 0, malformedLines: 0, inconsistentBuckets: 0, implausibleSize: 0, counterResets: 0, unpricedCalls: 0, unpricedModels: {} };
 
   const getSource = db.prepare("SELECT id, size_bytes, offset_bytes FROM ingest_source WHERE path = ?");
   const putSource = db.prepare(
@@ -52,7 +58,7 @@ export async function ingestCodex(db: Ledger, files: readonly string[], snapshot
     `INSERT OR IGNORE INTO model_call (call_id, session_id, request_id, ts, model, is_sidechain, input_tokens, output_tokens, reasoning_tokens,
        cache_read_tokens, cache_write_5m_tokens, cache_write_1h_tokens, cache_ttl_basis, cache_split_mismatch, service_tier, speed,
        stop_reason, is_api_error, tool_names, block_lines, usage_conflicts, source_id)
-     VALUES (?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, 0, 0, 'assumed-5m', 0, NULL, NULL, NULL, 0, '[]', 1, 0, ?)`,
+     VALUES (?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, 0, 0, 'assumed-5m', 0, NULL, NULL, NULL, 0, '[]', 1, ?, ?)`,
   );
   const putLimit = db.prepare(
     `INSERT OR IGNORE INTO limit_sample (tool, session_id, ts, kind, window_minutes, used_percent, resets_at, plan_type, limit_id) VALUES ('codex', ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -96,11 +102,14 @@ export async function ingestCodex(db: Ledger, files: readonly string[], snapshot
         sessions.add(s.sessionId);
         report.replayedCalls += r.replayedCalls;
         report.replayedTokens += r.replayedTokens;
+        report.counterResets += r.counterResets;
         for (const c of r.calls) {
-          const res = putCall.run(c.callId, s.sessionId, c.ts, c.model, s.subagent ? 1 : 0, c.inputTokens, c.outputTokens, c.reasoningTokens, c.cachedInputTokens, sourceId);
+          const res = putCall.run(c.callId, s.sessionId, c.ts, c.model, s.subagent ? 1 : 0, c.inputTokens, c.outputTokens, c.reasoningTokens, c.cachedInputTokens, c.flags.length, sourceId);
           if (Number(res.changes) > 0) {
             report.callsNew += 1;
             if (c.mergedRequests) report.mergedRequests += 1;
+            if (c.flags.includes("inconsistent_buckets")) report.inconsistentBuckets += 1;
+            if (c.flags.includes("implausible_size")) report.implausibleSize += 1;
             inserted.add(c.callId);
           }
         }
@@ -120,7 +129,7 @@ export async function ingestCodex(db: Ledger, files: readonly string[], snapshot
   updateSessionSpans(db, sessions);
   db.prepare(
     `INSERT INTO ingest_run (kind, started_at, finished_at, files, lines_read, calls_new, calls_merged, malformed_lines, truncated_tails, usage_conflicts)
-     VALUES ('codex', ?, ?, ?, 0, ?, ?, ?, 0, 0)`,
-  ).run(started, now().toISOString(), report.files, report.callsNew, report.mergedRequests, report.malformedLines);
+     VALUES ('codex', ?, ?, ?, 0, ?, ?, ?, 0, ?)`,
+  ).run(started, now().toISOString(), report.files, report.callsNew, report.mergedRequests, report.malformedLines, report.inconsistentBuckets + report.implausibleSize);
   return report;
 }

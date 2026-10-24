@@ -9,6 +9,7 @@ import { canaryCard, type CanaryCard } from "../canary/card.ts";
 import { OWN_RUNS, SAMPLE_RUNS } from "../canary/command.ts";
 import { nightLine, readGateNight } from "../gate/readout.ts";
 import { addDays, isDate, localDate, localDayRange } from "./localday.ts";
+import { ADAPTERS, CAPABILITY_KEYS, CAPABILITY_TITLE, NO_ADAPTER } from "../adapters/registry.ts";
 import { explainBlock, findBlocks, type BlockKind } from "../explain/blocks.ts";
 import { readExcerpts } from "../explain/lines.ts";
 import { classCoverage, coverageLine } from "../bill/coverage.ts";
@@ -1091,9 +1092,21 @@ export function sources(ctx: UiContext): object {
     state: "ok",
     mode: ctx.mode,
     ledger: ctx.ledgerName,
-    adapters: [
-      { id: "claude_code", title: "Claude Code local logs", found: ingest.find((i) => i.kind === "claude_code")?.files ?? 0, bytes: ingest.find((i) => i.kind === "claude_code")?.bytes ?? 0, lastIngestedAt: ingest.find((i) => i.kind === "claude_code")?.last ?? null },
-    ],
+    adapters: ADAPTERS.map((a) => {
+      const row = a.ledgerKind === null ? undefined : ingest.find((i) => i.kind === a.ledgerKind);
+      return {
+        id: a.id,
+        title: a.title,
+        tool: a.tool,
+        how: a.how,
+        command: a.command ?? null,
+        found: row?.files ?? 0,
+        bytes: row?.bytes ?? 0,
+        lastIngestedAt: row?.last ?? null,
+        capabilities: CAPABILITY_KEYS.map((k) => ({ key: k, title: CAPABILITY_TITLE[k], level: a.capabilities[k].level, note: a.capabilities[k].note })),
+      };
+    }),
+    noAdapter: NO_ADAPTER.map((n) => ({ tool: n.tool, why: n.why })),
     lastRun: run ?? null,
     skipped: { malformedLines: totals?.m ?? 0, truncatedTails: totals?.t ?? 0, usageConflicts: totals?.u ?? 0 },
     price: { snapshotId: ctx.snapshot.snapshotId, source: ctx.snapshot.source, fetchedAt: ctx.snapshot.fetchedAt, ageDays, models: Object.keys(ctx.snapshot.models).length, license: ctx.snapshot.license },

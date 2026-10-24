@@ -419,7 +419,33 @@ CREATE TABLE owner_answer (
 );
 `;
 
-const MIGRATIONS: readonly string[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8, SCHEMA_V9, SCHEMA_V10, SCHEMA_V11, SCHEMA_V12];
+// Two more kinds of source (a gateway's spend log and OpenTelemetry spans, DF-022 and DF-023), and what a source itself said a call cost,
+// kept beside the estimate and never in place of it.
+const SCHEMA_V13 = `${FOREIGN_KEYS_OFF}
+
+CREATE TABLE ingest_source_v13 (
+  id INTEGER PRIMARY KEY,
+  kind TEXT NOT NULL CHECK (kind IN ('claude_code', 'codex', 'opencode', 'gateway', 'otel')),
+  path TEXT NOT NULL UNIQUE,
+  size_bytes INTEGER NOT NULL CHECK (size_bytes >= 0),
+  offset_bytes INTEGER NOT NULL CHECK (offset_bytes >= 0),
+  last_ingested_at TEXT NOT NULL
+);
+INSERT INTO ingest_source_v13 SELECT id, kind, path, size_bytes, offset_bytes, last_ingested_at FROM ingest_source;
+DROP TABLE ingest_source;
+ALTER TABLE ingest_source_v13 RENAME TO ingest_source;
+
+CREATE TABLE call_reported_cost (
+  call_id TEXT PRIMARY KEY REFERENCES model_call (call_id) ON DELETE CASCADE,
+  source TEXT NOT NULL,
+  currency TEXT NOT NULL,
+  amount_micros INTEGER NOT NULL CHECK (amount_micros >= 0),
+  observed_at TEXT NOT NULL
+);
+CREATE INDEX call_reported_cost_source ON call_reported_cost (source);
+`;
+
+const MIGRATIONS: readonly string[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8, SCHEMA_V9, SCHEMA_V10, SCHEMA_V11, SCHEMA_V12, SCHEMA_V13];
 
 /** The schema version this build writes: the number of migrations. A reader compares a ledger's `user_version` with it. */
 export const SCHEMA_VERSION = MIGRATIONS.length;

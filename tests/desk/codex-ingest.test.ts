@@ -128,3 +128,20 @@ describe("reading Codex logs into the ledger", () => {
     expect(r).toMatchObject({ files: 1, callsNew: 0, skippedFiles: 1 });
   });
 });
+
+describe("calls with counters that disagree are counted and marked in the ledger", () => {
+  it("stores the flag on the call, reports how many, and keeps the clean calls clean", async () => {
+    const path = dir.file("rollout-flag.jsonl", [
+      meta({ id: "f1", ts: "2026-10-01T10:00:00.000Z" }),
+      turn("2026-10-01T10:00:01.000Z", "gpt-5.5"),
+      count("2026-10-01T10:00:05.000Z", { input: 1000, cached: 600, output: 50, reasoning: 20 }),
+      count("2026-10-01T10:00:30.000Z", { input: 2500, cached: 400, output: 120, reasoning: 40 }),
+      count("2026-10-01T10:01:30.000Z", { input: 100, cached: 0, output: 5, reasoning: 0 }),
+    ]);
+    const r = await ingestCodex(db, [path], snapshotWith({ "gpt-5.5": GPT }));
+    expect(r).toMatchObject({ callsNew: 2, inconsistentBuckets: 1, implausibleSize: 0, counterResets: 1 });
+    const rows = db.prepare("SELECT call_id, usage_conflicts FROM model_call ORDER BY call_id").all() as { call_id: string; usage_conflicts: number }[];
+    expect(rows).toEqual([{ call_id: "codex:f1:1", usage_conflicts: 0 }, { call_id: "codex:f1:2", usage_conflicts: 1 }]);
+    expect((db.prepare("SELECT usage_conflicts u FROM ingest_run WHERE kind = 'codex'").get() as { u: number }).u).toBe(1);
+  });
+});
