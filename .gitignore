@@ -65,3 +65,6 @@ meterless/
 scripts/demo-video-motion/src/data.json
 data/lab/
 docs/plan/external-blueprint-*.md
+
+# Crash dumps from the shell
+*.stackdump
