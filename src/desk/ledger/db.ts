@@ -375,7 +375,12 @@ CREATE TABLE reconciliation (
 );
 `;
 
-const MIGRATIONS: readonly string[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8, SCHEMA_V9];
+// Finding the newest call a file produced, which every read of a changed or new file does, scanned the whole call table.
+const SCHEMA_V10 = `
+CREATE INDEX model_call_source_ts ON model_call (source_id, ts);
+`;
+
+const MIGRATIONS: readonly string[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8, SCHEMA_V9, SCHEMA_V10];
 
 /** The schema version this build writes: the number of migrations. A reader compares a ledger's `user_version` with it. */
 export const SCHEMA_VERSION = MIGRATIONS.length;

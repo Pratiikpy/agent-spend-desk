@@ -125,6 +125,11 @@ export async function ingestClaudeCode(
     const stat = statSync(file);
     const known = getSource.get(file) as { id: number; size_bytes: number; offset_bytes: number } | undefined;
     let offset = known?.offset_bytes ?? 0;
+    // A file that has not grown since it was last read has nothing to add: do not open a transaction or look anything up for it.
+    if (known && stat.size === offset) {
+      report.files += 1;
+      continue;
+    }
     if (known && stat.size < offset) {
       offset = 0; // the file shrank or was replaced: read it again from the start; call ids keep this idempotent
       report.resetFiles += 1;

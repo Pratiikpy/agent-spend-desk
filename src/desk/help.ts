@@ -22,6 +22,7 @@ export const COMMANDS: readonly CommandHelp[] = [
   { name: "reconcile", group: "Read more sources", summary: "Compare the cost Claude Code recorded for itself with our estimate, process by process." },
   { name: "silos", group: "Read more sources", summary: "Ask the invoice, CI and roster data through Zetaris (`silos seed` builds the sample data)." },
 
+  { name: "gauge", group: "Costs and limits", summary: "What the last few hours cost, how fast, where it went and where your plan windows stand; --line for a status line, --watch to keep it fresh." },
   { name: "bill", group: "Costs and limits", summary: "The month bill: estimated spend by day, model and project, and the kind of figure each dollar is." },
   { name: "autopsy", group: "Costs and limits", summary: "Split a window of spend into causes: idle, loops, cache misses, and work that was needed." },
   { name: "limits", group: "Costs and limits", summary: "What a percent of your plan limit costs in tokens, per plan and window, with an interval, or why there is no estimate." },

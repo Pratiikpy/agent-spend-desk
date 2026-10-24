@@ -59,6 +59,8 @@ import { renderSummary, summarise as summariseRuns } from "./lab/stats.ts";
 import { loadTasks, type LabTask } from "./lab/task.ts";
 import { forgetLedger, forgetPreview } from "./security/forget.ts";
 import { invoicesCommand } from "./billing/command.ts";
+import { buildGauge, gaugeLine, renderGauge } from "./gauge/gauge.ts";
+import { gaugeCachePath, newestMtimeMs, watchLogs, writeGaugeCache } from "./gauge/watch.ts";
 import { backfillClaudeCodeFields } from "./ledger/backfill.ts";
 import { costVersions, listRepricings, renderRepricing, repriceLedger } from "./pricing/reprice.ts";
 import { refreshTasks } from "./tasks/assign.ts";
@@ -146,6 +148,9 @@ const { values, positionals } = parseOrExit({
     preview: { type: "boolean", default: false },
     call: { type: "string" },
     backfill: { type: "boolean", default: false },
+    line: { type: "boolean", default: false },
+    watch: { type: "boolean", default: false },
+    session: { type: "string" },
     horizon: { type: "string", default: "7" },
     base: { type: "string" },
     head: { type: "string" },
@@ -185,6 +190,30 @@ const db = command === "card" || command === "status" || command === "lab" ? ope
 
 if (command === "help") {
   console.log(helpText());
+} else if (command === "gauge") {
+  const snapshot = loadSnapshot(pricesPath);
+  const hours = Number(values.hours);
+  if (!Number.isFinite(hours) || hours <= 0 || hours > 168) throw new Error("--hours must be a number of hours between 0 and 168");
+  const draw = async (): Promise<void> => {
+    // A gauge of stale logs would say the work stopped. Read what was appended since the last read first (a few seconds), unless told not to.
+    if (!sampleMode && !values["no-ingest"] && existsSync(values["claude-dir"])) {
+      const files = findJsonlLogs(values["claude-dir"]);
+      if (!values.watch) console.error(`Reading what is new in ${files.length} log file${files.length === 1 ? "" : "s"}...`);
+      await ingestClaudeCode(db, files, snapshot);
+    }
+    const g = buildGauge(db, snapshot, { nowMs: Date.now(), hours, ...(values.session ? { sessionId: values.session } : {}), statusSamples: readSamples(statuslineLogPath()) });
+    writeGaugeCache(gaugeCachePath(), g);
+    if (values.watch && process.stdout.isTTY) process.stdout.write(String.fromCharCode(27) + "[2J" + String.fromCharCode(27) + "[H");
+    console.log(values.line ? gaugeLine(g) : renderGauge(g));
+  };
+  if (values.watch) {
+    requireLocation(values["claude-dir"], "Claude Code keeps its logs in ~/.claude/projects", "--claude-dir");
+    let stop = false;
+    process.on("SIGINT", () => {
+      stop = true;
+    });
+    await watchLogs({ poll: () => newestMtimeMs(findJsonlLogs(values["claude-dir"])), refresh: draw, sleep: (ms) => new Promise((r) => setTimeout(r, ms)), intervalMs: 3000, shouldStop: () => stop });
+  } else await draw();
 } else if (command === "invoices") {
   console.log(
     invoicesCommand(positionals.slice(1), db, {
