@@ -1,5 +1,8 @@
 import { spawnSync } from "node:child_process";
-import { describe, expect, it } from "vitest";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterAll, describe, expect, it } from "vitest";
 
 import { parseOrUsage, UsageError } from "../../src/desk/args.ts";
 
@@ -59,6 +62,26 @@ describe("the desk command line", () => {
     expect(r.status).toBe(0);
     expect(r.stdout).toContain("nothing to check");
     expect(r.stdout).not.toMatch(/log files on disk/);
+  });
+
+  describe("a log location that does not exist", () => {
+    const dir = mkdtempSync(join(tmpdir(), "desk-args-"));
+    const db = join(dir, "ledger.db");
+    const missing = join(dir, "nowhere");
+    afterAll(() => rmSync(dir, { recursive: true, force: true }));
+
+    it.each([
+      [["ingest", "--claude-dir", missing], "--claude-dir"],
+      [["ingest", "--agent", "codex", "--codex-dir", missing], "--codex-dir"],
+      [["ingest", "--agent", "opencode", "--opencode-db", missing], "--opencode-db"],
+    ])("is named, not read as an empty history: %j", (args, flag) => {
+      const r = run(...args, "--db", db);
+      expect(r.status).toBe(1);
+      expect(r.stderr.trim().split(/\r?\n/)).toHaveLength(1);
+      expect(r.stderr).toContain("nothing at");
+      expect(r.stderr).toContain(flag);
+      expect(r.stdout).toBe("");
+    });
   });
 
   it("prints the guide for help, and exits 0", () => {

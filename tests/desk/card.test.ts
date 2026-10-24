@@ -212,7 +212,16 @@ describe("the card", () => {
   it("reports skipped log lines", () => {
     const c = card(history(5, () => 25), { ingest: { ...INPUT.ingest, malformedLines: 4, truncatedTails: 1 } });
     expect(c.couldNotKnow.join(" ")).toMatch(/4 log lines could not be read/);
-    expect(c.couldNotKnow.join(" ")).toMatch(/1 logs end in an unfinished line/);
+    expect(c.couldNotKnow.join(" ")).toMatch(/1 log ends in an unfinished line/);
+  });
+
+  it("uses the singular for one skipped line, one unfinished log and one unpriced log file", () => {
+    const one = card(history(5, () => 25), { ingest: { ...INPUT.ingest, malformedLines: 1, truncatedTails: 1 } });
+    expect(one.couldNotKnow.join(" ")).toMatch(/1 log line could not be read/);
+    expect(one.couldNotKnow.join(" ")).toMatch(/1 log ends in an unfinished line/);
+    const built = buildCard({ calls: [call({ t: 0, unpriced: true })], mode: "own_logs", ...INPUT, ingest: { ...INPUT.ingest, logFilesFound: 1 } });
+    if ("empty" in built) expect(built.couldNotKnow[0]).toMatch(/^1 log file was read but none/);
+    else throw new Error("expected an empty card");
   });
 
   it("shows the exact searched paths, shortened, when no logs exist", () => {

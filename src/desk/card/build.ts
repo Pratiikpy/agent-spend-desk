@@ -57,7 +57,7 @@ export function buildCard(input: CardInput): Card | { empty: true; couldNotKnow:
     return {
       empty: true,
       couldNotKnow: [
-        input.ingest.logFilesFound === 0 ? `No agent logs were found. Searched: ${searched.join(", ") || "(nothing)"}.` : `${input.ingest.logFilesFound} log files were read but none contained a priced model call.`,
+        input.ingest.logFilesFound === 0 ? `No agent logs were found. Searched: ${searched.join(", ") || "(nothing)"}.` : `${input.ingest.logFilesFound} ${input.ingest.logFilesFound === 1 ? "log file was" : "log files were"} read but none contained a priced model call.`,
         "Run `desk card --sample` (or set SAMPLE_MODE=true) to see the same card on a constructed sample, offline.",
       ],
     };
@@ -84,8 +84,8 @@ export function buildCard(input: CardInput): Card | { empty: true; couldNotKnow:
   ];
   if (!input.landingKnown) couldNotKnow.push("No repository was linked, so the card cannot say which spend led to work that landed. Point it at repositories to raise that.");
   if (autopsy.unpricedCalls > 0) couldNotKnow.push(`${autopsy.unpricedCalls} calls (${autopsy.unpricedTokens} tokens) are on models with no price and are not in the total.`);
-  if (input.ingest.malformedLines > 0) couldNotKnow.push(`${input.ingest.malformedLines} log lines could not be read and were skipped.`);
-  if (input.ingest.truncatedTails > 0) couldNotKnow.push(`${input.ingest.truncatedTails} logs end in an unfinished line, which was skipped.`);
+  if (input.ingest.malformedLines > 0) couldNotKnow.push(`${input.ingest.malformedLines} ${input.ingest.malformedLines === 1 ? "log line" : "log lines"} could not be read and ${input.ingest.malformedLines === 1 ? "was" : "were"} skipped.`);
+  if (input.ingest.truncatedTails > 0) couldNotKnow.push(`${input.ingest.truncatedTails} ${input.ingest.truncatedTails === 1 ? "log ends" : "logs end"} in an unfinished line, which was skipped.`);
   if (past.length < 3) couldNotKnow.push(`Only ${past.length} comparable past windows exist, so savings are upper bounds, not intervals.`);
   if (input.mode === "sample") couldNotKnow.push("This is a constructed sample, not anyone's real history.");
 

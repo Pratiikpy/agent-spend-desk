@@ -143,6 +143,13 @@ const { values, positionals } = parseOrExit({
 
 const command = positionals[0] ?? "card";
 
+/** A named location that is not there is an error, not an empty history. */
+function requireLocation(path: string, where: string, flag: string): void {
+  if (existsSync(path)) return;
+  console.error(`desk ingest: nothing at ${path}. ${where}; ${flag} names another place.`);
+  process.exit(1);
+}
+
 const NO_LIMIT_READINGS = "No plan-limit readings in this ledger. Codex: desk ingest --agent codex. Claude Code: desk statusline install, then desk ingest --agent statusline.";
 const toolName = (tool: string): string => (tool === "claude_code" ? "Claude Code" : tool === "codex" ? "Codex" : tool);
 /** The tools that have plan-limit readings: the one named with --agent, or every one that has any. */
@@ -195,13 +202,15 @@ ${sensitivity}`);
   const r = ingestStatusline(db, readSamples(statuslineLogPath()));
   console.log(`read ${r.samples} status line samples; ${r.limitSamples} new plan-limit readings`);
 } else if (command === "ingest" && values.agent === "opencode") {
+  requireLocation(values["opencode-db"], "OpenCode keeps its history in a database at ~/.local/share/opencode/opencode.db", "--opencode-db");
   const r = await ingestOpenCode(db, values["opencode-db"], loadSnapshot(pricesPath));
   const skipped = Object.entries(r.skipped).map(([why, n]) => `${n} ${why}`).join(", ");
   console.log(`read ${r.messages} OpenCode messages; ${r.callsNew} new calls${skipped ? ` (left out: ${skipped})` : ""}`);
   console.log(`reasoning tokens counted apart from output: ${r.reasoningInOutput.confirmed} confirmed by the message's step totals, ${r.reasoningInOutput.contradicted} contradicted, ${r.reasoningInOutput.unchecked} not checkable`);
   if (r.unpricedCalls > 0) console.log(`unpriced: ${r.unpricedCalls} calls on ${Object.entries(r.unpricedModels).map(([m, why]) => `${m} (${why})`).join(", ")}`);
 } else if (command === "ingest" && values.agent === "codex") {
-  const files = existsSync(values["codex-dir"]) ? findJsonlLogs(values["codex-dir"]) : [];
+  requireLocation(values["codex-dir"], "Codex keeps its sessions in ~/.codex/sessions", "--codex-dir");
+  const files = findJsonlLogs(values["codex-dir"]);
   const r = await ingestCodex(db, files, loadSnapshot(pricesPath));
   console.log(`read ${r.files} Codex files (${r.unchangedFiles} unchanged, ${r.skippedFiles} with no session)`);
   console.log(`calls: ${r.callsNew} new, ${r.mergedRequests} stand for more than one request; ${r.replayedCalls} replayed from a parent session left out (${r.replayedTokens} tokens); ${r.limitSamples} plan-limit readings`);
@@ -233,6 +242,7 @@ ${sensitivity}`);
     }
   }
 } else if (command === "ingest") {
+  requireLocation(values["claude-dir"], "Claude Code keeps its logs in ~/.claude/projects", "--claude-dir");
   const files = findJsonlLogs(values["claude-dir"]);
   const started = Date.now();
   const r = await ingestClaudeCode(db, files, loadSnapshot(pricesPath));
