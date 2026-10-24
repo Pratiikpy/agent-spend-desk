@@ -36,3 +36,11 @@ All of these, on the measured batch:
 - One agent, one model. Results do not transfer to other agents or models.
 - The tasks are public in this repository, so a model trained on it later could memorise them. The held-out private tasks in the Lab plan exist for that reason.
 - Runs are on the author's machine at the author's network conditions; quota behaviour at other times of day is not covered.
+
+## Changes made while the spike was running (thresholds unchanged)
+
+Recorded the day they were found, because a measurement that was changed after it started has to say so.
+
+- **2026-10-24, before any valid result:** the first batch was set aside. Four of the ten tasks had no `package.json`, so the agent's `npm test` ran the repository's own test suite; the audit now fails a task without a test script. Workspaces were moved out of the repository, because an agent could read the hidden tests by walking up from a workspace inside it.
+- **2026-10-24, after 5 valid runs:** one run (path-router, repeat 1) ended as a 15-minute timeout while the model endpoint had stopped answering a call. The proxy now gives each call a budget of six minutes, answers 504 when the endpoint stalls past it, records a call the agent abandoned after a minute or more as an error, and a run whose last call ended that way counts as an infrastructure failure and not as a failed attempt. The run was set aside (`data/lab/invalid/`) and is repeated. The proxy also repeats a model reply that ends with `empty_response`.
+- No threshold, task, prompt or hidden test changed.

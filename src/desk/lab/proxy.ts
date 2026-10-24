@@ -45,8 +45,12 @@ export interface ProxyOptions {
   maxConcurrent?: number;
   maxRetries?: number;
   backoffMs?: number[];
-  /** How long to wait for the upstream's first byte. */
+  /** How long to wait for the upstream's first byte, and between chunks of a stream. */
   firstByteMs?: number;
+  /** The longest one call may take in all, retries included. After it the client is given a 504 and the failure is recorded: a stalling endpoint must not hold a run open. */
+  maxCallMs?: number;
+  /** A call the client gave up on after at least this long is recorded as an error (the endpoint made it wait), not as the client's choice. */
+  abandonedErrorMs?: number;
   onEntry?: (e: ProxyEntry) => void;
   fetchImpl?: typeof fetch;
   sleep?: (ms: number) => Promise<void>;
@@ -56,6 +60,10 @@ export interface Proxy {
   port: number;
   /** The base URL an agent should use for one run: it ends in /v1, like the endpoint's own. */
   runUrl(runId: string): string;
+  /** Calls of a run that have not finished, with how long each has been open. A run stopped while one is open was waiting on the model. */
+  inflight(runId: string): { ageMs: number }[];
+  /** Wait until the run's open calls have finished being recorded (the client closing a connection is noticed a moment later). */
+  settle(runId: string, maxMs?: number): Promise<void>;
   close(): Promise<void>;
 }
 
@@ -164,7 +172,10 @@ export async function startProxy(opts: ProxyOptions): Promise<Proxy> {
   // The free endpoint rate-limits in bursts, so the wait grows to a minute and stays there: a run should not be lost to a busy minute.
   const maxRetries = opts.maxRetries ?? 8;
   const backoff = opts.backoffMs ?? [3_000, 6_000, 12_000, 24_000, 45_000, 60_000];
-  const firstByteMs = opts.firstByteMs ?? 240_000;
+  const firstByteMs = opts.firstByteMs ?? 120_000;
+  const callBudgetMs = opts.maxCallMs ?? 360_000;
+  const abandonedErrorMs = opts.abandonedErrorMs ?? 60_000;
+  const open = new Map<string, Set<{ startedAt: number }>>();
   const upstream = opts.upstream.replace(/\/$/, "");
 
   const server: Server = createServer((req, res) => {
@@ -200,6 +211,9 @@ export async function startProxy(opts: ProxyOptions): Promise<Proxy> {
     if (body === null) return fail(res, 413, "request body too large");
 
     const release = await gate.take();
+    const token = { startedAt: Date.now() };
+    open.set(run, (open.get(run) ?? new Set()).add(token));
+    const withinBudget = (): boolean => Date.now() - token.startedAt < callBudgetMs;
     let current: AbortController | null = null;
     let clientGone = false;
     res.on("close", () => {
@@ -235,7 +249,7 @@ export async function startProxy(opts: ProxyOptions): Promise<Proxy> {
         } catch (e) {
           clearTimeout(timer);
           if (clientGone) return;
-          if (attempt < maxRetries) {
+          if (attempt < maxRetries && withinBudget()) {
             entry.retries += 1;
             await sleep(backoff[Math.min(attempt, backoff.length - 1)] ?? 1000);
             attempt += 1;
@@ -247,7 +261,7 @@ export async function startProxy(opts: ProxyOptions): Promise<Proxy> {
         }
         clearTimeout(timer);
 
-        if (RETRIABLE_STATUS.has(up.status) && attempt < maxRetries) {
+        if (RETRIABLE_STATUS.has(up.status) && attempt < maxRetries && withinBudget()) {
           await up.body?.cancel().catch(() => undefined);
           entry.retries += 1;
           const ra = Number(up.headers.get("retry-after"));
@@ -272,7 +286,7 @@ export async function startProxy(opts: ProxyOptions): Promise<Proxy> {
           }
           const local = fresh();
           if (parsed) absorb(local, parsed);
-          if (local.error && RETRIABLE_TEXT.test(local.error) && attempt < maxRetries) {
+          if (local.error && RETRIABLE_TEXT.test(local.error) && attempt < maxRetries && withinBudget()) {
             entry.retries += 1;
             await sleep(backoff[Math.min(attempt, backoff.length - 1)] ?? 1000);
             attempt += 1;
@@ -315,7 +329,7 @@ export async function startProxy(opts: ProxyOptions): Promise<Proxy> {
             step = await readWithin(reader, firstByteMs);
           } catch (e) {
             if (clientGone) return;
-            if (!committed && attempt < maxRetries) {
+            if (!committed && attempt < maxRetries && withinBudget()) {
               retry = true;
               break;
             }
@@ -340,7 +354,7 @@ export async function startProxy(opts: ProxyOptions): Promise<Proxy> {
               }
             }
             const bytes = new TextEncoder().encode(`${eventText}\n\n`);
-            if (!committed && local.error && RETRIABLE_TEXT.test(local.error) && attempt < maxRetries && !local.meaningful) {
+            if (!committed && local.error && RETRIABLE_TEXT.test(local.error) && attempt < maxRetries && withinBudget() && !local.meaningful) {
               retry = true;
               break;
             }
@@ -360,6 +374,11 @@ export async function startProxy(opts: ProxyOptions): Promise<Proxy> {
           attempt += 1;
           continue;
         }
+        if (!committed && entry.error !== undefined && entry.error.startsWith("stream broke")) {
+          // Nothing had reached the client, and the endpoint stalled past the budget: say so, instead of sending an empty stream that looks like an answer.
+          entry.status = 504;
+          return fail(res, 504, entry.error);
+        }
         if (!committed) await commit();
         if (buffer !== "") await writeOut(new TextEncoder().encode(buffer));
         Object.assign(seen, local);
@@ -368,6 +387,8 @@ export async function startProxy(opts: ProxyOptions): Promise<Proxy> {
       }
     } finally {
       release();
+      open.get(run)?.delete(token);
+      if (clientGone && entry.error === undefined && Date.now() - token.startedAt >= abandonedErrorMs) entry.error = `the client stopped waiting after ${Math.round((Date.now() - token.startedAt) / 1000)} s`;
       entry.ms = Date.now() - started;
       if (seen.model !== undefined) entry.model = seen.model;
       if (seen.promptTokens !== undefined) entry.promptTokens = seen.promptTokens;
@@ -394,6 +415,11 @@ export async function startProxy(opts: ProxyOptions): Promise<Proxy> {
   return {
     port,
     runUrl: (runId: string) => `http://127.0.0.1:${port}/run/${runId}/v1`,
+    inflight: (runId: string) => [...(open.get(runId) ?? [])].map((t) => ({ ageMs: Date.now() - t.startedAt })),
+    settle: async (runId: string, maxMs = 3000) => {
+      const until = Date.now() + maxMs;
+      while ((open.get(runId)?.size ?? 0) > 0 && Date.now() < until) await new Promise<void>((r) => setTimeout(r, 20));
+    },
     close: () => new Promise<void>((resolve) => {
       server.closeAllConnections();
       server.close(() => resolve());

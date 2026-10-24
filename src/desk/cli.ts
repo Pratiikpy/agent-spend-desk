@@ -45,6 +45,7 @@ import { fitLimit, observeWindows, renderLimitFit } from "./limits/fit.ts";
 import { reconcile, renderReconciliation, summariseReconciliation } from "./reconcile/reconcile.ts";
 import { auditTask, renderAudit, writeExpected } from "./lab/audit.ts";
 import { readRecords, runBatch } from "./lab/batch.ts";
+import { evaluateProtocol, renderProtocol } from "./lab/protocol.ts";
 import { renderSummary, summarise as summariseRuns } from "./lab/stats.ts";
 import { loadTasks, type LabTask } from "./lab/task.ts";
 import { forgetLedger, forgetPreview } from "./security/forget.ts";
@@ -119,6 +120,8 @@ const { values, positionals } = parseArgs({
     "lab-out": { type: "string", default: "data/lab" },
     name: { type: "string" },
     debug: { type: "boolean", default: false },
+    second: { type: "string" },
+    defects: { type: "string", default: "0" },
     "timeout-sec": { type: "string", default: "900" },
   },
 });
@@ -422,6 +425,11 @@ ${t.pass} PASS, ${t.fail} FAIL, ${t.notRun} NOT RUN. NOT RUN is not a pass: it n
     } else {
       const recorded = readRecords(join(values["lab-out"], values.name, "runs.jsonl"));
       console.log(recorded.length === 0 ? "no runs recorded under that name" : renderSummary(summariseRuns(recorded)));
+      if (recorded.length > 0) {
+        const second = values.second ? readRecords(join(values["lab-out"], values.second, "runs.jsonl")) : undefined;
+        console.log("");
+        console.log(renderProtocol(evaluateProtocol(recorded, { openTaskDefects: Number(values.defects), ...(second ? { second } : {}) })));
+      }
     }
   } else {
     console.error("Use: lab audit | lab run --name <batch> | lab report --name <batch>");

@@ -30,6 +30,7 @@ export interface BatchOptions {
   retryInfra?: boolean;
 }
 
+/** The run records in a file. A run repeated after an infrastructure failure appears twice; only its latest record counts. */
 export function readRecords(path: string): RunRecord[] {
   if (!existsSync(path)) return [];
   const out: RunRecord[] = [];
@@ -41,7 +42,9 @@ export function readRecords(path: string): RunRecord[] {
       /* a half-written last line is ignored */
     }
   }
-  return out;
+  const latest = new Map<string, RunRecord>();
+  for (const r of out) latest.set(r.runId, r);
+  return [...latest.values()];
 }
 
 /** A per-run seed, derived so the same batch seed and run id always give the same value. */
@@ -113,6 +116,7 @@ export async function runBatch(opts: BatchOptions): Promise<RunRecord[]> {
         model: opts.model,
         modelUrl: proxy ? proxy.runUrl(job.runId) : "",
         entriesFor: (id) => byRun.get(id) ?? [],
+        ...(proxy ? { settle: (id: string) => (proxy as Proxy).settle(id) } : {}),
         workDir,
         artifactsDir,
         timeoutMs: opts.timeoutMs,

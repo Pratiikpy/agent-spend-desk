@@ -254,6 +254,56 @@ describe("the lab proxy: retries", () => {
   });
 });
 
+describe("the lab proxy: an endpoint that stalls", () => {
+  const stall = (_req: IncomingMessage, res: ServerResponse): void => {
+    res.writeHead(200, { "content-type": "text/event-stream" });
+    res.write(chunk({ choices: [{ delta: { role: "assistant" } }] }));
+  };
+
+  it("gives up after the call budget and answers 504, instead of holding the run open or sending an empty stream", async () => {
+    const up = await fakeUpstream([stall]);
+    const { proxy, entries } = await proxyFor(up.url, { firstByteMs: 60, maxCallMs: 200, maxRetries: 50 });
+    const t0 = Date.now();
+    const r = await post(proxy.runUrl("r1"), { stream: true });
+    expect(r.status).toBe(504);
+    expect(Date.now() - t0).toBeLessThan(3000);
+    expect(entries[0]).toMatchObject({ status: 504 });
+    expect(entries[0]?.error).toMatch(/stream broke/);
+    expect(up.seen.length).toBeLessThan(10);
+  });
+
+  it("lists a run's open calls while they are open and none after, and settle waits for the last record", async () => {
+    const hang: Handler = () => undefined;
+    const up = await fakeUpstream([hang]);
+    const { proxy, entries } = await proxyFor(up.url, { abandonedErrorMs: 50 });
+    expect(proxy.inflight("r1")).toEqual([]);
+    const ctl = new AbortController();
+    const gone = fetch(`${proxy.runUrl("r1")}/chat/completions`, { method: "POST", body: "{}", signal: ctl.signal }).catch(() => undefined);
+    await new Promise((r) => setTimeout(r, 150));
+    expect(proxy.inflight("r1")).toHaveLength(1);
+    expect(proxy.inflight("r1")[0]!.ageMs).toBeGreaterThanOrEqual(100);
+    expect(proxy.inflight("other")).toEqual([]);
+    ctl.abort();
+    await gone;
+    await proxy.settle("r1");
+    expect(proxy.inflight("r1")).toEqual([]);
+    expect(entries.at(-1)?.error).toMatch(/client stopped waiting/);
+  });
+
+  it("does not call a short call the client dropped an error", async () => {
+    const hang: Handler = () => undefined;
+    const up = await fakeUpstream([hang]);
+    const { proxy, entries } = await proxyFor(up.url, { abandonedErrorMs: 60_000 });
+    const ctl = new AbortController();
+    const gone = fetch(`${proxy.runUrl("r1")}/chat/completions`, { method: "POST", body: "{}", signal: ctl.signal }).catch(() => undefined);
+    await new Promise((r) => setTimeout(r, 80));
+    ctl.abort();
+    await gone;
+    await proxy.settle("r1");
+    expect(entries.at(-1)?.error).toBeUndefined();
+  });
+});
+
 describe("the lab proxy: sharing the endpoint", () => {
   it("lets no more calls through at once than it was told to", async () => {
     const slow: Handler = async (_req, res) => {

@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
@@ -181,6 +181,18 @@ describe("running a batch", () => {
     const again = await runBatch(opts("b2", gold, 2));
     expect(again).toHaveLength(2);
     expect(readRecords(join(dir.path, "batch", "runs.jsonl"))).toHaveLength(4);
+  });
+
+  it("counts only the latest record of a run that was repeated after an infrastructure failure", async () => {
+    const out = join(dir.path, "batch");
+    await runBatch({ ...opts("b4", gold, 1), tasks: [loadTask("lab/tasks/spike/interval-merge")] });
+    const file = join(out, "runs.jsonl");
+    const first = readRecords(file)[0] as RunRecord;
+    appendFileSync(file, `${JSON.stringify({ ...first, outcome: "infra", reason: "an earlier try" })}\n`);
+    appendFileSync(file, `${JSON.stringify({ ...first, outcome: "pass", reason: "the repeat" })}\n`);
+    const rows = readRecords(file);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.reason).toBe("the repeat");
   });
 
   it("gives the same run order for the same seed and a different one for another seed", () => {

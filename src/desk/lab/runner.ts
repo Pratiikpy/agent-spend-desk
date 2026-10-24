@@ -60,6 +60,8 @@ export interface RunSpec {
   modelUrl: string;
   /** What the proxy recorded for this run, read after the agent has stopped. */
   entriesFor: (runId: string) => ProxyEntry[];
+  /** Waits for the proxy to finish recording the run's last calls, which it only notices a moment after the agent is gone. */
+  settle?: (runId: string) => Promise<void>;
   /** A folder for this run's workspace and configuration. It must be outside the repository: an agent can walk up from its workspace. */
   workDir: string;
   /** Where the transcript and the patch the agent produced are kept for good. Defaults to the run's own folder. */
@@ -158,6 +160,7 @@ export async function runOnce(spec: RunSpec): Promise<RunRecord> {
     result = { exitCode: null, timedOut: false, output: `[agent adapter error: ${(e as Error).message}]` };
   }
 
+  await spec.settle?.(spec.runId);
   const entries = spec.entriesFor(spec.runId);
   const accounting = accountFor(entries);
   const diff = diffWorkspace(ws, spec.task.protected);
