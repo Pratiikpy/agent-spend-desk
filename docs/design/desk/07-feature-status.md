@@ -27,7 +27,7 @@ How to read a status. *Built*: the core of the feature as specified exists and a
 | DF-017 Scene 3: replay last month on a cheaper route | partial | `src/desk/route/replay.ts` | replay on a cheaper route covers canary tasks only |
 | DF-018 Scene 4: the argument, the diff and the wow sentence | partial | `src/desk/demo.ts` | the argument, diff and wow sentence scene as specified |
 | DF-019 Judge-proof demo mode | partial | `src/desk/prove/run.ts`, `src/desk/demo.ts` | judge-proof mode is sample mode plus `desk prove`, not a separate mode |
-| DF-020 Claude Code log adapter | built | `src/desk/ingest/claude-code.ts`, `tests/desk/ingest.test.ts` | - |
+| DF-020 Claude Code log adapter | built | `src/desk/ingest/claude-code.ts`, `src/desk/retention/retention.ts`, `tests/desk/ingest.test.ts`, `tests/desk/retention.test.ts` | - |
 | DF-021 Codex log adapter | partial | `src/desk/ingest/codex.ts`, `src/desk/ledger/ingest-codex.ts`, `tests/desk/codex-parse.test.ts`, `tests/desk/codex-ingest.test.ts`, `docs/verification/codex-reader-and-limit-fit-2026-10-24.md` | calls come from growth of the cumulative total (merged requests are marked, a forked session's replayed history is left out); a negative counter is clamped to zero and not flagged; OpenAI models have no price rows, so calls are unpriced |
 | DF-022 OpenTelemetry GenAI ingest and the `desk.*` namespace | absent | none | no OpenTelemetry ingest and no desk.* namespace |
 | DF-023 Gateway spend-log adapter | absent | none | no gateway spend-log adapter |

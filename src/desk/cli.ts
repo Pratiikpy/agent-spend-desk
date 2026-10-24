@@ -13,6 +13,7 @@ import { linkOutcomes } from "./outcomes/link.ts";
 import { ingestClaudeCode } from "./ledger/ingest.ts";
 import { formatUsd } from "./money.ts";
 import { comparePrices, parsePortkey, renderComparison } from "./pricing/compare.ts";
+import { readCleanupDays, renderRetention, retentionReport, scanLogs, scheduleSnippets } from "./retention/retention.ts";
 import { priceSensitivity, renderSensitivity } from "./pricing/sensitivity.ts";
 import { loadSnapshot } from "./pricing/pricebook.ts";
 import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -124,6 +125,7 @@ const { values, positionals } = parseArgs({
     debug: { type: "boolean", default: false },
     second: { type: "string" },
     portkey: { type: "string" },
+    horizon: { type: "string", default: "7" },
     defects: { type: "string", default: "0" },
     "timeout-sec": { type: "string", default: "900" },
   },
@@ -139,7 +141,14 @@ if (sampleMode && ["propose", "silos", "ask", "ui", "verify-answer", "bench", "s
 }
 const db = command === "card" || command === "status" || command === "lab" ? openLedger(":memory:") : openLedger(ledgerPath);
 
-if (command === "prices") {
+if (command === "retention") {
+  if (positionals[1] === "schedule") {
+    console.log(scheduleSnippets(process.cwd(), process.platform));
+  } else {
+    const setting = readCleanupDays(join(homedir(), ".claude", "settings.json"));
+    console.log(renderRetention(retentionReport({ files: scanLogs(values["claude-dir"]), db, retentionDays: setting.days, retentionSource: setting.source, now: new Date(), horizonDays: Number(values.horizon) })));
+  }
+} else if (command === "prices") {
   if (positionals[1] !== "compare") throw new Error("Use: desk prices compare [--portkey <file>] [--prices <snapshot>]");
   const other = values.portkey ?? "data/prices/portkey-anthropic-2026-10-24.json";
   const body = JSON.parse(readFileSync(other, "utf8")) as { snapshotId?: string; fetchedAt?: string; models: unknown };
@@ -497,7 +506,7 @@ ${t.pass} PASS, ${t.fail} FAIL, ${t.notRun} NOT RUN. NOT RUN is not a pass: it n
   console.log(`logs: ${sampleLogsDir(values.out)}`);
   console.log(`repos: ${sampleReposDir(values.out)}`);
 } else {
-  console.error(`unknown command "${command}". Use: card | status | forget | egress | limits | statusline | prices | propose | silos | ask | remember | verify-answer | gate | approve | ui | canary | bench | seats | route | calibrate | regret | lessons | prove | demo | ingest | bill | autopsy | landing | replay | tunnel | sample build`);
+  console.error(`unknown command "${command}". Use: card | status | forget | egress | limits | statusline | prices | retention | propose | silos | ask | remember | verify-answer | gate | approve | ui | canary | bench | seats | route | calibrate | regret | lessons | prove | demo | ingest | bill | autopsy | landing | replay | tunnel | sample build`);
   process.exitCode = 2;
 }
 db.close();

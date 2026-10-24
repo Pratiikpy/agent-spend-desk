@@ -21,7 +21,7 @@
     { "id": "DF-017", "status": "partial", "evidence": ["src/desk/route/replay.ts"], "missing": "replay on a cheaper route covers canary tasks only" },
     { "id": "DF-018", "status": "partial", "evidence": ["src/desk/demo.ts"], "missing": "the argument, diff and wow sentence scene as specified" },
     { "id": "DF-019", "status": "partial", "evidence": ["src/desk/prove/run.ts", "src/desk/demo.ts"], "missing": "judge-proof mode is sample mode plus `desk prove`, not a separate mode" },
-    { "id": "DF-020", "status": "built", "evidence": ["src/desk/ingest/claude-code.ts", "tests/desk/ingest.test.ts"], "missing": "" },
+    { "id": "DF-020", "status": "built", "evidence": ["src/desk/ingest/claude-code.ts", "src/desk/retention/retention.ts", "tests/desk/ingest.test.ts", "tests/desk/retention.test.ts"], "missing": "" },
     { "id": "DF-021", "status": "partial", "evidence": ["src/desk/ingest/codex.ts", "src/desk/ledger/ingest-codex.ts", "tests/desk/codex-parse.test.ts", "tests/desk/codex-ingest.test.ts", "docs/verification/codex-reader-and-limit-fit-2026-10-24.md"], "missing": "calls come from growth of the cumulative total (merged requests are marked, a forked session's replayed history is left out); a negative counter is clamped to zero and not flagged; OpenAI models have no price rows, so calls are unpriced" },
     { "id": "DF-022", "status": "absent", "evidence": [], "missing": "no OpenTelemetry ingest and no desk.* namespace" },
     { "id": "DF-023", "status": "absent", "evidence": [], "missing": "no gateway spend-log adapter" },
