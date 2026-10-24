@@ -126,6 +126,8 @@ export async function runGateCli(argv: readonly string[], env: Record<string, st
       const state = JSON.parse(gate.ledger.projectionJson()) as { budgets: unknown[]; paused: string[]; eventCount: number; open: unknown[] };
       console.log(`switch: ${b.open ? `OPEN until ${b.expiresAt}` : b.reason}`);
       console.log(`events: ${state.eventCount}, open reservations: ${state.open.length}, paused: ${state.paused.join(", ") || "none"}`);
+      const behind = gate.clockBehindMs();
+      if (behind > 0) console.log(`clock: ${Math.round(behind / 1000)} s behind the last recorded event, so the gate holds its own time until the clock catches up`);
       console.log(`integrity: ${violations.length === 0 ? "ok" : `${violations.length} violation(s)`}`);
       for (const v of violations.slice(0, 5)) console.log(`  ${v.invariant} event ${String(v.eventId)}: ${v.message}`);
       return violations.length === 0 ? 0 : 1;

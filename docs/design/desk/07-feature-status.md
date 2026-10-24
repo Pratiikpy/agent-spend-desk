@@ -8,7 +8,7 @@ How to read a status. *Built*: the core of the feature as specified exists and a
 
 | Feature | Status | Evidence | Missing |
 |---|---|---|---|
-| DF-001 First run and source discovery | partial | `src/desk/ingest/discover.ts`, `src/desk/ingest/codex.ts`, `tests/desk/discover.test.ts` | adapter capability declarations; two adapters (Claude Code, Codex) |
+| DF-001 First run and source discovery | partial | `src/desk/ingest/discover.ts`, `src/desk/ingest/codex.ts`, `src/desk/ingest/opencode.ts`, `tests/desk/discover.test.ts` | adapter capability declarations; three adapters (Claude Code, Codex, OpenCode), none for Gemini CLI, Cline, Copilot or Cursor |
 | DF-002 Morning brief | partial | `src/desk/ui/client/screens/brief.js`, `tests/desk/ui/server.test.ts` | quota runway, overnight pauses and denials, a single recommended action by rule, every figure clickable to its rows |
 | DF-003 Live gauge (terminal and status line) | absent | none | no gauge or status-line command |
 | DF-004 Month bill | partial | `src/desk/ui/client/screens/bill.js`, `src/desk/cost/cost.ts`, `src/desk/reconcile/reconcile.ts`, `tests/desk/cost.test.ts`, `tests/desk/reconcile.test.ts` | the cost Claude Code recorded for itself is stored in a separate table and reconciled by `desk reconcile`, but the Bill screen does not show it beside the estimate; generic invoice import; allocation of idle and shared spend |
@@ -53,7 +53,7 @@ How to read a status. *Built*: the core of the feature as specified exists and a
 | DF-043 Language surcharge and the locale route experiment | absent | none | no language surcharge or locale route experiment |
 | DF-044 Spend policy language | built | `src/desk/policy/parse.ts`, `src/desk/policy/evaluate.ts`, `tests/desk/policy.test.ts` | - |
 | DF-045 Caps, windows and override resolution | partial | `src/desk/policy/types.ts`, `src/desk/gate/gate.ts` | windows are day and month only; no per-session, per-model or velocity limits |
-| DF-046 Reservation ledger and integrity job | built | `src/desk/gate/gate.ts`, `src/desk/gate/ledger.ts`, `tests/desk/gate/gate.test.ts` | - |
+| DF-046 Reservation ledger and integrity job | built | `src/desk/gate/gate.ts`, `src/desk/gate/ledger.ts`, `tests/desk/gate/gate.test.ts`, `tests/desk/gate/bypass.test.ts`, `docs/verification/gate-enforcement.md` | - |
 | DF-047 Restrict-only check with a counterexample | built | `src/desk/policy/restrict.ts`, `src/desk/prove/fuzz.ts`, `tests/desk/policy.test.ts` | - |
 | DF-048 Policy replay before a change | built | `src/desk/replay/policy-replay.ts`, `tests/desk/replay.test.ts` | - |
 | DF-049 Approval echo card and approval-habit metrics | partial | `src/desk/dossier/approval.ts`, `tests/desk/dossier/happy.test.ts` | approval-habit metrics |

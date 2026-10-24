@@ -27,3 +27,22 @@ only (`tests/desk/gate/`), not through Claude Code.
 Two defects were found by the tests written for this and fixed: the owner routes could not be reached with the owner
 token (the agent token check ran first), and `integrity` reported a reservation whose time had run out as still
 counted because expiry is written lazily (it now sweeps first).
+
+## Bypass suite, 2026-10-24
+
+`tests/desk/gate/bypass.test.ts` and the earlier gate tests, case by case. "Blocked" means a test shows the gate refusing or the attempt having no effect; "outside" means the gate cannot see it and says so.
+
+| Case | Result | Where |
+|---|---|---|
+| Four processes ask at once on one database (24 requests, a cap that fits three) | Blocked. No more than three were allowed, the reserved total never passed the cap, every other answer was a deny, an ask or a coded refusal, and the hash chain and invariants came out clean | `bypass.test.ts`, real child processes |
+| The same request key from two processes | Blocked. One reservation per key | `bypass.test.ts` |
+| An approval replayed, used twice | Blocked. An approval is spent by its first use, also after the gate restarts on the same database | `gate.test.ts`, `bypass.test.ts` |
+| An approval used for a different action, or by another person | Blocked | `bypass.test.ts` |
+| A forged or wrong action digest | Blocked | `gate.test.ts` |
+| The checker crashes, is unreachable, is slow or answers oddly | Blocked: the hook turns every failure into exit 2 | `gate.test.ts`, run 1 above |
+| Clock set back | Blocked. The gate never uses a time earlier than its last recorded event, so a spent day does not reopen; the record stays in time order; `gate status` says how far behind the clock is. While the clock is behind, the gate's time stands still, so reservations and approvals do not age until it catches up. The test fails when the anchor is removed (checked) | `bypass.test.ts` |
+| Clock set forward | **Outside.** A forward step cannot be told from a machine that slept, so the next day's budget opens. Detecting it needs a time source the gate does not have | `bypass.test.ts` states this |
+| The hook removed from the agent's settings | **Outside.** Only the proxy door of Phase 6 would see it; not built |  |
+| A direct API call, a tool with no hook | **Outside.** Same |  |
+
+Not covered: a gate database edited by hand is detected by the hash chain only when the edit breaks it (a complete rewrite of the chain, with the owner key not involved for ordinary events, is not detected); the whole suite ran on Windows only; the four-process race used Node's SQLite binding with a 15-second busy wait, and other bindings were not tried.

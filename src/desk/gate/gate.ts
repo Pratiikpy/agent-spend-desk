@@ -144,6 +144,11 @@ export class Gate {
     return Date.parse(first) + this.cfg.shadowMs > this.ledger.now() ? "shadow" : "enforce";
   }
 
+  /** How far the machine's clock is behind the last event the gate recorded. Above zero means the clock was set back; the gate holds its own time until it catches up. */
+  clockBehindMs(): number {
+    return this.ledger.clockBehindMs();
+  }
+
   private ttl(req: { ttl_ms: number | null }): number {
     return req.ttl_ms ?? this.cfg.ttlMs ?? DEFAULT_RESERVATION_TTL_MS;
   }

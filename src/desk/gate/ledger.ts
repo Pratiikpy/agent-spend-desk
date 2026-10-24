@@ -40,8 +40,30 @@ export class GateLedger {
 
   constructor(
     readonly db: DatabaseSync,
-    readonly now: () => number = Date.now,
+    private readonly wall: () => number = Date.now,
   ) {}
+
+  /**
+   * The gate's time: the wall clock, but never earlier than the last event it recorded. A clock set back (by a person, a
+   * virtual machine or a time service) therefore cannot reopen a window that is already spent, and the record stays in time
+   * order. While the wall clock is behind, this time stands still, so a reservation or approval does not age until the
+   * clock catches up. A clock set forward cannot be told from a machine that slept, so the gate follows it.
+   */
+  readonly now = (): number => {
+    const wall = this.wall();
+    const last = this.lastStampMs();
+    return last > wall ? last : wall;
+  };
+
+  private lastStampMs(): number {
+    const r = this.db.prepare("SELECT ts FROM gate_event ORDER BY id DESC LIMIT 1").get() as { ts?: string } | undefined;
+    return r?.ts === undefined ? 0 : Date.parse(r.ts);
+  }
+
+  /** How far the wall clock is behind the last recorded event, in milliseconds; 0 when it is not. */
+  clockBehindMs(): number {
+    return Math.max(0, this.lastStampMs() - this.wall());
+  }
 
   /** Run `fn` under BEGIN IMMEDIATE. A lock that cannot be taken in time throws, and the caller must fail closed. */
   tx<T>(fn: () => T): T {

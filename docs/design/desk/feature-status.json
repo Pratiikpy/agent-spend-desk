@@ -2,7 +2,7 @@
   "asOf": "2026-10-24",
   "method": "Each of the 129 features in 02-feature-list.md was compared with the code. built = the core of the feature as specified exists and a test or a `desk prove` check exercises it; partial = a real part exists, the missing part is named; absent = no code was found. A status is a judgement made by reading and searching; tests/desk/feature-status.test.ts checks that every feature has a row and every cited file exists, not that the judgement is right.",
   "features": [
-    { "id": "DF-001", "status": "partial", "evidence": ["src/desk/ingest/discover.ts", "src/desk/ingest/codex.ts", "tests/desk/discover.test.ts"], "missing": "adapter capability declarations; two adapters (Claude Code, Codex)" },
+    { "id": "DF-001", "status": "partial", "evidence": ["src/desk/ingest/discover.ts", "src/desk/ingest/codex.ts", "src/desk/ingest/opencode.ts", "tests/desk/discover.test.ts"], "missing": "adapter capability declarations; three adapters (Claude Code, Codex, OpenCode), none for Gemini CLI, Cline, Copilot or Cursor" },
     { "id": "DF-002", "status": "partial", "evidence": ["src/desk/ui/client/screens/brief.js", "tests/desk/ui/server.test.ts"], "missing": "quota runway, overnight pauses and denials, a single recommended action by rule, every figure clickable to its rows" },
     { "id": "DF-003", "status": "absent", "evidence": [], "missing": "no gauge or status-line command" },
     { "id": "DF-004", "status": "partial", "evidence": ["src/desk/ui/client/screens/bill.js", "src/desk/cost/cost.ts", "src/desk/reconcile/reconcile.ts", "tests/desk/cost.test.ts", "tests/desk/reconcile.test.ts"], "missing": "the cost Claude Code recorded for itself is stored in a separate table and reconciled by `desk reconcile`, but the Bill screen does not show it beside the estimate; generic invoice import; allocation of idle and shared spend" },
@@ -47,7 +47,7 @@
     { "id": "DF-043", "status": "absent", "evidence": [], "missing": "no language surcharge or locale route experiment" },
     { "id": "DF-044", "status": "built", "evidence": ["src/desk/policy/parse.ts", "src/desk/policy/evaluate.ts", "tests/desk/policy.test.ts"], "missing": "" },
     { "id": "DF-045", "status": "partial", "evidence": ["src/desk/policy/types.ts", "src/desk/gate/gate.ts"], "missing": "windows are day and month only; no per-session, per-model or velocity limits" },
-    { "id": "DF-046", "status": "built", "evidence": ["src/desk/gate/gate.ts", "src/desk/gate/ledger.ts", "tests/desk/gate/gate.test.ts"], "missing": "" },
+    { "id": "DF-046", "status": "built", "evidence": ["src/desk/gate/gate.ts", "src/desk/gate/ledger.ts", "tests/desk/gate/gate.test.ts", "tests/desk/gate/bypass.test.ts", "docs/verification/gate-enforcement.md"], "missing": "" },
     { "id": "DF-047", "status": "built", "evidence": ["src/desk/policy/restrict.ts", "src/desk/prove/fuzz.ts", "tests/desk/policy.test.ts"], "missing": "" },
     { "id": "DF-048", "status": "built", "evidence": ["src/desk/replay/policy-replay.ts", "tests/desk/replay.test.ts"], "missing": "" },
     { "id": "DF-049", "status": "partial", "evidence": ["src/desk/dossier/approval.ts", "tests/desk/dossier/happy.test.ts"], "missing": "approval-habit metrics" },
