@@ -304,23 +304,23 @@ svg.arch { width: 100%; height: auto; display: block; }
 <section class="slide dense">
   <div class="meta"><b>00</b>Head to head, pre-registered</div>
   <div>
-    <h2>Same model, three ways: 49 against 41 on questions it never saw.</h2>
+    <h2>Same model, three ways: 55 against 45 on questions nobody had read.</h2>
     <table>
-      <tr><th></th><th class="r">One call</th><th class="r">Tool agent</th><th class="r">Desk, as pre-registered</th><th class="r">Desk, after one fix</th></tr>
-      <tr><td>Second set, 60 new questions, exact</td><td class="r">12</td><td class="r">41</td><td class="r"><b>49</b></td><td class="r">54</td></tr>
-      <tr><td>Same, asked 3 more times: pass^3</td><td class="r">17%</td><td class="r">63%</td><td class="r"><b>77%</b></td><td class="r">85%</td></tr>
-      <tr><td>Hidden instruction not followed (5)</td><td class="r">3</td><td class="r">3</td><td class="r"><b>5</b></td><td class="r">5</td></tr>
-      <tr><td>Correct abstention (10 unanswerable)</td><td class="r">10</td><td class="r">7</td><td class="r"><b>10</b></td><td class="r">10</td></tr>
-      <tr><td>7 questions from templates the tools were not built for</td><td class="r">1</td><td class="r">2</td><td class="r">2</td><td class="r">4</td></tr>
-      <tr><td>First set, 60 questions (seen, not held out)</td><td class="r">12</td><td class="r">47</td><td class="r">51</td><td class="r">55</td></tr>
+      <tr><th></th><th class="r">One call</th><th class="r">Tool agent</th><th class="r">Desk v3</th></tr>
+      <tr><td>Set D, 60 new questions, preregistered: exact</td><td class="r">12</td><td class="r">45</td><td class="r"><b>55</b></td></tr>
+      <tr><td>Same, asked 3 more times: pass^3</td><td class="r">18%</td><td class="r">70%</td><td class="r"><b>85%</b></td></tr>
+      <tr><td>Hidden instruction not followed (5)</td><td class="r">40%</td><td class="r">60%</td><td class="r"><b>100%</b></td></tr>
+      <tr><td>Correct abstention (10 unanswerable)</td><td class="r">100%</td><td class="r">70%</td><td class="r"><b>100%</b></td></tr>
+      <tr><td>6 shapes nothing was built for</td><td class="r">1</td><td class="r">2</td><td class="r">1</td></tr>
+      <tr><td>Earlier round, set B, preregistered for the v2.1</td><td class="r">12</td><td class="r">41</td><td class="r">49</td></tr>
     </table>
     <ul style="margin-top:18px">
-      <li>Eight questions in sixty is at the edge of what that sample can show; the held-out split of 20 is 15 against 13, inside the noise.</li>
-      <li>Reading the misses found a real defect: a refused plan went to the rule planner and the Planner was never told why. 33 runs were affected; telling it recovered 17. That fix was written after set B was read, so the last column is post hoc and sits beside the first.</li>
-      <li>Of the four predictions written for this set, three held (one exactly at its limit) and one failed; every prediction is audited in <span class="mono">RESULTS-v2.md</span>.</li>
+      <li>Seven predictions were written before set D was run, and all seven held. Ten questions in sixty is a margin this size of set cannot make certain; the predictions are the stronger evidence.</li>
+      <li>The five misses are the five question shapes the Desk has no step for. The tool agent, which can write any computation, missed four of the same five and eleven more that the Desk answered.</li>
+      <li>Sets A and B were used to build the Desk, so its 60 of 60 on each is post hoc. Set B's own result, 49, is the Desk before the fixes that reading its misses produced.</li>
     </ul>
   </div>
-  <div class="foot"><span>desk.</span><span>docs/verification/benchmark/ · npm run desk -- bench report --sample --set B</span></div>
+  <div class="foot"><span>desk.</span><span>docs/verification/benchmark/ · npm run desk -- bench report --sample --set D</span></div>
 </section>
 
 <section class="slide dense">
@@ -501,7 +501,7 @@ svg.arch { width: 100%; height: auto; display: block; }
   <div>
     <h2>Say what was not run, and what failed.</h2>
     <div class="grid2">
-      <div class="card"><div class="cap">Run, and passing: 26 of 26 checks</div><ul><li>Planted waste found in a constructed scenario, with false positives counted</li><li>A regression called on 52 real tasks with a flat control arm</li><li>A pre-registered benchmark, 900 runs replayed from recordings</li><li>Gate invariants through 400 random operations</li><li>Real Claude Code blocked a Bash call (and ran it under an allow policy)</li><li>Zetaris stopped: the output changed</li><li>Clean clone to card in 30 seconds, same figures hash</li></ul></div>
+      <div class="card"><div class="cap">Run, and passing: 35 of 35 checks</div><ul><li>Planted waste found in a constructed scenario, with false positives counted</li><li>A regression called on 52 real tasks with a flat control arm</li><li>A pre-registered benchmark, 900 runs replayed from recordings</li><li>Gate invariants through 400 random operations</li><li>Real Claude Code blocked a Bash call (and ran it under an allow policy)</li><li>Zetaris stopped: the output changed</li><li>Clean clone to card in 30 seconds, same figures hash</li></ul></div>
       <div class="card"><div class="cap">Measured, and short of its label</div><ul><li>The wind tunnel's 90% range held 73% (77% with no change planted)</li><li>Its chance of blocking landed work: calibration error 0.29</li><li>The Desk is still wrong on about a tenth of questions</li><li>Learning moved 2 of 60: no improvement claimed</li></ul><div class="cap" style="margin-top:20px">Not built, or not verified</div><ul><li>Team mode</li><li>How a plan's limit maps to tokens</li><li>Zetaris semantic layer and data steward</li></ul></div>
     </div>
   </div>

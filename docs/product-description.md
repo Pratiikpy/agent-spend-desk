@@ -76,7 +76,7 @@ The model is Nemotron (`nvidia/nemotron-3.5-super-vl-120b-a12b`) behind one Open
 | Benchmark | Pre-registered 60-question head-to-head of three arms on one model; pass^k over repeated runs | `src/desk/bench/` |
 | Lessons, regret, calibration, seats, route | Learning from wrong answers; scoring the Desk's own past choices; confidence against planted truth; seats beyond people who landed work; the same recorded tasks replayed on two routes | `src/desk/lessons/`, `regret/`, `calibrate/`, `seats/`, `route/` |
 | Proof | `desk prove` runs 26 named checks, each PASS, FAIL or NOT RUN | `src/desk/prove/` |
-| UI | Twelve screens on a local, read-only server | `src/desk/ui/` |
+| UI | Thirteen screens on a local, read-only server | `src/desk/ui/` |
 
 ### 3.3 The agents
 
@@ -98,36 +98,80 @@ Three of Meterless's open reference engines run in this process under Apache-2.0
 
 ## 4. Everything it does
 
-### 4.1 Commands (25)
+### 4.1 Commands (54, from `desk help`)
 
 | Command | What it does |
 |---|---|
-| `desk card` (default) | The limit-autopsy card on your own logs or the sample |
-| `desk ingest`, `desk bill`, `desk autopsy`, `desk landing` | The pieces of the card on their own: read logs, price them, split a window, tie spend to git |
-| `desk pr [--base ref] [--head ref] [--markdown]` | What the agent work behind one change cost: reads new logs, ties the change's commits to sessions, counts each session in proportion to its commits that are in the change, and prints a description to paste into the pull request. On this repository's last eight commits it found one session, $29.21 counted of $200.80, tied by file overlap (a medium tie) |
-| `desk replay`, `desk tunnel` | Replay a policy on a month; resample months to give a range and a chance of blocking landed work |
-| `desk propose` | Draft, check, attack, harden and replay a spend policy; `--dossier` writes the signed bundle |
-| `desk approve` | The approval echo and the signature |
-| `desk silos` | The Zetaris statement over invoices, CI and roster: billed against estimated, spend per landed PR |
-| `desk ask`, `desk remember`, `desk verify-answer` | Questions answered by typed steps; owner notes and definitions into H-MEM; re-run an answer's steps |
-| `desk canary` | The daily regression verdict with interval, control arm and limits |
-| `desk gate` (`serve`, `mcp`, `open`, `close`, `status`, `integrity`) | The spend gate and its emergency switch |
-| `desk bench` | Pre-registered head-to-head: questions, run, report |
-| `desk lessons` | Learning from mistakes with a measured held-out round and a revert if worse |
-| `desk regret` | The Desk's own past choices scored on the month that followed |
-| `desk calibrate` | Confidence against planted truth |
-| `desk seats`, `desk route` | Seats beyond landed work; recorded tasks on two routes |
-| `desk prove`, `desk demo`, `desk sample build` | Every check; the eight-beat demo; the constructed sample |
-| `desk ui` | The local web page |
-| `npm run desk-verify` | The offline dossier verifier |
+| **Start here** | |
+| `desk card` | Read your Claude Code logs and print the card: where the money went, and one change worth trying. This is what plain `desk` does. |
+| `desk ui` | Start the screens (Brief, Bill, Autopsy, Sessions, Outcomes, Policy, Canary, Ask and more) and print the address to open in a browser. |
+| `desk status` | How many of the specified features are built, counted from the code (`status write` writes the page). |
+| **Read more sources** | |
+| `desk ingest` | Read agent logs into the ledger: Claude Code by default, or --agent codex, opencode or statusline. |
+| `desk retention` | Which agent logs are about to be deleted before they were read, and a daily ingest command (`retention schedule`). |
+| `desk statusline` | The Claude Code status line that records your plan limits (`statusline install` prints the setting to add). |
+| `desk task` | Label the work you start (`task <label>`, `task end`) so sessions group into tasks; `task list` shows how each task was identified. |
+| `desk invoices` | Import an invoice or usage export (CSV, or PDF read twice) and reconcile billed against estimated against reported, month by month. |
+| `desk questions` | Where the Desk is unsure which session a commit came from, it asks; your yes or no is applied the next time landing is computed. |
+| `desk landing` | Tie sessions to the commits they produced in your repositories, and show what the spend bought. |
+| `desk reconcile` | Compare the cost Claude Code recorded for itself with our estimate, process by process. |
+| `desk silos` | Ask the invoice, CI and roster data through Zetaris (`silos seed` builds the sample data). |
+| `desk sources` | Which agent tools the Desk finds on this machine, where it looked, and what each source can and cannot tell it. |
+| `desk otel` | Read OpenTelemetry GenAI spans (OTLP/JSON) as calls, or write the Desk's own record as spans with the desk.* attributes. |
+| `desk gateway` | Import a LiteLLM spend log (JSON, JSON Lines or CSV): tokens priced at list price, the gateway's own cost kept beside it. |
+| **Costs and limits** | |
+| `desk gauge` | What the last few hours cost, how fast, where it went and where your plan windows stand; --line for a status line, --watch to keep it fresh. |
+| `desk estimate` | Before a large task: the cost range of similar past tasks and how many there were, or no estimate when fewer than ten are similar. |
+| `desk approvals` | What is waiting for your approval, how fast and how carefully past ones were decided; `show <id>` opens the evidence, `deny <id>` says no. |
+| `desk close` | Close a month: spend, invoices, canary, a replay and drafted change, and a signed month dossier a stranger can check offline. |
+| `desk review` | The weekly review: what the week cost, what it bought, how the forecasts did, what drifted, and at most three changes worth making. |
+| `desk bill` | The bill for a month or any dates: kinds of figure, what it bought, where it went; --export csv or json gives every line. |
+| `desk overhead` | Share the idle and unowned spend of a period among the projects that landed work, to the micro-dollar. |
+| `desk delegation` | Which agents started which: each delegated agent alone and with the agents it started, and the sessions that went too deep. |
+| `desk waste` | Waste the extra rules find: the same error from new inputs, cut-short results repeated, file churn, bare calls, orphaned agents. |
+| `desk autopsy` | Split a window of spend into causes: idle, loops, cache misses, and work that was needed. |
+| `desk limits` | What a percent of your plan limit costs in tokens, per plan and window, with an interval, or why there is no estimate. |
+| `desk plans` | Every plan window your tools report: the tool's own figure beside a local count, the outlook, and the limit hits and model changes. |
+| `desk runway` | Will this plan window last until it resets? Judged from how past windows of the same plan ended. |
+| `desk prices` | `prices compare` checks our price book against another; `reprice` prices the ledger again, keeping old costs; `history` shows them. |
+| `desk pr` | What the agent work behind one change cost, as a description to paste into the pull request. |
+| **Decide and enforce** | |
+| `desk ci` | A pipeline gate: fail a change that worsens the canary suite or raises cost past a bound. Exit 0 pass, 1 fail, 2 error, 3 inconclusive. |
+| `desk enforcement` | What the Desk can actually stop, tool by tool: enforced, advisory or notify only. `enforcement test [--live]` records the evidence. |
+| `desk propose` | Draft a spend policy from your own history and check by proof that it only narrows what is in force. |
+| `desk replay` | Replay a policy over past sessions: what it would have blocked, and what that would have saved. |
+| `desk tunnel` | The same as replay, for several policies side by side. |
+| `desk alerts` | Tell you once when something needs you: a cap nearly spent, a pause, idle spend, a canary regression, a month that will not reconcile. |
+| `desk approve` | Approve a pending policy change; the approval is signed into the dossier. |
+| `desk gate` | The spend gate: `gate serve`, `gate gateway` (a door for tools with no hook), `gate mcp`, `gate status`, `gate open` and `gate close`. |
+| `desk seats` | For each person, whether a flat seat or tokens at list price is cheaper. |
+| `desk route` | Test a cheaper model on recorded tasks and say whether it holds up. |
+| `desk canary` | The daily regression check: did the agent get worse? `canary run` records today's tasks; `--if-due` is the hourly job, `schedule` prints it. |
+| **Ask and remember** | |
+| `desk ask` | Ask a question about your spend; the answer cites the rows it used and is checked before it is shown. |
+| `desk remember` | Store a note for Ask to use later, such as an exception someone granted. |
+| `desk verify-answer` | Check an answer's claims against the ledger. |
+| `desk lessons` | Learn rules from past mistakes, and show whether they would have helped on held-out questions. |
+| `desk regret` | Score earlier proposals against what happened afterwards. |
+| `desk calibrate` | How well the confidence of a session-to-commit link and the simulator match answers we know. |
+| **Privacy** | |
+| `desk egress` | What was sent to a model: host, size and a count of masked secrets for every request, never the text. |
+| `desk forget` | Delete sessions by --project, by --before a date, or --all, and say what was removed; without --yes it only shows what would go. |
+| **Evidence** | |
+| `desk prove` | Run every check against the code and print PASS, FAIL or NOT RUN with the reason. |
+| `desk bench` | The recorded benchmark: Ask against plain baselines on questions with known answers. |
+| `desk demo` | The scripted demonstration run, from recordings, with no network. |
+| `desk sample` | `sample build` generates the 14-engineer sample that `--sample` reads; nothing of yours is read. |
+| `desk lab` | Audit tasks, run an agent on them, and report the pass rates and whether the experiment is worth running (`lab audit`, `lab run`, `lab report`). |
+| `npm run desk-verify` | The offline dossier verifier: plain Node, network off, one changed byte names the row |
 
-### 4.2 Screens (12)
+### 4.2 Screens (13)
 
-Brief · Autopsy · Bill · Outcomes · Sessions · Policy (with the wind tunnel) · Canary · Ask · Org data (Zetaris) · Doctor (what each source can and cannot say) · Dossiers · Evidence (what was measured, including what failed). Each was photographed in light and dark at 1440 and 390 px and read; the record is `docs/verification/ui-sweep.md`.
+Brief · Week (the weekly review) · Autopsy · Bill (with shared overhead) · Outcomes · Sessions (with delegation and waste blocks) · Policy (with the wind tunnel and what the Desk can enforce) · Canary · Ask · Org data (Zetaris) · Sources (what each source can and cannot say) · Dossiers · Evidence (what was measured, including what failed). The first twelve were photographed in light and dark at 1440 and 390 px and read, and the record is `docs/verification/ui-sweep.md`; the sections added since (delegation, shared overhead, enforcement, waste blocks) were read in light and dark and desktop and phone width as they were built, and a full pass over all thirteen is still owed (not recorded here).
 
 ### 4.3 The feature specification
 
-129 numbered features (DF-001 to DF-129) in eight tiers are written in `docs/design/desk/02-feature-list.md`, with a requirements document (`03-product-requirements.md`) and an architecture contract (`00-architecture-master-spec.md`). That file was written as design on 2026-10-20 and every row says "designed, not built". **Which of the 129 are built has not been reconciled row by row. NOT VERIFIED.** The built set is the commands, screens and checks above; the not-built set is in 7.4. Reconciling the list against the code is the first item of the plan.
+129 numbered features (DF-001 to DF-129) in eight tiers are written in `docs/design/desk/02-feature-list.md`, with a requirements document (`03-product-requirements.md`) and an architecture contract (`00-architecture-master-spec.md`). `docs/design/desk/07-feature-status.md` is written by `desk status write`, which counts each row from `docs/design/desk/feature-status.json`; a row can be marked built only if it names a test, a `desk prove` check or a verification note, and a test enforces that. At this commit **73 are built, 35 partial and 21 absent**; the partial and absent rows, with what each lacks, are in that file.
 
 ---
 
@@ -140,10 +184,10 @@ Open Agent Hackathon 2026 (GenAI Works): 144 hours, 22 to 27 October 2026, one p
 | Criterion | Pts | The judge's question | Our evidence |
 |---|---:|---|---|
 | Impact | 30 | A meaningful real problem for a clearly defined user, consistent with the challenge statement | The problem sentence; five public quotes; `docs/design/desk/04-evidence-table.md` (146 claims). **Gap: no real user has used it; willingness to pay NOT VERIFIED** |
-| Technical | 20 | Implementation, reliability, architecture | 494 tests; `desk prove` with 26 named checks; budgets in code; fallbacks; a pre-registered benchmark whose losing first run is published |
+| Technical | 20 | Implementation, reliability, architecture | 1,451 tests; `desk prove` with 35 named checks; budgets in code; fallbacks; a pre-registered benchmark whose losing first run is published |
 | Innovation | 15 | Originality | Restrict-only policy check fuzzed against an oracle; an Explainer that never reads the question; a signed dossier a stranger verifies offline; the Desk's own judgement recorded and scored |
 | Demo | 15 | Shows the solution, its functionality and value | 3:49 captioned motion video; `npm run desk -- demo`. **The video is rendered but not uploaded** |
-| Product and UX | 10 | Intuitive, accessible, easy for the intended user | Twelve screens, light and dark, phone width |
+| Product and UX | 10 | Intuitive, accessible, easy for the intended user | Thirteen screens, light and dark, phone width |
 | Sponsor tech | 10 | Effective use of sponsor technology | Section 5.4 |
 
 Tie-break: Impact, then submission time.
@@ -220,7 +264,7 @@ For each track: the organisers' lines, then what the product does about each, th
 | "...combining availability rules, priority policy, and memory of past decisions, and producing a prioritised booking list with the reasoning for each decision." [A] | The analogue: spend rules, a priority on landed work, memory of past decisions, and a policy with the reasoning for each rule | `output_examples/traces/propose-sample.jsonl` | |
 | Example 3: Intake, Rules Checker, Memory Keeper, Priority Critic, Scheduler; "Priority Critic challenges decisions that look unfair, unsafe, or inconsistent with past decisions" [A] | Intake = Risk Router + Planner. Rules Checker = restrict-only check and policy evaluation. Memory Keeper = H-MEM plus lessons and regret. Priority Critic = Attacker, plan critic, Auditor, held-out replay. Scheduler = Drafter to dossier | One real trace: the first draft would pause 81 of 311 landed sessions, the check caught it, the Drafter revised, the second draft paused none | Learning from mistakes moved 2 of 60 held-out questions with an interval touching zero: no improvement is claimed |
 | "A domain expert on the team" [A] | None: solo | | Practitioner validation plan exists (`docs/design/04-practitioner-validation-plan.md`) but no interview was done. NOT VERIFIED |
-| "Combining data, knowledge, memory, and a usable interface" [A] | Twelve screens | | |
+| "Combining data, knowledge, memory, and a usable interface" [A] | Thirteen screens | | |
 | Prize: $1,500 / $1,200 / $900 | | | |
 
 ### 6.4 The Approach Guide's general lines
@@ -233,30 +277,34 @@ For each track: the organisers' lines, then what the product does about each, th
 
 ---
 
-## 7. Where the product stands (2026-10-24)
+## 7. Where the product stands (2026-10-25)
 
 ### 7.1 Done and checked
 
-- Everything in sections 3 and 4 runs. 638 tests pass on the working tree (41 files; `npx vitest run`, 2026-10-24). `desk prove` was 26 PASS, 0 FAIL, 0 NOT RUN at the last committed state, on fresh clones of Windows 11 (Node 24.20) and Ubuntu 22.04 (Node 22.23).
+- Everything in sections 3 and 4 runs. 1,451 tests pass (110 files; `npx vitest run`, 2026-10-25), and `desk prove` is 35 PASS, 0 FAIL, 0 NOT RUN on fresh clones of Windows 11 (Node 24.20) and Ubuntu 22.04 (Node 22.23); the commit those clones were made at is named in the README.
 - Canary: calls the planted model switch on day 15 (-40.0 points, 99% interval -56.2 to -23.8, control flat); 0 of 100 no-change histories called regressed. Smallest detectable change on the recorded design is about 21 points.
 - Held-out replay: a policy drafted from September meets October and would have blocked 5 of 333 landed sessions.
-- Head-to-head (same Nemotron model, pre-registered, 60 questions): one call 12, a tool-using agent 41, the Desk (v2) 49; 54 after a fix made after reading the misses, shown beside the first figure. Eight in sixty is at the edge of what that sample shows.
-- Dossier: untouched PASS, one byte changed FAIL naming the row.
-- Gate: invariants hold after 400 random operations; six of six junk requests refused.
+- Head-to-head (same Nemotron model, 60 questions nobody had read, preregistered with seven written predictions): one call 12, a tool-using agent 45, the Desk v3 55; pass^3 18%, 70%, 85%; all seven predictions held; the five misses are shapes the Desk has no step for. Sets A and B, which the Desk was built against, are 60 of 60 each on v3 and are post hoc. Ten in sixty is a margin this size of set cannot make certain (`docs/verification/benchmark/RESULTS-v3.md`).
+- Dossier: untouched PASS, one byte changed FAIL naming the row. The signed month bill verifies on plain Node and fails on one changed byte.
+- Gate: invariants hold after 400 random operations; six of six junk requests refused; caps by session, by the last ten minutes or hour, and per model or project; a stopped session writes a handoff and resumes only with a reason (and a signed extension while the cap still binds).
+- What it can stop is tested per tool and kept as a result: Claude Code reads enforced (the real tool was run three times against the gate), the others advisory or notify only.
+- CI gate: `desk ci` exits 0, 1, 2 or 3 and treats inconclusive as never a pass; on packs of known truth it called a fall in 1 of 400 when nothing changed and in 96% of cases for a 20-point fall (`docs/verification/ci-gate-2026-10-25.md`).
 
 ### 7.2 Changed today and in progress
 
+- **Desk v3 and its results (built, measured).** Two new typed steps (median daily spend, count of sessions started), one-model spend counted as one total however grouped, the rule planner planning shares, medians and session counts, a comparison naming the higher period first, the asked-for figure first, empty model replies retried, the sampler stating `top_p`, and a private cache scope per gateway call. The recordings of sets A, B and D are committed and `desk prove` replays them, so a fresh clone reproduces the tables with no key.
+- **Waste rules, compaction, delegation and shared overhead (built, one machine).** Extra rules over the tool calls (the same error from new inputs, cut-short results repeated, file churn, bare calls, orphaned agents), a cost for context rebuilt after a compaction that landed nothing, a tree of which agent started which, and the idle and unowned spend shared among the projects that landed work to the micro-dollar (`docs/verification/waste-rules-2026-10-25.md`, `compaction-2026-10-25.md`, `delegation-2026-10-25.md`, `overhead-2026-10-25.md`).
+- **Cap windows, checkpoints and the enforcement ladder (built).** The policy language caps a session, the last ten minutes or hour, and one model or project; a session that hits a cap stops with a handoff; `desk enforcement` says per tool what is enforced, advisory or notify only, from recorded tests.
+- **The CI gate and the monthly close (built).** `desk ci` gates a change on the canary; `desk close` writes a signed month dossier.
+- **Feature status.** 73 of 129 specified features are built, 35 partial and 21 absent (`docs/design/desk/07-feature-status.md`). A dated search of prior art for the Track 3 claim is in `docs/design/desk/08-novelty-search-2026-10-24.md`: LaunchDarkly AI Configs experiments, ARC-DR, the self-evolving harness papers and Cedar policy comparison each cover a part; we did not find one system that closes the whole loop, and the search is shallow.
 - **Nightshift installed and routing (verified live).** Windows edition 1.2.3, per-user, unsigned by the vendor's own label (hash matched the published one; Defender clean; Windows Firewall blocks inbound). Nightshift holds our exact model out by default after 31 of 94 hosted calls failed for them; the opt-in was set. A live Ask returned with receipt ids in the trace and under the answer. Calls go through it while three `MODEL_` lines are in `.env`.
-- **Desk v3.** Two new typed steps (median daily spend, count of sessions started), one-model spend counts as one total however grouped, the rule planner plans shares, medians and session counts, a comparison names the higher period first, the asked-for figure comes first, empty model replies are retried, the sampler states `top_p`, and each call to a gateway has a private cache scope. Pre-registered Addendum 6 and a fourth question set (D, seed 20261027, hash in the addendum) were committed before D was run.
-- **Re-recording.** Changing the Planner's tool schema invalidates every recorded Desk reply, so the Desk arm of sets A and B and the learning run are being recorded again; until that finishes `desk prove` shows three FAIL (benchmark A, benchmark B, learning curve). Set D has not been run. No v3 figure is a result yet. The v2 and v2.1 rows are kept in `docs/verification/benchmark/pre-v3/`.
 - **A Nightshift defect found and worked around.** On 2026-10-24 Nightshift answered repeats of some planner requests from its response cache with an empty message and no tool call (`from_cache: true`, 4 ms), which spoiled the first v3 sampled trials. Every request to a gateway now carries its own `meterless-scope`, which avoids the cache (checked: same request, default scope cached and empty, private scope fresh and a proper tool call). Empty replies are also retried now. The first v3 recordings were discarded and the Desk arm of sets A and B is being recorded again from scratch. The defect is worth reporting to Meterless.
-
 - **Security and privacy foundation (built and tested).** Credential-shaped strings are masked in stored log text (folder, branch, tool version, edited path) and in every message sent to a model; commit authors are stored as a hash, never an e-mail address; every model request is logged as host, size, hash and number of masked secrets (`desk egress`); `desk forget --project | --before | --all` removes sessions and everything under them and compacts the database file; the threat model is `docs/security/threat-model.md`. A planted credential is searched for in the card, the card files, the ledger file and every screen the interface serves, and the test fails when masking is switched off. Not covered: encryption at rest, install provenance, a live-model test with a hostile log name.
 - **The tool's own recorded cost, reconciled (built, one machine).** Claude Code writes its own running cost into its logs; the ledger keeps it as a separate `reported` class, `desk reconcile` compares it with the estimate per process, and the Bill screen shows both with the sub-agent warning. On this machine 248 of 420 processes agree within 2% (median difference 0.0%); for the 7 processes that used sub-agents the tool's counter lags and the two figures differ by tens of percent to several times over. Our price table matches Anthropic's pricing page; Claude Code's own Sonnet 5.5 figure uses $0.20 per million for cache reads where the page says $0.10, and a second source, Portkey's open price database, also says $0.20 (89 of 90 prices agree between it and ours; this is the one that does not). Which is in force is NOT VERIFIED: on this machine's 17.4 billion Sonnet 5.5 cache-read tokens it is worth $1,741.87, and the Bill screen shows the estimate as a range for that reason (`desk prices compare`). No invoice was used, so no figure is claimed to be the bill. See `docs/verification/reconciliation-2026-10-24.md`.
 - **A second tool, Codex, and the plan limit in tokens (built, one machine).** `desk ingest --agent codex` reads Codex session logs: calls from the growth of the cumulative total, a forked session's replayed parent history left out (782 replayed calls and 119 million tokens on this machine), merged requests marked. Codex also writes the percent of its plan's 5-hour and weekly windows used and when they reset; `desk limits` fits tokens to percent with an interval and abstains when there is too little data. Each plan and window length is its own limit (the first version pooled the free, team and plus plans and was corrected the same day). On this machine the plus plan's 5-hour limit is about 258K tokens per percent (95% interval 244K to 275K, 76 windows) and its weekly limit about 2.1M (1.7M to 2.4M, 15 windows); the other plans have too little data and the command says so. Predicting a held-out 5-hour window from the others has a median error of 5.0 points (12%). `desk runway` and the Brief screen say whether a window will last until its reset, from how past windows of the same plan and length ended when they stood at the same stage and percent (one reading per past window, the 10 closest; no forecast under 30 past windows). A first version that assumed the last hour's pace would continue held the final percent in its range in 2 of 26 cases and was dropped; this one, checked by forecasting each of 237 readings only from the windows before it, scored a Brier of 0.186 against 0.327 for the base rate, with its interval holding 81% (aimed at 80%), and failed when it stopped learning (see `docs/verification/runway-2026-10-24.md`). One person, one plan. Not a forecast for one window. Claude Code's own limit readings come from its status line: the command and the reader are built and tested against the documented fields (`desk statusline install` prints the setting to add), but nothing has been captured yet, so there is no Claude limit estimate. See `docs/verification/codex-reader-and-limit-fit-2026-10-24.md`.
 - **Prompt-length pricing (built).** Claude Haiku 5.5 is priced by prompt length on Anthropic's page; the price book now supports it (`data/prices/anthropic-2026-10-24.json`). The sample and the recorded benchmark keep the dated 2026-10-22 snapshot.
 - **Decision records and a claim registry engine (built).** A `desk.decision_record.v1` schema that refuses a record without alternatives (doing nothing among them), a chosen option, intervals, limits and an honest evidence level; every policy proposal now yields one with a conservative recommendation. The registry engine that fails a sentence with no supporting run exists; the registry itself is not written yet.
-- **The Lab harness (built; its first measurement is running).** A task format with hidden tests and an audit (the gold change passes every test three times, the starting state fails, four cheating moves fail, `npm test` runs the task tests), a grader, an accounting proxy in front of the model endpoint (per-call cache scope, retries, no text stored), a runner, and ten handwritten spike tasks. A 50-run spike on OpenCode with Nemotron through Nightshift is running under a protocol written before the first run (`docs/lab/00-spike-protocol.md`); no result exists yet, and no claim rests on it.
+- **The Lab harness (built; its feasibility spike was stopped and has not been resumed, so no effect has been measured).** A task format with hidden tests and an audit (the gold change passes every test three times, the starting state fails, four cheating moves fail, `npm test` runs the task tests), a grader, an accounting proxy in front of the model endpoint (per-call cache scope, retries, no text stored), a runner, and ten handwritten spike tasks. A 50-run spike on OpenCode with Nemotron through Nightshift was started under a protocol written before the first run (`docs/lab/00-spike-protocol.md`) and stopped before it finished; it can be resumed, no result exists, and no claim rests on it.
 - **Task identity (built).** `desk task <label>` (or `DESK_TASK` through a SessionStart hook, or `desk task run <label> -- <command>`) names the work you start; sessions are otherwise grouped by ticket key, pull request number or feature branch in the branch name, else the session is its own task. The Outcomes screen shows how tasks were identified. No prompt text is kept, so no session is grouped by what it was about.
 - **Pricing rules and repricing (built).** One function prices a call and names the rules that applied: long prompts, fast mode (the log says `speed: "fast"`), and US-only inference (`inference_geo: "us"`, 1.1x), with the cache prices following the vendor's rule. Where the log is silent a note is kept and the standard price used. `desk prices reprice` prices the ledger again, keeps every old cost in a history and says what moved; the gateway reserves and settles what a request asked for. None of this machine's calls says fast or us, so those two surcharges are tested on constructed calls only (`docs/verification/pricing-rules-and-repricing-2026-10-24.md`).
 - **Invoices and reconciliation (built).** `desk invoices import` reads a CSV (or a PDF twice, trusting only the lines both readings agree on), holds an invoice whose lines do not sum, never converts a currency, and `desk invoices reconcile` sets billed against estimated against the tool's own cost per month. The Bill screen shows the billed class and the comparison. No real invoice has been read (`docs/verification/invoices-and-reconciliation-2026-10-24.md`).
@@ -265,11 +313,10 @@ For each track: the organisers' lines, then what the product does about each, th
 - **A second price source (built).** `desk prices compare` checks the price book against Portkey's open price file: 89 of 90 prices agree, and one does not (Sonnet 5.5 cache read, $0.10 against $0.20; NOT VERIFIED which is in force; worth $1,741.87 on this machine's tokens). The Bill screen shows the estimate as a range where a second source disagrees (`docs/verification/price-sources-2026-10-24.md`).
 - **Enforcement beyond the hook (built, partial).** The gate keeps its own time at its last recorded event, so a clock set back cannot reopen a spent day, and a bypass suite runs four real processes against one database (never more than the cap reserved), replayed and misused approvals, and the clock cases; a clock set forward, a removed hook and an untouched tool are recorded as outside what it can see (`docs/verification/gate-enforcement.md`). The gateway door (`desk gate gateway`) lets a tool with no hook be governed: point its OpenAI-compatible base URL at it and every chat completion is reserved before it is sent and settled after, with the caller's key passed on and never stored, other writes refused as unmeterable, and a fail-closed 503 when the gate cannot decide. Run against Nightshift with an owner-set price and a small cap: calls settled to the micro-dollar, an over-cap call refused in 13 ms, never sent (`docs/verification/gateway-2026-10-24.md`). It meters the OpenAI chat route (run against a real endpoint) and the Anthropic messages route (tested against a fake upstream only; NOT VERIFIED against api.anthropic.com); the Responses API is not metered and is refused.
 - **What a change cost (built).** `desk pr` reads new logs and the repository, takes the commits of a change, and counts each session tied to them in proportion to its commits in the change; it prints a description for the pull request. On this repository's last eight commits: one session, $29.21 counted of $200.80.
-- **Feature status and novelty search.** Every one of the 129 specified features is compared with the code (42 built, 57 partial, 30 absent; `docs/design/desk/07-feature-status.md`), and a dated search of prior art for the Track 3 claim is in `docs/design/desk/08-novelty-search-2026-10-24.md`: LaunchDarkly AI Configs experiments, ARC-DR, the self-evolving harness papers and Cedar policy comparison each cover a part; we did not find one system that closes the whole loop, and the search is shallow.
 
 ### 7.3 Not built
 
-Team mode (roles, per-team caps, more than one approver); a CI check on policy changes; other agents' readers (Gemini, Cline; Codex and OpenCode are built); real-task replay on a cheaper route; an open format for the ledger and dossier; a mobile summary of each table.
+The 56 rows marked partial or absent in `docs/design/desk/07-feature-status.md`, each with what it lacks. The larger ones: team mode (roles, per-team caps, more than one approver); a CI check that gates a change to a policy file; other agents' readers beyond Claude Code, Codex and OpenCode; a bill auditor and dispute pack; real-task replay on a cheaper route and trajectory capture of tool-using runs; an open ledger format and adapter kit; a public regression index.
 
 ### 7.4 NOT VERIFIED or thin
 
