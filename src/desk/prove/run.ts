@@ -1,4 +1,6 @@
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
+import { createServer } from "node:http";
+import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
@@ -33,6 +35,7 @@ import { approve, issueApproval, type DossierPaths } from "../dossier/command.ts
 import { buildPolicyChangePack } from "../dossier/policy-change.ts";
 import { OwnerMemory } from "../engines/memory.ts";
 import { readConformance, recordConformance } from "../engines/registry.ts";
+import { startGateway } from "../gateway/server.ts";
 import { Gate } from "../gate/gate.ts";
 import { fixedPolicy } from "../gate/policy-source.ts";
 import { GateError } from "../gate/types.ts";
@@ -41,6 +44,7 @@ import { openLedger, type Ledger } from "../ledger/db.ts";
 import { ingestClaudeCode } from "../ledger/ingest.ts";
 import { linkOutcomes } from "../outcomes/link.ts";
 import { parsePolicyYaml } from "../policy/parse.ts";
+import { comparePrices, parsePortkey } from "../pricing/compare.ts";
 import { loadSnapshot } from "../pricing/pricebook.ts";
 import { propose } from "../propose/run.ts";
 import { replaySessionsFromLedger } from "../replay/from-ledger.ts";
@@ -397,6 +401,61 @@ const CHECKS: Check[] = [
       }
       const v = gate.integrity();
       return v.length === 0 && refusedJunk === 6 ? pass("I-R1 to I-R5 and the hash chain recomputed clean after 400 operations; 6 of 6 junk requests refused with a named error") : fail(`${v.length} integrity violations; ${refusedJunk} of 6 junk requests refused`);
+    },
+  },
+  {
+    id: "gateway-meters-and-fails-closed",
+    command: "a local stand-in endpoint behind the gateway door: one call allowed and settled, one refused by policy, one over the cap, one on a route that cannot be metered, one with the gate down",
+    seed: null,
+    async run() {
+      let upstreamCalls = 0;
+      const stand = createServer((req, res) => {
+        req.resume();
+        req.on("end", () => {
+          upstreamCalls += 1;
+          res.writeHead(200, { "content-type": "application/json" });
+          res.end(JSON.stringify({ model: "claude-opus-5", choices: [{ message: { role: "assistant", content: "ok" }, finish_reason: "stop" }], usage: { prompt_tokens: 1000, completion_tokens: 500 } }));
+        });
+      });
+      await new Promise<void>((r) => stand.listen(0, "127.0.0.1", r));
+      const db = new DatabaseSync(":memory:");
+      const prices = loadSnapshot(PRICES);
+      const policy = parsePolicyYaml(["version: 1", "rules:", '  - { id: a, kind: permit, when: { model: { in: ["claude-opus-5"] } }, cap: { window: day, max_usd: "1.00", warn_at: 0.5, ask_at: 0.9 } }', ""].join("\n"));
+      const gate = new Gate({ db, prices, policy: fixedPolicy(policy), person: "p-0" });
+      const gw = await startGateway({ upstream: `http://127.0.0.1:${(stand.address() as AddressInfo).port}/v1`, gate, prices });
+      try {
+        const send = (model: string, maxTokens: number): Promise<Response> =>
+          fetch(`${gw.url}/chat/completions`, { method: "POST", headers: { "content-type": "application/json", authorization: "Bearer prove" }, body: JSON.stringify({ model, max_tokens: maxTokens, messages: [{ role: "user", content: "hi" }] }) });
+        const allowed = await send("claude-opus-5", 2000);
+        const refused = await send("claude-sonnet-5-5", 2000);
+        const overCap = await send("claude-opus-5", 100_000);
+        const embeddings = await fetch(`${gw.url}/embeddings`, { method: "POST", headers: { "content-type": "application/json" }, body: "{}" });
+        const callsBeforeDown = upstreamCalls;
+        const spent = gate.budgetLeft({ person: "p-0" }).standing.find((x) => x.window === "day")?.spentMicros;
+        db.close();
+        const down = await send("claude-opus-5", 2000);
+        const detail = `allowed ${allowed.status} settled for ${spent} micro-dollars; policy refusal ${refused.status}; over the cap ${overCap.status}; unmeterable route ${embeddings.status}; gate down ${down.status}; the stand-in endpoint saw ${upstreamCalls} call${upstreamCalls === 1 ? "" : "s"}`;
+        const ok = allowed.status === 200 && spent === 17_500 && refused.status === 403 && overCap.status === 429 && embeddings.status === 403 && down.status === 503 && callsBeforeDown === 1 && upstreamCalls === 1;
+        return (ok ? pass : fail)(detail);
+      } finally {
+        await gw.close();
+        await new Promise<void>((r) => stand.close(() => r()));
+      }
+    },
+  },
+  {
+    id: "price-sources-agree-but-one",
+    command: "compare data/prices/anthropic-2026-10-24.json with the saved Portkey file data/prices/portkey-anthropic-2026-10-24.json",
+    seed: null,
+    async run() {
+      const ours = "data/prices/anthropic-2026-10-24.json";
+      const theirs = "data/prices/portkey-anthropic-2026-10-24.json";
+      if (!existsSync(ours) || !existsSync(theirs)) return notRun(`a price file is missing (${ours}, ${theirs})`);
+      const c = comparePrices(loadSnapshot(ours), parsePortkey((JSON.parse(readFileSync(theirs, "utf8")) as { models: unknown }).models));
+      const d = c.disagreements;
+      const only = d.length === 1 && d[0]?.model === "claude-sonnet-5-5" && d[0]?.field === "cacheReadPerMTokMicros" && d[0]?.ours === 100_000 && d[0]?.theirs === 200_000;
+      const detail = `${c.compared.length} models priced by both: ${c.agreeing} of ${c.agreeing + d.length} prices agree; ${d.length === 0 ? "no disagreement" : d.map((x) => `${x.model} ${x.field} ${x.ours} against ${x.theirs}`).join("; ")}`;
+      return c.agreeing === 89 && only ? pass(detail) : fail(detail);
     },
   },
   {
