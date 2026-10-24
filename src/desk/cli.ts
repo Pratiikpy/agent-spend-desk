@@ -12,6 +12,8 @@ import { findRepoRoot } from "./outcomes/git.ts";
 import { linkOutcomes } from "./outcomes/link.ts";
 import { ingestClaudeCode } from "./ledger/ingest.ts";
 import { formatUsd } from "./money.ts";
+import { comparePrices, parsePortkey, renderComparison } from "./pricing/compare.ts";
+import { priceSensitivity, renderSensitivity } from "./pricing/sensitivity.ts";
 import { loadSnapshot } from "./pricing/pricebook.ts";
 import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { parsePolicyYaml } from "./policy/parse.ts";
@@ -121,6 +123,7 @@ const { values, positionals } = parseArgs({
     name: { type: "string" },
     debug: { type: "boolean", default: false },
     second: { type: "string" },
+    portkey: { type: "string" },
     defects: { type: "string", default: "0" },
     "timeout-sec": { type: "string", default: "900" },
   },
@@ -136,7 +139,18 @@ if (sampleMode && ["propose", "silos", "ask", "ui", "verify-answer", "bench", "s
 }
 const db = command === "card" || command === "status" || command === "lab" ? openLedger(":memory:") : openLedger(ledgerPath);
 
-if (command === "statusline") {
+if (command === "prices") {
+  if (positionals[1] !== "compare") throw new Error("Use: desk prices compare [--portkey <file>] [--prices <snapshot>]");
+  const other = values.portkey ?? "data/prices/portkey-anthropic-2026-10-24.json";
+  const body = JSON.parse(readFileSync(other, "utf8")) as { snapshotId?: string; fetchedAt?: string; models: unknown };
+  const mine = loadSnapshot(pricesPath);
+  console.log(`Our price book: ${mine.snapshotId}. Portkey: ${body.snapshotId ?? other}, fetched ${body.fetchedAt?.slice(0, 10) ?? "on an unknown date"}.`);
+  const comparison = comparePrices(mine, parsePortkey(body.models));
+  console.log(renderComparison(comparison, { ours: "our price book", theirs: "Portkey" }));
+  const sensitivity = renderSensitivity(priceSensitivity(db, comparison), { ours: "our price book", theirs: "Portkey" });
+  if (sensitivity !== "") console.log(`
+${sensitivity}`);
+} else if (command === "statusline") {
   if (positionals[1] === "install") {
     console.log("Add this to ~/.claude/settings.json (this command never edits Claude Code's settings). Claude Code then runs it for each status line update and sends the plan limits it knows:");
     console.log(installSnippet(process.cwd()));
@@ -231,7 +245,7 @@ written: ${r.files.join(", ")}`);
   console.log(r.text);
   if (!r.ok) process.exitCode = 1;
 } else if (command === "ui") {
-  const ui = await startUiServer({ ledgerPath: ledgerPath, pricesPath: pricesPath, policiesDir: "policies", port: Number(values.port), mode: sampleMode ? "sample" : "own_logs" });
+  const ui = await startUiServer({ ledgerPath: ledgerPath, pricesPath: pricesPath, policiesDir: "policies", port: Number(values.port), mode: sampleMode ? "sample" : "own_logs", otherPricesPath: values.portkey ?? "data/prices/portkey-anthropic-2026-10-24.json" });
   console.log(`desk ui is running. Open this address (it carries a one-time token):
   ${ui.url}
 Ctrl+C stops it.`);
@@ -483,7 +497,7 @@ ${t.pass} PASS, ${t.fail} FAIL, ${t.notRun} NOT RUN. NOT RUN is not a pass: it n
   console.log(`logs: ${sampleLogsDir(values.out)}`);
   console.log(`repos: ${sampleReposDir(values.out)}`);
 } else {
-  console.error(`unknown command "${command}". Use: card | status | forget | egress | limits | statusline | propose | silos | ask | remember | verify-answer | gate | approve | ui | canary | bench | seats | route | calibrate | regret | lessons | prove | demo | ingest | bill | autopsy | landing | replay | tunnel | sample build`);
+  console.error(`unknown command "${command}". Use: card | status | forget | egress | limits | statusline | prices | propose | silos | ask | remember | verify-answer | gate | approve | ui | canary | bench | seats | route | calibrate | regret | lessons | prove | demo | ingest | bill | autopsy | landing | replay | tunnel | sample build`);
   process.exitCode = 2;
 }
 db.close();

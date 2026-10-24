@@ -8,6 +8,7 @@ import { DatabaseSync } from "node:sqlite";
 
 import { createRedactor } from "../card/redact.ts";
 import { OLDEST_READABLE_VERSION, openLedger, SCHEMA_VERSION, type Ledger } from "../ledger/db.ts";
+import { parsePortkey } from "../pricing/compare.ts";
 import { loadSnapshot } from "../pricing/pricebook.ts";
 import * as q from "./queries.ts";
 import { askScreen, canaryScreen, dossiersScreen, silosScreen, type ExtraPaths } from "./extra.ts";
@@ -44,6 +45,8 @@ export interface UiOptions {
   token?: string;
   env?: Readonly<Record<string, string | undefined>>;
   nowMs?: () => number;
+  /** A saved copy of another source's price file (see scripts/fetch-portkey-prices.ts). The Bill screen shows a range where it disagrees with ours. */
+  otherPricesPath?: string;
 }
 
 export interface UiServer {
@@ -125,6 +128,16 @@ function tokenOk(given: string | undefined, expected: string): boolean {
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
+function readOtherPrices(path: string): q.UiContext["otherPrices"] {
+  if (!existsSync(path)) return null;
+  try {
+    const body = JSON.parse(readFileSync(path, "utf8")) as { fetchedAt?: string; models?: unknown };
+    return { label: "Portkey", fetchedAt: String(body.fetchedAt ?? "").slice(0, 10), models: parsePortkey(body.models) };
+  } catch {
+    return null;
+  }
+}
+
 export async function startUiServer(opts: UiOptions): Promise<UiServer> {
   const { db, problem } = openReadOnly(opts.ledgerPath);
   const snapshot = loadSnapshot(opts.pricesPath);
@@ -136,6 +149,7 @@ export async function startUiServer(opts: UiOptions): Promise<UiServer> {
     ledgerName: basename(opts.ledgerPath),
     env: opts.env ?? process.env,
     nowMs: opts.nowMs ?? Date.now,
+    otherPrices: opts.otherPricesPath ? readOtherPrices(opts.otherPricesPath) : null,
   };
   const token = opts.token ?? randomBytes(24).toString("hex");
   const statics = staticMap();

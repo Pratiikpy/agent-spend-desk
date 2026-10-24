@@ -7,7 +7,9 @@ import { buildCard } from "../card/build.ts";
 import type { Ledger } from "../ledger/db.ts";
 import { landingBreakdown } from "../outcomes/breakdown.ts";
 import { reconcile, summariseReconciliation, type ReconcileRow } from "../reconcile/reconcile.ts";
+import { comparePrices, type ForeignRow } from "../pricing/compare.ts";
 import type { PriceSnapshot } from "../pricing/pricebook.ts";
+import { costBand, priceSensitivity } from "../pricing/sensitivity.ts";
 import { describeWidening, restrictCheck } from "../policy/restrict.ts";
 import { parsePolicyYaml } from "../policy/parse.ts";
 import type { Policy } from "../policy/types.ts";
@@ -29,6 +31,8 @@ export interface UiContext {
   ledgerName: string;
   env: Readonly<Record<string, string | undefined>>;
   nowMs: () => number;
+  /** A second source of list prices to check ours against, when one is on disk. */
+  otherPrices?: { label: string; fetchedAt: string; models: Readonly<Record<string, ForeignRow>> } | null;
 }
 
 export class BadParam extends Error {}
@@ -217,6 +221,7 @@ export function bill(ctx: UiContext, span: Span): object {
       { cls: "unpriced", calls: t.unpricedCalls, note: "Models with no price row: tokens counted, no dollars invented." },
     ],
     reconciliation: reconciliationSummary(reportedInSpan(ctx, span)),
+    priceBand: priceBand(ctx, span, t.estimatedMicros),
     landing: { rows: landingRows(landing), totalMicros: landing.totalMicros, lowConfidenceMicros: landing.lowConfidenceMicros, linked: hasLinks(ctx.db) },
     costPerLandedSession: landed === 0 ? null : Math.round(landedMicros / landed),
     landedSessions: landed,
@@ -229,6 +234,25 @@ export function bill(ctx: UiContext, span: Span): object {
   };
 }
 
+const PRICE_LABEL: Record<string, string> = { inputPerMTokMicros: "input", outputPerMTokMicros: "output", cacheReadPerMTokMicros: "cache read", cacheWrite5mPerMTokMicros: "cache write (5 minutes)", cacheWrite1hPerMTokMicros: "cache write (1 hour)" };
+
+/** The estimate as a range when a second price source disagrees with ours on a price that applies to tokens in this period; null when there is no second source or no disagreement that matters. */
+function priceBand(ctx: UiContext, span: Span, estimatedMicros: number): object | null {
+  if (!ctx.otherPrices) return null;
+  const items = priceSensitivity(ctx.db, comparePrices(ctx.snapshot, ctx.otherPrices.models), { since: span.sinceIso, until: span.untilIso });
+  if (items.length === 0) return null;
+  const band = costBand(estimatedMicros, items);
+  return {
+    source: ctx.otherPrices.label,
+    fetchedAt: ctx.otherPrices.fetchedAt,
+    estimateMicros: band.estimateMicros,
+    lowMicros: band.lowMicros,
+    highMicros: band.highMicros,
+    items: items.map((i) => ({ model: i.model, price: PRICE_LABEL[i.field] ?? i.field, longPrompts: i.tier === "long", tokens: i.tokens, deltaMicros: i.deltaMicros })),
+    note: "Two sources of list prices disagree on the prices above. Which one is in force is not verified here; an invoice or a usage export for these tokens settles it.",
+  };
+}
+
 function reportedClass(r: ReturnType<typeof reportedInSpan>): object {
   if (r === null) return { cls: "reported", calls: 0, processes: 0, note: "This ledger was written before the tool's own cost was read. Run `desk ingest` once to read it." };
   if (r.rows.length === 0) return { cls: "reported", calls: 0, processes: 0, note: "The tool recorded no cost of its own in this period (older Claude Code versions do not write one)." };
@@ -237,7 +261,7 @@ function reportedClass(r: ReturnType<typeof reportedInSpan>): object {
     calls: r.rows.reduce((s, x) => s + x.calls, 0),
     processes: r.rows.length,
     micros: r.summary.reportedMicros,
-    note: "The tool's own running total for those processes, cumulative from each process's start. It lags and undercounts when sub-agents run, and it uses an older cache-read price for Sonnet 5.5 and Opus 5.5. It is not an invoice.",
+    note: "The tool's own running total for those processes, cumulative from each process's start. It lags and undercounts when sub-agents run, and for Sonnet 5.5 it uses a cache-read price of $0.20 per million tokens where Anthropic's pricing page says $0.10 (see the price check under the headline). It is not an invoice.",
   };
 }
 

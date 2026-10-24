@@ -32,7 +32,7 @@ How to read a status. *Built*: the core of the feature as specified exists and a
 | DF-022 OpenTelemetry GenAI ingest and the `desk.*` namespace | absent | none | no OpenTelemetry ingest and no desk.* namespace |
 | DF-023 Gateway spend-log adapter | absent | none | no gateway spend-log adapter |
 | DF-024 Invoice and usage-export import | partial | `src/desk/silo/facts.ts`, `src/sponsors/zetaris/silo-port.ts`, `tests/desk/silo.test.ts` | invoices arrive only through the Zetaris silo; there is no generic import |
-| DF-025 Price book | built | `src/desk/pricing/pricebook.ts`, `tests/desk/cost.test.ts` | a second price source, retirement dates |
+| DF-025 Price book | built | `src/desk/pricing/pricebook.ts`, `src/desk/pricing/compare.ts`, `src/desk/pricing/sensitivity.ts`, `tests/desk/cost.test.ts`, `tests/desk/price-compare.test.ts`, `tests/desk/price-sensitivity.test.ts`, `docs/verification/price-sources-2026-10-24.md` | retirement dates; only Anthropic's file is compared with a second source (Portkey), and the one disagreement it found (Sonnet 5.5 cache read) is unresolved without an invoice |
 | DF-026 Per-call cost formula and surcharges | partial | `src/desk/cost/cost.ts`, `src/desk/pricing/pricebook.ts`, `tests/desk/cost.test.ts`, `tests/desk/price-tiers.test.ts` | Claude Haiku 5.5 is priced by prompt length (over 100,000 tokens) from Anthropic's page; fast-mode, batch and US-only (1.1x) surcharges are not applied, and the logs do not say which applied |
 | DF-027 Provenance classes, reconciliation and allocation | partial | `src/desk/silo/facts.ts`, `src/desk/cost/cost.ts` | a reported class, idle and shared allocation |
 | DF-028 Unpriced handling | built | `src/desk/cost/cost.ts`, `tests/desk/cost.test.ts` | - |

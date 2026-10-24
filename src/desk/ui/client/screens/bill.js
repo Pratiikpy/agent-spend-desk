@@ -31,6 +31,13 @@ export async function render(ctx) {
         stat("Per landed session", d.costPerLandedSession === null ? "n/a" : money(d.costPerLandedSession, d.snapshotId), `${int(d.landedSessions)} sessions landed`),
         stat("Reverted", reverted ? money(reverted.micros, d.snapshotId) : usd(0), "work that was undone", Boolean(reverted && total > 0 && reverted.micros / total >= 0.05)),
       ),
+      d.priceBand
+        ? h(
+            "p",
+            { class: "note", "data-price-band": "true" },
+            `Price check: ${d.priceBand.source} (fetched ${d.priceBand.fetchedAt}) disagrees with our price book on ${d.priceBand.items.map((i) => `${i.model} ${i.price}${i.longPrompts ? " for long prompts" : ""} (${int(i.tokens)} tokens)`).join(", ")}. The estimate is ${usd(d.priceBand.estimateMicros)} on our prices and would be ${d.priceBand.highMicros > d.priceBand.estimateMicros ? `up to ${usd(d.priceBand.highMicros)}` : ""}${d.priceBand.highMicros > d.priceBand.estimateMicros && d.priceBand.lowMicros < d.priceBand.estimateMicros ? " or as low as " : ""}${d.priceBand.lowMicros < d.priceBand.estimateMicros ? usd(d.priceBand.lowMicros) : ""} on theirs. ${d.priceBand.note}`,
+          )
+        : null,
     ),
     section(
       "Kinds of dollars",

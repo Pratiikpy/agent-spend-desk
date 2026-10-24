@@ -30,7 +30,7 @@ The median absolute difference is 0.0%: more than half of the processes agree to
 
 ## What this does to the product
 
-- The Bill and the card must keep three classes apart: **reported** (the tool's own counter, known to lag and undercount with sub-agents, and to use the old Sonnet 5.5 cache-read price), **estimated** (tokens in the logs at the page's list prices), and **billed** (an invoice, not available here). Neither of the first two is billed.
+- The Bill and the card must keep three classes apart: **reported** (the tool's own counter, known to lag and undercount with sub-agents, and to use a $0.20 Sonnet 5.5 cache-read price where the pricing page says $0.10; a second price source agrees with the tool, see `docs/verification/price-sources-2026-10-24.md`), **estimated** (tokens in the logs at the page's list prices), and **billed** (an invoice, not available here). Neither of the first two is billed.
 - A statement such as "the estimate matches Claude Code's own figure" is true of 248 of 420 processes on this machine, and false for the sessions that matter most to a big bill. Do not state accuracy beyond that.
 - The estimate for sessions that use sub-agents could be closer to the invoice than the tool's counter or farther. Settling it needs Anthropic's usage export or invoice for the same period.
 
