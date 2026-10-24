@@ -42,8 +42,44 @@ function pricingNote(p) {
   return parts.length ? h("div", null, ...parts) : null;
 }
 
+const BAR_WORDS = { kept: "kept", merged: "merged", committed: "committed" };
+
+// Idle work and spend no project owns, shared among the projects that landed work, in proportion to what each landed.
+function overheadSection(o) {
+  if (!o || o.state !== "ok") return null;
+  const lead = `${usd(o.overheadMicros)} of the period is overhead no project owns: idle work ${usd(o.idleMicros)}${o.sharedMicros > 0 ? `, sessions with no project folder ${usd(o.sharedMicros)}` : ""}.`;
+  if (o.overheadMicros === 0) return section("Shared overhead", "nothing to share", h("p", { class: "note" }, "No idle work and no unowned spend in this period."));
+  if (o.rows.length === 0) {
+    const wider = o.alternatives.filter((a) => a.projects > 0 && a.bar !== o.bar);
+    return section(
+      "Shared overhead",
+      "unallocated",
+      h("p", null, lead),
+      h("p", { class: "note" }, `Nothing is allocated: no project has work that reached "${BAR_WORDS[o.bar]}", so ${usd(o.unallocatedMicros)} stays unallocated rather than being divided by guess.${wider.length > 0 ? ` At a lower bar it would be shared: ${wider.map((a) => `"${a.bar}" among ${a.projects} project${a.projects === 1 ? "" : "s"}`).join("; ")}.` : " Few commits are linked, and a missing link is unknown, not proof that nothing landed."}`),
+    );
+  }
+  return section(
+    "Shared overhead",
+    `among projects that ${BAR_WORDS[o.bar]} work`,
+    h("p", null, lead),
+    table(
+      "Overhead by project",
+      [
+        { label: "Project", id: true, render: (r) => r.project },
+        { label: "Landed", num: true, render: (r) => usd(r.directMicros) },
+        { label: "Share", num: true, render: (r) => `${(r.weight * 100).toFixed(1)}%` },
+        { label: "Overhead", num: true, render: (r) => usd(r.allocatedMicros) },
+        { label: "With overhead", num: true, render: (r) => usd(r.directMicros + r.allocatedMicros) },
+      ],
+      o.rows,
+    ),
+    o.moreRows > 0 ? h("p", { class: "note" }, `And ${int(o.moreRows)} more projects, counted in the total.`) : null,
+    h("p", { class: "note" }, `The shares add up to the overhead exactly${o.residualMicros > 0 ? `; ${int(o.residualMicros)} micro-dollar${o.residualMicros === 1 ? "" : "s"} left over by rounding went to ${o.residualTo}, the project with the most landed spend` : ""}. A project that landed nothing bears none of it. ${int(o.landedSessions)} of ${int(o.sessions)} sessions reached "${BAR_WORDS[o.bar]}"; a commit missing from the ledger is unknown, not proof that nothing landed.`),
+  );
+}
+
 export async function render(ctx) {
-  const d = await ctx.api("/api/bill", { range: ctx.range });
+  const [d, oh] = await Promise.all([ctx.api("/api/bill", { range: ctx.range }), ctx.api("/api/overhead", { range: ctx.range })]);
   if (d.state === "empty") return h("div", null, head("Month bill", "Nothing billed yet"), emptyState(d));
   const rows = d.landing.rows;
   const landed = rows.filter((r) => r.state === "kept" || r.state === "merged").reduce((s, r) => s + r.micros, 0);
@@ -126,6 +162,7 @@ export async function render(ctx) {
         table("Projects", [{ label: "Project", id: true, render: (r) => r.project }, { label: "Sessions", num: true, render: (r) => int(r.sessions) }, { label: "Spend", num: true, render: (r) => num(usd(r.micros), PROV.estimated(d.snapshotId, { Rows: open({ project: r.project }) })) }], d.byProject),
       ),
     ),
+    overheadSection(oh),
     footnote(`List price times logged tokens, with the price snapshot ${d.snapshotId}.`, "A flat plan does not charge per token; this is what the same tokens would cost at list price."),
   );
 }

@@ -181,6 +181,11 @@ export async function startUiServer(opts: UiOptions): Promise<UiServer> {
         return withProblem(q.brief(ctx, p.get("day")));
       case "/api/bill":
         return withProblem(q.bill(ctx, q.parseRange(p.get("range"), db)));
+      case "/api/overhead": {
+        const bar = p.get("landed") ?? "kept";
+        if (bar !== "committed" && bar !== "merged" && bar !== "kept") throw new q.BadParam("landed is committed, merged or kept");
+        return withProblem(q.overhead(ctx, q.parseRange(p.get("range"), db), bar));
+      }
       case "/api/autopsy":
         return withProblem(q.autopsy(ctx, q.parseInt0(p.get("hours"), "hours", 5, 1, 168), q.parseInt0(p.get("days"), "days", 14, 1, 365)));
       case "/api/sessions":

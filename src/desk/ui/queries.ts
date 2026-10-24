@@ -20,6 +20,7 @@ import { analyseCalls, buildAutopsy, CAUSES, type Autopsy, type AutopsyCall, typ
 import { loadAutopsyCalls } from "../autopsy/load.ts";
 import { wasteEventsOf } from "../waste/load.ts";
 import { delegationTrees } from "../delegation/tree.ts";
+import { overheadView } from "../overhead/view.ts";
 import { buildCard } from "../card/build.ts";
 import type { Ledger } from "../ledger/db.ts";
 import { landingBreakdown } from "../outcomes/breakdown.ts";
@@ -206,6 +207,30 @@ function reportedInSpan(ctx: UiContext, span: Span): { rows: ReconcileRow[]; sum
   if (!has || has.n === 0) return null;
   const rows = reconcile(ctx.db).filter((r) => r.observedAt !== null && r.observedAt >= span.sinceIso && r.observedAt <= span.untilIso);
   return { rows, summary: summariseReconciliation(rows) };
+}
+
+/** The overhead of the period and who shares it, for the Bill screen. */
+export function overhead(ctx: UiContext, span: Span, bar: "committed" | "merged" | "kept"): object {
+  const empty = emptyState(ctx);
+  if (empty) return empty;
+  const v = overheadView(ctx.db, ctx.snapshot, span.sinceIso, span.untilIso, bar);
+  return {
+    state: "ok",
+    bar: v.bar,
+    window: { from: v.sinceIso, to: v.untilIso },
+    idleMicros: v.idleMicros,
+    sharedMicros: v.sharedMicros,
+    overheadMicros: v.overheadMicros,
+    unallocatedMicros: v.allocation.unallocatedMicros,
+    residualMicros: v.allocation.residualMicros,
+    residualTo: v.allocation.residualTo === null ? null : projectName(v.allocation.residualTo),
+    landedSessions: v.landedSessions,
+    sessions: v.sessions,
+    rows: v.allocation.rows.slice(0, 12).map((r) => ({ project: projectName(r.project), directMicros: r.directMicros, weight: r.weight, allocatedMicros: r.allocatedMicros })),
+    moreRows: Math.max(0, v.allocation.rows.length - 12),
+    alternatives: v.alternatives,
+    snapshotId: ctx.snapshot.snapshotId,
+  };
 }
 
 export function bill(ctx: UiContext, span: Span): object {

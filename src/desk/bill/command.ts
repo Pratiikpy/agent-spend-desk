@@ -29,8 +29,8 @@ export interface BillResult {
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const usd = formatUsd;
 
-/** The bill's period as a span the screens' query understands. */
-function spanOf(o: BillOptions): Span | string {
+/** A period as a span the screens' query understands: a calendar month, or dates, or everything the ledger holds. A string is the reason it could not be read. */
+export function spanOf(o: { db: Ledger; month?: string | undefined; since?: string | undefined; until?: string | undefined }): Span | string {
   if (o.month !== undefined && (o.since !== undefined || o.until !== undefined)) return "Give a month, or --since and --until, not both.";
   if (o.month !== undefined) {
     let m;

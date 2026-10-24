@@ -78,6 +78,7 @@ import { gaugeCachePath, newestMtimeMs, watchLogs, writeGaugeCache } from "./gau
 import { backfillClaudeCodeFields } from "./ledger/backfill.ts";
 import { wasteCommand } from "./waste/command.ts";
 import { delegationCommand } from "./delegation/command.ts";
+import { overheadCommand } from "./overhead/command.ts";
 import { costVersions, listRepricings, renderRepricing, repriceLedger } from "./pricing/reprice.ts";
 import { refreshTasks } from "./tasks/assign.ts";
 import { taskCommand } from "./tasks/command.ts";
@@ -160,6 +161,7 @@ const { values, positionals } = parseOrExit({
     currency: { type: "string" },
     period: { type: "string" },
     month: { type: "string" },
+    landed: { type: "string" },
     export: { type: "string" },
     "if-due": { type: "boolean", default: false },
     output: { type: "string" },
@@ -608,6 +610,10 @@ ${t.pass} PASS, ${t.fail} FAIL, ${t.notRun} NOT RUN. NOT RUN is not a pass: it n
     ...(values.export ? { exportAs: values.export as "csv" | "json" } : {}),
     ...(values.output ? { out: values.output } : {}),
   });
+  console.log(result.text);
+  if (!result.ok) process.exitCode = 1;
+} else if (command === "overhead") {
+  const result = overheadCommand({ db, snapshot: loadSnapshot(pricesPath), ...(values.month ? { month: values.month } : {}), ...(values.since ? { since: values.since } : {}), ...(values.until ? { until: values.until } : {}), ...(values.landed ? { landed: values.landed } : {}) });
   console.log(result.text);
   if (!result.ok) process.exitCode = 1;
 } else if (command === "delegation") {
