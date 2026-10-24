@@ -18,6 +18,7 @@ import { buildReview, weekLabel, weekRange } from "../review/review.ts";
 import { defaultMarkerPath, readMarkers } from "../tasks/markers.ts";
 import { analyseCalls, buildAutopsy, CAUSES, type Autopsy, type AutopsyCall, type Cause, type PerCall } from "../autopsy/engine.ts";
 import { loadAutopsyCalls } from "../autopsy/load.ts";
+import { wasteEventsOf } from "../waste/load.ts";
 import { buildCard } from "../card/build.ts";
 import type { Ledger } from "../ledger/db.ts";
 import { landingBreakdown } from "../outcomes/breakdown.ts";
@@ -654,7 +655,17 @@ export function sessions(ctx: UiContext, span: Span, sort: string, limit: number
   };
 }
 
-const KIND_TITLE: Record<BlockKind, string> = { loops: "A failing command repeated", idle: "The agent working on its own", subagents: "A delegated agent's run", cache_miss: "A context rewritten after the cache was lost" };
+const KIND_TITLE: Record<BlockKind, string> = {
+  loops: "A failing command repeated",
+  idle: "The agent working on its own",
+  subagents: "A delegated agent's run",
+  cache_miss: "A context rewritten after the cache was lost",
+  echo: "The same error again and again",
+  truncation: "A cut-short result asked for again",
+  churn: "One file edited again and again",
+  reflection: "Calls with no tool and no one asking",
+  orphan: "A delegated agent after its parent stopped",
+};
 
 const toolList = (raw: string): string[] => {
   try {
@@ -673,7 +684,7 @@ export async function sessionBlock(ctx: UiContext, id: string, blockId: string):
   const sessionCalls = loadAutopsyCalls(ctx.db, ctx.snapshot, span.a, span.b, { sessionId: id });
   const analysis = analyseCalls(sessionCalls);
   const autopsy = buildAutopsy(sessionCalls, Date.parse(span.a) - 1, Date.parse(span.b) + 1, analysis);
-  const block = findBlocks(sessionCalls, analysis, autopsy.missEvents).find((b) => b.id === blockId);
+  const block = findBlocks(sessionCalls, analysis, autopsy.missEvents, wasteEventsOf(ctx.db, sessionCalls, analysis)).find((b) => b.id === blockId);
   if (!block) return { state: "empty", reason: "This session has no such waste block.", hint: "Blocks are recomputed from the calls; a ledger read again since the link was made may have changed them. Open the session and pick one." };
   const thread = sessionCalls.filter((c) => c.threadKey === block.threadKey).sort((a, b) => a.tsMs - b.tsMs || a.callId.localeCompare(b.callId));
   const factsRows = all<{ call_id: string; n: number }>(
@@ -777,7 +788,7 @@ export function session(ctx: UiContext, id: string): object {
   );
   const sessionCalls = loadAutopsyCalls(ctx.db, ctx.snapshot, span.a, span.b, { sessionId: id });
   const analysis = analyseCalls(sessionCalls);
-  const blocks = findBlocks(sessionCalls, analysis, buildAutopsy(sessionCalls, Date.parse(span.a) - 1, Date.parse(span.b) + 1, analysis).missEvents);
+  const blocks = findBlocks(sessionCalls, analysis, buildAutopsy(sessionCalls, Date.parse(span.a) - 1, Date.parse(span.b) + 1, analysis).missEvents, wasteEventsOf(ctx.db, sessionCalls, analysis));
   const commits = all<{ sha: string; authored_at: string; method: string; confidence: string; merged: number; reverted: number; root: string }>(
     ctx.db,
     `SELECT g.sha, g.authored_at, sc.method, sc.confidence, g.merged, g.reverted, r.root FROM session_commit sc
@@ -830,7 +841,7 @@ export function session(ctx: UiContext, id: string): object {
     truncated: span.n > LIMIT,
     calls: rows,
     byCause,
-    blocks: blocks.slice(0, 50).map((b) => ({ id: b.id, kind: b.kind, rule: b.rule, calls: b.calls.length, micros: b.totalMicros, unpricedCalls: b.unpricedCalls, stopOffsetSec: Math.round((b.startMs - start) / 1000), durationSec: Math.round((b.endMs - b.startMs) / 1000) })),
+    blocks: blocks.slice(0, 50).map((b) => ({ id: b.id, kind: b.kind, rule: b.rule, calls: b.calls.length, micros: b.totalMicros, unpricedCalls: b.unpricedCalls, confidence: b.confidence ?? "high", stopOffsetSec: Math.round((b.startMs - start) / 1000), durationSec: Math.round((b.endMs - b.startMs) / 1000) })),
     blockCount: blocks.length,
     landing: {
       state: outcome?.state ?? "unlinked",

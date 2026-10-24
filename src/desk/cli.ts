@@ -76,6 +76,7 @@ import { approvalsCommand } from "./approvals/command.ts";
 import { readHabit } from "./ui/queries.ts";
 import { gaugeCachePath, newestMtimeMs, watchLogs, writeGaugeCache } from "./gauge/watch.ts";
 import { backfillClaudeCodeFields } from "./ledger/backfill.ts";
+import { wasteCommand } from "./waste/command.ts";
 import { costVersions, listRepricings, renderRepricing, repriceLedger } from "./pricing/reprice.ts";
 import { refreshTasks } from "./tasks/assign.ts";
 import { taskCommand } from "./tasks/command.ts";
@@ -454,7 +455,7 @@ ${sensitivity}`);
 } else if (command === "ingest" && values.backfill) {
   requireLocation(values["claude-dir"], "Claude Code keeps its logs in ~/.claude/projects", "--claude-dir");
   const r = await backfillClaudeCodeFields(db, findJsonlLogs(values["claude-dir"]));
-  console.log(`read ${r.files} files, ${r.callsSeen} calls; filled inference_geo on ${r.inferenceGeoFilled}. Nothing else was changed. Run desk prices reprice to price calls that say US-only.`);
+  console.log(`read ${r.files} files, ${r.callsSeen} calls; filled inference_geo on ${r.inferenceGeoFilled} calls and the hash and truncation mark of ${r.resultFactsFilled} tool results. Nothing else was changed. Run desk prices reprice to price calls that say US-only.`);
 } else if (command === "ingest") {
   requireLocation(values["claude-dir"], "Claude Code keeps its logs in ~/.claude/projects", "--claude-dir");
   const files = findJsonlLogs(values["claude-dir"]);
@@ -608,6 +609,10 @@ ${t.pass} PASS, ${t.fail} FAIL, ${t.notRun} NOT RUN. NOT RUN is not a pass: it n
   });
   console.log(result.text);
   if (!result.ok) process.exitCode = 1;
+} else if (command === "waste") {
+  const until = values.until ?? new Date().toISOString();
+  const since = values.since ?? new Date(Date.parse(until) - Number(values.days) * 86_400_000).toISOString();
+  console.log(wasteCommand(db, loadSnapshot(pricesPath), since, until).text);
 } else if (command === "autopsy") {
   const snapshot = loadSnapshot(pricesPath);
   const until = values.until ?? new Date().toISOString();

@@ -10,6 +10,7 @@ interface CallRow {
   ts: string;
   model: string;
   is_sidechain: number;
+  stop_reason: string | null;
   input_tokens: number;
   output_tokens: number;
   reasoning_tokens: number;
@@ -36,7 +37,7 @@ export function loadAutopsyCalls(db: Ledger, snapshot: PriceSnapshot, sinceIso: 
   const sidArgs = sid === undefined ? [] : [sid];
   const rows = db
     .prepare(
-      `SELECT m.call_id, m.source_id, m.session_id, m.ts, m.model, m.is_sidechain, m.input_tokens, m.output_tokens, m.reasoning_tokens,
+      `SELECT m.call_id, m.source_id, m.session_id, m.ts, m.model, m.is_sidechain, m.stop_reason, m.input_tokens, m.output_tokens, m.reasoning_tokens,
               m.cache_read_tokens, m.cache_write_5m_tokens, m.cache_write_1h_tokens, c.class, c.input_micros, c.output_micros,
               c.cache_read_micros, c.cache_write_5m_micros, c.cache_write_1h_micros
        FROM model_call m LEFT JOIN cost_event c ON c.call_id = m.call_id
@@ -129,6 +130,7 @@ export function loadAutopsyCalls(db: Ledger, snapshot: PriceSnapshot, sinceIso: 
               write1h: r.cache_write_1h_micros ?? 0,
             }
           : null,
+      stopReason: r.stop_reason ?? null,
       tools: toolsByCall.get(r.call_id) ?? [],
       toolResultChars: prev ? (resultCharsByCall.get(prev.id) ?? 0) : 0,
       humanPromptBefore: humanBefore,

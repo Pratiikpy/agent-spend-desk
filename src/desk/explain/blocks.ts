@@ -1,5 +1,6 @@
 import { CONFIG, type AutopsyCall, type MissEvent, type PerCall } from "../autopsy/engine.ts";
 import { callCostMicros, WASTE_RULE } from "../replay/from-ledger.ts";
+import type { WasteClass, WasteEvent } from "../waste/detect.ts";
 
 /**
  * Waste blocks and their explanation (DF-005). A block is a run of calls that one rule flags together: calls an agent made on its
@@ -7,9 +8,21 @@ import { callCostMicros, WASTE_RULE } from "../replay/from-ledger.ts";
  * call that rewrote a context the cache had held (cache miss). Everything here is computed from the calls and the rule's own
  * parameters; nothing is guessed, and what the logs cannot show is marked, not filled in.
  */
-export type BlockKind = "loops" | "idle" | "subagents" | "cache_miss";
+export type BlockKind = "loops" | "idle" | "subagents" | "cache_miss" | "echo" | "truncation" | "churn" | "reflection" | "orphan";
 
-export const BLOCK_RULE: Record<BlockKind, string> = { loops: WASTE_RULE.loops ?? "C-LOOP-1", idle: WASTE_RULE.idle ?? "C-IDLE-1", subagents: WASTE_RULE.subagents ?? "C-FANOUT-1", cache_miss: "C-CACHE-1" };
+export const BLOCK_RULE: Record<BlockKind, string> = {
+  loops: WASTE_RULE.loops ?? "C-LOOP-1",
+  idle: WASTE_RULE.idle ?? "C-IDLE-1",
+  subagents: WASTE_RULE.subagents ?? "C-FANOUT-1",
+  cache_miss: "C-CACHE-1",
+  echo: "C-LOOP-2",
+  truncation: "C-TRUNC",
+  churn: "C-CHURN",
+  reflection: "C-UNREF",
+  orphan: "C-ORPHAN",
+};
+
+const KIND_OF_RULE: Record<WasteClass, BlockKind> = { "C-LOOP-2": "echo", "C-TRUNC": "truncation", "C-CHURN": "churn", "C-UNREF": "reflection", "C-ORPHAN": "orphan" };
 
 /** What the ledger knows about the tool uses of one call that the autopsy call does not carry. */
 export interface ToolUseFacts {
@@ -28,12 +41,17 @@ export interface Block {
   endMs: number;
   totalMicros: number;
   unpricedCalls: number;
+  /** What the rule saw, for the rules that report it, and how far to trust a rule that is a heuristic. */
+  observed?: Record<string, string | number>;
+  confidence?: "high" | "low";
 }
 
 const cost = (c: AutopsyCall): number => callCostMicros(c);
 
 /** The blocks of one session, most expensive first. A session's threads (its own file, each delegated agent's file) are read separately. */
-export function findBlocks(calls: readonly AutopsyCall[], analysis: ReadonlyMap<string, PerCall>, misses: readonly MissEvent[]): Block[] {
+export function findBlocks(calls: readonly AutopsyCall[], analysis: ReadonlyMap<string, PerCall>, misses: readonly MissEvent[], events: readonly WasteEvent[] = []): Block[] {
+  // A call the waste rules claim is theirs: it does not also count in a delegated agent's run.
+  const claimed = new Set(events.flatMap((e) => e.calls.map((c) => c.callId)));
   const byThread = new Map<string, AutopsyCall[]>();
   for (const c of calls) {
     const list = byThread.get(c.threadKey) ?? [];
@@ -67,7 +85,7 @@ export function findBlocks(calls: readonly AutopsyCall[], analysis: ReadonlyMap<
     };
     for (const c of sorted) {
       const whole = analysis.get(c.callId)?.wholeCall;
-      const k: BlockKind | null = whole === "loops" || whole === "idle" || whole === "subagents" ? whole : null;
+      const k: BlockKind | null = claimed.has(c.callId) ? null : whole === "loops" || whole === "idle" || whole === "subagents" ? whole : null;
       if (k !== kind) flush();
       if (k !== null) {
         kind = k;
@@ -75,6 +93,23 @@ export function findBlocks(calls: readonly AutopsyCall[], analysis: ReadonlyMap<
       }
     }
     flush();
+  }
+  for (const e of events) {
+    const first = e.calls[0] as AutopsyCall;
+    blocks.push({
+      id: `${KIND_OF_RULE[e.rule]}-${first.callId.slice(-10)}`,
+      kind: KIND_OF_RULE[e.rule],
+      rule: e.rule,
+      sessionId: e.sessionId,
+      threadKey: e.threadKey,
+      calls: e.calls,
+      startMs: first.tsMs,
+      endMs: (e.calls[e.calls.length - 1] as AutopsyCall).tsMs,
+      totalMicros: e.micros,
+      unpricedCalls: e.unpricedCalls,
+      observed: e.observed,
+      confidence: e.confidence,
+    });
   }
   const byId = new Map(calls.map((c) => [c.callId, c]));
   for (const m of misses) {
@@ -185,6 +220,40 @@ export function explainBlock(block: Block, thread: readonly AutopsyCall[], missB
     rule = { id: block.rule, params: {}, observed: { calls: n, models: [...new Set(block.calls.map((c) => c.model))].join(", ") } };
     why = "the first call of a delegated agent's run";
     sentences.push({ text: `A delegated agent made ${n} call${n === 1 ? "" : "s"}. This is not necessarily waste: it is the cost a cap on delegated agents would govern.`, basis: "model_call rows with is_sidechain set" });
+  } else if (block.kind === "echo") {
+    const o = block.observed ?? {};
+    const tool = String(o["failing_tool"] ?? "a tool");
+    cascade = { firstBreak: null, steps: [], confidence: "high", why: "The same tool returned the same error each time and never succeeded in between: the agent kept trying a call that does not work." };
+    rule = { id: block.rule, params: { repeats: Number(o["repeats_required"] ?? 3) }, observed: { failing_tool: tool, calls_flagged: n } };
+    why = `the ${ordinal(Number(o["repeats_required"] ?? 3))} time ${tool} returned the same error, with no success of ${tool} and no prompt from you in between`;
+    sentences.push({ text: `${tool} returned the same error again and again, and the agent kept calling it for ${n} call${n === 1 ? "" : "s"} from the third time on.`, basis: "tool_result hashes (numbers and identifiers folded away) of this thread; the text of the error is not kept" });
+  } else if (block.kind === "truncation") {
+    const o = block.observed ?? {};
+    const tool = String(o["truncated_tool"] ?? "a tool");
+    const cut = thread.find((c) => c.callId === String(o["truncated_call"]));
+    const steps: CascadeStep[] = [...(cut ? [cut] : []), ...block.calls].map((c) => ({ callId: c.callId, atMs: c.tsMs, tools: c.tools.map((t) => t.name), repeatsFirstBreak: c.callId !== cut?.callId && c.tools.some((t) => t.name === tool), failed: false, opaque: false, opaqueWhy: null }));
+    cascade = { firstBreak: cut ? { callId: cut.callId, atMs: cut.tsMs, tool, callsBeforeStop: 0 } : null, steps, confidence: "high", why: `${tool} said its output was cut short, and the same use was asked for again ${Number(o["repeated_after_calls"] ?? 1)} call${Number(o["repeated_after_calls"] ?? 1) === 1 ? "" : "s"} later.` };
+    rule = { id: block.rule, params: { repeat_within_calls: Number(o["repeat_within_calls"] ?? 3) }, observed: { truncated_tool: tool, repeated_after_calls: Number(o["repeated_after_calls"] ?? 1) } };
+    why = `the call after a ${tool} result that said it was cut short: the cut was not dealt with and the same ${tool} use came back`;
+    sentences.push({ text: `A ${tool} result said it did not return everything, and the same ${tool} use was repeated ${Number(o["repeated_after_calls"] ?? 1)} call${Number(o["repeated_after_calls"] ?? 1) === 1 ? "" : "s"} later; the ${n} call${n === 1 ? "" : "s"} after the cut produced nothing that changed what the repeat asked for.`, basis: "tool_result rows marked truncated and the tool name and input hash of the later calls" });
+  } else if (block.kind === "churn") {
+    const o = block.observed ?? {};
+    cascade = { firstBreak: null, steps: [], confidence: "low", why: "A file edited again and again may be a file being written well. This rule cannot tell, so it is a heuristic and says so." };
+    rule = { id: block.rule, params: { edits: Number(o["edits_required"] ?? 4) }, observed: { calls_flagged: n } };
+    why = `the ${ordinal(Number(o["edits_required"] ?? 4))} edit of one file with no call that could run a check, and no prompt from you, in between`;
+    sentences.push({ text: `One file was edited for the ${ordinal(Number(o["edits_required"] ?? 4))} time without anything being run between the edits, and the edits went on for ${n} call${n === 1 ? "" : "s"} from there. This may be one change made in parts, which is work that was needed.`, basis: "session_edit rows of this thread" });
+  } else if (block.kind === "reflection") {
+    const o = block.observed ?? {};
+    cascade = { firstBreak: null, steps: [], confidence: "high", why: "None of these calls used a tool, and the calls before them did not hand control back, so the model was carrying on alone." };
+    rule = { id: block.rule, params: { consecutive_calls: Number(o["consecutive_required"] ?? 3) }, observed: { calls_with_no_tool: Number(o["calls_with_no_tool"] ?? n) } };
+    why = `the ${ordinal(Number(o["consecutive_required"] ?? 3))} call in a row that used no tool, when the calls before it had not handed control back`;
+    sentences.push({ text: `${Number(o["calls_with_no_tool"] ?? n)} calls in a row used no tool, and none of the earlier ones ended its turn.`, basis: "model_call tool names and stop reasons of this thread" });
+  } else if (block.kind === "orphan") {
+    const o = block.observed ?? {};
+    cascade = { firstBreak: null, steps: [], confidence: "high", why: "The agent that started this one had made its last call before these, and you did not prompt in between." };
+    rule = { id: block.rule, params: { orphan_after_minutes: Number(o["orphan_after_minutes"] ?? 10) }, observed: { minutes_after_parent: Number(o["minutes_after_parent"] ?? 0), calls: n } };
+    why = `a delegated agent's call ${Number(o["minutes_after_parent"] ?? 0)} minutes after the agent that started it made its last (the rule acts after ${Number(o["orphan_after_minutes"] ?? 10)})`;
+    sentences.push({ text: `A delegated agent went on calling the model for ${n} call${n === 1 ? "" : "s"}, starting ${Number(o["minutes_after_parent"] ?? 0)} minutes after the agent that started it had stopped.`, basis: "model_call timestamps of the session's main thread and the delegated thread" });
   } else {
     const m = missByCall.get(first.callId);
     const idx = thread.findIndex((c) => c.callId === first.callId);

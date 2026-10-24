@@ -2,7 +2,7 @@
 
 Generated from `feature-status.json` by `npm run desk -- status` and checked by `tests/desk/feature-status.test.ts`. The specification is `02-feature-list.md`, which was written as design; this page says how much of it exists.
 
-**63 built, 41 partial, 25 absent** of 129.
+**65 built, 41 partial, 23 absent** of 129.
 
 How to read a status. *Built*: the core of the feature as specified exists and a test, a `desk prove` check or a verification record exercises it. *Partial*: a real part exists and the missing part is named. *Absent*: no code was found. A status is a judgement made by reading and searching, which is why every row cites the files it rests on. A built feature can still be shallow; the "missing" column says so where known.
 
@@ -40,7 +40,7 @@ How to read a status. *Built*: the core of the feature as specified exists and a
 | DF-030 Task identity | built | `src/desk/tasks/identity.ts`, `src/desk/tasks/assign.ts`, `src/desk/tasks/markers.ts`, `src/desk/tasks/command.ts`, `src/desk/tasks/mark.ts`, `tests/desk/tasks.test.ts` | no prompt-thread method, by design: no prompt text is kept, so sessions are never grouped by what they were about; a task worked on under several branches is several tasks |
 | DF-031 Attribution with confidence | built | `src/desk/outcomes/attribute.ts`, `src/desk/calibrate/attribution.ts`, `tests/desk/calibration.test.ts`, `tests/desk/outcomes.test.ts` | - |
 | DF-032 Landing lattice | built | `src/desk/outcomes/attribute.ts`, `src/desk/outcomes/breakdown.ts`, `src/desk/pr/cost.ts`, `tests/desk/outcomes.test.ts`, `tests/desk/pr-cost.test.ts` | - |
-| DF-033 Waste classes | partial | `src/desk/autopsy/engine.ts`, `tests/desk/autopsy.test.ts` | classes beyond the ones the sample plants (truncation re-reads, reflection loops, edit-failure loops) |
+| DF-033 Waste classes | partial | `src/desk/waste/detect.ts`, `src/desk/waste/command.ts`, `src/desk/autopsy/engine.ts`, `src/desk/explain/blocks.ts`, `tests/desk/waste.test.ts`, `docs/verification/waste-rules-2026-10-25.md` | C-BLOAT, C-ABANDON, C-PR, C-REVERT and C-LANG are not built; error echo, edit churn, orphaned agent, truncation and reflection are |
 | DF-034 Threshold calibration on the owner's history | absent | none | no calibration of thresholds on the owner's history |
 | DF-035 Forecasts with a scorecard | partial | `src/desk/replay/wind-tunnel.ts`, `src/desk/calibrate/windtunnel.ts`, `tests/desk/calibration.test.ts` | a forecast of the owner's month with a running scorecard; the tunnel's range is a screen whose coverage was measured at 73% |
 | DF-036 Canary task capture | absent | none | canary tasks are not captured from the owner's work |
@@ -99,7 +99,7 @@ How to read a status. *Built*: the core of the feature as specified exists and a
 | DF-089 Prompt-cache invalidation root-cause analyzer | partial | `src/desk/autopsy/engine.ts` | cache-miss causes are inferred from logs; the prefix-diff root cause is not built |
 | DF-090 Tool-call idempotency key guard | partial | `src/desk/gate/gate.ts` | the reserve is idempotent; there is no tool-call exactly-once guard |
 | DF-091 Quota-aware plan router | absent | none | no quota-aware plan router |
-| DF-092 Tool-output silent-truncation waste detector | absent | none | no silent-truncation detector |
+| DF-092 Tool-output silent-truncation waste detector | built | `src/desk/ingest/claude-code.ts`, `src/desk/waste/detect.ts`, `src/desk/waste/command.ts`, `src/desk/explain/blocks.ts`, `tests/desk/waste.test.ts`, `tests/desk/result-facts.test.ts`, `docs/verification/waste-rules-2026-10-25.md` | the marker is a phrase the tool prints; a cut with no sentinel is invisible (no size clusters at a harness cap in 277,917 results, so a length rule would guess) |
 | DF-093 Earned-autonomy promotion and demotion matrix per workflow | absent | none | no earned-autonomy matrix |
 | DF-094 Multi-agent delegation handoff cost tree | partial | `src/desk/autopsy/engine.ts` | the sub-agent share is shown; there is no handoff cost tree |
 | DF-095 Share-weighted idle and shared-overhead allocation engine | absent | none | no share-weighted idle allocation |
@@ -107,7 +107,7 @@ How to read a status. *Built*: the core of the feature as specified exists and a
 | DF-097 Replay workspace snapshot including untracked scratch files | absent | none | no workspace snapshot for replay |
 | DF-098 Verbosity-bias penalty and bidirectional swap scoring in replay | absent | none | no verbosity-bias penalty or swap scoring |
 | DF-099 E-process anytime-valid canary monitor | built | `src/desk/canary/eprocess.ts`, `tests/desk/canary/stats.test.ts` | - |
-| DF-100 Ungrounded-reflection-loop waste detector | absent | none | no ungrounded-reflection detector |
+| DF-100 Ungrounded-reflection-loop waste detector | built | `src/desk/waste/detect.ts`, `src/desk/waste/command.ts`, `src/desk/explain/blocks.ts`, `tests/desk/waste.test.ts`, `docs/verification/waste-rules-2026-10-25.md` | not seen on a real positive: every bare call in Claude Code's logs that ended its turn answered something, so the rule needs calls that did not; NOT VERIFIED beyond constructed sequences |
 | DF-101 Structured tool-output alignment and continuous scoring in canary and replay | absent | none | no structured tool-output alignment |
 | DF-102 Standard in-toto statement and Sigstore-bundle packaging of dossiers | partial | `src/desk/verify/dsse.ts`, `src/desk/verify/format.ts` | in-toto Statement v1 in DSSE exists; no Sigstore bundle or timestamp anchor |
 | DF-103 Policy Attacker | built | `src/desk/agents/attacker.ts`, `tests/desk/propose.test.ts` | - |

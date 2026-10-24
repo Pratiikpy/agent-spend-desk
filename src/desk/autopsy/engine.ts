@@ -53,6 +53,8 @@ export interface AutopsyCall {
   /** Null when the model has no price: the tokens are counted but no cost is invented. */
   micros: { input: number; output: number; read: number; write5m: number; write1h: number } | null;
   tools: AutopsyToolUse[];
+  /** Why the model stopped, when the log says: `end_turn` hands control back, `tool_use` asks for a tool. Null when the record is incomplete. */
+  stopReason?: string | null;
   /** Characters of tool results that the previous call's tools returned to this call. */
   toolResultChars: number;
   /** A person sent a prompt between the previous call of this thread and this call. */

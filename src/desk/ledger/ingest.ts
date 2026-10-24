@@ -106,7 +106,7 @@ export async function ingestClaudeCode(
     "INSERT OR IGNORE INTO tool_call (tool_use_id, call_id, session_id, name, input_hash, ts) VALUES (?, ?, ?, ?, ?, ?)",
   );
   const upsertToolResult = db.prepare(
-    "INSERT OR REPLACE INTO tool_result (tool_use_id, session_id, ts, is_error, result_chars) VALUES (?, ?, ?, ?, ?)",
+    "INSERT OR REPLACE INTO tool_result (tool_use_id, session_id, ts, is_error, result_chars, result_hash, truncated) VALUES (?, ?, ?, ?, ?, ?, ?)",
   );
   const insertEdit = db.prepare("INSERT OR IGNORE INTO session_edit (tool_use_id, session_id, path, ts) VALUES (?, ?, ?, ?)");
   const insertPrompt = db.prepare("INSERT OR IGNORE INTO human_prompt (prompt_id, session_id, ts) VALUES (?, ?, ?)");
@@ -173,7 +173,7 @@ export async function ingestClaudeCode(
           }
         } else if (outcome.kind === "tool_results") {
           for (const r of outcome.results) {
-            upsertToolResult.run(r.toolUseId, r.sessionId, r.ts, r.isError ? 1 : 0, r.resultChars);
+            upsertToolResult.run(r.toolUseId, r.sessionId, r.ts, r.isError ? 1 : 0, r.resultChars, r.resultHash, r.truncated ? 1 : 0);
             seenAt(r.ts);
             report.toolResults += 1;
           }

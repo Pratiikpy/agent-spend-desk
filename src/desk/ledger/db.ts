@@ -445,7 +445,14 @@ CREATE TABLE call_reported_cost (
 CREATE INDEX call_reported_cost_source ON call_reported_cost (source);
 `;
 
-const MIGRATIONS: readonly string[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8, SCHEMA_V9, SCHEMA_V10, SCHEMA_V11, SCHEMA_V12, SCHEMA_V13];
+// What a tool result looked like without keeping what it said (DF-033, DF-092): a hash of the result with its numbers and identifiers folded away, so that
+// the same error coming back with a new line number or time reads as the same error, and whether the tool said it cut its own output short.
+const SCHEMA_V14 = `
+ALTER TABLE tool_result ADD COLUMN result_hash TEXT;
+ALTER TABLE tool_result ADD COLUMN truncated INTEGER NOT NULL DEFAULT 0 CHECK (truncated IN (0, 1));
+`;
+
+const MIGRATIONS: readonly string[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8, SCHEMA_V9, SCHEMA_V10, SCHEMA_V11, SCHEMA_V12, SCHEMA_V13, SCHEMA_V14];
 
 /** The schema version this build writes: the number of migrations. A reader compares a ledger's `user_version` with it. */
 export const SCHEMA_VERSION = MIGRATIONS.length;

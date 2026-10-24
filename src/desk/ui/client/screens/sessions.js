@@ -76,7 +76,17 @@ async function list(ctx) {
   );
 }
 
-const KIND_LABEL = { loops: "A failing command repeated", idle: "The agent on its own", subagents: "A delegated agent's run", cache_miss: "A cache lost" };
+const KIND_LABEL = {
+  loops: "A failing command repeated",
+  idle: "The agent on its own",
+  subagents: "A delegated agent's run",
+  cache_miss: "A cache lost",
+  echo: "The same error again and again",
+  truncation: "A cut-short result asked for again",
+  churn: "One file edited again and again",
+  reflection: "The model carrying on alone",
+  orphan: "A delegated agent after its parent stopped",
+};
 const ROLE_LABEL = { assistant_text: "said", tool_use: "called", tool_result: "got back" };
 
 function offset(sec) {
@@ -95,7 +105,7 @@ function blocksSection(ctx, d) {
       "Waste blocks",
       [
         { label: "What", render: (b) => h("a", { href: ctx.link("sessions", { id: d.id, block: b.id, range: ctx.range }) }, KIND_LABEL[b.kind] || b.kind) },
-        { label: "Rule", id: true, render: (b) => b.rule },
+        { label: "Rule", id: true, render: (b) => (b.confidence === "low" ? `${b.rule} (heuristic)` : b.rule) },
         { label: "Stop point", num: true, render: (b) => offset(b.stopOffsetSec) },
         { label: "Calls", num: true, render: (b) => int(b.calls) },
         { label: "Cost", num: true, render: (b) => usd(b.micros) },

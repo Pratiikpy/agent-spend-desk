@@ -50,6 +50,11 @@ export interface ParsedCall {
   toolVersion: string | null;
 }
 
+/**
+ * A tool result as the Desk keeps it: its size, whether it was an error, a hash of what it said with numbers and identifiers folded away
+ * (so the same error with a new line number reads as the same error), and whether the tool says it cut its own output short. The text
+ * itself is never kept.
+ */
 export interface ParsedToolResult {
   toolUseId: string;
   sessionId: string;
@@ -57,6 +62,8 @@ export interface ParsedToolResult {
   isError: boolean;
   /** Length in characters of the text of the result; images and other blocks count as zero. */
   resultChars: number;
+  resultHash: string | null;
+  truncated: boolean;
 }
 
 export interface ParsedHumanPrompt {
@@ -258,6 +265,48 @@ function hashInput(input: unknown): string {
   return createHash("sha256").update(canonical).digest("hex").slice(0, 16);
 }
 
+/**
+ * Phrases a tool uses to say it did not return everything: Claude Code's "output too large, full output saved to a file", a size limit that was
+ * exceeded, a count of lines or characters left out. The bare word is not enough (a result may print a field called truncated, or a test of that name).
+ * Only the start and the end of a result are read.
+ */
+const TRUNCATION = /<persisted-output>|\boutput (?:was |is )?too (?:large|long)\b|\bexceeds? (?:the )?maximum allowed\b|\b(?:output|results?|content|response|text|lines?) (?:was |were |is |has been |have been )?truncated\b|\btruncated (?:to|at|after|from|\()|\[\s*truncated\s*\]|\.\.\.\s*truncated|\[\d[\d,]* (?:more )?(?:lines?|chars?|characters?|bytes?|tokens?) (?:truncated|omitted|hidden|elided)\]|\.\.\. ?\[?\d[\d,]* (?:more )?(?:lines?|chars?|characters?|bytes?|tokens?)/i;
+
+function textOf(content: unknown): string {
+  if (typeof content === "string") return content;
+  if (Array.isArray(content)) return content.map((b) => (isObject(b) && typeof b["text"] === "string" ? b["text"] : "")).join("\n");
+  return "";
+}
+
+/**
+ * Fold what changes from one run to the next out of a result, so that the same failure compares equal: digit runs, long hex and uuid-like
+ * identifiers, whitespace and case. Only the start of a result is compared (the first 200 characters after folding): the head of an error
+ * says what failed, and a long tail often carries a path or a time that differs.
+ */
+export function foldResult(text: string): string {
+  return text
+    .slice(0, 20_000)
+    .toLowerCase()
+    .replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, "#")
+    .replace(/\b[0-9a-f]{12,}\b/gi, "#")
+    .replace(/\d+/g, "#")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 200);
+}
+
+/** A bare exit status, or a few characters, says too little to tell one failure from another: a search with no match and a build that broke both read "exit code 1". */
+const UNINFORMATIVE = /^exit code #\.?$/;
+
+export function resultFacts(content: unknown): { hash: string | null; truncated: boolean } {
+  const t = textOf(content);
+  if (t === "") return { hash: null, truncated: false };
+  const ends = t.length <= 4_000 ? t : `${t.slice(0, 2_000)}\n${t.slice(-2_000)}`;
+  const folded = foldResult(t);
+  const informative = folded.length >= 8 && !UNINFORMATIVE.test(folded);
+  return { hash: informative ? createHash("sha256").update(folded).digest("hex").slice(0, 16) : null, truncated: TRUNCATION.test(ends) };
+}
+
 function textLength(content: unknown): number {
   if (typeof content === "string") return content.length;
   if (Array.isArray(content)) {
@@ -280,7 +329,10 @@ function parseUserLine(d: Record<string, unknown>): LineOutcome {
     for (const block of content) {
       if (isObject(block) && block["type"] === "tool_result") {
         const toolUseId = text(block["tool_use_id"]);
-        if (toolUseId) results.push({ toolUseId, sessionId, ts, isError: block["is_error"] === true, resultChars: textLength(block["content"]) });
+        if (toolUseId) {
+          const facts = resultFacts(block["content"]);
+          results.push({ toolUseId, sessionId, ts, isError: block["is_error"] === true, resultChars: textLength(block["content"]), resultHash: facts.hash, truncated: facts.truncated });
+        }
       }
     }
     if (results.length > 0) return { kind: "tool_results", results };
