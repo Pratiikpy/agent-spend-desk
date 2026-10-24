@@ -28,6 +28,12 @@ Method: a window (one `resets_at`) with at least two readings gives one observat
 
 **Why windows differ.** The percent is in whole points, and the same plan is used from other devices, the web and models whose use does not appear in these logs; the percent moves without a trace here. Calls through other providers (kimi, glm, minimax and others set up through a router) do not draw on the plan and are left out of the token count by model name.
 
+## Claude Code's plan limit: the reader is built, no readings exist yet
+
+Claude Code documents one source for the plan limit: the JSON it sends a status line script, with `rate_limits.five_hour` and `rate_limits.seven_day` (`used_percentage` 0 to 100, `resets_at` in epoch seconds), present for claude.ai Pro and Max users after a session's first response (https://code.claude.com/docs/en/statusline, read 2026-10-24). `src/desk/statusline/main.ts` is a command Claude Code can run as its status line: it prints a one-line gauge (`claude-opus-5 · 5h 31% (resets in 3h 1m) · wk 9% · $1.50 · ctx 12%`), keeps a sample when a limit changed or a minute passed, never keeps the working directory or any text, and never errors loudly (checked on Node 24: 116 ms from start to output, junk input prints nothing and exits 0). `desk ingest --agent statusline` reads the samples into the same table as Codex's readings, and `desk limits --agent claude_code` fits them against Claude's token counts.
+
+Not turned on: Claude Code's settings are the user's, so `desk statusline install` prints the setting and does not edit anything. Until it has run for a few days there are no Claude readings and no Claude fit. The reader is tested against the fields the documentation lists; **NOT VERIFIED against a real Claude Code status line run**. Claude's plan limit may weight models differently (an Opus token may count for more than a Haiku token), which the Codex fit above does not need to model; a Claude fit should be checked per model before it is trusted.
+
 ## Not covered
 
 - One user, one plan type, Codex only. Claude Code's equivalent (the statusline's rate-limit fields) has not been captured on this machine, so no Claude limit estimate exists.

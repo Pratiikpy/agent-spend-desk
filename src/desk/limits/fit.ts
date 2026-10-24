@@ -29,14 +29,20 @@ export interface WindowObservation {
 export interface ObserveOptions {
   tool: string;
   kind: "primary" | "secondary";
-  /** Which models draw on the plan. The default is OpenAI's own models; calls through other providers do not count against it. */
+  /** Which models draw on the plan. The default is the tool's own provider's models; calls through other providers do not count against it. */
   modelFilter?: (model: string) => boolean;
 }
 
 const OPENAI_MODEL = /^(gpt|o\d|codex)/i;
+const CLAUDE_MODEL = /^claude/i;
+
+/** Which models draw on a tool's plan: its own provider's. Calls routed to other providers do not. */
+export function modelsOfTool(tool: string): (model: string) => boolean {
+  return (m) => (tool === "codex" ? OPENAI_MODEL.test(m) : tool === "claude_code" ? CLAUDE_MODEL.test(m) : true);
+}
 
 export function observeWindows(db: Ledger, opts: ObserveOptions): WindowObservation[] {
-  const filter = opts.modelFilter ?? ((m: string) => OPENAI_MODEL.test(m));
+  const filter = opts.modelFilter ?? modelsOfTool(opts.tool);
   const samples = db
     .prepare("SELECT ts, used_percent AS pct, resets_at AS resetsAt, window_minutes AS windowMinutes FROM limit_sample WHERE tool = ? AND kind = ? ORDER BY ts, session_id")
     .all(opts.tool, opts.kind) as unknown as { ts: string; pct: number; resetsAt: number; windowMinutes: number }[];

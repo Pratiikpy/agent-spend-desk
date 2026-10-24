@@ -39,6 +39,8 @@ import { calibrateCommand } from "./calibrate/command.ts";
 import { renderFeatureStatus, summariseFeatures, type FeatureRow } from "./status/features.ts";
 import { openCodeAgent } from "./lab/agents.ts";
 import { ingestCodex } from "./ledger/ingest-codex.ts";
+import { ingestStatusline } from "./ledger/ingest-statusline.ts";
+import { gauge, installSnippet, readSamples, statuslineLogPath } from "./statusline/statusline.ts";
 import { fitLimit, observeWindows, renderLimitFit } from "./limits/fit.ts";
 import { reconcile, renderReconciliation, summariseReconciliation } from "./reconcile/reconcile.ts";
 import { auditTask, renderAudit, writeExpected } from "./lab/audit.ts";
@@ -131,7 +133,20 @@ if (sampleMode && ["propose", "silos", "ask", "ui", "verify-answer", "bench", "s
 }
 const db = command === "card" || command === "status" || command === "lab" ? openLedger(":memory:") : openLedger(ledgerPath);
 
-if (command === "ingest" && values.agent === "codex") {
+if (command === "statusline") {
+  if (positionals[1] === "install") {
+    console.log("Add this to ~/.claude/settings.json (this command never edits Claude Code's settings). Claude Code then runs it for each status line update and sends the plan limits it knows:");
+    console.log(installSnippet(process.cwd()));
+    console.log(`Readings are kept in ${statuslineLogPath()} and read into the ledger with: desk ingest --agent statusline`);
+  } else {
+    const samples = readSamples(statuslineLogPath());
+    const last = samples[samples.length - 1];
+    console.log(last ? `${samples.length} readings in ${statuslineLogPath()}; the last: ${gauge(last, new Date(last.ts))} at ${last.ts}` : `No readings in ${statuslineLogPath()} yet. Turn the status line on with: desk statusline install`);
+  }
+} else if (command === "ingest" && values.agent === "statusline") {
+  const r = ingestStatusline(db, readSamples(statuslineLogPath()));
+  console.log(`read ${r.samples} status line samples; ${r.limitSamples} new plan-limit readings`);
+} else if (command === "ingest" && values.agent === "codex") {
   const files = existsSync(values["codex-dir"]) ? findJsonlLogs(values["codex-dir"]) : [];
   const r = await ingestCodex(db, files, loadSnapshot(pricesPath));
   console.log(`read ${r.files} Codex files (${r.unchangedFiles} unchanged, ${r.skippedFiles} with no session)`);
@@ -139,7 +154,7 @@ if (command === "ingest" && values.agent === "codex") {
   if (r.unpricedCalls > 0) console.log(`unpriced: ${r.unpricedCalls} calls on ${Object.entries(r.unpricedModels).map(([m, why]) => `${m} (${why})`).join(", ")}`);
 } else if (command === "limits") {
   const rows = db.prepare("SELECT COUNT(*) AS n FROM limit_sample WHERE tool = ?").get(values.agent ?? "codex") as { n: number };
-  if (rows.n === 0) console.log("No plan-limit readings in this ledger. Read Codex logs first: desk ingest --agent codex.");
+  if (rows.n === 0) console.log("No plan-limit readings for that tool in this ledger. Codex: desk ingest --agent codex. Claude Code: desk statusline install, then desk ingest --agent statusline; use --agent claude_code here.");
   else {
     for (const [kind, label] of [["primary", "5-hour"], ["secondary", "weekly"]] as const) {
       console.log(renderLimitFit(fitLimit(observeWindows(db, { tool: values.agent ?? "codex", kind })), label));
@@ -460,7 +475,7 @@ ${t.pass} PASS, ${t.fail} FAIL, ${t.notRun} NOT RUN. NOT RUN is not a pass: it n
   console.log(`logs: ${sampleLogsDir(values.out)}`);
   console.log(`repos: ${sampleReposDir(values.out)}`);
 } else {
-  console.error(`unknown command "${command}". Use: card | status | forget | egress | limits | propose | silos | ask | remember | verify-answer | gate | approve | ui | canary | bench | seats | route | calibrate | regret | lessons | prove | demo | ingest | bill | autopsy | landing | replay | tunnel | sample build`);
+  console.error(`unknown command "${command}". Use: card | status | forget | egress | limits | statusline | propose | silos | ask | remember | verify-answer | gate | approve | ui | canary | bench | seats | route | calibrate | regret | lessons | prove | demo | ingest | bill | autopsy | landing | replay | tunnel | sample build`);
   process.exitCode = 2;
 }
 db.close();
