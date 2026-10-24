@@ -226,3 +226,16 @@ Phase 0 to 8 each ends with the user-facing part of what it built: a screen or a
 ## 11. Status of the go (2026-10-24)
 
 Prateek said go on the whole plan and asked to be told when build and polish are done. Work proceeds in this order, each step tested before the next: Phase 0 to completion; Phase 1; the security and privacy foundation (Phase 2 item 0) before any real data is read; the Phase 3 spike, whose numbers decide how much of Phases 3 to 7 can claim; then the rest of Phase 2 and Phases 3 to 8 in dependency order; the trial kit of Phase 9; Phase 10. A phase that fails its conviction check stops and is reported with the numbers, not worked around. The only steps that need Prateek are the ones marked "only Prateek": real users, Cursor sessions, the upload and the HackOS submission.
+
+## 12. Progress log (2026-10-24)
+
+What is built and checked since the go, in the order it was done, each with the file that holds the evidence. Nothing here is a claim of "done": every item names what it does not cover.
+
+- **Phase 1.** Feature status for all 129 rows (42 built, 57 partial, 30 absent), the claim checker, decision records (`docs/design/desk/07-feature-status.md`).
+- **Security and privacy.** Credentials masked before storage and egress, an egress log, `desk forget` (`docs/security/threat-model.md`).
+- **Phase 2.** A `reported` cost class and a reconciliation of the tool's own cost with the estimate (`docs/verification/reconciliation-2026-10-24.md`); Haiku 5.5 prompt-length pricing; a second price source and the one disagreement it found, with its dollar effect and a range on the Bill screen (`docs/verification/price-sources-2026-10-24.md`); Codex and OpenCode readers (`codex-reader-and-limit-fit-2026-10-24.md`, `opencode-reader-2026-10-24.md`); a Claude Code status line reader for plan limits; per-plan limit fits (a pooling error was found and corrected the same day); a runway forecast checked time-ordered on 110 real windows, after a pace projection failed the same check (`runway-2026-10-24.md`); a retention report; `desk pr`.
+- **Phase 3.** The Lab harness, ten spike tasks, a protocol with go criteria held in code, and a task defect fixed and logged (`docs/lab/00-spike-protocol.md`). The spike's first results: 8 of 9 tasks passed every run (too easy), one never (too hard), so five harder tasks were written (cron, JSON Patch, glob, money, semver ranges) and a calibration batch (`hard-1`) is running. Not yet done: the second-day reproduction, the verdict, the arms.
+- **Phase 6.** A bypass suite and a gate clock anchor (`gate-enforcement.md`), and the gateway door for OpenAI-compatible and Anthropic-compatible tools with owner-set prices (`gateway-2026-10-24.md`). Not done: coverage measured on Lab runs, a reversible installer, a watcher for tools with no hook.
+- **Phase 0.** Paused for the spike (the same model endpoint). Its recordings are uncommitted; `desk prove` is red until they finish.
+
+Corrections made on the way, so they are not lost: the limit fit had pooled plans and window lengths (plus 5-hour is 258K tokens per percent, not 242K); the first runway forecast was wrong 24 times in 26 and was replaced; the cost note said Claude Code's Sonnet 5.5 price was "older" when two sources agree with it; OpenCode's own database omits one call per session.
