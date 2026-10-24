@@ -1,3 +1,5 @@
+import { BudgetError } from "../agents/budget.ts";
+import { completeOwn } from "../agents/own-calls.ts";
 import { createHash } from "node:crypto";
 
 import { ModelError, type ModelPort } from "../agents/model.ts";
@@ -78,7 +80,8 @@ export async function runPack(o: RunOptions): Promise<RunRow[]> {
       for (let a = 1; a <= attempts; a += 1) {
         const nonce = createHash("sha256").update(`${o.arm}|${o.day}|${task.id}|${now()}|${i}|${a}`).digest("hex").slice(0, 12);
         try {
-          const r = await o.port.complete(
+          const r = await completeOwn(
+            o.port,
             { role: `canary_${o.arm}`, maxTokens: o.maxTokens ?? 400, temperature: o.temperature ?? 0.7, messages: [{ role: "system", content: SYSTEM }, { role: "user", content: `${task.prompt}\n\n(test id ${nonce})` }] },
             o.deadlineMs ?? 90_000,
           );
@@ -89,9 +92,11 @@ export async function runPack(o: RunOptions): Promise<RunRow[]> {
           };
           if (score !== null) break;
         } catch (e) {
-          const why = e instanceof ModelError ? `${e.kind}${e.status ? ` ${e.status}` : ""}` : "unexpected";
+          const why = e instanceof BudgetError ? "own spend limit" : e instanceof ModelError ? `${e.kind}${e.status ? ` ${e.status}` : ""}` : "unexpected";
           last = { day: o.day, date: o.date, arm: o.arm, taskId: task.id, servedModel: null, score: null, error: `${why} after ${a} of ${attempts} attempts`, latencyMs: now() - started, tokensIn: null, tokensOut: null, replySha: null, harness, cacheBypass: true };
         }
+        // The Desk's own daily limit will not be lifted by asking again.
+        if (last !== null && last.error?.startsWith("own spend limit")) break;
         if (a < attempts) await new Promise((r) => setTimeout(r, o.retryPauseMs ?? 3000));
       }
       rows[i] = last as RunRow;
@@ -109,7 +114,7 @@ export async function runPack(o: RunOptions): Promise<RunRow[]> {
 export async function probeCache(port: ModelPort, now: () => number = Date.now): Promise<{ fresh: boolean; why: string }> {
   const code = createHash("sha256").update(`probe|${now()}|${Math.random()}`).digest("hex").slice(0, 10);
   try {
-    const r = await port.complete({ role: "canary_probe", maxTokens: 60, temperature: 0, messages: [{ role: "system", content: SYSTEM }, { role: "user", content: `Reply with exactly this code and nothing else: ${code}` }] }, 60_000);
+    const r = await completeOwn(port, { role: "canary_probe", maxTokens: 60, temperature: 0, messages: [{ role: "system", content: SYSTEM }, { role: "user", content: `Reply with exactly this code and nothing else: ${code}` }] }, 60_000);
     return r.content.includes(code) ? { fresh: true, why: "the probe came back with its own fresh code" } : { fresh: false, why: "the probe asked for a code invented a moment ago and the answer did not contain it, so the endpoint may be replaying answers" };
   } catch (e) {
     return { fresh: false, why: `the probe could not be answered (${e instanceof ModelError ? e.kind : "unexpected"})` };

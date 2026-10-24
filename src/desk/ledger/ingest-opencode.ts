@@ -1,3 +1,4 @@
+import { flagUntrustedText } from "../security/flag.ts";
 import { statSync } from "node:fs";
 
 import { readOpenCode, type ReasoningCheck } from "../ingest/opencode.ts";
@@ -84,5 +85,6 @@ export async function ingestOpenCode(db: Ledger, dbPath: string, snapshot: Price
     `INSERT INTO ingest_run (kind, started_at, finished_at, files, lines_read, calls_new, calls_merged, malformed_lines, truncated_tails, usage_conflicts)
      VALUES ('opencode', ?, ?, 1, ?, ?, 0, ?, 0, 0)`,
   ).run(started, now().toISOString(), read.messages, report.callsNew, read.skipped["malformed"] ?? 0);
+  flagUntrustedText(db, new Date().toISOString());
   return report;
 }

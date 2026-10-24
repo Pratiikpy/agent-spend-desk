@@ -1,3 +1,4 @@
+import { declaredFetch, destination, type Profile } from "../security/net.ts";
 import { randomUUID } from "node:crypto";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
@@ -71,6 +72,8 @@ export interface GatewayOptions {
   firstByteMs?: number;
   onEntry?: (e: GatewayEntry) => void;
   fetchImpl?: typeof fetch;
+  /** `local` forwards only to an upstream on this machine. */
+  profile?: Profile;
   /** A fixed identity for every request, for a gateway that serves one agent run; it overrides the x-desk headers. */
   identity?: { person?: string; session?: string; project?: string; agent?: string };
   /**
@@ -187,7 +190,8 @@ async function readWithin(reader: ReadableStreamDefaultReader<Uint8Array>, ms: n
 }
 
 export async function startGateway(opts: GatewayOptions): Promise<Gateway> {
-  const fetchImpl = opts.fetchImpl ?? fetch;
+  const declared = destination("gateway_upstream", opts.upstream, "the requests of the tool pointed at the gateway, after the gate has allowed them", "--upstream");
+  const fetchImpl = opts.fetchImpl ?? declaredFetch(declared === null ? [] : [declared], opts.profile === undefined ? {} : { profile: opts.profile });
   const upstream = opts.upstream.replace(/\/$/, "");
   const maxBody = opts.maxBodyBytes ?? 8 * 1024 * 1024;
   const firstByteMs = opts.firstByteMs ?? 120_000;

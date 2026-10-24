@@ -1,6 +1,6 @@
 export class BudgetError extends Error {
   readonly code = "E_BUDGET_EXCEEDED";
-  constructor(readonly what: "wall_clock" | "model_calls" | "tool_calls" | "turns", detail: string) {
+  constructor(readonly what: "wall_clock" | "model_calls" | "tool_calls" | "turns" | "own_spend", detail: string) {
     super(`E_BUDGET_EXCEEDED: ${what}: ${detail}`);
     this.name = "BudgetError";
   }

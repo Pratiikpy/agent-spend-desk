@@ -42,6 +42,18 @@ function pricingNote(p) {
   return parts.length ? h("div", null, ...parts) : null;
 }
 
+// What the tool that watches spend spent itself: its planner, drafter, explainer and canary calls, priced like any other and kept apart from the agents' figures.
+function deskOwnSection(o) {
+  if (!o) return null;
+  return section(
+    "The Desk's own calls",
+    "kept apart from the agents' spend",
+    h("p", null, `${int(o.calls)} model call${o.calls === 1 ? "" : "s"}, ${int(o.tokensIn)} tokens in and ${int(o.tokensOut)} out: ${o.priced === 0 ? "no call was priced" : `${usd(o.micros)} estimated on ${int(o.priced)} priced call${o.priced === 1 ? "" : "s"}`}.${o.unpriced > 0 ? ` ${int(o.unpriced)} ran on a model with no price: counted, not priced.` : ""}${o.failed > 0 ? ` ${int(o.failed)} failed; whether they were billed is not known.` : ""}`),
+    table("By role", [{ label: "Role", id: true, render: (r) => r.role }, { label: "Calls", num: true, render: (r) => int(r.calls) }, { label: "Estimated", num: true, render: (r) => (r.priced === 0 ? "not priced" : usd(r.micros)) }], o.byRole),
+    h("p", { class: "note" }, o.dailyCapMicros === null ? "No daily limit is set for the Desk's own calls (DESK_OWN_DAILY_CAP_USD); each run is still bounded in calls and seconds." : `Today ${usd(o.spentTodayMicros)} of a daily limit of ${usd(o.dailyCapMicros)}; a call that could pass it is refused before it is sent.`),
+  );
+}
+
 const BAR_WORDS = { kept: "kept", merged: "merged", committed: "committed" };
 
 // Idle work and spend no project owns, shared among the projects that landed work, in proportion to what each landed.
@@ -163,6 +175,7 @@ export async function render(ctx) {
       ),
     ),
     overheadSection(oh),
+    deskOwnSection(d.deskOwn),
     footnote(`List price times logged tokens, with the price snapshot ${d.snapshotId}.`, "A flat plan does not charge per token; this is what the same tokens would cost at list price."),
   );
 }

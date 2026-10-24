@@ -20,6 +20,8 @@ import { formatUsd } from "./money.ts";
 import { comparePrices, parsePortkey, renderComparison } from "./pricing/compare.ts";
 import { readCleanupDays, renderRetention, retentionReport, scanLogs, scheduleSnippets } from "./retention/retention.ts";
 import { priceSensitivity, renderSensitivity } from "./pricing/sensitivity.ts";
+import { ledgerSink } from "./agents/own-ledger.ts";
+import { setOwnCallSink } from "./agents/own-calls.ts";
 import { loadSnapshot } from "./pricing/pricebook.ts";
 import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { parsePolicyYaml } from "./policy/parse.ts";
@@ -88,6 +90,7 @@ import { refreshTasks } from "./tasks/assign.ts";
 import { taskCommand } from "./tasks/command.ts";
 import { appendMarker, defaultMarkerPath, readMarkers } from "./tasks/markers.ts";
 import { summariseEgress } from "./security/egress.ts";
+import { describeManifest, manifestFromEnv, profileOf } from "./security/net.ts";
 
 const regretPath = (): string => (sampleMode ? join(values.out, "regret.db") : "data/desk/regret.db");
 const DOSSIER_PATHS = { dbPath: "data/desk/dossier.db", pendingDir: "data/desk/pending", outDir: "data/desk/dossiers" };
@@ -237,6 +240,25 @@ if (sampleMode && ["propose", "silos", "ask", "ui", "verify-answer", "bench", "s
 }
 const db = command === "card" || command === "status" || command === "lab" ? openLedger(":memory:") : openLedger(ledgerPath);
 
+// The Desk's own model calls are written to the ledger it keeps, priced like any other call, and held to DESK_OWN_DAILY_CAP_USD when that is set.
+if (!["card", "status", "lab", "help", "prove", "demo"].includes(command)) {
+  let ownPrices = null;
+  try {
+    ownPrices = loadSnapshot(pricesPath);
+  } catch {
+    /* without a price list the calls are still recorded, unpriced */
+  }
+  setOwnCallSink(
+    ledgerSink(db, ownPrices, {
+      dailyCapMicros: () => {
+        const usd = Number(process.env["DESK_OWN_DAILY_CAP_USD"]);
+        return Number.isFinite(usd) && usd > 0 ? Math.round(usd * 1_000_000) : null;
+      },
+      configuredModel: () => process.env["NEMOTRON_MODEL"] ?? process.env["NVIDIA_MODEL"] ?? null,
+    }),
+  );
+}
+
 if (command === "help") {
   console.log(helpText());
 } else if (command === "close") {
@@ -315,7 +337,7 @@ Answer one with: desk questions answer <id> yes|no. Or go through them: desk que
         gate: policyPath ? { policyPath, dbPath: values["gate-db"], person: values.person ?? process.env["USERNAME"] ?? process.env["USER"] ?? "owner" } : null,
         statusSamples: readSamples(statuslineLogPath()),
         channels: { terminal: true, desktop: values.desktop, ...(values.webhook ? { webhook: values.webhook } : {}), ...(values["notify-command"] ? { command: values["notify-command"].split(" ").filter((x) => x !== "") } : {}) },
-        deps: realDeps(),
+        deps: realDeps(profileOf(process.env)),
       }),
     );
   } else console.log(alertsAdmin(sub, positionals[2], db));
@@ -563,6 +585,7 @@ written: ${r.files.join(", ")}`);
   console.log(r.text);
   if (!r.ok) process.exitCode = 1;
 } else if (command === "ui") {
+  loadDotenv(".env");
   const ui = await startUiServer({ ledgerPath: ledgerPath, pricesPath: pricesPath, policiesDir: "policies", port: Number(values.port), mode: sampleMode ? "sample" : "own_logs", ...(values.at ? { nowMs: () => new Date(values.at as string).getTime() } : {}), otherPricesPath: values.portkey ?? "data/prices/portkey-anthropic-2026-10-24.json" });
   console.log(`desk ui is running. Open this address (it carries a one-time token):
   ${ui.url}
@@ -864,8 +887,14 @@ ${t.pass} PASS, ${t.fail} FAIL, ${t.notRun} NOT RUN. NOT RUN is not a pass: it n
     process.exitCode = 2;
   }
 } else if (command === "egress") {
+  loadDotenv(".env");
   const s = summariseEgress(process.env["DESK_EGRESS_LOG"] ?? "data/desk/egress.jsonl");
-  if (s.requests === 0) console.log("No request has left this machine for a model since the egress log began (or it does not exist yet). Offline and sample runs send nothing.");
+  console.log(describeManifest(manifestFromEnv(process.env)).join("\n"));
+  console.log("A webhook is declared by the --webhook address you give `desk alerts check`; it is not stored, and a redirect from it is not followed.");
+  console.log("");
+  if (positionals[1] === "manifest") {
+    /* the manifest alone */
+  } else if (s.requests === 0) console.log("No request has left this machine for a model since the egress log began (or it does not exist yet). Offline and sample runs send nothing.");
   else {
     console.log(`${s.requests} requests to a model, ${(s.bytes / 1024).toFixed(1)} KiB in all, from ${s.first} to ${s.last}; ${s.redactions} secret-shaped strings masked before sending.`);
     for (const h of s.hosts) console.log(`  ${h.host}: ${h.requests} requests, ${(h.bytes / 1024).toFixed(1)} KiB`);

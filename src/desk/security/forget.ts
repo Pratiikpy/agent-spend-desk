@@ -22,7 +22,7 @@ export interface ForgetReport {
   calls: number;
 }
 
-const BY_SESSION = ["tool_result", "human_prompt", "session_compaction", "delegation_edge", "workflow_run", "session_outcome", "session_commit", "reported_cost", "reported_model_usage", "limit_sample", "task_session", "owner_answer"] as const;
+const BY_SESSION = ["tool_result", "human_prompt", "session_compaction", "delegation_edge", "workflow_run", "untrusted_flag", "session_outcome", "session_commit", "reported_cost", "reported_model_usage", "limit_sample", "task_session", "owner_answer"] as const;
 
 export function forgetPreview(db: Ledger, scope: ForgetScope): ForgetReport {
   const ids = chooseSessions(db, scope);
@@ -71,6 +71,9 @@ export function forgetLedger(db: Ledger, scope: ForgetScope): ForgetReport {
     db.exec("DELETE FROM task WHERE task_id NOT IN (SELECT DISTINCT task_id FROM task_session)");
     db.exec("DELETE FROM repricing WHERE repricing_id NOT IN (SELECT DISTINCT repricing_id FROM cost_event_history)");
     db.exec("DELETE FROM ingest_source WHERE id NOT IN (SELECT DISTINCT source_id FROM model_call WHERE source_id IS NOT NULL)");
+    // The Desk's own model calls are not a session's. A whole forget takes them all, and a forget before a date takes the ones before it.
+    if (scope.all) db.exec("DELETE FROM desk_call");
+    else if (scope.before !== undefined) db.prepare("DELETE FROM desk_call WHERE ts < ?").run(`${scope.before}T00:00:00.000Z`);
     // A whole forget also takes what the owner imported or the Desk decided about the money: invoices with their lines, reconciliations and alert history.
     if (scope.all) db.exec("DELETE FROM session_commit; DELETE FROM git_commit; DELETE FROM repo; DELETE FROM ingest_run; DELETE FROM billed_line; DELETE FROM invoice; DELETE FROM reconciliation; DELETE FROM alert_event; DELETE FROM alert_state; DELETE FROM owner_answer; DELETE FROM repricing;");
     if (!scope.all && scope.project !== undefined) {

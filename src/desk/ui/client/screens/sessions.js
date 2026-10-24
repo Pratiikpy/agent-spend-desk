@@ -128,6 +128,27 @@ function delegationSection(d) {
   );
 }
 
+const FIELD_NOTE = { project_path: "the folder", git_branch: "the branch", tool_version: "the client version", edited_path: "an edited file's path", model: "a model name" };
+const KIND_NOTE = { ignore_instructions: "tells a reader to ignore its rules", role_markup: "carries markup that imitates a system message", persona_change: "tells a reader it is now someone else", reveal_secrets: "asks a reader to reveal secrets", jailbreak: "asks a reader to drop its limits", tool_call_syntax: "imitates a tool call" };
+
+function untrustedSection(d) {
+  if (!d.untrusted || d.untrusted.length === 0) return null;
+  return section(
+    "Instruction-like text in the log",
+    "held back from every model request",
+    table(
+      "Found",
+      [
+        { label: "Where", render: (r) => FIELD_NOTE[r.field] || r.field },
+        { label: "What it does", render: (r) => KIND_NOTE[r.kind] || r.kind },
+        { label: "Excerpt", id: true, render: (r) => r.excerpt },
+      ],
+      d.untrusted,
+    ),
+    h("p", { class: "note" }, "A name that reads as an instruction is shown to a model as 'withheld', and nothing in a log decides a cost, an outcome or a cap, so this session's figures are unchanged. A harmless name can match too (a branch called ignore-all-lint-rules, say); the excerpt shows what matched."),
+  );
+}
+
 function blocksSection(ctx, d) {
   if (!d.blocks || d.blocks.length === 0) return section("Waste blocks", "what a rule would have stopped", h("p", { class: "note" }, "No rule flags a block of calls in this session."));
   return section(
@@ -288,6 +309,7 @@ async function detail(ctx, id) {
     ),
     blocksSection(ctx, d),
     delegationSection(d),
+    untrustedSection(d),
     section(
       "Commits",
       d.landing.commits.length === 0 ? "none tied" : "how the link was made",

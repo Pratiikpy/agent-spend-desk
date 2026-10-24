@@ -2,7 +2,7 @@
 
 Generated from `feature-status.json` by `npm run desk -- status` and checked by `tests/desk/feature-status.test.ts`. The specification is `02-feature-list.md`, which was written as design; this page says how much of it exists.
 
-**73 built, 35 partial, 21 absent** of 129.
+**77 built, 31 partial, 21 absent** of 129.
 
 How to read a status. *Built*: the core of the feature as specified exists and a test, a `desk prove` check or a verification record exercises it. *Partial*: a real part exists and the missing part is named. *Absent*: no code was found. A status is a judgement made by reading and searching, which is why every row cites the files it rests on. A built feature can still be shallow; the "missing" column says so where known.
 
@@ -79,12 +79,12 @@ How to read a status. *Built*: the core of the feature as specified exists and a
 | DF-069 Signed dossiers | built | `src/desk/dossier/sign.ts`, `src/desk/dossier/build.ts`, `tests/desk/dossier/happy.test.ts` | - |
 | DF-070 Offline verifier | built | `src/desk/verify/verify.ts`, `tests/desk/dossier/happy.test.ts` | - |
 | DF-071 Hash-chained append-only ledger | partial | `src/desk/gate/ledger.ts`, `src/desk/dossier/log.ts` | the gate ledger and the dossier log are hash-chained; the usage ledger is not |
-| DF-072 Untrusted log text isolation | partial | `src/desk/engines/label.ts`, `src/desk/ask/risk.ts` | labels are sanitised and instructions flagged; there is no systematic test that planted instructions in log text cannot change a plan |
-| DF-073 Redaction at read | partial | `src/desk/card/redact.ts`, `src/desk/security/secrets.ts`, `tests/desk/card.test.ts`, `tests/desk/security.test.ts` | credential shapes are masked in stored log text (folder, branch, tool version, edited path) and in every outgoing model message, and the author e-mail is stored as a pseudonym; a planted-secret test across the card, the trace and the dossier is not written, and the entropy rule is applied on the card only |
-| DF-074 Local-first egress manifest | partial | `src/desk/security/egress.ts`, `src/desk/agents/model.ts`, `tests/desk/security.test.ts` | every model request is logged as host, size, hash and count of masked secrets, and `desk egress` prints the summary; the Sources screen does not show it, an undeclared destination is not refused, and no network-monitor test runs |
+| DF-072 Untrusted log text isolation | built | `src/desk/security/injection.ts`, `src/desk/security/flag.ts`, `src/desk/engines/label.ts`, `src/desk/ask/ask.ts`, `tests/desk/injection.test.ts`, `tests/desk/ui/untrusted-ui.test.ts`, `docs/verification/untrusted-log-text-2026-10-25.md` | A pattern screen, not a proof: a rewording it does not know passes it and is held by the typed-plan, gate and landing rules; not tried with a live model shown planted text |
+| DF-073 Redaction at read | built | `src/desk/security/secrets.ts`, `src/desk/card/redact.ts`, `tests/desk/security.test.ts`, `tests/desk/security-e2e.test.ts`, `docs/verification/redaction-and-egress-2026-10-25.md` | The month dossier carries no per-session rows, so the dossier check shows no leak into figures, not row-level masking |
+| DF-074 Local-first egress manifest | built | `src/desk/security/net.ts`, `src/desk/security/egress.ts`, `tests/desk/net.test.ts`, `tests/desk/egress-monitor.test.ts`, `docs/verification/redaction-and-egress-2026-10-25.md` | Only the Desk's own code is guarded; tools it watches or launches make their own connections |
 | DF-075 JSONL decision trace with the why | built | `src/desk/agents/trace.ts`, `tests/desk/agents.test.ts` | - |
 | DF-076 SAMPLE_MODE cassettes and rule-brain fallback | built | `src/desk/agents/model.ts`, `src/desk/prove/run.ts` | - |
-| DF-077 Bounded runs; the Desk pays through its own ledger | partial | `src/desk/agents/budget.ts`, `tests/desk/agents.test.ts` | budgets are enforced in code; the Desk's own model calls are not paid through its own ledger |
+| DF-077 Bounded runs; the Desk pays through its own ledger | built | `src/desk/agents/own-calls.ts`, `src/desk/agents/own-ledger.ts`, `src/desk/agents/model.ts`, `src/desk/agents/budget.ts`, `tests/desk/own-calls.test.ts`, `docs/verification/own-model-calls-2026-10-25.md` | The limit is a separate daily limit, not the gate's reserve-and-settle; no priced live call was run |
 | DF-078 A provenance chip on every figure, and unknown is never zero | partial | `src/desk/ui/client/lib/prov.js` | provenance chips in the UI; not on every figure in every output |
 | DF-079 Unlinked spend shown as unknowable | built | `src/desk/outcomes/breakdown.ts`, `tests/desk/outcomes.test.ts` | - |
 | DF-080 Wording lint | partial | `src/desk/canary/command.ts`, `src/desk/prove/run.ts` | a wording check on canary text; no general lint over outputs |

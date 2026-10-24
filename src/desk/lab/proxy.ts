@@ -1,3 +1,4 @@
+import { declaredFetch, destination, type Profile } from "../security/net.ts";
 import { randomUUID } from "node:crypto";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
@@ -53,6 +54,7 @@ export interface ProxyOptions {
   abandonedErrorMs?: number;
   onEntry?: (e: ProxyEntry) => void;
   fetchImpl?: typeof fetch;
+  profile?: Profile;
   sleep?: (ms: number) => Promise<void>;
 }
 
@@ -166,7 +168,8 @@ async function readWithin(reader: ReadableStreamDefaultReader<Uint8Array>, ms: n
 }
 
 export async function startProxy(opts: ProxyOptions): Promise<Proxy> {
-  const fetchImpl = opts.fetchImpl ?? fetch;
+  const declared = destination("lab_upstream", opts.upstream, "the model requests of a lab run", "the lab's upstream setting");
+  const fetchImpl = opts.fetchImpl ?? declaredFetch(declared === null ? [] : [declared], opts.profile === undefined ? {} : { profile: opts.profile });
   const sleep = opts.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
   const gate = new Gate(opts.maxConcurrent ?? 2);
   // The free endpoint rate-limits in bursts, so the wait grows to a minute and stays there: a run should not be lost to a busy minute.

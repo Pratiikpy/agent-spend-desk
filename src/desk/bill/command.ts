@@ -85,6 +85,14 @@ export function renderBill(b: Row, span: Span): string {
   out.push("");
   out.push("Where it went");
   for (const c of b["causes"] as Row[]) out.push(`  ${String(c["cause"]).padEnd(14)} ${usd(c["micros"]).padStart(12)}  ${(c["share"] * 100).toFixed(1).padStart(5)}%`);
+  const own = b["deskOwn"] as Row | null;
+  if (own) {
+    out.push("");
+    out.push("The Desk's own model calls (not in the agents' figures above)");
+    out.push(`  ${own["calls"].toLocaleString("en-US")} calls, ${own["tokensIn"].toLocaleString("en-US")} tokens in and ${own["tokensOut"].toLocaleString("en-US")} out: ${own["priced"] === 0 ? "no call was priced" : `${usd(own["micros"])} estimated on ${own["priced"].toLocaleString("en-US")} priced calls`}${own["unpriced"] > 0 ? `; ${own["unpriced"].toLocaleString("en-US")} on a model with no price (counted, not priced)` : ""}${own["failed"] > 0 ? `; ${own["failed"].toLocaleString("en-US")} failed (whether billed is unknown)` : ""}.`);
+    for (const r of own["byRole"] as Row[]) out.push(`  ${String(r["role"]).padEnd(18)} ${String(r["calls"]).padStart(6)} calls ${(r["priced"] === 0 ? "not priced" : usd(r["micros"])).padStart(12)}`);
+    out.push(own["dailyCapMicros"] === null ? "  No daily limit is set (DESK_OWN_DAILY_CAP_USD)." : `  Today ${usd(own["spentTodayMicros"])} of a daily limit of ${usd(own["dailyCapMicros"])}.`);
+  }
   const pricing = b["pricing"] as Row | null;
   if (pricing && (pricing["rules"] as Row[]).length > 0) {
     out.push("");

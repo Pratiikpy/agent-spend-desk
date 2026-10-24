@@ -496,7 +496,40 @@ CREATE TABLE workflow_run (
 );
 `;
 
-const MIGRATIONS: readonly string[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8, SCHEMA_V9, SCHEMA_V10, SCHEMA_V11, SCHEMA_V12, SCHEMA_V13, SCHEMA_V14, SCHEMA_V15, SCHEMA_V16, SCHEMA_V17];
+const SCHEMA_V18 = `
+CREATE TABLE untrusted_flag (
+  session_id TEXT NOT NULL,
+  field TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  excerpt TEXT NOT NULL,
+  found_at TEXT NOT NULL,
+  PRIMARY KEY (session_id, field, kind)
+);
+`;
+
+const SCHEMA_V19 = `
+CREATE TABLE desk_call (
+  call_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  ts TEXT NOT NULL,
+  role TEXT NOT NULL,
+  served_model TEXT,
+  served_by TEXT,
+  source TEXT NOT NULL,
+  input_tokens INTEGER,
+  output_tokens INTEGER,
+  reasoning_tokens INTEGER,
+  ms INTEGER NOT NULL,
+  ok INTEGER NOT NULL,
+  error TEXT,
+  class TEXT NOT NULL,
+  total_micros INTEGER,
+  snapshot_id TEXT,
+  unpriced_reason TEXT
+);
+CREATE INDEX desk_call_ts ON desk_call (ts);
+`;
+
+const MIGRATIONS: readonly string[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8, SCHEMA_V9, SCHEMA_V10, SCHEMA_V11, SCHEMA_V12, SCHEMA_V13, SCHEMA_V14, SCHEMA_V15, SCHEMA_V16, SCHEMA_V17, SCHEMA_V18, SCHEMA_V19];
 
 /** The schema version this build writes: the number of migrations. A reader compares a ledger's `user_version` with it. */
 export const SCHEMA_VERSION = MIGRATIONS.length;

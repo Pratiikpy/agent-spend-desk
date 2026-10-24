@@ -1,3 +1,4 @@
+import { declaredFetch, destination, type Profile } from "../security/net.ts";
 import { spawnSync } from "node:child_process";
 
 import type { AlertEvent } from "./engine.ts";
@@ -28,8 +29,13 @@ export interface DeliveryDeps {
   webhookTimeoutMs?: number;
 }
 
-export const realDeps = (): DeliveryDeps => ({
-  fetch,
+export const realDeps = (profile: Profile = "standard"): DeliveryDeps => ({
+  // The webhook the owner named is the one destination; a redirect from it is not followed, and the local profile refuses a remote one.
+  fetch: ((input, init) => {
+    const raw = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+    const declared = destination("webhook", raw, "the alert title, body and evidence reference", "--webhook");
+    return declaredFetch(declared === null ? [] : [declared], { profile })(input, init);
+  }) as typeof fetch,
   run: (program, args, env) => {
     const r = spawnSync(program, args, { env: { ...process.env, ...env }, timeout: 15_000, windowsHide: true, stdio: "ignore" });
     return r.error ? { status: null, error: r.error.message } : { status: r.status };

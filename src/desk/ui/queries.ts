@@ -1,3 +1,6 @@
+import { flagsFor, flagTotals } from "../security/flag.ts";
+import { summariseEgress } from "../security/egress.ts";
+import { manifestFromEnv } from "../security/net.ts";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
@@ -59,6 +62,8 @@ export interface UiContext {
   dossierDbPath?: string | null;
   /** Where the recorded results of the enforcement tests are kept; the Policy screen reads them. */
   enforcementPath?: string | null;
+  /** The log of requests that left for a model; the Sources screen summarises it. Default `data/desk/egress.jsonl`. */
+  egressLogPath?: string | null;
   /** The owner's time zone: "yesterday" is the calendar day that just ended there. Default UTC. */
   timeZone?: string;
   /** The gate's database, read for what it paused or denied; null when the gate is not running here. */
@@ -238,6 +243,33 @@ export function overhead(ctx: UiContext, span: Span, bar: "committed" | "merged"
   };
 }
 
+/**
+ * The Desk's own model calls in the period (DF-077): what the tool that watches spend spent itself. Not part of the agents' figures above. A call on a model with no
+ * price is counted and its tokens kept, with no dollars invented; a failed call is counted, and whether it was billed is unknown.
+ */
+function deskOwnBlock(ctx: UiContext, span: Span): object | null {
+  const rows = all<{ role: string; calls: number; priced: number; unpriced: number; failed: number; micros: number; tin: number; tout: number }>(
+    ctx.db,
+    `SELECT role, COUNT(*) calls, SUM(class = 'estimated') priced, SUM(class != 'estimated' AND ok = 1) unpriced, SUM(ok = 0) failed,
+            COALESCE(SUM(CASE WHEN class = 'estimated' THEN total_micros END), 0) micros, COALESCE(SUM(input_tokens), 0) tin, COALESCE(SUM(output_tokens), 0) tout
+     FROM desk_call WHERE ts >= ? AND ts <= ? GROUP BY role ORDER BY micros DESC, calls DESC, role`,
+    span.sinceIso,
+    // The bill's header names whole days, and a period that ends at the last agent call ends that day: the Desk's own calls on the day count.
+    `${span.untilIso.slice(0, 10)}T23:59:59.999Z`,
+  );
+  if (rows.length === 0) return null;
+  const cap = Number(ctx.env["DESK_OWN_DAILY_CAP_USD"]);
+  const today = new Date(ctx.nowMs()).toISOString().slice(0, 10);
+  const spentToday = one<{ m: number }>(ctx.db, "SELECT COALESCE(SUM(total_micros), 0) m FROM desk_call WHERE class = 'estimated' AND ts >= ?", `${today}T00:00:00.000Z`)?.m ?? 0;
+  const sum = (k: "calls" | "priced" | "unpriced" | "failed" | "micros" | "tin" | "tout"): number => rows.reduce((s, r) => s + Number(r[k]), 0);
+  return {
+    calls: sum("calls"), priced: sum("priced"), unpriced: sum("unpriced"), failed: sum("failed"), micros: sum("micros"), tokensIn: sum("tin"), tokensOut: sum("tout"),
+    byRole: rows.map((r) => ({ role: r.role, calls: Number(r.calls), priced: Number(r.priced), unpriced: Number(r.unpriced), failed: Number(r.failed), micros: Number(r.micros) })),
+    dailyCapMicros: Number.isFinite(cap) && cap > 0 ? Math.round(cap * 1_000_000) : null,
+    spentTodayMicros: Number(spentToday),
+  };
+}
+
 export function bill(ctx: UiContext, span: Span): object {
   const empty = emptyState(ctx);
   if (empty) return empty;
@@ -286,6 +318,7 @@ export function bill(ctx: UiContext, span: Span): object {
       { cls: "unpriced", calls: t.unpricedCalls, note: "Models with no price row: tokens counted, no dollars invented." },
     ],
     reconciliation: reconciliationSummary(reported),
+    deskOwn: deskOwnBlock(ctx, span),
     priceBand: priceBand(ctx, span, t.estimatedMicros),
     pricing: pricingNotes(ctx, span),
     reconciliations: reconciliationRows(ctx, span),
@@ -892,6 +925,7 @@ export function session(ctx: UiContext, id: string): object {
     blocks: blocks.slice(0, 50).map((b) => ({ id: b.id, kind: b.kind, rule: b.rule, calls: b.calls.length, micros: b.totalMicros, unpricedCalls: b.unpricedCalls, confidence: b.confidence ?? "high", stopOffsetSec: Math.round((b.startMs - start) / 1000), durationSec: Math.round((b.endMs - b.startMs) / 1000) })),
     blockCount: blocks.length,
     delegation: delegationBlock(ctx, id),
+    untrusted: flagsFor(ctx.db, id).map((f) => ({ field: f.field, kind: f.kind, excerpt: f.excerpt })),
     landing: {
       state: outcome?.state ?? "unlinked",
       confidence: outcome?.best_confidence ?? null,
@@ -1150,7 +1184,11 @@ export function sources(ctx: UiContext): object {
   const fetched = Date.parse(ctx.snapshot.fetchedAt);
   const ageDays = Number.isNaN(fetched) ? null : Math.max(0, Math.floor((ctx.nowMs() - fetched) / DAY));
   const set = (name: string): boolean => (ctx.env[name] ?? "").length > 0;
-  const endpoint = (label: string, names: string[], role: string): { label: string; configured: boolean; missing: string[]; role: string } => ({ label, role, configured: names.every(set), missing: names.filter((n) => !set(n)) });
+  // A setting can have an alternative name (the model's three settings also go by NVIDIA_*); it counts as set when any of its names is.
+  const endpoint = (label: string, settings: string[][], role: string): { label: string; configured: boolean; missing: string[]; role: string } => {
+    const missing = settings.filter((names) => !names.some(set)).map((names) => names[0] as string);
+    return { label, role, configured: missing.length === 0, missing };
+  };
   return {
     state: "ok",
     mode: ctx.mode,
@@ -1176,9 +1214,22 @@ export function sources(ctx: UiContext): object {
     unpriced,
     repos,
     endpoints: [
-      endpoint("Zetaris", ["ZETARIS_REST_URL", "ZETARIS_API_KEY", "ZETARIS_ORG_ID"], "Organisational sources (invoices, CI and pull requests, roster)."),
-      endpoint("Nemotron model endpoint", ["NVIDIA_API_KEY", "NVIDIA_BASE_URL", "NVIDIA_MODEL"], "Language roles: drafter, auditor, explainer."),
+      endpoint("Zetaris", [["ZETARIS_REST_URL"], ["ZETARIS_API_KEY"], ["ZETARIS_ORG_ID"]], "Organisational sources (invoices, CI and pull requests, roster)."),
+      endpoint("Nemotron model endpoint", [["MODEL_BASE_URL", "NVIDIA_BASE_URL"], ["MODEL_API_KEY", "NVIDIA_API_KEY"], ["NEMOTRON_MODEL", "NVIDIA_MODEL"]], "Language roles: drafter, auditor, explainer."),
     ],
+    egress: egressBlock(ctx),
+    untrusted: flagTotals(ctx.db),
     sampleMode: ctx.mode === "sample",
+  };
+}
+
+/** Where this product's own code can send data, from the settings it runs with, and what has been sent. Never the text of a request. */
+function egressBlock(ctx: UiContext): object {
+  const m = manifestFromEnv(ctx.env);
+  const log = summariseEgress(ctx.egressLogPath === null ? "" : (ctx.egressLogPath ?? ctx.env["DESK_EGRESS_LOG"] ?? "data/desk/egress.jsonl"));
+  return {
+    profile: m.profile,
+    destinations: m.destinations.map((d) => ({ kind: d.kind, origin: d.origin, purpose: d.purpose, loopback: d.loopback, declaredBy: d.declaredBy, refused: m.profile === "local" && !d.loopback })),
+    log: { requests: log.requests, bytes: log.bytes, redactions: log.redactions, first: log.first, last: log.last, hosts: log.hosts },
   };
 }

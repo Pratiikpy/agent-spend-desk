@@ -1,3 +1,4 @@
+import { profileOf } from "../security/net.ts";
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, appendFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -82,6 +83,7 @@ export async function runBatch(opts: BatchOptions): Promise<RunRecord[]> {
   let proxy: Proxy | null = null;
   if (opts.endpoint) {
     proxy = await startProxy({
+      profile: profileOf(process.env),
       upstream: opts.endpoint.upstream,
       apiKey: opts.endpoint.apiKey,
       maxConcurrent: opts.endpoint.maxConcurrent ?? Math.max(1, opts.concurrency),

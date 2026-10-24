@@ -1,3 +1,4 @@
+import { declaredFetch, destination, EgressRefused } from "../../desk/security/net.ts";
 import { createHash, randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -47,6 +48,8 @@ export interface ZetarisConfig {
   /** Most rows one statement may return. A result that reports more rows than it carries is an error, never a partial answer. */
   limit?: number;
   fetchImpl?: typeof fetch;
+  /** `local` allows only an instance on this machine. */
+  profile?: "standard" | "local";
 }
 
 export const DEFAULT_TIMEOUT_MS = 15_000;
@@ -65,7 +68,7 @@ export function configFromEnv(env: Record<string, string | undefined>): ZetarisC
   const apiKey = env["ZETARIS_API_KEY"];
   const orgId = env["ZETARIS_ORG_ID"];
   if (!restUrl || !apiKey || !orgId) return null;
-  return { restUrl, apiKey, orgId };
+  return { restUrl, apiKey, orgId, ...(env["DESK_MODEL_PROFILE"]?.trim().toLowerCase() === "local" ? { profile: "local" as const } : {}) };
 }
 
 function scrub(text: string, cfg: ZetarisConfig): string {
@@ -77,7 +80,8 @@ export async function runLive(cfg: ZetarisConfig, sql: string): Promise<SiloRows
   const statement = normaliseSql(sql);
   if (statement.length === 0) throw new SiloError("rejected", "empty statement");
   const limit = cfg.limit ?? DEFAULT_LIMIT;
-  const doFetch = cfg.fetchImpl ?? fetch;
+  const declared = destination("zetaris", cfg.restUrl, "read-only SQL statements over the invoice, CI and roster silos", "ZETARIS_REST_URL");
+  const doFetch = cfg.fetchImpl ?? declaredFetch(declared === null ? [] : [declared], cfg.profile === undefined ? {} : { profile: cfg.profile });
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), cfg.timeoutMs ?? DEFAULT_TIMEOUT_MS);
   let res: Response;
@@ -89,6 +93,7 @@ export async function runLive(cfg: ZetarisConfig, sql: string): Promise<SiloRows
       body: JSON.stringify({ queryId: randomUUID(), sql: statement, source: "SqlEditor", limit }),
     });
   } catch (e) {
+    if (e instanceof EgressRefused) throw new SiloError("unreachable", scrub(e.message, cfg));
     const aborted = (e as Error).name === "AbortError";
     throw new SiloError(aborted ? "timeout" : "unreachable", scrub(aborted ? "Zetaris did not answer in time" : `Zetaris is not reachable: ${(e as Error).message}`, cfg));
   } finally {

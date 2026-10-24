@@ -1,3 +1,4 @@
+import { flagUntrustedText } from "../security/flag.ts";
 import { statSync } from "node:fs";
 
 import { priceCall } from "../cost/price-call.ts";
@@ -231,6 +232,7 @@ export async function ingestClaudeCode(
     `INSERT INTO ingest_run (kind, started_at, finished_at, files, lines_read, calls_new, calls_merged, malformed_lines, truncated_tails, usage_conflicts)
      VALUES ('claude_code', ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(started, now().toISOString(), report.files, report.linesRead, report.callsNew, report.callsMerged, report.malformedLines, report.truncatedTails, report.usageConflicts);
+  flagUntrustedText(db, new Date().toISOString());
   return report;
 
   function mergeOrInsert(call: ParsedCall, sourceId: number): void {

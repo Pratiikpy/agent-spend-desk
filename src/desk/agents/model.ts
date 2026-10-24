@@ -1,10 +1,12 @@
+import { ownCallSink } from "./own-calls.ts";
 import { createHash, randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { jsonlEgress, type EgressEntry } from "../security/egress.ts";
+import { declaredFetch, destination, EgressRefused, type Profile } from "../security/net.ts";
 import { maskSecrets } from "../security/secrets.ts";
-import type { Budget } from "./budget.ts";
+import { BudgetError, type Budget } from "./budget.ts";
 import { NULL_TRACE, type Trace } from "./trace.ts";
 
 export interface ChatMessage {
@@ -114,6 +116,8 @@ export interface OpenAiConfig {
   backoffMs?: readonly number[];
   random?: () => number;
   fetchImpl?: typeof fetch;
+  /** `local` allows only a model endpoint on this machine; any other address is refused before a connection is made. */
+  profile?: Profile;
   /** Told, for every request sent, where it went, how big it was, its hash and how many secrets were masked: never the text. */
   onEgress?: (e: EgressEntry) => void;
 }
@@ -149,14 +153,17 @@ export function readNightshiftReceipt(meterless: unknown): NightshiftReceipt | u
 
 /** An OpenAI-compatible chat endpoint: NVIDIA's API or a Meterless Nightshift URL. Only the three settings differ. Nightshift is claimed only when its receipt is in the reply. */
 export class OpenAiPort implements ModelPort {
-  private readonly cfg: Required<Omit<OpenAiConfig, "fetchImpl" | "onEgress">> & { fetchImpl: typeof fetch; onEgress?: (e: EgressEntry) => void };
+  private readonly cfg: Required<Omit<OpenAiConfig, "fetchImpl" | "onEgress" | "profile">> & { fetchImpl: typeof fetch; onEgress?: (e: EgressEntry) => void };
   constructor(cfg: OpenAiConfig) {
+    const { profile, ...rest } = cfg;
+    // The one destination this port may reach is the endpoint it was configured with; anything else, and any redirect, is refused.
+    const declared = destination("model", cfg.baseUrl, "model requests", "MODEL_BASE_URL");
     this.cfg = {
       sleep: (ms) => new Promise((r) => setTimeout(r, ms)),
       backoffMs: [5_000, 15_000],
       random: Math.random,
-      fetchImpl: fetch,
-      ...cfg,
+      fetchImpl: declaredFetch(declared === null ? [] : [declared], profile === undefined ? {} : { profile }),
+      ...rest,
     };
   }
 
@@ -202,7 +209,6 @@ export class OpenAiPort implements ModelPort {
     if (request.json) body["response_format"] = { type: "json_object" };
 
     const payload = JSON.stringify(body);
-    this.logEgress(request.role, payload, masked.count);
     const scrub = (text: string): string => maskSecrets(text, [this.cfg.apiKey]).text;
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -221,11 +227,15 @@ export class OpenAiPort implements ModelPort {
         signal: controller.signal,
       });
     } catch (e) {
+      // A refused destination never left the machine, so it is not logged as sent, and asking again would be refused again.
+      if (e instanceof EgressRefused) throw new ModelError("non_transient", e.message);
+      this.logEgress(request.role, payload, masked.count);
       if (controller.signal.aborted) throw new ModelError("transient", `no reply within ${timeoutMs} ms`);
       throw new ModelError("transient", scrub(`network error: ${(e as Error).message}`));
     } finally {
       clearTimeout(timer);
     }
+    this.logEgress(request.role, payload, masked.count);
     if (res.status === 429 || res.status >= 500) throw new ModelError("transient", `HTTP ${res.status}`, res.status);
     if (!res.ok) {
       const text = await res.text().catch(() => "");
@@ -365,11 +375,26 @@ export interface CallContext {
 /** One model call under the run's budget, with a trace line. Retries inside the port count toward the deadline, not the call count. */
 export async function callModel(port: ModelPort, request: ModelRequest, ctx: CallContext): Promise<ModelResponse> {
   const trace = ctx.trace ?? NULL_TRACE;
+  const own = ownCallSink();
   ctx.budget.useModelCall();
   const deadline = ctx.budget.nextCallDeadlineMs();
+  // The Desk pays for its own calls through its own ledger: a call that could pass today's limit is refused here, before it is sent.
+  own?.reserve(request);
   const started = Date.now();
+  const note = (r: ModelResponse | null, e: ModelError | null): void => {
+    try {
+      own?.record({
+        ts: new Date().toISOString(), role: request.role, servedModel: r?.servedModel ?? null, servedBy: r?.servedBy ?? null, source: r?.source ?? "live",
+        inputTokens: r?.usage?.inputTokens ?? null, outputTokens: r?.usage?.outputTokens ?? null, reasoningTokens: r?.usage?.reasoningTokens ?? null,
+        ms: Date.now() - started, ok: r !== null, error: e === null ? null : `${e.kind ?? "unknown"}: ${e.message}`.replace(/[^A-Za-z0-9._:@/+ -]/g, "_").slice(0, 160),
+      });
+    } catch {
+      /* a ledger that cannot be written must not stop a call; the trace line below still says it was made */
+    }
+  };
   try {
     const r = await port.complete(request, deadline);
+    note(r, null);
     trace.emit({
       event: "desk.model",
       why: "computed",
@@ -387,6 +412,7 @@ export async function callModel(port: ModelPort, request: ModelRequest, ctx: Cal
     return r;
   } catch (e) {
     const err = e as ModelError;
+    if (!(e instanceof BudgetError)) note(null, err);
     trace.emit({ event: "desk.model.failed", why: "computed", role: request.role, detail: { kind: err.kind ?? "unknown", message: err.message, ms: Date.now() - started } });
     throw e;
   }
@@ -402,5 +428,6 @@ export function portFromEnv(env: Record<string, string | undefined>, cassetteDir
     throw new ModelError("non_transient", "model not configured: set MODEL_BASE_URL, MODEL_API_KEY and NEMOTRON_MODEL (or the NVIDIA_ names), or run with SAMPLE_MODE=true");
   }
   const egressPath = env["DESK_EGRESS_LOG"] ?? "data/desk/egress.jsonl";
-  return new OpenAiPort({ baseUrl, apiKey, model, ...(opts.backoffMs ? { backoffMs: opts.backoffMs } : {}), ...(egressPath === "off" ? {} : { onEgress: jsonlEgress(egressPath) }) });
+  const profile = env["DESK_MODEL_PROFILE"]?.trim().toLowerCase() === "local" ? ("local" as const) : undefined;
+  return new OpenAiPort({ baseUrl, apiKey, model, ...(profile ? { profile } : {}), ...(opts.backoffMs ? { backoffMs: opts.backoffMs } : {}), ...(egressPath === "off" ? {} : { onEgress: jsonlEgress(egressPath) }) });
 }

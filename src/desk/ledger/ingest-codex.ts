@@ -1,3 +1,4 @@
+import { flagUntrustedText } from "../security/flag.ts";
 import { statSync } from "node:fs";
 
 import { CodexParser } from "../ingest/codex.ts";
@@ -131,5 +132,6 @@ export async function ingestCodex(db: Ledger, files: readonly string[], snapshot
     `INSERT INTO ingest_run (kind, started_at, finished_at, files, lines_read, calls_new, calls_merged, malformed_lines, truncated_tails, usage_conflicts)
      VALUES ('codex', ?, ?, ?, 0, ?, ?, ?, 0, ?)`,
   ).run(started, now().toISOString(), report.files, report.callsNew, report.mergedRequests, report.malformedLines, report.inconsistentBuckets + report.implausibleSize);
+  flagUntrustedText(db, new Date().toISOString());
   return report;
 }

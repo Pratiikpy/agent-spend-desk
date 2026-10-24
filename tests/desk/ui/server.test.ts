@@ -275,6 +275,15 @@ describe("the screens' data", () => {
     expect(s.endpoints.every((e: { configured: boolean }) => e.configured === false)).toBe(true);
     expect(JSON.stringify(s)).not.toMatch(/nvapi|sk-/);
   });
+
+  it("lists where data can leave this machine, from the settings, with the egress log's totals and never a request's text", async () => {
+    const s = await json(full, "/api/sources");
+    expect(s.egress.profile).toBe("standard");
+    // The test server runs with no model or Zetaris setting, so the only declared destination is the local gate.
+    expect(s.egress.destinations.map((d: { kind: string; loopback: boolean }) => [d.kind, d.loopback])).toEqual([["gate", true]]);
+    expect(s.egress.log).toMatchObject({ requests: expect.any(Number), bytes: expect.any(Number), redactions: expect.any(Number) });
+    expect(JSON.stringify(s.egress)).not.toMatch(/messages|content/);
+  });
 });
 
 describe("bad input and bad ledgers", () => {

@@ -12,6 +12,7 @@ import { MemoryTrace } from "../agents/trace.ts";
 import { Gate } from "./gate.ts";
 import { GateError } from "./types.ts";
 import { startGateway } from "../gateway/server.ts";
+import { profileOf } from "../security/net.ts";
 import { startGateServer } from "./http.ts";
 import { serveMcp } from "./mcp.ts";
 import { filePolicy } from "./policy-source.ts";
@@ -151,7 +152,7 @@ export async function runGateCli(argv: readonly string[], env: Record<string, st
       }
       const gate = makeGate(true);
       gate.currentPolicy(); // refuse to start on a policy that cannot be read
-      const running = await startGateway({ upstream: values.upstream, gate, prices: priceBook(), port: Number(values.port === String(DEFAULT_PORT) ? DEFAULT_GATEWAY_PORT : values.port) });
+      const running = await startGateway({ upstream: values.upstream, gate, prices: priceBook(), port: Number(values.port === String(DEFAULT_PORT) ? DEFAULT_GATEWAY_PORT : values.port), profile: profileOf(process.env) });
       console.error(`desk gateway listening on ${running.url} (loopback only), forwarding to ${values.upstream}; db ${dbPath}; policy ${values.policy}`);
       console.error(`Point an agent at it, for example: OPENAI_BASE_URL=${running.url}`);
       await new Promise<void>((resolve) => {

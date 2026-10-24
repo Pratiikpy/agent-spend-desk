@@ -66,7 +66,30 @@ export async function render(ctx) {
       h("div", { class: "cards" }, ...d.endpoints.map((e) => h("div", { class: "card s" }, h("h3", null, e.label), h("p", { class: "note" }, e.role), h("p", null, pill(e.configured ? "configured" : "not configured", e.configured ? "live" : ""), e.missing.length > 0 ? h("span", { class: "muted mono" }, ` missing ${e.missing.join(", ")}`) : null)))),
       h("p", { class: "note" }, "Keys are read from the environment and never shown. Without them the Desk uses recorded replies and local sources, and says so on each answer."),
     ),
+    section(
+      "Where data can leave this machine",
+      d.egress.profile === "local" ? "local profile" : "declared destinations",
+      d.egress.destinations.length === 0
+        ? h("p", { class: "note" }, "No destination is declared: nothing leaves this machine.")
+        : table("Destinations", [
+            { label: "Address", id: true, render: (r) => r.origin },
+            { label: "What is sent", render: (r) => r.purpose },
+            { label: "Where", render: (r) => (r.refused ? "refused in the local profile" : r.loopback ? "this machine" : "another machine") },
+            { label: "Declared by", render: (r) => r.declaredBy },
+          ], d.egress.destinations),
+      d.egress.log.requests === 0
+        ? h("p", { class: "note" }, "No request has left for a model since the log began, or the log does not exist yet. Offline and sample runs send nothing.")
+        : h("p", { class: "note" }, `${int(d.egress.log.requests)} requests to a model, ${bytes(d.egress.log.bytes)} in all, ${int(d.egress.log.redactions)} secret-shaped strings masked before sending. The log holds a size and a hash for each request, never the text.`),
+      h("p", { class: "note" }, "Any other address is refused before a connection is made, and so is a redirect to one. Set DESK_MODEL_PROFILE=local to allow only destinations on this machine."),
+    ),
+    d.untrusted && d.untrusted.flags > 0
+      ? section(
+          "Instruction-like text in your logs",
+          "found, held back, harmless to the figures",
+          h("p", { class: "note" }, `${int(d.untrusted.flags)} field${d.untrusted.flags === 1 ? "" : "s"} in ${int(d.untrusted.sessions)} session${d.untrusted.sessions === 1 ? "" : "s"} (${d.untrusted.byKind.map((k) => `${k.kind.replace(/_/g, " ")} ${int(k.flags)}`).join(", ")}). Open a session to see where. These names are never shown to a model, and no cost, outcome or cap reads them.`),
+        )
+      : null,
     section("Repositories", "for landing", h("p", { class: "note" }, d.repos === 0 ? "No repository is linked. Outcomes stay unlinked until one is." : `${int(d.repos)} repositories are linked.`)),
-    footnote(d.sampleMode ? "Sample mode: a constructed scenario." : "Your own logs. Nothing leaves this machine.", `ledger ${d.ledger}`),
+    footnote(d.sampleMode ? "Sample mode: a constructed scenario." : "Your own logs. Nothing leaves this machine except to the destinations above.", `ledger ${d.ledger}`),
   );
 }

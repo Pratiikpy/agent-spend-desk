@@ -7,7 +7,7 @@ import { ModelError, OpenAiPort, type ModelPort, type ModelRequest, type ModelRe
 import { openLedger, type Ledger } from "../../src/desk/ledger/db.ts";
 import { ingestClaudeCode } from "../../src/desk/ledger/ingest.ts";
 import { forgetLedger } from "../../src/desk/security/forget.ts";
-import { maskSecrets, pseudonym } from "../../src/desk/security/secrets.ts";
+import { maskEntropy, maskSecrets, maskStored, pseudonym } from "../../src/desk/security/secrets.ts";
 import { sanitizeLabel } from "../../src/desk/engines/label.ts";
 import { assistantLine, TempDir, testSnapshot } from "./helpers.ts";
 
@@ -66,6 +66,41 @@ describe("masking secrets", () => {
     expect(pseudonym("dev@example.com")).toBe(pseudonym("dev@example.com"));
     expect(pseudonym("dev@example.com")).not.toBe(pseudonym("other@example.com"));
     expect(pseudonym("dev@example.com")).not.toMatch(/@|example/);
+  });
+});
+
+describe("masking random-looking words in stored text", () => {
+  // Assembled at run time: a 32-character word with letters and digits in a spread no English word has.
+  const RANDOM = ["q7Zt", "9XkLm", "2VbN", "x8RwY", "5cJhP", "3dFgS", "a1Ue", "Oi6T"].join("");
+
+  it("masks one word and keeps the path around it, so a repository can still be found", () => {
+    const r = maskEntropy(`/work/app/${RANDOM}/src/index.ts`);
+    expect(r.text).toBe("/work/app/(redacted)/src/index.ts");
+    expect(r.count).toBe(1);
+  });
+
+  it("leaves hashes, UUIDs, long identifiers, dates and ordinary branch names alone", () => {
+    const keep = [
+      "9fceb02d0ae598e95dc970b74767f19372d61af8a1b2c3d4", // a hex hash
+      "b5c0e6a2-7f3d-4e8a-9c1b-2d4f6a8c0e1b", // a UUID
+      "feature/ENG-1234-add-the-new-billing-dashboard-widget",
+      "ServiceAccountCredentialProviderFactory", // letters only
+      "20261025123456789012345678", // digits only
+      "worktree-agent-a4a5c1b2e7d90f13c",
+      "D:/work/Documents/Projects/billing-service",
+    ];
+    for (const v of keep) expect(maskEntropy(v), v).toEqual({ text: v, count: 0 });
+  });
+
+  it("applies to what the ledger stores, on top of the provider shapes", () => {
+    expect(maskStored(`fix-${RANDOM}`)).toBe("(redacted)"); // a dash is part of a word, so a URL-safe token that contains dashes is not split into pieces too short to test
+    expect(maskStored(`hotfix-${PLANTED}-${RANDOM}`)).not.toContain("sk-proj");
+    expect(maskStored(null)).toBeNull();
+    expect(maskStored("main")).toBe("main");
+  });
+
+  it("does not touch the text that is sent to a model, where a hash or id must survive", () => {
+    expect(maskSecrets(`session ${RANDOM}`).text).toBe(`session ${RANDOM}`);
   });
 });
 
