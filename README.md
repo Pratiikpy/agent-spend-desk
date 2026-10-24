@@ -65,48 +65,6 @@ The pain is public. These are quotes from the sources we read on 2026-10-20 (eac
 
 The first three are why the autopsy exists, the fourth is why the canary runs every day, the fifth is why seats are tied to landed work.
 
-## How it answers Track 3
-
-The track asks for "a novel ability to turn data, knowledge, memory, and reasoning into reliable decisions and actions." Here each of the five has a place and a test:
-
-| | In desk. | Where |
-|---|---|---|
-| Data | Agent logs into a SQLite ledger; invoices, CI and roster through one Zetaris statement | `src/desk/ledger/`, `src/sponsors/zetaris/` |
-| Knowledge | A price book, a policy language with a restrict-only check, owner definitions of "landed" | `src/desk/policy/`, `src/desk/pricing/` |
-| Memory | Meterless H-MEM holds the owner's definitions and past decisions; the World Model holds what changed when | `src/engines/` |
-| Reasoning | A typed program the Planner writes and code runs; an Auditor that rejects unsupported figures; a Drafter, an Attacker and a held-out replay for policy | `src/desk/ask/`, `src/desk/agents/` |
-| Decisions and actions | A signed dossier, an approval echo, and a gate Claude Code calls before each tool use | `src/desk/dossier/`, `src/desk/gate/` |
-
-## The agents
-
-| Agent | Role | Reads | Writes | Works with |
-|---|---|---|---|---|
-| Risk Router | A code classifier: is this a read of the ledger, or an action or policy change phrased as a question; flags text that tries to redirect the Planner | The question | A route (`read`, `spend_action`, `policy_change`) and flags | Planner |
-| Planner | Turns the question into a typed program; may call `cannot_answer` | The question, the program schema | A program (spend, share, per-day, top sessions, landing, changes before, ...) | Plan critic, specialists |
-| Plan critic | Checks the program against what the question needs (a share needs a numerator and a denominator) and sends the Planner back | The question, the program | A one-line objection or a pass | Planner |
-| Specialists | Run each step read-only; code does every sum and percentage | Ledger, Zetaris facts, Meterless engines | Claims with their rows | Auditor |
-| Auditor | Rejects any sentence whose figure no claim supports | The draft answer, the claims | Accept, or the sentences to fix | Explainer |
-| Explainer | Writes the answer from claims; never sees the question, only what the program is about | Claims, a topic | The answer | Auditor |
-| Drafter | Drafts a spend policy from the training month | Waste findings | A policy | Restrict check, Attacker |
-| Attacker | Looks for requests that step around the policy | The policy | Counter-examples | Hardener |
-| Canary | Runs a 52-task pack daily on two arms | The task pack | A verdict, an interval, the control arm | Gate, dossier |
-
-The organizers' collaboration checklist asks for three of nine; desk. has all nine, each with a place to look:
-
-| Item | Where |
-|---|---|
-| Planner delegates subtasks | The Planner's program steps are run by separate specialists (`src/desk/ask/specialists.ts`) |
-| Specialist uses data or tools | Ledger queries, the Zetaris statement, Meterless engines |
-| Evaluator critiques the output | The Auditor on every answer; the plan critic on every plan |
-| Agent revises after critique | The Explainer revises at most twice; the Planner revises once after the plan critic; the Drafter after a failed check (`revision.applied` in the trace) |
-| Risk agent flags unsupported claims | The Risk Router flags an action phrased as a question before anything runs; the Auditor flags unsupported figures after |
-| Structured messages to shared memory | A claim ledger per run; H-MEM across runs |
-| Branches on confidence | A plan the critic rejects goes back; a range with too few clusters is not called; a question the ledger cannot hold is declined |
-| Fallback if data or an API fails | Every language role has a rule-based fallback; Zetaris and Nemotron fall back to recordings, then to the rule brain, and the trace says which |
-| Final answer has traceable evidence | Each figure carries its claim and its rows; the trace says why each decision was made |
-
-A human stays in the loop where it matters: the gate turns an `ask` into an allow only on the owner's approval, echoed back with its request id and action digest, it never overrides a deny, and it fails closed.
-
 ## What it does
 
 | You ask | desk. answers with | Command |
@@ -120,23 +78,19 @@ A human stays in the loop where it matters: the gate turns an `ask` into an allo
 | Why did it change? | An answer from typed, read-only steps that an Auditor checks; engines can be switched off | `desk ask` |
 | Is the reasoning architecture better than calling the model? | A pre-registered 60-question head-to-head, with its first losing run and its misses | `desk bench report` |
 | Can it stop a runaway? | A local gate that Claude Code calls before each tool use; it fails closed | `desk gate serve` |
-| Would a cheaper model have done the same work? | The recorded tasks replayed on two routes, with a screen for which kinds of task held up on both halves | `desk route` |
-| Which seats earn their price? | Seats a team holds beyond the people who landed work, from the Zetaris roster | `desk seats` |
-| Does its stated confidence mean what it says? | Link confidence against planted truth, the wind tunnel's range and probability against what happened | `desk calibrate` |
-| Was the Desk's own judgement right? | What it expected of each option when it proposed, scored on the month that followed, with regret | `desk regret` |
-| Does it learn from its mistakes? | Wrong answers become lessons; held-out error is measured per round and a worse round is reverted | `desk lessons learn` |
+
+Route replay, seat return, calibration, the regret ledger and learning from mistakes are in [docs/commands.md](docs/commands.md).
 
 ## The evidence
 
-- **A regression, called.** The canary runs a 52-task pack once a day on two arms for 30 assigned days. The primary arm's model is switched on day 15, on purpose. The statistic calls it: **-40.0 points, 99% interval -56.2 to -23.8, control arm flat**. A first recording on 16 tasks measured a 35 point drop and correctly refused to call it (four clusters cannot support a call), so the pack was grown and re-recorded. Both are in the repository: `docs/verification/canary-first-run/`.
-- **A head-to-head, published as it came out.** Same Nemotron model, three arms: one call with a summary, a tool-using agent, and the Desk. On the first 60 questions the Desk was 51 exact against the agent's 47 and one call's 12. On a second set of 60 it had never seen, preregistered before it ran: **49 against 41 and 12**, and 77% against 63% when each question is asked three more times at temperature 0.7 (pass^3). Eight questions in sixty is at the edge of what that sample can show, and the Desk was level with the agent on the 7 questions from templates its tools were not built around (2 of 7 each). A defect found by reading that set (a refused plan was handed to the rule planner without telling the Planner why) was then fixed; after the fix the Desk is at 54 of 60 and 85% pass^3, reported as post hoc, beside the first figures and never in place of them. Its first run on the first set was 20 of 40 against the agent's 31. Everything is in `docs/verification/benchmark/` (`RESULTS-v2.md` has the written predictions, several of which failed or held only barely), and `desk prove` replays all 900 recorded runs from the recordings.
-- **Held-out replay.** A policy drafted from September meets October, a month it never saw. The headline is the landed work it would have blocked (5 of 333 sessions), not the savings.
-- **A verifier a stranger can run.** A signed dossier carries the rows its figures come from; `desk-verify` recomputes them on plain Node with the network off. Change one byte and it names the row. A signature proves the record was not altered after signing and that its figures follow from its rows; it does not prove that the agent logs were truthful.
-- **A fuzzed checker.** The restrict-only check (does an edit only narrow a policy?) agrees with an independent oracle on 3,000 random policy pairs, and a checker that always says "narrows" is caught.
-- **Its own confidence, measured.** Link confidence is checked against planted truth with Wilson intervals (high 99.2%, medium 98.6%, ordered as named). The wind tunnel's "90%" one-month range held the realized month in **73%** of 48 constructed samples with a regime change planted and **77%** with none (interval 63% to 87%), and its chance of blocking landed work had an expected calibration error of 0.29. Both are stated beside the range on screen: read it as a screen, not a promise.
-- **It keeps a record of its own judgement.** When a policy is proposed, the expected range for each option is written down; after the month that followed, each option is replayed and scored, with regret. On the sample, the proposed policy's month fell inside its range and blocked the same 5 landed sessions the held-out replay named.
-- **It tries to learn from its mistakes, and says how little it moved.** Nine wrong answers on 120 training questions gave six verified plans; the six lessons moved two held-out questions from wrong to right and none the other way (54 to 56 of 60, 95% interval -8.3 to 0.0 points), so no improvement is claimed. Nothing changed on the 7 new-template questions. A first run of this experiment measured the model's run-to-run noise rather than the lessons; both runs and the correction are in `docs/verification/learning/` and the preregistration.
+- **A regression, called.** The canary calls the planted model switch on day 15: **-40.0 points, 99% interval -56.2 to -23.8, control arm flat**. A first run on 16 tasks refused to call it, and both runs are in the repository.
+- **A head-to-head, pre-registered.** Same Nemotron model, 60 questions it never saw: the Desk **49 exact against a tool agent's 41 and one call's 12** (54 after a fix made after reading the misses, shown beside the first figure, never in place of it). Eight in sixty is at the edge of what that sample can show, and several written predictions failed.
+- **Held-out replay.** A policy drafted from September meets October: it would have blocked **5 of 333** landed sessions. That, not the savings, is the headline.
+- **A verifier a stranger can run.** `desk-verify` recomputes a signed dossier's figures on plain Node with the network off; one changed byte names the row. A signature proves the record was not altered after signing and that its figures follow from its rows; it does not prove that the agent logs were truthful.
+- **Its own confidence, measured and published.** The wind tunnel's "90%" range held the real month in **73%** of 48 constructed samples (77% with no change planted), and learning from mistakes moved 2 of 60 questions with an interval that touches zero, so no improvement is claimed.
 - **`desk prove`:** 26 PASS, 0 FAIL, 0 NOT RUN on a fresh clone. NOT RUN names a check the spec asks for that is not built or not recorded; it is never counted as a pass.
+
+Every figure, its file, and the failures: [docs/evidence.md](docs/evidence.md) and `docs/verification/`.
 
 ## How it is built
 
@@ -160,58 +114,6 @@ Zetaris ──► invoices · CI · roster ────────────�
 
 Code map: `src/desk/` (ledger, ingest, autopsy, outcomes, policy, replay, agents, ask, engines, silo, canary, bench, gate, dossier, verify, card, ui, propose, prove), `src/sponsors/zetaris/` (the Zetaris port), `src/engines/` (Meterless engines), `vendor/meterless/` (their conformance suites, unchanged), `infra/silos/` (three synthetic silos), `policies/`, `tests/`.
 
-## Stack and dependencies
-
-| Layer | What | Why |
-|---|---|---|
-| Language and runtime | TypeScript on Node 22.19 or later; `node:sqlite` for the ledger | One runtime, no database server, nothing to install beyond `npm install` |
-| Runtime dependencies | `yaml` (policy files), `@resvg/resvg-js` (renders the SVG charts to PNG) | These are the only two packages the product needs at run time |
-| Development | `tsx`, `typescript`, `vitest`, `@types/node` | Tests and the type check |
-| Model | NVIDIA Nemotron through an OpenAI-compatible API (`src/desk/agents/model.ts`) | The Power rule; tool calling verified |
-| Organisational data | Zetaris, a local instance in Docker, three synthetic silos | One statement over an S3-style file, Postgres and REST |
-| Memory and reasoning engines | Meterless World Model, H-MEM, Markovian, with their own conformance suites in `vendor/meterless/` | Run from our code; conformance 8/8, 13/13, 8/8 |
-| Signing | Ed25519 from `node:crypto`; the verifier is a single file on plain Node | A stranger can check a dossier with the network off |
-| Editor | Cursor is the required IDE; see the sponsor table for what the log does and does not show | |
-
-No GPU, no training, no package installed at run time, no download at run time. Model replies and Zetaris answers are recorded, so the sample needs no key and no network.
-
-## How long a run takes
-
-| | Bound | Measured |
-|---|---|---|
-| The card on the sample | Wall clock, model calls and tool calls are budgets enforced in code | About 20 seconds, offline |
-| The whole demo | The same | Under a minute, offline |
-| One live `desk ask` | At most one plan, one revision, and two explainer revisions | Two model calls on the questions in the benchmark; the NVIDIA free API took from about 8 to 80 seconds per run on 2026-10-23 |
-
-The organizers' target is 5 to 10 minutes for a full agent run; every path here is inside it, and none runs without a bound. The offline paths replay recorded model and Zetaris replies; the live path is the one with variable latency.
-
-## Against the organizers' red flags
-
-| Red flag in the Approach Guide | Here |
-|---|---|
-| A private API key you do not have | None needed for the sample; live mode is optional |
-| A dataset you cannot access quickly | The sample is generated from a seed on your machine |
-| Raw data of many GB with no sample strategy | The 590 MB sample is generated, not shipped; what is shipped is described in `data/README.md` |
-| GPU training | None |
-| Agents run once in a fixed sequence | Plans that fail a check are revised; the path depends on the question and on what the critic finds (see the trace below) |
-| Zetaris or Meterless with no real role | Each has a call site and a switch-off test that changes the output |
-| Cannot explain the value | The problem sentence at the top |
-| Output mostly generic text | Every figure is computed by code from the ledger and carries its rows |
-| Cannot run without internet; fails if an API is down | The sample runs offline; every language role has a rule-based fallback |
-| Demo needs manual steps not in the README | `npm run desk -- demo` is the whole demo |
-| No sample inputs and outputs | `input_examples/`, `output_examples/`, `data/sample/` |
-| Cannot show how the agent reached its output | A JSONL trace per run; a cleaned sample is below |
-
-## One real trace
-
-From `output_examples/traces/propose-sample.jsonl`, the Drafter proposing a policy. The first draft is checked on the training month, the check finds it would pause 81 of 311 sessions whose work landed, the Drafter revises, and the second draft passes:
-
-```
-{"seq":3,"event":"desk.policy.check","role":"policy_drafter","detail":{"attempt":1,"narrows":true,"landedBlocked":81,"landedTotal":311,"pausedSessions":138}}
-{"seq":4,"event":"revision.applied","role":"policy_drafter","detail":{"attempt":1,"because":"on the training window it would pause 81 of 311 sessions whose work landed; raise the threshold so they are not paused"}}
-{"seq":6,"event":"desk.policy.check","role":"policy_drafter","detail":{"attempt":2,"narrows":true,"landedBlocked":0,"landedTotal":311,"pausedSessions":0}}
-```
-
 ## Sponsor technology
 
 Each claim has a call site, a trace line and a test that switches the component off. Full text: `docs/submission/sponsor-technology-explanation.md`.
@@ -222,10 +124,6 @@ Each claim has a call site, a trace line and a test that switches the component 
 | **Meterless** | `src/engines/` (World Model, H-MEM, Markovian), conformance 8/8, 13/13, 8/8 from Meterless's own runners | `desk ask --ablate world_model` turns "what changed before 15 October" into "unknowable"; an owner's definition in H-MEM changes what counts as landed; Markovian bounds a long range |
 | **NVIDIA Nemotron** | `src/desk/agents/model.ts`, NVIDIA's OpenAI-compatible API, tool calling verified; roles: Drafter, Attacker, Planner, Explainer, the canary, all three benchmark arms | Recorded replies replay the same answers offline; without them the rule brain answers and the trace says so |
 | **Cursor** | The required IDE; editor rules in `.cursor/rules/` | `docs/sponsors/cursor-usage-log.md` records what was done in it, and claims nothing beyond that |
-
-## Live mode (optional)
-
-Copy `.env.example` to `.env` and fill in what you have; nothing is required for the sample. `desk propose --record`, `desk ask --record` and `desk bench run --record` call Nemotron and record the replies; `desk silos --record` records Zetaris answers; `desk canary run` runs the day's pack on the model in `.env`. Zetaris runs locally in Docker (install steps and every verified fact: `docs/sponsors/zetaris-local-setup.md`); `infra/silos/` starts the three synthetic silos and loads them from the sample. The gate, the hook and the signing key are described in `docs/verification/gate-enforcement.md`.
 
 ## The sample
 
@@ -257,6 +155,6 @@ The design documents under `docs/`, the sponsor notes and the two guard scripts 
 
 ## More
 
-`docs/design/desk/` the architecture, register, feature list and requirements · `docs/verification/` what was run against the real thing · `docs/sponsors/` verified facts per sponsor · `docs/submission/` the deck (`desk-deck.pdf`), the demo video script, and the sponsor explanation · `scripts/demo-video-motion/` the Remotion project that renders the captioned motion video, with every figure read from a real run or a result file (`scripts/demo-video/` is an older screen recorder, kept for reference).
+[docs/the-agents.md](docs/the-agents.md) the agents and the Track 3 mapping · [docs/evidence.md](docs/evidence.md) the evidence in full, one real trace, and the organizers' red flags · [docs/commands.md](docs/commands.md) every question and its command · [docs/reference.md](docs/reference.md) stack, run time and live mode · `docs/design/desk/` the architecture, register, feature list and requirements · `docs/verification/` what was run against the real thing · `docs/sponsors/` verified facts per sponsor · `docs/submission/` the deck (`desk-deck.pdf`), the demo video script, and the sponsor explanation · `scripts/demo-video-motion/` the Remotion project that renders the captioned motion video, with every figure read from a real run or a result file.
 
 Licence: Apache-2.0. No secret is ever written to the repository; `python scripts/secret_scan.py` runs before every commit.
