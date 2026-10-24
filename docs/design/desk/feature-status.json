@@ -56,7 +56,7 @@
     { "id": "DF-052", "status": "partial", "evidence": ["src/desk/gate/gate.ts", "docs/verification/gate-enforcement.md"], "missing": "a ladder of enforcement surfaces with notify-only labels" },
     { "id": "DF-053", "status": "built", "evidence": ["src/desk/gate/http.ts", "tests/desk/gate/gate.test.ts"], "missing": "" },
     { "id": "DF-054", "status": "built", "evidence": ["src/desk/gate/mcp.ts", "tests/desk/gate/mcp.test.ts"], "missing": "" },
-    { "id": "DF-055", "status": "absent", "evidence": [], "missing": "no gateway door" },
+    { "id": "DF-055", "status": "partial", "evidence": ["src/desk/gateway/server.ts", "src/desk/pricing/virtual.ts", "tests/desk/gateway/gateway.test.ts", "tests/desk/virtual-prices.test.ts", "docs/verification/gateway-2026-10-24.md"], "missing": "an OpenAI-compatible chat route only; no Anthropic-compatible route, no Responses API, TLS to a public endpoint not exercised, and a tool not pointed at it is outside it" },
     { "id": "DF-056", "status": "partial", "evidence": ["src/desk/gate/hook.ts", "docs/verification/gate-enforcement.md"], "missing": "Claude Code only" },
     { "id": "DF-057", "status": "built", "evidence": ["src/sponsors/zetaris/silo-port.ts", "src/sponsors/zetaris/queries.ts", "tests/sponsors/zetaris/silo-port.test.ts"], "missing": "" },
     { "id": "DF-058", "status": "built", "evidence": ["src/desk/agents/model.ts", "tests/desk/agents.test.ts"], "missing": "" },

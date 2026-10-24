@@ -2,7 +2,7 @@
 
 Generated from `feature-status.json` by `npm run desk -- status` and checked by `tests/desk/feature-status.test.ts`. The specification is `02-feature-list.md`, which was written as design; this page says how much of it exists.
 
-**42 built, 56 partial, 31 absent** of 129.
+**42 built, 57 partial, 30 absent** of 129.
 
 How to read a status. *Built*: the core of the feature as specified exists and a test, a `desk prove` check or a verification record exercises it. *Partial*: a real part exists and the missing part is named. *Absent*: no code was found. A status is a judgement made by reading and searching, which is why every row cites the files it rests on. A built feature can still be shallow; the "missing" column says so where known.
 
@@ -62,7 +62,7 @@ How to read a status. *Built*: the core of the feature as specified exists and a
 | DF-052 Enforcement-surface ladder and notify-only labels | partial | `src/desk/gate/gate.ts`, `docs/verification/gate-enforcement.md` | a ladder of enforcement surfaces with notify-only labels |
 | DF-053 Local reserve endpoint (HTTP) | built | `src/desk/gate/http.ts`, `tests/desk/gate/gate.test.ts` | - |
 | DF-054 MCP tools | built | `src/desk/gate/mcp.ts`, `tests/desk/gate/mcp.test.ts` | - |
-| DF-055 Gateway door | absent | none | no gateway door |
+| DF-055 Gateway door | partial | `src/desk/gateway/server.ts`, `src/desk/pricing/virtual.ts`, `tests/desk/gateway/gateway.test.ts`, `tests/desk/virtual-prices.test.ts`, `docs/verification/gateway-2026-10-24.md` | an OpenAI-compatible chat route only; no Anthropic-compatible route, no Responses API, TLS to a public endpoint not exercised, and a tool not pointed at it is outside it |
 | DF-056 Hook adapters per agent tool | partial | `src/desk/gate/hook.ts`, `docs/verification/gate-enforcement.md` | Claude Code only |
 | DF-057 Zetaris data path and the on-camera query | built | `src/sponsors/zetaris/silo-port.ts`, `src/sponsors/zetaris/queries.ts`, `tests/sponsors/zetaris/silo-port.test.ts` | - |
 | DF-058 Model endpoint (Nemotron through NVIDIA's free API) | built | `src/desk/agents/model.ts`, `tests/desk/agents.test.ts` | - |

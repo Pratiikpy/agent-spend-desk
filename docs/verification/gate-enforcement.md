@@ -43,6 +43,6 @@ counted because expiry is written lazily (it now sweeps first).
 | Clock set back | Blocked. The gate never uses a time earlier than its last recorded event, so a spent day does not reopen; the record stays in time order; `gate status` says how far behind the clock is. While the clock is behind, the gate's time stands still, so reservations and approvals do not age until it catches up. The test fails when the anchor is removed (checked) | `bypass.test.ts` |
 | Clock set forward | **Outside.** A forward step cannot be told from a machine that slept, so the next day's budget opens. Detecting it needs a time source the gate does not have | `bypass.test.ts` states this |
 | The hook removed from the agent's settings | **Outside.** Only the proxy door of Phase 6 would see it; not built |  |
-| A direct API call, a tool with no hook | **Outside.** Same |  |
+| A direct API call, a tool with no hook | **Outside**, unless the tool is pointed at the gateway door (`docs/verification/gateway-2026-10-24.md`), which meters OpenAI-compatible chat completions and refuses other writes; a tool that ignores its base-URL setting is still outside |  |
 
 Not covered: a gate database edited by hand is detected by the hash chain only when the edit breaks it (a complete rewrite of the chain, with the owner key not involved for ordinary events, is not detected); the whole suite ran on Windows only; the four-process race used Node's SQLite binding with a 15-second busy wait, and other bindings were not tried.
