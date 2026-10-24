@@ -1,0 +1,26 @@
+{
+  "fail_to_pass": [
+    "RFC A.1 to A.5: add a member, add an array element, remove a member, remove an array element, replace a value",
+    "RFC A.6 and A.7: moving a value and moving an array element",
+    "RFC A.8 and A.9: a test that holds changes nothing, and one that does not hold fails",
+    "RFC A.10 to A.12: a nested object, unrecognised members are ignored, adding under a missing parent fails",
+    "RFC A.14 to A.16: escape order in pointers, a string is not a number, and appending an array",
+    "pointers: the empty pointer is the whole document, ~1 is a slash and ~0 a tilde, and a bad pointer is refused",
+    "array indexes: decimal digits with no leading zero, the end marker only for add, and no index past the end",
+    "add replaces an existing member; remove and replace need the target to exist",
+    "move: from must exist, equal paths do nothing, a path inside the source is refused",
+    "copy makes an independent copy",
+    "test compares by value: key order does not matter, arrays are ordered, types are not coerced",
+    "the document passed in is never changed, and the result shares nothing with it or with the patch",
+    "it is all or nothing: a failing operation leaves nothing applied and says which one failed",
+    "operations see the result of the ones before them",
+    "bad operations are refused: unknown or missing op, missing value, missing from, a patch that is not an array",
+    "a value of null is a value: it can be added, replaced and tested",
+    "keys named like object properties are ordinary keys and never reach a prototype",
+    "adds an object member",
+    "inserts into an array",
+    "a failed test operation is a PatchError that says which operation failed"
+  ],
+  "pass_to_pass": [],
+  "total": 20
+}

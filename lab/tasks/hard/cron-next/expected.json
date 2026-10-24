@@ -1,0 +1,25 @@
+{
+  "fail_to_pass": [
+    "a time exactly on a matching minute is not returned, the next one is, and seconds and milliseconds are ignored",
+    "a list, a range and a step can be combined in one field",
+    "a step from a start value runs to the largest value of the field",
+    "names of months and days are accepted in any case, alone and as the ends of a range",
+    "day of week 0 and 7 are both Sunday, and a range may run up to 7",
+    "when both day fields are restricted either one may match",
+    "a day field that starts with a star makes both day fields have to match",
+    "a day that does not exist in a month never matches",
+    "a date that never comes within nine years gives null",
+    "it crosses the end of a month, a year and a leap day",
+    "it takes a Date or a number of milliseconds, returns a new Date, and leaves the one given alone",
+    "something else, or a value that is not a time, is a TypeError",
+    "bad expressions are refused with the expression as it was given",
+    "the edges of every field are accepted",
+    "fields may be separated by any run of spaces or tabs and the whole may be padded",
+    "it agrees with a day-by-day search over many expressions and starting times",
+    "every minute gives the next whole minute",
+    "a fixed time of day",
+    "a bad expression is refused with the expression in the message"
+  ],
+  "pass_to_pass": [],
+  "total": 19
+}

@@ -1,0 +1,22 @@
+{
+  "schema": "desk.lab.task.v1",
+  "id": "cron-next",
+  "title": "Next run of a cron expression",
+  "kind": "feature",
+  "prompt": "Implement `nextRun(expression, after)` in `src/cron.js` (it is a stub that throws). `expression` is a five-field cron expression: minute, hour, day of month, month, day of week, separated by any run of spaces or tabs; whitespace around the whole expression is ignored. Everything is in UTC. It returns a new `Date`: the earliest whole minute that is strictly later than `after` and matches the expression, so for `* * * * *` and `after` 10:00:30 or exactly 10:00:00.000 or 10:00:59.999 the answer is 10:01:00, and the `after` that was passed is not changed. It returns `null` if no minute matches up to and including the end of the ninth calendar year after the calendar year of the first minute later than `after`. `after` is a `Date` or a number of milliseconds; anything else, and any value that is not a finite time (NaN, Infinity, an invalid Date), throws `TypeError('after must be a Date or a number of milliseconds')`. Each field is a comma-separated list of items, and an item is one of: `*`, `*/n`, `a`, `a-b`, `a-b/n`, or `a/n` (from a up to the field's largest value, in steps of n). Numbers are decimal digits only, a step `n` is a whole number of at least 1, and a range needs a <= b. Ranges: minute 0-59, hour 0-23, day of month 1-31, month 1-12 or JAN-DEC, day of week 0-7 or SUN-SAT. In the day-of-week field 0 and 7 both mean Sunday, so `5-7` is Friday to Sunday, and `7-0` is invalid because 7 is more than 0; `*` there means 0-6. Names are three letters in any case, may be single values or the ends of a range, and may not be used as a step. Anything malformed (the wrong number of fields, an empty item, a value out of range, a bad step, a name that is not one of those) throws `Error('invalid cron: <expression>')` with the expression exactly as it was passed; an `expression` that is not a string is treated the same way, with the value written as a string. A day matches like this. The month must match. The day of the month must exist in that month: 31 never matches in a 30-day month, and 29 February only in leap years by the Gregorian rule (every fourth year, except century years not divisible by 400). Then, if the day-of-month field or the day-of-week field starts with `*` (such as `*` or `*/2`), both fields must match the day; otherwise either one matching is enough. So `0 0 13 * FRI` runs on every 13th and on every Friday, while `0 0 */2 * FRI` and `0 0 13 * *` need both. Run `npm test` to check your work.",
+  "test": {
+    "files": [
+      "test/visible.test.js",
+      "test/hidden.test.js"
+    ],
+    "timeoutSec": 60
+  },
+  "protected": [
+    "test"
+  ],
+  "origin": {
+    "type": "handwritten",
+    "licence": "MIT (this repository)",
+    "note": "Second tranche. Many small rules stated exactly (the day-of-month and day-of-week rule, leap years, names, steps, error forms), checked against an independent day-by-day search."
+  }
+}

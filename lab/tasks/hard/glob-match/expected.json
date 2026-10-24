@@ -1,0 +1,29 @@
+{
+  "fail_to_pass": [
+    "a star matches any run of characters, including none, inside one segment",
+    "a question mark is exactly one character, and a character is a whole code point",
+    "a backslash makes the next character ordinary",
+    "classes: members, ranges, negation with ! or ^, a leading ] or - as a plain character",
+    "a class that is not closed is just the characters",
+    "a slash always separates segments, even where a class seems to contain it",
+    "a star, a question mark or a class does not match a leading dot; a literal dot does",
+    "the dot option lets wildcards match a leading dot",
+    "a double star that is a whole segment matches any number of segments, none included",
+    "a double star does not walk into a directory that starts with a dot, unless the dot option is on",
+    "a double star that is part of a longer segment acts as a single star",
+    "braces list alternatives, which may be empty, nested, or contain slashes; a brace group with no comma is just characters",
+    "braces that are not closed, a closing brace on its own, commas outside braces, and escaped braces are plain characters",
+    "a leading exclamation mark negates the whole pattern, once, and an escaped one does not",
+    "with nocase, letters match in either case, in literals and in classes",
+    "several features together",
+    "a path with an empty segment, or one that starts or ends with a slash, or is empty, is refused",
+    "a pattern that is empty, starts or ends with a slash or has an empty segment is refused, and so is a lone exclamation mark",
+    "anything but two strings is a TypeError",
+    "it agrees with a regular-expression translation on generated single-segment patterns and paths",
+    "star stays inside a segment and double star crosses segments",
+    "alternatives in braces",
+    "a bad path is refused with the path in the message"
+  ],
+  "pass_to_pass": [],
+  "total": 23
+}

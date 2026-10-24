@@ -1,0 +1,22 @@
+{
+  "schema": "desk.lab.task.v1",
+  "id": "glob-match",
+  "title": "Glob matching",
+  "kind": "feature",
+  "prompt": "Implement `match(pattern, path, options = {})` in `src/glob.js` (a stub that throws): it returns `true` or `false` for whether a glob pattern matches a path. Inputs. Both must be strings, otherwise throw `TypeError('pattern and path must be strings')`. A `path` that is empty, starts or ends with `/`, or contains `//` throws `Error('invalid path: <path>')`; a pattern with the same faults (checked after removing one leading `!`, see below) throws `Error('invalid pattern: <pattern>')` with the pattern as it was passed, and so does a pattern that is only `!`. Paths and patterns are split on `/` into segments, and a `/` always separates segments, even where it seems to sit inside a class. `.` and `..` are ordinary segment names. `options.dot` and `options.nocase` are in force only when they are exactly `true`. Matching a segment. `*` matches any run of characters, including none; `?` matches exactly one character, and a character means a whole Unicode code point (an emoji is one). `[abc]` matches one character from the set; `[a-c]` a range by code point (a reversed range such as `z-a` matches nothing); `[!abc]` and `[^abc]` match one character not in the set; a `]` right after the `[` or after the `[!`/`[^`, and a `-` first or last, are ordinary characters; a backslash inside a class makes the next character ordinary (so `[a\\-z]` is `a`, `-` and `z`). A `[` with no closing `]` is an ordinary character. A backslash outside a class makes the next character ordinary (`\\*`, `\\?`, `\\[`, `\\\\`, `\\{`, `\\!`). Everything else matches itself. A class never matches `/`. Segments of the path. A pattern segment that is exactly `**` matches zero or more whole path segments. A `**` that is part of a longer segment (`a**b`, `***`) is just a `*`. Dot files: a path segment that starts with `.` is matched only by a pattern segment whose first character is a literal `.` (typed or escaped, including one that comes out of a brace alternative); `*`, `?`, a class and `**` do not match a leading dot, and a `**` does not walk through a segment that starts with a dot. With `dot: true` there is no such restriction. Matching is case sensitive; with `nocase: true` a letter matches its other case, in literals and in classes (a character is in a class if it, its lower-case form or its upper-case form is in it). Braces. A `{...}` group that has at least one comma at its own top level is a list of alternatives (any may be empty; groups can nest; an alternative may contain `/`), and the pattern matches if any way of choosing alternatives matches. A group with no top-level comma, an unclosed `{`, a `}` with no `{`, an escaped brace, and commas outside a group are all just characters (so `{a}` matches the text `{a}`, and `{*}` matches `{x}`). A choice that leaves an empty segment (such as `/x` from `{,x}/y`) matches nothing. Negation. If the pattern starts with `!` (not escaped), the result is the opposite of whether the rest of the pattern matches; only that first `!` negates, so `!!a` is a negation of the literal text `!a`. Run `npm test` to check your work.",
+  "test": {
+    "files": [
+      "test/visible.test.js",
+      "test/hidden.test.js"
+    ],
+    "timeoutSec": 60
+  },
+  "protected": [
+    "test"
+  ],
+  "origin": {
+    "type": "handwritten",
+    "licence": "MIT (this repository)",
+    "note": "Second tranche. Many interacting rules (classes, double star, dot files, braces, negation, case) stated exactly, and a second opinion on single segments from a regular-expression translation over generated cases."
+  }
+}

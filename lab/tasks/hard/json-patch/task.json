@@ -1,0 +1,22 @@
+{
+  "schema": "desk.lab.task.v1",
+  "id": "json-patch",
+  "title": "JSON Patch",
+  "kind": "feature",
+  "prompt": "Implement `applyPatch(document, patch)` in `src/patch.js` (a stub that throws) and the `PatchError` class it exports: JSON Patch as in RFC 6902, with JSON Pointers as in RFC 6901. `patch` is an array of operations applied in order, each seeing the result of the one before. The function returns the new document. The `document` and `patch` you are given are never changed, and the result shares no object or array with either (copy what you insert). If `patch` is not an array, throw `TypeError('patch must be an array')`. An empty patch returns an equal copy of the document. Operations are objects with `op`, `path` and, depending on the operation, `value` or `from`; members it does not use are ignored. `add` needs `value`; `replace` and `test` need `value`; `move` and `copy` need `from`, a string; `remove` needs neither. `null` is a value like any other. `add` sets an object member (replacing it if it exists), or inserts into an array at an index from 0 to the array's length, shifting the rest up, or appends when the last segment is `-`; a path of `\"\"` replaces the whole document. `remove` deletes an existing member or array element (shifting the rest down); removing the whole document (`\"\"`) is `invalid_operation`. `replace` needs an existing target and sets it (`\"\"` replaces the whole document). `move` removes the value at `from` and adds it at `path`; if `from` and `path` are the same location it does nothing when the location exists; `from` being a proper prefix of `path` (moving something into itself) is `invalid_operation`. `copy` adds a deep copy of the value at `from` at `path`. `test` succeeds if the value at `path` equals `value` and fails with `test_failed` if it does not; two values are equal when they have the same JSON type and value, so `1` is not `\"1\"`, `0` is not `null` and `true` is not `1`, arrays are equal element by element in order, and objects are equal when they have the same keys in any order with equal values. Pointers: `\"\"` is the whole document; otherwise it must start with `/` and each segment is separated by `/`, where `~1` stands for `/` and `~0` for `~` (decode `~1` first, then `~0`, so `/~01` is the key `~1`); a `~` followed by anything else is invalid. An array index is `0` or decimal digits with no leading zero; `-1`, `01`, `1.5`, `+1`, a blank or empty segment and letters are invalid; `-` means one past the end and is accepted only as the last segment of the `path` of `add`, `move` and `copy` (not mid-path, not for `remove`, `replace`, `test` or `from`). In an object, a segment is always a key, including `__proto__`, `constructor` and `prototype`: these are ordinary keys, own members of the object, and must never reach an object's prototype (applying `add` at `/__proto__` creates a member named `__proto__`, and `Object.getPrototypeOf` of the result stays `Object.prototype`). A failure throws `PatchError` (a subclass of `Error`, `name` `\"PatchError\"`) with `index`, the zero-based position of the failing operation, and `code`, and the message `operation <index> failed: <code>`. The codes are: `invalid_operation` (an operation that is not an object, an `op` that is missing, not a string or not one of add, remove, replace, move, copy, test; a missing `value` or `from` where one is needed, or a `from` that is not a string; removing the whole document; moving into itself); `invalid_pointer` (a `path` or `from` that is not a string or is malformed as above, or an array index that is invalid as above); `not_found` (a target, or a parent, that does not exist, or is not an object or array, or an array index at or past the end for `remove`, `replace`, `test`, `move` and `copy` sources); `out_of_bounds` (an `add` at an array index greater than the length); `test_failed`. The patch is all or nothing: since the input is never changed, a failure simply throws. Run `npm test` to check your work.",
+  "test": {
+    "files": [
+      "test/visible.test.js",
+      "test/hidden.test.js"
+    ],
+    "timeoutSec": 60
+  },
+  "protected": [
+    "test"
+  ],
+  "origin": {
+    "type": "handwritten",
+    "licence": "MIT (this repository)",
+    "note": "Second tranche. RFC 6902 appendix A examples (short examples from the RFC, used as test data) plus the failure codes, pointer rules, copying and prototype safety stated exactly."
+  }
+}
