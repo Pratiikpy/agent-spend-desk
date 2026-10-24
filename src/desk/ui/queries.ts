@@ -226,6 +226,7 @@ export function bill(ctx: UiContext, span: Span): object {
     ],
     reconciliation: reconciliationSummary(reported),
     priceBand: priceBand(ctx, span, t.estimatedMicros),
+    pricing: pricingNotes(ctx, span),
     landing: { rows: landingRows(landing), totalMicros: landing.totalMicros, lowConfidenceMicros: landing.lowConfidenceMicros, linked: hasLinks(ctx.db) },
     costPerLandedSession: landed === 0 ? null : Math.round(landedMicros / landed),
     landedSessions: landed,
@@ -254,6 +255,37 @@ function priceBand(ctx: UiContext, span: Span, estimatedMicros: number): object 
     highMicros: band.highMicros,
     items: items.map((i) => ({ model: i.model, price: PRICE_LABEL[i.field] ?? i.field, longPrompts: i.tier === "long", tokens: i.tokens, deltaMicros: i.deltaMicros })),
     note: "Two sources of list prices disagree on the prices above. Which one is in force is not verified here; an invoice or a usage export for these tokens settles it.",
+  };
+}
+
+const RULE_LABEL: Record<string, string> = {
+  long_prompt: "priced at the long-prompt rates",
+  fast_mode: "priced at fast-mode rates",
+  us_only: "priced with the 1.1x US-only multiplier",
+  "note:fast_mode_unpriced": "said fast on a model with no fast price (priced standard)",
+  "note:speed_unrecorded": "on a model with a fast mode but no speed in the log (priced standard)",
+  "note:us_only_unpriced": "said US-only on a model with no multiplier in the price book (priced standard)",
+  "note:geo_unrecorded": "on a model with a US-only option but no geography in the log (priced standard)",
+};
+
+/** Which pricing rules applied to the calls in this period, and any repricing that changed what the ledger says. Null on a ledger too old to carry them. */
+function pricingNotes(ctx: UiContext, span: Span): object | null {
+  const has = (name: string): boolean => (one<{ n: number }>(ctx.db, `SELECT COUNT(*) AS n FROM sqlite_master WHERE type = 'table' AND name = '${name}'`)?.n ?? 0) > 0;
+  if (!has("repricing")) return null;
+  const rules = all<{ id: string; n: number }>(
+    ctx.db,
+    `SELECT j.value AS id, COUNT(*) AS n FROM model_call m JOIN cost_event c ON c.call_id = m.call_id, json_each(c.rule_ids) j
+     WHERE m.ts >= ? AND m.ts <= ? GROUP BY j.value ORDER BY n DESC`,
+    span.sinceIso,
+    span.untilIso,
+  );
+  const repricings = all<{ id: number; at: string; to_snapshot: string; calls: number; delta: number; reason: string }>(
+    ctx.db,
+    "SELECT repricing_id id, at, to_snapshot, calls_changed calls, delta_micros delta, reason FROM repricing ORDER BY repricing_id DESC LIMIT 3",
+  );
+  return {
+    rules: rules.map((r) => ({ id: r.id, calls: r.n, label: RULE_LABEL[r.id] ?? r.id, note: r.id.startsWith("note:") })),
+    repricings: repricings.map((r) => ({ id: r.id, at: r.at, snapshot: r.to_snapshot, calls: r.calls, deltaMicros: r.delta, reason: r.reason })),
   };
 }
 

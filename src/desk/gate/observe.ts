@@ -1,10 +1,10 @@
 import { closeSync, fstatSync, openSync, readSync, realpathSync } from "node:fs";
 import { resolve, sep } from "node:path";
 
-import { listPriceCost } from "../cost/cost.ts";
+import { priceCall } from "../cost/price-call.ts";
 import { parseClaudeCodeLine } from "../ingest/claude-code.ts";
 import type { Micros } from "../money.ts";
-import { resolvePrice, type PriceSnapshot } from "../pricing/pricebook.ts";
+import type { PriceSnapshot } from "../pricing/pricebook.ts";
 import { GateError } from "./types.ts";
 
 export interface ObservedCall {
@@ -84,14 +84,13 @@ export function readTranscriptDelta(realPath: string, offset: number, snapshot: 
       if (out.kind !== "call") continue;
       const c = out.call;
       if (c.isApiError || seen.has(c.callId)) continue;
-      const price = resolvePrice(snapshot, c.model);
-      const micros =
-        price.kind === "priced"
-          ? listPriceCost(
-              { inputTokens: c.inputTokens, outputTokens: c.outputTokens, cacheReadTokens: c.cacheReadTokens, cacheWrite5mTokens: c.cacheWrite5mTokens, cacheWrite1hTokens: c.cacheWrite1hTokens },
-              price.row,
-            ).totalMicros
-          : null;
+      const price = priceCall(snapshot, {
+        model: c.model,
+        tokens: { inputTokens: c.inputTokens, outputTokens: c.outputTokens, cacheReadTokens: c.cacheReadTokens, cacheWrite5mTokens: c.cacheWrite5mTokens, cacheWrite1hTokens: c.cacheWrite1hTokens },
+        speed: c.speed,
+        inferenceGeo: c.inferenceGeo,
+      });
+      const micros = price.kind === "priced" ? price.totalMicros : null;
       seen.set(c.callId, { callId: c.callId, ts: c.ts, model: c.model, micros });
       lastModel = c.model;
     }

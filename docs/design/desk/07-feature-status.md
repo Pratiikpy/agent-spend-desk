@@ -2,7 +2,7 @@
 
 Generated from `feature-status.json` by `npm run desk -- status` and checked by `tests/desk/feature-status.test.ts`. The specification is `02-feature-list.md`, which was written as design; this page says how much of it exists.
 
-**43 built, 56 partial, 30 absent** of 129.
+**45 built, 54 partial, 30 absent** of 129.
 
 How to read a status. *Built*: the core of the feature as specified exists and a test, a `desk prove` check or a verification record exercises it. *Partial*: a real part exists and the missing part is named. *Absent*: no code was found. A status is a judgement made by reading and searching, which is why every row cites the files it rests on. A built feature can still be shallow; the "missing" column says so where known.
 
@@ -33,10 +33,10 @@ How to read a status. *Built*: the core of the feature as specified exists and a
 | DF-023 Gateway spend-log adapter | absent | none | no gateway spend-log adapter |
 | DF-024 Invoice and usage-export import | partial | `src/desk/silo/facts.ts`, `src/sponsors/zetaris/silo-port.ts`, `tests/desk/silo.test.ts` | invoices arrive only through the Zetaris silo; there is no generic import |
 | DF-025 Price book | built | `src/desk/pricing/pricebook.ts`, `src/desk/pricing/compare.ts`, `src/desk/pricing/sensitivity.ts`, `tests/desk/cost.test.ts`, `tests/desk/price-compare.test.ts`, `tests/desk/price-sensitivity.test.ts`, `docs/verification/price-sources-2026-10-24.md` | retirement dates; only Anthropic's file is compared with a second source (Portkey), and the one disagreement it found (Sonnet 5.5 cache read) is unresolved without an invoice |
-| DF-026 Per-call cost formula and surcharges | partial | `src/desk/cost/cost.ts`, `src/desk/pricing/pricebook.ts`, `tests/desk/cost.test.ts`, `tests/desk/price-tiers.test.ts` | Claude Haiku 5.5 is priced by prompt length (over 100,000 tokens) from Anthropic's page; fast-mode, batch and US-only (1.1x) surcharges are not applied, and the logs do not say which applied |
+| DF-026 Per-call cost formula and surcharges | built | `src/desk/cost/price-call.ts`, `src/desk/cost/cost.ts`, `src/desk/pricing/pricebook.ts`, `data/prices/official-modifiers-2026-10-24.json`, `tests/desk/price-rules.test.ts`, `tests/desk/gateway/modifiers.test.ts`, `docs/verification/pricing-rules-and-repricing-2026-10-24.md` | batch pricing is not modelled (Claude Code does not use the Batch API); fast mode and US-only never fired on real data because none of this machine's calls says fast or us, so they are tested on constructed calls only; the Codex and OpenCode readers carry no speed or geography |
 | DF-027 Provenance classes, reconciliation and allocation | partial | `src/desk/silo/facts.ts`, `src/desk/cost/cost.ts` | a reported class, idle and shared allocation |
 | DF-028 Unpriced handling | built | `src/desk/cost/cost.ts`, `tests/desk/cost.test.ts` | - |
-| DF-029 Repricing as superseding events | partial | `src/desk/ledger/db.ts`, `src/desk/ledger/ingest.ts` | repricing replaces a cost event by re-ingest; it is not recorded as a superseding event |
+| DF-029 Repricing as superseding events | built | `src/desk/pricing/reprice.ts`, `src/desk/ledger/backfill.ts`, `src/desk/ledger/db.ts`, `tests/desk/reprice.test.ts`, `tests/desk/backfill.test.ts`, `docs/verification/pricing-rules-and-repricing-2026-10-24.md` | the Bill and the CLI show repricings and each call's versions; no screen opens two versions of one call side by side |
 | DF-030 Task identity | built | `src/desk/tasks/identity.ts`, `src/desk/tasks/assign.ts`, `src/desk/tasks/markers.ts`, `src/desk/tasks/command.ts`, `src/desk/tasks/mark.ts`, `tests/desk/tasks.test.ts` | no prompt-thread method, by design: no prompt text is kept, so sessions are never grouped by what they were about; a task worked on under several branches is several tasks |
 | DF-031 Attribution with confidence | built | `src/desk/outcomes/attribute.ts`, `src/desk/calibrate/attribution.ts`, `tests/desk/calibration.test.ts`, `tests/desk/outcomes.test.ts` | - |
 | DF-032 Landing lattice | built | `src/desk/outcomes/attribute.ts`, `src/desk/outcomes/breakdown.ts`, `src/desk/pr/cost.ts`, `tests/desk/outcomes.test.ts`, `tests/desk/pr-cost.test.ts` | - |

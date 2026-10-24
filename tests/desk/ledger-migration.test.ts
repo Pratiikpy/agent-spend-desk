@@ -13,11 +13,11 @@ beforeEach(() => {
 afterEach(() => dir.dispose());
 
 // The tables a later version added, dropped when a test puts a ledger back at an older version. Each new migration adds its tables here.
-const DROP_AFTER_V6 = "DROP TABLE IF EXISTS task_session; DROP TABLE IF EXISTS task;";
+const DROP_AFTER_V6 = "DROP TABLE IF EXISTS cost_event_history; DROP TABLE IF EXISTS repricing; ALTER TABLE model_call DROP COLUMN inference_geo; ALTER TABLE cost_event DROP COLUMN rule_ids; DROP TABLE IF EXISTS task_session; DROP TABLE IF EXISTS task;";
 
 describe("the ledger schema", () => {
-  it("is at version 7 and a reader can use version 3 and later", () => {
-    expect(SCHEMA_VERSION).toBe(7);
+  it("is at version 8 and a reader can use version 3 and later", () => {
+    expect(SCHEMA_VERSION).toBe(8);
     expect(OLDEST_READABLE_VERSION).toBe(3);
   });
 
@@ -39,7 +39,7 @@ describe("the ledger schema", () => {
 
     const upgraded = openLedger(path);
     try {
-      expect((upgraded.prepare("PRAGMA user_version").get() as { user_version: number }).user_version).toBe(7);
+      expect((upgraded.prepare("PRAGMA user_version").get() as { user_version: number }).user_version).toBe(8);
       expect(upgraded.prepare("SELECT * FROM ingest_source").all()).toEqual(before.sources);
       expect(upgraded.prepare("SELECT call_id, source_id, output_tokens FROM model_call ORDER BY call_id").all()).toEqual(before.calls);
       expect(upgraded.prepare("PRAGMA foreign_key_check").all()).toEqual([]);
@@ -85,7 +85,7 @@ describe("the ledger schema", () => {
 
   it("opens a fresh ledger at the newest version and refuses one from a newer build", () => {
     const fresh = openLedger(":memory:");
-    expect((fresh.prepare("PRAGMA user_version").get() as { user_version: number }).user_version).toBe(7);
+    expect((fresh.prepare("PRAGMA user_version").get() as { user_version: number }).user_version).toBe(8);
     fresh.close();
     const path = join(dir.path, "future.db");
     const f = new DatabaseSync(path);

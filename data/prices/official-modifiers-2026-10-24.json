@@ -1,0 +1,43 @@
+{
+  "supplementId": "official-modifiers-2026-10-24",
+  "source": "Anthropic pricing page, Data residency pricing and Fast mode pricing (read through the r.jina.ai text reader)",
+  "sourceUrl": "https://platform.claude.com/docs/en/about-claude/pricing",
+  "fetchedAt": "2026-10-24T18:30:00.000Z",
+  "pageSha256": "af58183971be6e6ea075dd53a9117a1697ef5daf729822b4c45e161c3ac2f0fb",
+  "evidence": [
+    "For Claude 4.6 and later models, specifying US-only inference through the `inference_geo` parameter incurs a 1.1x multiplier on all token pricing categories, including input tokens, output tokens, cache writes, and cache reads. On Claude Haiku 5.5, the multiplier also applies to the higher prices for prompts over 100,000 tokens (see [Long context pricing](https://platform.claude.com/docs/en/about-claude/pricing#long-context-pricing)). Global routing (the default) uses standard pricing.",
+    "| Claude Opus 5.5 | $8 USD / MTok | $40 USD / MTok |",
+    "| Claude Opus 5 / Claude Opus 4.8 | $10 USD / MTok | $50 USD / MTok |",
+    "*   [Prompt caching multipliers](https://platform.claude.com/docs/en/about-claude/pricing#prompt-caching) apply on top of fast mode pricing.",
+    "[Fast mode](https://platform.claude.com/docs/en/build-with-claude/fast-mode) provides significantly faster output for Claude Opus 5.5, Claude Opus 5, and Claude Opus 4.8 at premium pricing. Fast mode for Claude Opus 5 and Claude Opus 4.8 is in research preview. Fast mode pricing applies across the full context window, including requests over 200k input tokens. Fast mode is available on the Claude API (first-party) and, for Claude Opus 5.5, on [Claude Models on Google Cloud (Anthropic managed)](https://platform.claude.com/docs/en/build-with-claude/claude-models-on-google-cloud/anthropic-managed#billing) and on [Claude in Microsoft Foundry](https://platform.claude.com/docs/en/build-with-claude/claude-in-microsoft-foundry) for deployments hosted on Azure."
+  ],
+  "fast": {
+    "claude-opus-5-5": {
+      "inputPerMTokMicros": 8000000,
+      "outputPerMTokMicros": 40000000
+    },
+    "claude-opus-5": {
+      "inputPerMTokMicros": 10000000,
+      "outputPerMTokMicros": 50000000
+    },
+    "claude-opus-4-8": {
+      "inputPerMTokMicros": 10000000,
+      "outputPerMTokMicros": 50000000
+    }
+  },
+  "usOnly": [
+    "claude-opus-4-6",
+    "claude-opus-4-6-20260205",
+    "claude-opus-4-7",
+    "claude-opus-4-7-20260416",
+    "claude-opus-4-8",
+    "claude-opus-5",
+    "claude-opus-5-5",
+    "claude-sonnet-4-6",
+    "claude-sonnet-5",
+    "claude-sonnet-5-5",
+    "claude-haiku-5-5",
+    "claude-fable-5",
+    "claude-fable-5-1"
+  ]
+}

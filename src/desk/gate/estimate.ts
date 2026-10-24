@@ -1,4 +1,5 @@
 import { TOKENS_PER_MTOK, type Micros } from "../money.ts";
+import { effectiveRow } from "../cost/price-call.ts";
 import { resolvePrice, type PriceSnapshot } from "../pricing/pricebook.ts";
 
 /** Used when a request names no max_tokens (spec 10.5, the LiteLLM default). */
@@ -13,6 +14,9 @@ export interface EstimateInput {
   maxTokens: number | null;
   n: number;
   explicitMicros: Micros | null;
+  /** What the request says about its speed and where it runs; fast mode and US-only inference change the price (DF-026). Absent means the standard price. */
+  speed?: string | null;
+  inferenceGeo?: string | null;
   /** Owner-set flat reservation for a model the price book cannot price (spec 10.5, the Helicone-style exception). */
   unpricedReserveMicros?: Readonly<Record<string, Micros>>;
 }
@@ -54,7 +58,8 @@ export function worstCaseReservation(snapshot: PriceSnapshot, input: EstimateInp
   const inTok = BigInt(input.inputTokens ?? 0);
   const requested = input.maxTokens ?? DEFAULT_MAX_TOKENS;
   const outTok = BigInt(Math.min(requested, MAX_TOKENS_CEILING));
-  const numerator = inTok * BigInt(resolved.row.inputPerMTokMicros) + BigInt(input.n) * outTok * BigInt(resolved.row.outputPerMTokMicros);
+  const rates = effectiveRow(resolved.row, input.speed ?? null, input.inferenceGeo ?? null).row;
+  const numerator = inTok * BigInt(rates.inputPerMTokMicros) + BigInt(input.n) * outTok * BigInt(rates.outputPerMTokMicros);
   const denominator = BigInt(TOKENS_PER_MTOK);
   const q = numerator / denominator;
   const rounded = (numerator - q * denominator) * 2n >= denominator ? q + 1n : q;

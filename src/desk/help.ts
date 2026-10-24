@@ -25,7 +25,7 @@ export const COMMANDS: readonly CommandHelp[] = [
   { name: "autopsy", group: "Costs and limits", summary: "Split a window of spend into causes: idle, loops, cache misses, and work that was needed." },
   { name: "limits", group: "Costs and limits", summary: "What a percent of your plan limit costs in tokens, per plan and window, with an interval, or why there is no estimate." },
   { name: "runway", group: "Costs and limits", summary: "Will this plan window last until it resets? Judged from how past windows of the same plan ended." },
-  { name: "prices", group: "Costs and limits", summary: "`prices compare` checks our price book against a second source and says what a disagreement is worth." },
+  { name: "prices", group: "Costs and limits", summary: "`prices compare` checks our price book against another; `reprice` prices the ledger again, keeping old costs; `history` shows them." },
   { name: "pr", group: "Costs and limits", summary: "What the agent work behind one change cost, as a description to paste into the pull request." },
 
   { name: "propose", group: "Decide and enforce", summary: "Draft a spend policy from your own history and check by proof that it only narrows what is in force." },

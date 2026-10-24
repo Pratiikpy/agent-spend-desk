@@ -1,8 +1,8 @@
-import { listPriceCost } from "../cost/cost.ts";
+import { priceCall } from "../cost/price-call.ts";
 import { restrictCheck } from "../policy/restrict.ts";
 import { replayPolicy, type ReplayCall, type ReplaySession } from "../replay/policy-replay.ts";
 import type { Policy } from "../policy/types.ts";
-import { resolvePrice, type PriceSnapshot } from "../pricing/pricebook.ts";
+import type { PriceSnapshot } from "../pricing/pricebook.ts";
 import { LIMITS, type Row } from "./format.ts";
 
 /**
@@ -207,21 +207,23 @@ const costMicros: Run = (spec, rows, env) => {
   for (const r of picked) {
     const snapshot = env.snapshots.get(strField(r, "snapshot_id"));
     if (!snapshot) fail("snapshot_missing", `${r.stream}#${r.seq} cites price snapshot ${strField(r, "snapshot_id")}, which is not in the bundle`);
-    const price = resolvePrice(snapshot, strField(r, "model"));
     const recorded = intField(r, "cost_micros");
+    // A row may carry the speed and the inference geography the call was priced with; an older row does not, and is priced as before.
+    const price = priceCall(snapshot, {
+      model: strField(r, "model"),
+      tokens: {
+        inputTokens: intField(r, "input_tokens"),
+        outputTokens: intField(r, "output_tokens"),
+        cacheReadTokens: intField(r, "cache_read_tokens"),
+        cacheWrite5mTokens: intField(r, "cache_write_5m_tokens"),
+        cacheWrite1hTokens: intField(r, "cache_write_1h_tokens"),
+      },
+      speed: typeof dataOf(r)["speed"] === "string" ? (dataOf(r)["speed"] as string) : null,
+      inferenceGeo: typeof dataOf(r)["inference_geo"] === "string" ? (dataOf(r)["inference_geo"] as string) : null,
+    });
     let cost = 0;
-    if (price.kind === "priced") {
-      cost = listPriceCost(
-        {
-          inputTokens: intField(r, "input_tokens"),
-          outputTokens: intField(r, "output_tokens"),
-          cacheReadTokens: intField(r, "cache_read_tokens"),
-          cacheWrite5mTokens: intField(r, "cache_write_5m_tokens"),
-          cacheWrite1hTokens: intField(r, "cache_write_1h_tokens"),
-        },
-        price.row,
-      ).totalMicros;
-    } else unpriced += 1;
+    if (price.kind === "priced") cost = price.totalMicros;
+    else unpriced += 1;
     if (cost !== recorded) fail("row_cost_mismatch", `${r.stream}#${r.seq}: recorded ${recorded} micro-USD, recomputed ${cost}`);
     total += BigInt(cost);
   }

@@ -58,6 +58,8 @@ import { evaluateProtocol, renderProtocol } from "./lab/protocol.ts";
 import { renderSummary, summarise as summariseRuns } from "./lab/stats.ts";
 import { loadTasks, type LabTask } from "./lab/task.ts";
 import { forgetLedger, forgetPreview } from "./security/forget.ts";
+import { backfillClaudeCodeFields } from "./ledger/backfill.ts";
+import { costVersions, listRepricings, renderRepricing, repriceLedger } from "./pricing/reprice.ts";
 import { refreshTasks } from "./tasks/assign.ts";
 import { taskCommand } from "./tasks/command.ts";
 import { appendMarker, defaultMarkerPath } from "./tasks/markers.ts";
@@ -68,7 +70,7 @@ const DOSSIER_PATHS = { dbPath: "data/desk/dossier.db", pendingDir: "data/desk/p
 // The dated snapshot the sample, the benchmark and the recorded replays were built on; it is never edited.
 const DEFAULT_SNAPSHOT = "data/prices/anthropic-litellm-2026-10-22.json";
 // The snapshot for real logs: the same list prices plus the prompt-length tier Anthropic lists for Claude Haiku 5.5.
-const LIVE_SNAPSHOT = "data/prices/anthropic-2026-10-24.json";
+const LIVE_SNAPSHOT = "data/prices/anthropic-2026-10-24-modifiers.json";
 
 // The gate has its own flags, so it takes the arguments before the general parser sees them.
 if (process.argv[2] === "gate") {
@@ -134,6 +136,10 @@ const { values, positionals } = parseOrExit({
     debug: { type: "boolean", default: false },
     second: { type: "string" },
     portkey: { type: "string" },
+    reason: { type: "string" },
+    preview: { type: "boolean", default: false },
+    call: { type: "string" },
+    backfill: { type: "boolean", default: false },
     horizon: { type: "string", default: "7" },
     base: { type: "string" },
     head: { type: "string" },
@@ -196,8 +202,28 @@ if (command === "help") {
     const setting = readCleanupDays(join(homedir(), ".claude", "settings.json"));
     console.log(renderRetention(retentionReport({ files: scanLogs(values["claude-dir"]), db, retentionDays: setting.days, retentionSource: setting.source, now: new Date(), horizonDays: Number(values.horizon) })));
   }
+} else if (command === "prices" && positionals[1] === "reprice") {
+  const snapshot = loadSnapshot(pricesPath);
+  const report = repriceLedger(db, snapshot, {
+    reason: values.reason ?? `repriced to ${snapshot.snapshotId}`,
+    ...(values.since ? { fromIso: new Date(values.since).toISOString() } : {}),
+    ...(values.until ? { untilIso: new Date(values.until).toISOString() } : {}),
+    preview: values.preview,
+  });
+  console.log(renderRepricing(report, values.preview));
+} else if (command === "prices" && positionals[1] === "history") {
+  if (values.call) {
+    const versions = costVersions(db, values.call);
+    if (versions.length === 0) console.log(`No cost for call ${values.call}.`);
+    for (const v of versions) console.log(`${v.supersededBy === null ? "stands now " : `replaced ${v.supersededAt?.slice(0, 10)} (repricing ${v.supersededBy})`}  ${v.snapshotId ?? "no snapshot"}  ${v.class === "estimated" ? formatUsd(v.totalMicros ?? 0) : `unpriced: ${v.unpricedReason}`}${v.ruleIds.length > 0 ? `  rules: ${v.ruleIds.join(", ")}` : ""}`);
+  } else {
+    const rows = listRepricings(db, 20);
+    if (rows.length === 0) console.log("No repricing yet. Every call still costs what the price book said when it was read.");
+    for (const r of rows) console.log(`#${r.repricingId}  ${r.at.slice(0, 16).replace("T", " ")}  to ${r.toSnapshot}  ${r.callsChanged.toLocaleString("en-US")} calls  ${r.deltaMicros < 0 ? "-" : "+"}${formatUsd(Math.abs(r.deltaMicros))}  ${r.reason}`);
+  }
+} else if (command === "prices" && positionals[1] !== "compare") {
+  throw new Error("Use: desk prices compare | reprice [--prices FILE] [--since D] [--until D] [--reason TEXT] [--preview] | history [--call ID]");
 } else if (command === "prices") {
-  if (positionals[1] !== "compare") throw new Error("Use: desk prices compare [--portkey <file>] [--prices <snapshot>]");
   const other = values.portkey ?? "data/prices/portkey-anthropic-2026-10-24.json";
   const body = JSON.parse(readFileSync(other, "utf8")) as { snapshotId?: string; fetchedAt?: string; models: unknown };
   const mine = loadSnapshot(pricesPath);
@@ -260,6 +286,10 @@ ${sensitivity}`);
       console.log(renderRunway(runwayFromLedger(db, { tool, windowMinutes: g.windowMinutes, planType: g.planType, now: at }), `${toolName(tool)}, ${groupLabel(g)}`));
     }
   }
+} else if (command === "ingest" && values.backfill) {
+  requireLocation(values["claude-dir"], "Claude Code keeps its logs in ~/.claude/projects", "--claude-dir");
+  const r = await backfillClaudeCodeFields(db, findJsonlLogs(values["claude-dir"]));
+  console.log(`read ${r.files} files, ${r.callsSeen} calls; filled inference_geo on ${r.inferenceGeoFilled}. Nothing else was changed. Run desk prices reprice to price calls that say US-only.`);
 } else if (command === "ingest") {
   requireLocation(values["claude-dir"], "Claude Code keeps its logs in ~/.claude/projects", "--claude-dir");
   const files = findJsonlLogs(values["claude-dir"]);

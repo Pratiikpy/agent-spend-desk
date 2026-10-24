@@ -288,7 +288,45 @@ CREATE TABLE task_session (
 CREATE INDEX task_session_task ON task_session (task_id);
 `;
 
-const MIGRATIONS: readonly string[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7];
+// The rules that priced a call (DF-026), where in the world its inference ran, and a cost that is replaced is kept (DF-029).
+// A cost_event is the current price of a call; when a repricing changes it, the old event moves to cost_event_history.
+const SCHEMA_V8 = `
+ALTER TABLE model_call ADD COLUMN inference_geo TEXT;
+ALTER TABLE cost_event ADD COLUMN rule_ids TEXT NOT NULL DEFAULT '[]';
+
+CREATE TABLE repricing (
+  repricing_id INTEGER PRIMARY KEY,
+  at TEXT NOT NULL,
+  to_snapshot TEXT NOT NULL REFERENCES price_snapshot (snapshot_id),
+  from_ts TEXT,
+  until_ts TEXT,
+  reason TEXT NOT NULL,
+  calls_changed INTEGER NOT NULL CHECK (calls_changed >= 0),
+  delta_micros INTEGER NOT NULL
+);
+
+CREATE TABLE cost_event_history (
+  history_id INTEGER PRIMARY KEY,
+  call_id TEXT NOT NULL REFERENCES model_call (call_id),
+  class TEXT NOT NULL CHECK (class IN ('estimated', 'unpriced')),
+  snapshot_id TEXT REFERENCES price_snapshot (snapshot_id),
+  matched_as TEXT,
+  ladder_step TEXT,
+  unpriced_reason TEXT,
+  total_micros INTEGER,
+  input_micros INTEGER,
+  output_micros INTEGER,
+  cache_read_micros INTEGER,
+  cache_write_5m_micros INTEGER,
+  cache_write_1h_micros INTEGER,
+  rule_ids TEXT NOT NULL DEFAULT '[]',
+  repricing_id INTEGER NOT NULL REFERENCES repricing (repricing_id)
+);
+CREATE INDEX cost_event_history_call ON cost_event_history (call_id);
+CREATE INDEX cost_event_history_repricing ON cost_event_history (repricing_id);
+`;
+
+const MIGRATIONS: readonly string[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8];
 
 /** The schema version this build writes: the number of migrations. A reader compares a ledger's `user_version` with it. */
 export const SCHEMA_VERSION = MIGRATIONS.length;

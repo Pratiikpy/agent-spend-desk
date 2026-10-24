@@ -21,8 +21,22 @@ export interface LongPromptTier extends BasePrices {
   overPromptTokens: number;
 }
 
+/**
+ * Fast mode's prices for a model that has one: premium input and output rates. The cache rates are not stated again: the
+ * pricing page says the prompt-caching multipliers (reads 0.1x, 5-minute writes 1.25x, 1-hour writes 2x of the input price)
+ * apply on top of fast mode pricing, so they are derived from the fast input price when a call is priced.
+ */
+export interface FastPrices {
+  inputPerMTokMicros: number;
+  outputPerMTokMicros: number;
+}
+
 export interface PriceRow extends BasePrices {
   longPrompt?: LongPromptTier;
+  /** Present when the model has a fast mode. A call logged with speed "fast" is priced with these. */
+  fast?: FastPrices;
+  /** True when the model supports US-only inference, which costs 1.1x on every price. A call logged with inference_geo "us" pays it. */
+  usOnly?: boolean;
 }
 
 /** The length of a request's prompt: every input token, whether fresh, read from cache or written to it. */
@@ -94,6 +108,21 @@ export function parseSnapshot(raw: unknown): PriceSnapshot {
       if (typeof over !== "number" || !Number.isSafeInteger(over) || over < 1) throw new TypeError(`price snapshot model ${name}: longPrompt.overPromptTokens must be a positive integer`);
       parsed.longPrompt = { overPromptTokens: over, ...readPrices(t, `${name} longPrompt`) };
     }
+    const fast = row["fast"];
+    if (fast !== undefined) {
+      if (typeof fast !== "object" || fast === null || Array.isArray(fast)) throw new TypeError(`price snapshot model ${name}: fast must be an object`);
+      const f = fast as Record<string, unknown>;
+      for (const k of ["inputPerMTokMicros", "outputPerMTokMicros"] as const) {
+        const v = f[k];
+        if (typeof v !== "number" || !Number.isSafeInteger(v) || v < 0) throw new TypeError(`price snapshot model ${name}: fast.${k} must be a non-negative integer`);
+      }
+      parsed.fast = { inputPerMTokMicros: f["inputPerMTokMicros"] as number, outputPerMTokMicros: f["outputPerMTokMicros"] as number };
+    }
+    const usOnly = row["usOnly"];
+    if (usOnly !== undefined) {
+      if (typeof usOnly !== "boolean") throw new TypeError(`price snapshot model ${name}: usOnly must be true or false`);
+      if (usOnly) parsed.usOnly = true;
+    }
     models[name] = parsed;
   }
   const snapshot: PriceSnapshot = {
@@ -144,6 +173,47 @@ export function applyTiers(base: PriceSnapshot, sup: TierSupplement): PriceSnaps
     license: base.license,
     upstreamSha256: base.upstreamSha256,
     note: `${base.note} Prompt-length tiers from ${sup.source} (${sup.sourceUrl}), page text sha256 ${sup.pageSha256}, read ${sup.fetchedAt}: a request whose prompt is over the stated length pays the higher prices on all its tokens.`,
+    contentHash: hashModels(models),
+    models,
+  });
+}
+
+/** Fast-mode prices and the models that take the US-only multiplier, read from a vendor's pricing page, with where they came from. */
+export interface ModifierSupplement {
+  supplementId: string;
+  source: string;
+  sourceUrl: string;
+  fetchedAt: string;
+  /** SHA-256 of the page text the modifiers were read from. */
+  pageSha256: string;
+  fast: Readonly<Record<string, FastPrices>>;
+  usOnly: readonly string[];
+}
+
+/**
+ * A new snapshot that is the given one plus fast-mode prices and the list of models that take the US-only multiplier. As with
+ * tiers, the id and note say where the figures came from and the base snapshot is left as it was.
+ */
+export function applyModifiers(base: PriceSnapshot, sup: ModifierSupplement): PriceSnapshot {
+  const models: Record<string, PriceRow> = { ...base.models };
+  for (const [name, fast] of Object.entries(sup.fast)) {
+    const row = models[name];
+    if (!row) throw new Error(`modifier supplement ${sup.supplementId} names ${name}, which snapshot ${base.snapshotId} does not price`);
+    models[name] = { ...row, fast };
+  }
+  for (const name of sup.usOnly) {
+    const row = models[name];
+    if (!row) throw new Error(`modifier supplement ${sup.supplementId} names ${name}, which snapshot ${base.snapshotId} does not price`);
+    models[name] = { ...row, usOnly: true };
+  }
+  return parseSnapshot({
+    snapshotId: `${base.snapshotId}+${sup.supplementId}`,
+    source: `${base.source}; fast-mode prices and US-only models from ${sup.source}`,
+    sourceUrl: base.sourceUrl,
+    fetchedAt: base.fetchedAt,
+    license: base.license,
+    upstreamSha256: base.upstreamSha256,
+    note: `${base.note} Fast-mode prices and US-only models from ${sup.source} (${sup.sourceUrl}), page text sha256 ${sup.pageSha256}, read ${sup.fetchedAt}: a call logged with speed "fast" is priced with the fast rates, a call logged with inference_geo "us" pays 1.1x on every price, and the caching multipliers apply on top of both.`,
     contentHash: hashModels(models),
     models,
   });

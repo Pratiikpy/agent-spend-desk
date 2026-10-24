@@ -1,10 +1,10 @@
 import { statSync } from "node:fs";
 
-import { listPriceCost } from "../cost/cost.ts";
+import { priceCall } from "../cost/price-call.ts";
 import { parseClaudeCodeLine, type ParsedCall } from "../ingest/claude-code.ts";
 import { readJsonlLines } from "../ingest/jsonl.ts";
 import { maskStored } from "../security/secrets.ts";
-import { resolvePrice, type PriceSnapshot } from "../pricing/pricebook.ts";
+import { type PriceSnapshot } from "../pricing/pricebook.ts";
 import type { Ledger } from "./db.ts";
 
 export interface IngestReport {
@@ -94,12 +94,12 @@ export async function ingestClaudeCode(
   const insertCall = db.prepare(
     `INSERT INTO model_call (call_id, session_id, request_id, ts, model, is_sidechain, input_tokens, output_tokens, reasoning_tokens,
        cache_read_tokens, cache_write_5m_tokens, cache_write_1h_tokens, cache_ttl_basis, cache_split_mismatch, service_tier, speed,
-       stop_reason, is_api_error, tool_names, block_lines, usage_conflicts, source_id)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0, ?)`,
+       stop_reason, is_api_error, tool_names, block_lines, usage_conflicts, source_id, inference_geo)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0, ?, ?)`,
   );
   const mergeCall = db.prepare(
     `UPDATE model_call SET input_tokens = ?, output_tokens = ?, reasoning_tokens = ?, cache_read_tokens = ?, cache_write_5m_tokens = ?,
-       cache_write_1h_tokens = ?, tool_names = ?, block_lines = ?, usage_conflicts = ? WHERE call_id = ?`,
+       cache_write_1h_tokens = ?, tool_names = ?, block_lines = ?, usage_conflicts = ?, inference_geo = COALESCE(inference_geo, ?) WHERE call_id = ?`,
   );
 
   const insertToolCall = db.prepare(
@@ -206,7 +206,7 @@ export async function ingestClaudeCode(
         call.callId, call.sessionId, call.requestId, call.ts, call.model, call.isSidechain ? 1 : 0, call.inputTokens, call.outputTokens,
         call.reasoningTokens, call.cacheReadTokens, call.cacheWrite5mTokens, call.cacheWrite1hTokens, call.cacheTtlBasis,
         call.cacheSplitMismatch ? 1 : 0, call.serviceTier, call.speed, call.stopReason, call.isApiError ? 1 : 0,
-        JSON.stringify([...new Set(call.toolNames)]), sourceId,
+        JSON.stringify([...new Set(call.toolNames)]), sourceId, call.inferenceGeo,
       );
       report.callsNew += 1;
       recordToolUses(call);
@@ -233,7 +233,7 @@ export async function ingestClaudeCode(
     const tools = [...new Set([...(JSON.parse(existing.tool_names) as string[]), ...call.toolNames])];
     const conflicts = existing.usage_conflicts + (differs ? 1 : 0);
     if (inputOrCacheChanged) report.usageConflicts += 1;
-    mergeCall.run(next.input, next.output, next.reasoning, next.read, next.w5, next.w1, JSON.stringify(tools), existing.block_lines + 1, conflicts, call.callId);
+    mergeCall.run(next.input, next.output, next.reasoning, next.read, next.w5, next.w1, JSON.stringify(tools), existing.block_lines + 1, conflicts, call.inferenceGeo, call.callId);
     report.callsMerged += 1;
     recordToolUses(call);
   }
@@ -250,36 +250,37 @@ export async function ingestClaudeCode(
 export function recomputeCosts(db: Ledger, snapshot: PriceSnapshot, callIds: ReadonlySet<string>, report: Pick<IngestReport, "unpricedCalls" | "unpricedModels">): void {
   if (callIds.size === 0) return;
   const load = db.prepare(
-    `SELECT call_id, model, input_tokens, output_tokens, cache_read_tokens, cache_write_5m_tokens, cache_write_1h_tokens FROM model_call WHERE call_id = ?`,
+    `SELECT call_id, model, input_tokens, output_tokens, cache_read_tokens, cache_write_5m_tokens, cache_write_1h_tokens, speed, inference_geo FROM model_call WHERE call_id = ?`,
   );
   const upsert = db.prepare(
     `INSERT OR REPLACE INTO cost_event (call_id, class, snapshot_id, matched_as, ladder_step, unpriced_reason, total_micros, input_micros,
-       output_micros, cache_read_micros, cache_write_5m_micros, cache_write_1h_micros)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       output_micros, cache_read_micros, cache_write_5m_micros, cache_write_1h_micros, rule_ids)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   );
   db.exec("BEGIN");
   try {
     for (const id of callIds) {
       const r = load.get(id) as {
         call_id: string; model: string; input_tokens: number; output_tokens: number; cache_read_tokens: number;
-        cache_write_5m_tokens: number; cache_write_1h_tokens: number;
+        cache_write_5m_tokens: number; cache_write_1h_tokens: number; speed: string | null; inference_geo: string | null;
       };
-      const resolved = resolvePrice(snapshot, r.model);
-      if (resolved.kind === "unpriced") {
-        upsert.run(id, "unpriced", null, null, null, resolved.reason, null, null, null, null, null, null);
-        report.unpricedCalls += 1;
-        report.unpricedModels[r.model] = resolved.reason;
-        continue;
-      }
-      const cost = listPriceCost(
-        {
+      const priced = priceCall(snapshot, {
+        model: r.model,
+        tokens: {
           inputTokens: r.input_tokens, outputTokens: r.output_tokens, cacheReadTokens: r.cache_read_tokens,
           cacheWrite5mTokens: r.cache_write_5m_tokens, cacheWrite1hTokens: r.cache_write_1h_tokens,
         },
-        resolved.row,
-      );
-      const c = cost.components;
-      upsert.run(id, "estimated", snapshot.snapshotId, resolved.matchedAs, resolved.ladderStep, null, cost.totalMicros, c.input, c.output, c.cacheRead, c.cacheWrite5m, c.cacheWrite1h);
+        speed: r.speed,
+        inferenceGeo: r.inference_geo,
+      });
+      if (priced.kind === "unpriced") {
+        upsert.run(id, "unpriced", null, null, null, priced.reason, null, null, null, null, null, null, "[]");
+        report.unpricedCalls += 1;
+        report.unpricedModels[r.model] = priced.reason;
+        continue;
+      }
+      const c = priced.components;
+      upsert.run(id, "estimated", snapshot.snapshotId, priced.matchedAs, priced.ladderStep, null, priced.totalMicros, c.input, c.output, c.cacheRead, c.cacheWrite5m, c.cacheWrite1h, JSON.stringify(priced.ruleIds));
     }
     db.exec("COMMIT");
   } catch (error) {

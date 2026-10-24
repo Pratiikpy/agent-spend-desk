@@ -9,7 +9,8 @@ import { openLedger } from "../../../src/desk/ledger/db.ts";
 import { ingestClaudeCode } from "../../../src/desk/ledger/ingest.ts";
 import { linkOutcomes } from "../../../src/desk/outcomes/link.ts";
 import { assignTasks } from "../../../src/desk/tasks/assign.ts";
-import { loadSnapshot } from "../../../src/desk/pricing/pricebook.ts";
+import { hashModels, loadSnapshot, parseSnapshot } from "../../../src/desk/pricing/pricebook.ts";
+import { repriceLedger } from "../../../src/desk/pricing/reprice.ts";
 import { buildSample, sampleLogsDir, sampleReposDir } from "../../../src/desk/sample/gen.ts";
 import { TEAM_OF_REPO } from "../../../src/desk/silo/seed.ts";
 import { startUiServer, type UiServer } from "../../../src/desk/ui/server.ts";
@@ -31,6 +32,11 @@ beforeAll(async () => {
   await ingestClaudeCode(db, findJsonlLogs(sampleLogsDir(out)), loadSnapshot(PRICES));
   linkOutcomes(db, Object.keys(TEAM_OF_REPO).map((n) => join(sampleReposDir(out), n)), Date.parse("2026-12-01T00:00:00Z"));
   assignTasks(db, []);
+  // A price corrected after the logs were read: the busiest model's output price goes up by $1 per million tokens.
+  const busiest = (db.prepare("SELECT model FROM model_call GROUP BY model ORDER BY COUNT(*) DESC LIMIT 1").get() as { model: string }).model;
+  const base = loadSnapshot(PRICES);
+  const models = { ...base.models, [busiest]: { ...base.models[busiest]!, outputPerMTokMicros: base.models[busiest]!.outputPerMTokMicros + 1_000_000 } };
+  repriceLedger(db, parseSnapshot({ ...base, snapshotId: `${base.snapshotId}-corrected`, models, contentHash: hashModels(models) }), { reason: "output price corrected" });
   db.close();
   const emptyPath = join(dir, "empty.db");
   openLedger(emptyPath).close();
@@ -129,6 +135,18 @@ describe("the screens' data", () => {
     expect(autopsy.card.causes.reduce((s: number, c: { micros: number }) => s + c.micros, 0)).toBe(autopsy.card.totals.estimatedMicros);
     expect(brief.state).toBe("ok");
     expect(brief.causes.length).toBeGreaterThan(0);
+  });
+
+  it("says on the Bill that the ledger was repriced, to which snapshot and why, and keeps the other screens in step with it", async () => {
+    const bill = await json(full, "/api/bill?range=all");
+    const autopsy = await json(full, "/api/autopsy?hours=5&days=30");
+    expect(bill.pricing.repricings[0]).toMatchObject({ reason: "output price corrected" });
+    expect(bill.pricing.repricings[0].snapshot).toMatch(/-corrected$/);
+    expect(bill.pricing.repricings[0].calls).toBeGreaterThan(0);
+    expect(bill.pricing.repricings[0].deltaMicros).toBeGreaterThan(0);
+    expect(autopsy.card.causes.reduce((s: number, c: { micros: number }) => s + c.micros, 0)).toBe(autopsy.card.totals.estimatedMicros);
+    // The screens read the one cost the ledger now holds: the Bill's landing split still adds up to its own total after the repricing.
+    expect(bill.landing.rows.reduce((t: number, r: { micros: number }) => t + r.micros, 0)).toBe(bill.landing.totalMicros);
   });
 
   it("shows how sessions were grouped into tasks, and the same spend as the other screens", async () => {

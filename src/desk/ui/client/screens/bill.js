@@ -7,6 +7,21 @@ import { stackedBar, dailyBars, swatch } from "../lib/charts.js";
 
 export const usesRange = true;
 
+// Which pricing rules applied in this period, and any repricing: a price that was corrected or a snapshot that came later changed what the ledger says, and both versions are kept.
+function pricingNote(p) {
+  if (!p) return null;
+  const parts = [];
+  const applied = p.rules.filter((r) => !r.note);
+  const notes = p.rules.filter((r) => r.note);
+  if (applied.length) parts.push(h("p", { class: "note", "data-pricing-rules": "true" }, `Pricing rules in this period: ${applied.map((r) => `${int(r.calls)} calls ${r.label}`).join("; ")}.`));
+  if (notes.length) parts.push(h("p", { class: "note" }, `Recorded, not guessed: ${notes.map((r) => `${int(r.calls)} calls ${r.label}`).join("; ")}.`));
+  if (p.repricings.length) {
+    const r = p.repricings[0];
+    parts.push(h("p", { class: "note", "data-repriced": "true" }, `Repriced on ${r.at.slice(0, 10)}: ${int(r.calls)} calls moved to ${r.snapshot}, ${r.deltaMicros < 0 ? "-" : "+"}${usd(Math.abs(r.deltaMicros))} (${r.reason}). Every earlier cost is kept; \`desk prices history\` lists them.`));
+  }
+  return parts.length ? h("div", null, ...parts) : null;
+}
+
 export async function render(ctx) {
   const d = await ctx.api("/api/bill", { range: ctx.range });
   if (d.state === "empty") return h("div", null, head("Month bill", "Nothing billed yet"), emptyState(d));
@@ -38,6 +53,7 @@ export async function render(ctx) {
             `Price check: ${d.priceBand.source} (fetched ${d.priceBand.fetchedAt}) disagrees with our price book on ${d.priceBand.items.map((i) => `${i.model} ${i.price}${i.longPrompts ? " for long prompts" : ""} (${int(i.tokens)} tokens)`).join(", ")}. The estimate is ${usd(d.priceBand.estimateMicros)} on our prices and would be ${d.priceBand.highMicros > d.priceBand.estimateMicros ? `up to ${usd(d.priceBand.highMicros)}` : ""}${d.priceBand.highMicros > d.priceBand.estimateMicros && d.priceBand.lowMicros < d.priceBand.estimateMicros ? " or as low as " : ""}${d.priceBand.lowMicros < d.priceBand.estimateMicros ? usd(d.priceBand.lowMicros) : ""} on theirs. ${d.priceBand.note}`,
           )
         : null,
+      pricingNote(d.pricing),
     ),
     section(
       "Kinds of dollars",

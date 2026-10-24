@@ -3,10 +3,11 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import type { AddressInfo } from "node:net";
 import type { ReadableStreamDefaultReader, ReadableStreamReadResult } from "node:stream/web";
 
-import { listPriceCost } from "../cost/cost.ts";
+import { priceCall } from "../cost/price-call.ts";
+import { worstCaseReservation } from "../gate/estimate.ts";
 import type { Gate } from "../gate/gate.ts";
 import type { GateDecision } from "../gate/types.ts";
-import { resolvePrice, type PriceSnapshot } from "../pricing/pricebook.ts";
+import { type PriceSnapshot } from "../pricing/pricebook.ts";
 
 /**
  * The gateway door. An agent that can be pointed at an OpenAI-compatible or Anthropic-compatible base URL (an environment
@@ -36,6 +37,9 @@ export interface GatewayEntry {
   stream?: boolean;
   settledAtWorstCase?: boolean;
   error?: string;
+  /** What the request said about its speed and where it runs, which decides fast-mode and US-only prices. */
+  speed?: string;
+  inferenceGeo?: string;
 }
 
 export interface GatewayStats {
@@ -235,15 +239,19 @@ export async function startGateway(opts: GatewayOptions): Promise<Gateway> {
     return out;
   }
 
-  function priced(model: string, u: Usage): number | null {
-    const r = resolvePrice(opts.prices, model);
-    if (r.kind !== "priced") return null;
-    return listPriceCost({ inputTokens: u.input, outputTokens: u.output, cacheReadTokens: u.cacheRead, cacheWrite5mTokens: u.cacheWrite5m, cacheWrite1hTokens: u.cacheWrite1h }, r.row).totalMicros;
+  function priced(model: string, u: Usage, entry: GatewayEntry): number | null {
+    const p = priceCall(opts.prices, {
+      model,
+      tokens: { inputTokens: u.input, outputTokens: u.output, cacheReadTokens: u.cacheRead, cacheWrite5mTokens: u.cacheWrite5m, cacheWrite1hTokens: u.cacheWrite1h },
+      speed: entry.speed ?? null,
+      inferenceGeo: entry.inferenceGeo ?? null,
+    });
+    return p.kind === "priced" ? p.totalMicros : null;
   }
 
   function settle(d: GateDecision, model: string, usage: Usage | null, entry: GatewayEntry): void {
     if (d.reservationId === null) return;
-    let micros = usage === null ? null : priced(model, usage);
+    let micros = usage === null ? null : priced(model, usage, entry);
     if (micros === null) {
       // The tokens used were not reported, or the model has no price: what was reserved is the honest figure.
       micros = d.reservedMicros;
@@ -330,6 +338,14 @@ export async function startGateway(opts: GatewayOptions): Promise<Gateway> {
     };
     const maxTokens = metered === "anthropic" ? body["max_tokens"] : typeof body["max_completion_tokens"] === "number" ? body["max_completion_tokens"] : body["max_tokens"];
     const n = metered === "openai" && typeof body["n"] === "number" && Number.isSafeInteger(body["n"]) && body["n"] >= 1 ? body["n"] : 1;
+    // A request can ask for fast mode or for US-only inference, and either costs more. The reservation covers what it asked for.
+    const speed = typeof body["speed"] === "string" ? body["speed"] : null;
+    const geo = typeof body["inference_geo"] === "string" ? body["inference_geo"] : null;
+    if (speed !== null) entry.speed = speed;
+    if (geo !== null) entry.inferenceGeo = geo;
+    const inputGuess = Math.ceil(raw.length / 3);
+    const maxGuess = typeof maxTokens === "number" && Number.isSafeInteger(maxTokens) && maxTokens >= 0 ? maxTokens : null;
+    const modifierEstimate = speed !== null || geo !== null ? worstCaseReservation(opts.prices, { model, inputTokens: inputGuess, maxTokens: maxGuess, n, explicitMicros: null, speed, inferenceGeo: geo }) : null;
     stats.controlled += 1;
     let decision: GateDecision;
     try {
@@ -345,9 +361,10 @@ export async function startGateway(opts: GatewayOptions): Promise<Gateway> {
         agent: opts.identity?.agent ?? header("x-desk-agent") ?? "agent:gateway",
         model,
         task_type: phase ?? header("x-desk-task-type") ?? "unknown",
-        input_tokens: Math.ceil(raw.length / 3),
-        max_tokens: typeof maxTokens === "number" && Number.isSafeInteger(maxTokens) && maxTokens >= 0 ? maxTokens : null,
+        input_tokens: inputGuess,
+        max_tokens: maxGuess,
         n,
+        ...(modifierEstimate?.ok ? { estimate_micros: modifierEstimate.micros } : {}),
         idempotency_key: randomUUID(),
       });
     } catch (e) {

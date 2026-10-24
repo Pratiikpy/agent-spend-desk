@@ -39,6 +39,8 @@ export interface ParsedCall {
   cacheSplitMismatch: boolean;
   serviceTier: string | null;
   speed: string | null;
+  /** Where the request ran (`global`, `us`, `not_available`, or empty); null when the log does not carry the field. */
+  inferenceGeo: string | null;
   stopReason: string | null;
   isApiError: boolean;
   toolNames: string[];
@@ -234,6 +236,7 @@ export function parseClaudeCodeLine(line: string): LineOutcome {
       cacheSplitMismatch: mismatch,
       serviceTier: text(usage["service_tier"]),
       speed: text(usage["speed"]),
+      inferenceGeo: text(usage["inference_geo"]),
       stopReason: text(message["stop_reason"]),
       isApiError: d["isApiErrorMessage"] === true,
       toolNames,
