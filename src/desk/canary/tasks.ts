@@ -18,6 +18,21 @@ export interface CanaryTask {
 
 const ANSWER_ONLY = "Reply with only the final answer, no explanation.";
 
+/**
+ * A checker states what it is, so the harness can be named without reading its source text. The source text of a function changes
+ * with the compiler that built it (this Desk runs through tsx, its tests through another), so a name taken from it would call every
+ * stored baseline a changed harness the day a compiler was updated. A checker's name is its kind, a version that is raised whenever
+ * the logic of that kind changes, and its arguments. A test scores a fixed table of answers with every kind, so changing the logic
+ * without raising the version fails the build.
+ */
+export interface CheckSpec {
+  kind: string;
+  version: number;
+  args: unknown[];
+}
+type Checker = ((answer: string) => 0 | 1) & { spec?: CheckSpec };
+const tag = (fn: (answer: string) => 0 | 1, kind: string, version: number, args: unknown[]): Checker => Object.assign(fn, { spec: { kind, version, args } });
+
 /** Every number in a text, in order, with thousands separators removed. */
 export function numbersIn(text: string): number[] {
   const out: number[] = [];
@@ -29,40 +44,76 @@ export function numbersIn(text: string): number[] {
 }
 
 /** The answer is the last number the reply states: models that show a line of working still end on the result. */
-const lastNumberIs = (want: number, tolerance = 0.005) => (answer: string): 0 | 1 => {
-  const nums = numbersIn(answer);
-  const got = nums[nums.length - 1];
-  return got !== undefined && Math.abs(got - want) <= tolerance ? 1 : 0;
-};
+export const lastNumberIs = (want: number, tolerance = 0.005): Checker =>
+  tag(
+    (answer) => {
+      const nums = numbersIn(answer);
+      const got = nums[nums.length - 1];
+      return got !== undefined && Math.abs(got - want) <= tolerance ? 1 : 0;
+    },
+    "lastNumberIs",
+    1,
+    [want, tolerance],
+  );
 
-const wordIs = (want: string) => (answer: string): 0 | 1 => {
-  const t = answer.trim().toLowerCase();
-  const last = t.split(/\s+/).pop()?.replace(/[^a-z]/g, "") ?? "";
-  return last === want.toLowerCase() || t.replace(/[^a-z]/g, "") === want.toLowerCase() ? 1 : 0;
-};
+export const wordIs = (want: string): Checker =>
+  tag(
+    (answer) => {
+      const t = answer.trim().toLowerCase();
+      const last = t.split(/\s+/).pop()?.replace(/[^a-z]/g, "") ?? "";
+      return last === want.toLowerCase() || t.replace(/[^a-z]/g, "") === want.toLowerCase() ? 1 : 0;
+    },
+    "wordIs",
+    1,
+    [want],
+  );
 
-const listIs = (want: string[]) => (answer: string): 0 | 1 => {
-  const got = answer.toLowerCase().match(/[a-z]+/g) ?? [];
-  const tail = got.slice(-want.length);
-  return tail.length === want.length && tail.every((w, i) => w === want[i]!.toLowerCase()) ? 1 : 0;
-};
+export const listIs = (want: string[]): Checker =>
+  tag(
+    (answer) => {
+      const got = answer.toLowerCase().match(/[a-z]+/g) ?? [];
+      const tail = got.slice(-want.length);
+      return tail.length === want.length && tail.every((w, i) => w === want[i]!.toLowerCase()) ? 1 : 0;
+    },
+    "listIs",
+    1,
+    [want],
+  );
 
-const dateIs = (want: string) => (answer: string): 0 | 1 => {
-  const found = answer.match(/\d{4}-\d{2}-\d{2}/g);
-  return found !== null && found[found.length - 1] === want ? 1 : 0;
-};
+export const dateIs = (want: string): Checker =>
+  tag(
+    (answer) => {
+      const found = answer.match(/\d{4}-\d{2}-\d{2}/g);
+      return found !== null && found[found.length - 1] === want ? 1 : 0;
+    },
+    "dateIs",
+    1,
+    [want],
+  );
 
-const timeIs = (want: string) => (answer: string): 0 | 1 => {
-  const found = answer.match(/(?<!\d)\d{1,2}:\d{2}(?!\d)/g);
-  const last = found?.[found.length - 1];
-  return last !== undefined && last.padStart(5, "0") === want ? 1 : 0;
-};
+export const timeIs = (want: string): Checker =>
+  tag(
+    (answer) => {
+      const found = answer.match(/(?<!\d)\d{1,2}:\d{2}(?!\d)/g);
+      const last = found?.[found.length - 1];
+      return last !== undefined && last.padStart(5, "0") === want ? 1 : 0;
+    },
+    "timeIs",
+    1,
+    [want],
+  );
 
 /** The reply ends on these numbers, in order: a short list read off the tail of the answer. */
-const numbersTailAre = (want: number[]) => (answer: string): 0 | 1 => {
-  const got = numbersIn(answer).slice(-want.length);
-  return got.length === want.length && got.every((n, i) => n === want[i]) ? 1 : 0;
-};
+export const numbersTailAre = (want: number[]): Checker =>
+  tag(
+    (answer) => {
+      const got = numbersIn(answer).slice(-want.length);
+      return got.length === want.length && got.every((n, i) => n === want[i]) ? 1 : 0;
+    },
+    "numbersTailAre",
+    1,
+    [want],
+  );
 
 const LOG = [
   "09:58:11 INFO  worker-3 started",
@@ -186,8 +237,34 @@ Incident report. 09:10 monitoring paged Priya. 09:25 Priya confirmed the checkou
 
 /** What a run is measured against. It changes when a task, its prompt or its checker changes, and a changed harness is reported as one. */
 export function harnessHash(): string {
-  const material = TASKS.map((t) => `${t.id}\n${t.cluster}\n${t.prompt}\n${t.check.toString()}`).join("\n---\n");
-  return `sha256:${createHash("sha256").update(material).digest("hex")}`;
+  const material = TASKS.map((t) => {
+    const spec = (t.check as Checker).spec;
+    if (spec === undefined) throw new Error(`canary task ${t.id} has a checker with no declared kind and version, so the harness cannot be named without its source text`);
+    return `${t.id}\n${t.cluster}\n${t.prompt}\n${JSON.stringify(spec)}`;
+  }).join("\n---\n");
+  return `v2:sha256:${createHash("sha256").update(material).digest("hex")}`;
+}
+
+/**
+ * The first name of the harness was a hash of the checkers' source text. Rows recorded under it are the same harness as the one this
+ * name stands for, because it was checked that the tasks, prompts and checkers were the same when the second naming was introduced;
+ * a stored row with the old name is read as having the new one. The mapping is fixed: it is not recomputed from today's tasks.
+ */
+export const LEGACY_HARNESS_NAMES: Readonly<Record<string, string>> = {
+  "sha256:d320fcfa0c60be6d6a9f72a1d7adfb26d2b9db9cd195d42eec00d2c66116ded7": "v2:sha256:467d9ca39b6011c47b2e2df278ccf6b4bfd82ae77ea4da9842f84bff59fdc4a8",
+};
+
+/** The tasks the control arm runs: the first task of each of three clusters, fixed so that the control's own history is comparable day to day. */
+export function controlTasks(): CanaryTask[] {
+  const seen = new Set<string>();
+  const out: CanaryTask[] = [];
+  for (const t of TASKS) {
+    if (seen.has(t.cluster)) continue;
+    seen.add(t.cluster);
+    out.push(t);
+    if (out.length === 3) break;
+  }
+  return out;
 }
 
 /** Score one reply. A missing or empty reply is an error (no score), never a zero. */

@@ -39,7 +39,7 @@ import { lessonsCommand } from "./lessons/command.ts";
 import { startUiServer } from "./ui/server.ts";
 import { formatLine, prove, summarise } from "./prove/run.ts";
 import { demo } from "./demo.ts";
-import { canaryCommand, canaryRunCommand, OWN_RUNS, SAMPLE_RUNS } from "./canary/command.ts";
+import { canaryCommand, canaryRunCommand, canaryScheduleSnippet, OWN_RUNS, SAMPLE_RUNS } from "./canary/command.ts";
 import { benchCommand } from "./bench/command.ts";
 import { seatsCommand } from "./seats/command.ts";
 import { routeCommand } from "./route/command.ts";
@@ -155,6 +155,7 @@ const { values, positionals } = parseOrExit({
     period: { type: "string" },
     month: { type: "string" },
     export: { type: "string" },
+    "if-due": { type: "boolean", default: false },
     output: { type: "string" },
     sign: { type: "boolean", default: false },
     "ask-approval": { type: "boolean", default: false },
@@ -532,9 +533,12 @@ Ctrl+C stops it.`);
   });
   await ui.close();
 } else if (command === "canary") {
-  if (positionals[1] === "run") {
+  if (positionals[1] === "schedule") {
+    console.log(canaryScheduleSnippet(process.cwd(), process.platform));
+  } else if (positionals[1] === "run") {
     loadDotenv(".env");
-    console.log(await canaryRunCommand({ runsPath: OWN_RUNS, env: process.env, today: new Date().toISOString().slice(0, 10) }));
+    const ran = await canaryRunCommand({ runsPath: OWN_RUNS, env: process.env, today: new Date().toISOString().slice(0, 10), db, snapshot: loadSnapshot(pricesPath), ifDue: values["if-due"], preview: values.preview });
+    console.log(ran.text);
   } else {
     console.log(canaryCommand({ runsPath: sampleMode ? SAMPLE_RUNS : OWN_RUNS, sample: sampleMode }).text);
   }

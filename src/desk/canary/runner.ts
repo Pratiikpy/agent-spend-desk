@@ -35,6 +35,8 @@ export interface RunOptions {
   day: number;
   date: string;
   tasks?: readonly CanaryTask[];
+  /** How many times each task is run in the pack: the scores of the repeats are separate rows of the same task and day. Default 1. */
+  repeats?: number;
   concurrency?: number;
   /** Per call, in milliseconds. */
   deadlineMs?: number;
@@ -56,7 +58,10 @@ const SYSTEM = "You are taking a short test. Work silently and answer exactly as
  * reason, never zeros: a failure of the harness must not look like a regression of the model.
  */
 export async function runPack(o: RunOptions): Promise<RunRow[]> {
-  const tasks = o.tasks ?? TASKS;
+  const base = o.tasks ?? TASKS;
+  const repeats = Math.max(1, Math.min(o.repeats ?? 1, 20));
+  // Task by task, repeat by repeat: a pack stopped early still holds whole tasks.
+  const tasks: readonly CanaryTask[] = base.flatMap((t) => Array.from({ length: repeats }, () => t));
   const harness = harnessHash();
   const now = o.now ?? Date.now;
   const rows: RunRow[] = new Array<RunRow>(tasks.length);
@@ -94,4 +99,19 @@ export async function runPack(o: RunOptions): Promise<RunRow[]> {
   };
   await Promise.all(Array.from({ length: Math.max(1, Math.min(o.concurrency ?? 4, tasks.length)) }, worker));
   return rows;
+}
+
+/**
+ * A probe for a cache in front of the endpoint: ask for a code that was invented a moment ago. An answer that does not contain it was
+ * not made for this request, so the endpoint, or something in front of it, is replaying answers and a canary run through it would
+ * measure the replay. Nothing here proves a cache is absent; an answer that holds the code shows only that this one was fresh.
+ */
+export async function probeCache(port: ModelPort, now: () => number = Date.now): Promise<{ fresh: boolean; why: string }> {
+  const code = createHash("sha256").update(`probe|${now()}|${Math.random()}`).digest("hex").slice(0, 10);
+  try {
+    const r = await port.complete({ role: "canary_probe", maxTokens: 60, temperature: 0, messages: [{ role: "system", content: SYSTEM }, { role: "user", content: `Reply with exactly this code and nothing else: ${code}` }] }, 60_000);
+    return r.content.includes(code) ? { fresh: true, why: "the probe came back with its own fresh code" } : { fresh: false, why: "the probe asked for a code invented a moment ago and the answer did not contain it, so the endpoint may be replaying answers" };
+  } catch (e) {
+    return { fresh: false, why: `the probe could not be answered (${e instanceof ModelError ? e.kind : "unexpected"})` };
+  }
 }

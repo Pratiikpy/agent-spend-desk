@@ -3,7 +3,7 @@ import { dirname } from "node:path";
 
 import type { RunRow } from "./runner.ts";
 import { EMPTY_CELL, type ArmSeries, type Cell, type Series } from "./series.ts";
-import { TASKS, harnessHash } from "./tasks.ts";
+import { LEGACY_HARNESS_NAMES, TASKS, harnessHash } from "./tasks.ts";
 
 /** Rows are kept as JSON lines: appended as each pack finishes, so a long run that stops can resume where it was. */
 export function appendRows(path: string, rows: readonly RunRow[]): void {
@@ -19,6 +19,7 @@ export function readRows(path: string): { rows: RunRow[]; skipped: number } {
     if (line.trim() === "") continue;
     try {
       const r = JSON.parse(line) as RunRow;
+      if (typeof r.harness === "string" && LEGACY_HARNESS_NAMES[r.harness] !== undefined) r.harness = LEGACY_HARNESS_NAMES[r.harness] as string;
       if (typeof r.day === "number" && Number.isInteger(r.day) && r.day >= 1 && (r.arm === "primary" || r.arm === "control") && typeof r.taskId === "string" && (r.score === null || r.score === 0 || r.score === 1)) rows.push(r);
       else skipped += 1;
     } catch {

@@ -1,6 +1,7 @@
 import { existsSync } from "node:fs";
 
 import { REASONS, WORDS } from "./command.ts";
+import { readSkips, skipsPathFor } from "./schedule.ts";
 import { readRows, buildSeries } from "./store.ts";
 import { DEFAULT_CONFIG, earliestCallDay, evaluateAt, makeContext, type Verdict } from "./verdict.ts";
 
@@ -28,6 +29,8 @@ export interface CanaryCard {
   daysSinceRun?: number;
   /** True when no run is dated within three days of `asOf`: the canary has stopped. */
   notRunning?: boolean;
+  /** The latest day the canary was skipped since its last run, and why: a plan window nearly spent, its own budget, a failing endpoint, a cache, no model. */
+  skipped?: { date: string; kind: string; reason: string } | null;
 }
 
 const DAY = 86_400_000;
@@ -40,6 +43,12 @@ const addDays = (date: string, n: number): string => new Date(Date.parse(`${date
  * The card as of a moment: the verdict on the latest run dated on or before `uptoDate` (default: all runs), so that the brief for a
  * past day shows what the canary said then, not what it says now.
  */
+function latestSkip(runsPath: string, lastRun: string, uptoDate: string | undefined): { date: string; kind: string; reason: string } | null {
+  const after = readSkips(skipsPathFor(runsPath)).filter((s) => s.date > lastRun && (uptoDate === undefined || s.date <= uptoDate));
+  const last = after.sort((a, b) => (a.date === b.date ? (a.at < b.at ? -1 : 1) : a.date < b.date ? -1 : 1)).at(-1);
+  return last ? { date: last.date, kind: last.kind, reason: last.reason } : null;
+}
+
 export function canaryCard(runsPath: string, asOfMs: number, sample: boolean, uptoDate?: string): CanaryCard {
   if (!existsSync(runsPath)) return { state: "none", reason: "No canary has run yet, so there is no verdict to show." };
   const all = readRows(runsPath).rows;
@@ -72,5 +81,6 @@ export function canaryCard(runsPath: string, asOfMs: number, sample: boolean, up
     lastRun,
     daysSinceRun: since,
     notRunning: since >= NOT_RUNNING_AFTER_DAYS,
+    skipped: latestSkip(runsPath, lastRun, uptoDate),
   };
 }

@@ -43,7 +43,7 @@ export const COMMANDS: readonly CommandHelp[] = [
   { name: "gate", group: "Decide and enforce", summary: "The spend gate: `gate serve`, `gate gateway` (a door for tools with no hook), `gate mcp`, `gate status`, `gate open` and `gate close`." },
   { name: "seats", group: "Decide and enforce", summary: "For each person, whether a flat seat or tokens at list price is cheaper." },
   { name: "route", group: "Decide and enforce", summary: "Test a cheaper model on recorded tasks and say whether it holds up." },
-  { name: "canary", group: "Decide and enforce", summary: "The daily regression check: did the agent get worse? `canary run` records today's tasks." },
+  { name: "canary", group: "Decide and enforce", summary: "The daily regression check: did the agent get worse? `canary run` records today's tasks; `--if-due` is the hourly job, `schedule` prints it." },
 
   { name: "ask", group: "Ask and remember", summary: "Ask a question about your spend; the answer cites the rows it used and is checked before it is shown." },
   { name: "remember", group: "Ask and remember", summary: "Store a note for Ask to use later, such as an exception someone granted." },

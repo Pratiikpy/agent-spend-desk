@@ -84,7 +84,7 @@ describe("the task pack", () => {
 
   it("has a harness hash that is stable and changes with the prompts", () => {
     expect(harnessHash()).toBe(harnessHash());
-    expect(harnessHash()).toMatch(/^sha256:[0-9a-f]{64}$/);
+    expect(harnessHash()).toMatch(/^v2:sha256:[0-9a-f]{64}$/);
   });
 });
 

@@ -1,10 +1,9 @@
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { copyFileSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { harnessHash } from "../../../src/desk/canary/tasks.ts";
 import { GateLedger } from "../../../src/desk/gate/ledger.ts";
 import { ensureGateSchema } from "../../../src/desk/gate/schema.ts";
 import { openLedger, type Ledger } from "../../../src/desk/ledger/db.ts";
@@ -225,11 +224,9 @@ describe("the canary card and the one recommended action", () => {
   it("shows the verdict as of the briefed day and says when it changed and when the canary has stopped", async () => {
     const runs = join(work, "canary", "runs.jsonl");
     mkdirSync(join(work, "canary"), { recursive: true });
-    // The sample scenario's runs are dated 2026-09-30 to 2026-10-29; its model was switched on purpose partway through. Each row names the
-    // harness it was measured with, and that name is computed from the checkers' source text, which differs between the compilers that
-    // run the tests and the one that recorded the sample, so the rows are re-labelled with this run's own harness name.
-    const harness = harnessHash();
-    writeFileSync(runs, readFileSync("data/sample/canary/runs.jsonl", "utf8").split("\n").filter(Boolean).map((l) => JSON.stringify({ ...JSON.parse(l), harness })).join("\n") + "\n");
+    // The sample scenario's runs are dated 2026-09-30 to 2026-10-29; its model was switched on purpose partway through. The file is used as it
+    // is: its rows carry the harness's first name, which is read as the current one, so the verdicts do not depend on which compiler runs the test.
+    copyFileSync("data/sample/canary/runs.jsonl", runs);
     const s = await serve(join(work, "main.db"), { timeZone: "UTC", canaryRunsPath: runs, nowMs: () => Date.parse("2026-10-30T10:00:00Z") });
     const late = (await brief(s, "2026-10-29")).canary;
     expect(late).toMatchObject({ state: "ok", verdict: "regressed", date: "2026-10-29", notRunning: false });
