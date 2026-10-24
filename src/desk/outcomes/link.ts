@@ -2,6 +2,7 @@ import { resolve, sep } from "node:path";
 
 import type { Ledger } from "../ledger/db.ts";
 import { assignCommits, outcomeOf, type Confidence, type LandingState, type Link, type SessionFacts } from "./attribute.ts";
+import { answersForRepo, applyAnswers } from "./questions.ts";
 import { pseudonym } from "../security/secrets.ts";
 import { relativeTo, scanRepo, type GitCommit } from "./git.ts";
 
@@ -79,7 +80,8 @@ export function linkOutcomes(db: Ledger, repoRoots: readonly string[], nowMs: nu
         const inRepo = (s.project_path !== null && isUnder(root, s.project_path)) || edited.length > 0;
         if (inRepo) facts.push({ sessionId: s.session_id, startMs: Date.parse(s.start_ts), endMs: Date.parse(s.end_ts), calls: s.calls, editedFiles: edited, ...(lastEditBySession.has(s.session_id) ? { lastEditMs: lastEditBySession.get(s.session_id)! } : {}) });
       }
-      for (const l of assignCommits(facts, scan.commits)) {
+      const answered = applyAnswers(assignCommits(facts, scan.commits), answersForRepo(db, root), new Set(scan.commits.map((c) => c.sha)), new Set(sessions.map((s) => s.session_id)));
+      for (const l of answered) {
         const entry = bySession.get(l.sessionId) ?? { links: [], commits: new Map<string, GitCommit>() };
         entry.links.push(l);
         const c = commitMap.get(l.sha);

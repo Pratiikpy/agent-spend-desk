@@ -2,6 +2,9 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { computeReconciliations } from "../billing/reconcile.ts";
+import { openQuestions } from "../outcomes/questions.ts";
+import { buildReview, weekLabel, weekRange } from "../review/review.ts";
+import { defaultMarkerPath, readMarkers } from "../tasks/markers.ts";
 import { analyseCalls, buildAutopsy, CAUSES, type Autopsy, type AutopsyCall, type Cause, type PerCall } from "../autopsy/engine.ts";
 import { loadAutopsyCalls } from "../autopsy/load.ts";
 import { buildCard } from "../card/build.ts";
@@ -159,17 +162,18 @@ export function meta(ctx: UiContext): object {
 /** The screen registry. A screen is listed only when the module behind it exists and has data to show. */
 export const SCREENS = [
   { id: "brief", title: "Brief", number: "01" },
-  { id: "bill", title: "Bill", number: "02" },
-  { id: "autopsy", title: "Autopsy", number: "03" },
-  { id: "sessions", title: "Sessions", number: "04" },
-  { id: "outcomes", title: "Outcomes", number: "05" },
-  { id: "policy", title: "Policy", number: "06" },
-  { id: "canary", title: "Canary", number: "07" },
-  { id: "ask", title: "Ask", number: "08" },
-  { id: "organisation", title: "Org data", number: "09" },
-  { id: "dossiers", title: "Dossiers", number: "10" },
-  { id: "evidence", title: "Evidence", number: "11" },
-  { id: "sources", title: "Doctor", number: "12" },
+  { id: "week", title: "Week", number: "02" },
+  { id: "bill", title: "Bill", number: "03" },
+  { id: "autopsy", title: "Autopsy", number: "04" },
+  { id: "sessions", title: "Sessions", number: "05" },
+  { id: "outcomes", title: "Outcomes", number: "06" },
+  { id: "policy", title: "Policy", number: "07" },
+  { id: "canary", title: "Canary", number: "08" },
+  { id: "ask", title: "Ask", number: "09" },
+  { id: "organisation", title: "Org data", number: "10" },
+  { id: "dossiers", title: "Dossiers", number: "11" },
+  { id: "evidence", title: "Evidence", number: "12" },
+  { id: "sources", title: "Doctor", number: "13" },
 ] as const;
 
 // ---------------------------------------------------------------------------------------------- bill
@@ -587,6 +591,42 @@ function taskView(ctx: UiContext, span: Span): object {
   };
 }
 
+/** The open owner questions: how many, and the costliest few, with the command that answers one. Empty on a ledger too old to hold answers. */
+function questionView(ctx: UiContext): object {
+  const has = one<{ n: number }>(ctx.db, "SELECT COUNT(*) AS n FROM sqlite_master WHERE type = 'table' AND name = 'owner_answer'");
+  if (!has || has.n === 0) return { open: 0, top: [] };
+  const all = openQuestions(ctx.db, 100_000);
+  return {
+    open: all.length,
+    top: all.slice(0, 5).map((q) => ({ id: q.id, sha: q.sha.slice(0, 7), commitAt: q.commitAt, project: projectName(q.project), sessionStart: q.sessionStart, sessionEnd: q.sessionEnd, spendMicros: q.spendMicros, method: q.method })),
+  };
+}
+
+/** The weekly review as the screen shows it: the review, the weeks the ledger covers (newest first, at most eight) and the dates of the one shown. */
+export function week(ctx: UiContext, label: string | null): object {
+  const empty = emptyState(ctx);
+  if (empty) return empty;
+  const last = one<{ b: string }>(ctx.db, "SELECT MAX(ts) b FROM model_call")!.b;
+  const first = one<{ a: string }>(ctx.db, "SELECT MIN(ts) a FROM model_call")!.a;
+  let range;
+  try {
+    range = weekRange(label ?? undefined, ctx.nowMs());
+  } catch (e) {
+    throw new BadParam((e as Error).message);
+  }
+  // The default is the last complete week; a ledger that ends before it shows the week it ends in.
+  if (label === null && Date.parse(last) < range.startMs) range = weekRange(weekLabel(Date.parse(last)), ctx.nowMs());
+  const weeks: string[] = [];
+  for (let t = Date.parse(last); t >= Date.parse(first) - 7 * DAY && weeks.length < 8; t -= 7 * DAY) {
+    const w = weekLabel(t);
+    if (!weeks.includes(w)) weeks.push(w);
+  }
+  if (!weeks.includes(range.label)) weeks.push(range.label);
+  weeks.sort().reverse();
+  const review = buildReview({ db: ctx.db, snapshot: ctx.snapshot, range, markers: ctx.mode === "own_logs" ? readMarkers(defaultMarkerPath()) : [] });
+  return { state: "ok", weeks, review: { ...review, week: { label: review.week.label, start: new Date(review.week.startMs).toISOString().slice(0, 10), end: new Date(review.week.endMs - 1).toISOString().slice(0, 10) } } };
+}
+
 export function outcomes(ctx: UiContext, span: Span): object {
   const empty = emptyState(ctx);
   if (empty) return empty;
@@ -617,6 +657,7 @@ export function outcomes(ctx: UiContext, span: Span): object {
     commits: { total: commits.n, merged: commits.merged, reverted: commits.reverted },
     landing: { rows: landingRows(landing), totalMicros: landing.totalMicros, lowConfidenceMicros: landing.lowConfidenceMicros },
     tasks: taskView(ctx, span),
+    questions: questionView(ctx),
     byMethod: byMethod.map((m) => ({ method: m.method, confidence: m.confidence, links: m.n })),
     top: rows.map((r) => ({ id: r.session_id, project: projectName(r.project_path), micros: r.micros, state: r.state ?? "unlinked", confidence: r.conf, commits: r.commits ?? 0, method: r.method })),
   };

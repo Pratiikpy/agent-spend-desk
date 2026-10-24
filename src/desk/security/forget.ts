@@ -16,12 +16,13 @@ export interface ForgetScope {
   all?: boolean;
 }
 
+// Where the Desk keeps files outside the ledger that hold the same kinds of data; a whole forget removes them too (see `forgetFiles`).
 export interface ForgetReport {
   sessions: number;
   calls: number;
 }
 
-const BY_SESSION = ["tool_result", "human_prompt", "session_outcome", "session_commit", "reported_cost", "reported_model_usage", "limit_sample"] as const;
+const BY_SESSION = ["tool_result", "human_prompt", "session_outcome", "session_commit", "reported_cost", "reported_model_usage", "limit_sample", "task_session", "owner_answer"] as const;
 
 export function forgetPreview(db: Ledger, scope: ForgetScope): ForgetReport {
   const ids = chooseSessions(db, scope);
@@ -58,14 +59,19 @@ export function forgetLedger(db: Ledger, scope: ForgetScope): ForgetReport {
     for (const id of ids) {
       del("DELETE FROM session_edit WHERE session_id = ?", id);
       del("DELETE FROM tool_call WHERE session_id = ?", id);
+      del("DELETE FROM cost_event_history WHERE call_id IN (SELECT call_id FROM model_call WHERE session_id = ?)", id);
       del("DELETE FROM cost_event WHERE call_id IN (SELECT call_id FROM model_call WHERE session_id = ?)", id);
       calls += del("DELETE FROM model_call WHERE session_id = ?", id);
       for (const t of BY_SESSION) del(`DELETE FROM ${t} WHERE session_id = ?`, id);
       del("DELETE FROM session WHERE session_id = ?", id);
     }
     // A log-file cursor with no call left pointing at it would make the next ingest skip the file's old lines.
+    // A task with no session left, and a repricing with no cost left to explain, say nothing and are dropped.
+    db.exec("DELETE FROM task WHERE task_id NOT IN (SELECT DISTINCT task_id FROM task_session)");
+    db.exec("DELETE FROM repricing WHERE repricing_id NOT IN (SELECT DISTINCT repricing_id FROM cost_event_history)");
     db.exec("DELETE FROM ingest_source WHERE id NOT IN (SELECT DISTINCT source_id FROM model_call WHERE source_id IS NOT NULL)");
-    if (scope.all) db.exec("DELETE FROM session_commit; DELETE FROM git_commit; DELETE FROM repo; DELETE FROM ingest_run;");
+    // A whole forget also takes what the owner imported or the Desk decided about the money: invoices with their lines, reconciliations and alert history.
+    if (scope.all) db.exec("DELETE FROM session_commit; DELETE FROM git_commit; DELETE FROM repo; DELETE FROM ingest_run; DELETE FROM billed_line; DELETE FROM invoice; DELETE FROM reconciliation; DELETE FROM alert_event; DELETE FROM alert_state; DELETE FROM owner_answer; DELETE FROM repricing;");
     if (!scope.all && scope.project !== undefined) {
       // A repository whose path names the project goes with it, together with its commits and their links.
       const repos = (db.prepare("SELECT repo_id FROM repo WHERE instr(root, ?) > 0").all(scope.project) as { repo_id: number }[]).map((r) => r.repo_id);

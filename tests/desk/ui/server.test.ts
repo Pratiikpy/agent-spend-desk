@@ -124,7 +124,7 @@ describe("the server's doors", () => {
 describe("the screens' data", () => {
   it("lists the screens, the ledger span and the price snapshot", async () => {
     const m = await json(full, "/api/meta");
-    expect(m.screens.map((s: { id: string }) => s.id)).toEqual(["brief", "bill", "autopsy", "sessions", "outcomes", "policy", "canary", "ask", "organisation", "dossiers", "evidence", "sources"]);
+    expect(m.screens.map((s: { id: string }) => s.id)).toEqual(["brief", "week", "bill", "autopsy", "sessions", "outcomes", "policy", "canary", "ask", "organisation", "dossiers", "evidence", "sources"]);
     expect(m.calls).toBeGreaterThan(100);
     expect(m.mode).toBe("sample");
   });
@@ -166,6 +166,35 @@ describe("the screens' data", () => {
     expect(autopsy.card.causes.reduce((s: number, c: { micros: number }) => s + c.micros, 0)).toBe(autopsy.card.totals.estimatedMicros);
     // The screens read the one cost the ledger now holds: the Bill's landing split still adds up to its own total after the repricing.
     expect(bill.landing.rows.reduce((t: number, r: { micros: number }) => t + r.micros, 0)).toBe(bill.landing.totalMicros);
+  });
+
+  it("gives the weekly review for a named week and for the default, and never more spend than the Bill holds", async () => {
+    const dflt = await json(full, "/api/week");
+    expect(dflt.state).toBe("ok");
+    expect(dflt.weeks.length).toBeGreaterThan(0);
+    expect(dflt.weeks.length).toBeLessThanOrEqual(8);
+    expect([...dflt.weeks].sort().reverse()).toEqual(dflt.weeks);
+    const label = dflt.review.week.label;
+    expect(label).toMatch(/^\d{4}-W\d{2}$/);
+    const named = await json(full, `/api/week?week=${label}`);
+    expect(named.review.spend).toEqual(dflt.review.spend);
+    // The week's spend is the Bill's spend over the same days.
+    const bill = await json(full, `/api/bill?range=all`);
+    expect(named.review.spend.micros).toBeLessThanOrEqual(bill.totals.estimatedMicros);
+    expect(named.review.suggestions.length).toBeLessThanOrEqual(3);
+    expect(named.review.trend).toHaveLength(4);
+    expect((await api(full, "/api/week?week=nonsense")).status).toBe(400);
+  });
+
+  it("lists the open owner questions with the command that answers one, and no path", async () => {
+    const outcomes = await json(full, "/api/outcomes?range=all");
+    expect(outcomes.questions.open).toBeGreaterThanOrEqual(outcomes.questions.top.length);
+    expect(outcomes.questions.top.length).toBeLessThanOrEqual(5);
+    for (const q of outcomes.questions.top) {
+      expect(q.id).toMatch(/^q-[0-9a-f]{8}$/);
+      expect(q.sha).toMatch(/^[0-9a-f]{7}$/);
+      expect(q.project).not.toMatch(/[\\/]/);
+    }
   });
 
   it("shows how sessions were grouped into tasks, and the same spend as the other screens", async () => {
@@ -239,7 +268,7 @@ describe("the screens' data", () => {
 
 describe("bad input and bad ledgers", () => {
   it("refuses junk parameters with a 400 and a reason", async () => {
-    for (const p of ["/api/bill?range=abc", "/api/bill?range=0", "/api/bill?range=99999", "/api/sessions?sort=drop", "/api/sessions?limit=-1", "/api/sessions?offset=x", "/api/autopsy?hours=0", "/api/autopsy?days=1e9", "/api/ask?q=x&ablate=nonsense"]) {
+    for (const p of ["/api/bill?range=abc", "/api/bill?range=0", "/api/bill?range=99999", "/api/sessions?sort=drop", "/api/sessions?limit=-1", "/api/sessions?offset=x", "/api/autopsy?hours=0", "/api/autopsy?days=1e9", "/api/week?week=nonsense", "/api/week?week=2021-W53", "/api/ask?q=x&ablate=nonsense"]) {
       const r = await api(full, p);
       expect(r.status, p).toBe(400);
       expect(JSON.parse(r.text).message.length).toBeGreaterThan(0);
@@ -278,7 +307,7 @@ describe("the client code", () => {
   walk(root);
 
   it("has a screen for every registered screen and requests nothing from another origin", () => {
-    for (const id of ["brief", "bill", "autopsy", "sessions", "outcomes", "policy", "canary", "ask", "organisation", "dossiers", "sources"]) expect(files.some((f) => f.endsWith(`${id}.js`)), id).toBe(true);
+    for (const id of ["brief", "week", "bill", "autopsy", "sessions", "outcomes", "policy", "canary", "ask", "organisation", "dossiers", "sources"]) expect(files.some((f) => f.endsWith(`${id}.js`)), id).toBe(true);
     for (const f of files.filter((x) => /\.(js|html|css)$/.test(x))) {
       const text = readFileSync(f, "utf8");
       expect(text, f).not.toMatch(/https?:\/\/(?!www\.w3\.org)/);

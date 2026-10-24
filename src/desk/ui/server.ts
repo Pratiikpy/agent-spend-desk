@@ -174,6 +174,8 @@ export async function startUiServer(opts: UiOptions): Promise<UiServer> {
         return withProblem(q.sessions(ctx, q.parseRange(p.get("range"), db), p.get("sort") ?? "cost", q.parseInt0(p.get("limit"), "limit", 50, 1, 200), q.parseInt0(p.get("offset"), "offset", 0, 0, 10_000_000)));
       case "/api/session":
         return withProblem(q.session(ctx, p.get("id") ?? ""));
+      case "/api/week":
+        return withProblem(q.week(ctx, p.get("week")));
       case "/api/outcomes":
         return withProblem(q.outcomes(ctx, q.parseRange(p.get("range"), db)));
       case "/api/policy":

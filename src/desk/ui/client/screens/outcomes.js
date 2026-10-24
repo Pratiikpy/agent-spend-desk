@@ -7,6 +7,30 @@ import { stackedBar, swatch } from "../lib/charts.js";
 
 export const usesRange = true;
 
+// Where the Desk is not sure which session a commit came from it asks. The screen only reads; answering is a command, so a stray click cannot change what the Desk believes.
+function questionsSection(d) {
+  const q = d.questions;
+  if (!q || q.open === 0) return null;
+  return section(
+    "Questions",
+    `${int(q.open)} open`,
+    h("p", { class: "note" }, "A link the Desk is not sure of is not counted as landed. Your yes or no is kept and applied the next time landing is computed; a question you skip stays open."),
+    table(
+      "Is this commit from this session?",
+      [
+        { label: "Commit", id: true, render: (r) => r.sha },
+        { label: "Made", render: (r) => r.commitAt.slice(0, 16).replace("T", " ") },
+        { label: "Session", render: (r) => `${r.project}, ${r.sessionStart.slice(0, 16).replace("T", " ")} to ${r.sessionEnd.slice(11, 16)}` },
+        { label: "Cost", num: true, render: (r) => usd(r.spendMicros) },
+        { label: "Answer with", render: (r) => h("code", null, `desk questions answer ${r.id} yes|no`) },
+      ],
+      q.top,
+      { maxh: true },
+    ),
+    q.open > q.top.length ? h("p", { class: "note" }, `${int(q.open - q.top.length)} more: desk questions lists them, desk questions ask goes through them.`) : null,
+  );
+}
+
 const METHOD_LABEL = { explicit: "A label you set", ticket: "A ticket key in the branch", pull_request: "A pull request number in the branch", branch: "A feature branch", session: "The session itself" };
 
 // Which task each session belongs to, and how that was decided. A session on no feature branch is its own task: no prompt text is kept, so nothing is grouped by what it was about.
@@ -58,6 +82,7 @@ export async function render(ctx) {
       h("p", { class: "note" }, "A link is only as good as its evidence. High means an agent trailer and the files both agree; medium means the files agree inside the session window; low means a time window or part of the files. Only medium and high can move a session out of unlinked."),
       table("Links by method", [{ label: "Method", render: (r) => r.method.replace("_", " ") }, { label: "Confidence", render: (r) => pill(r.confidence, r.confidence === "high" ? "live" : "") }, { label: "Links", num: true, render: (r) => int(r.links) }], d.byMethod),
     ),
+    questionsSection(d),
     tasksSection(d),
     section(
       "Largest sessions",

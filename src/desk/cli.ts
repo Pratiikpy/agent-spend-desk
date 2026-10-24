@@ -12,6 +12,7 @@ import { openLedger } from "./ledger/db.ts";
 import { landingBreakdown } from "./outcomes/breakdown.ts";
 import { commandNames, helpText } from "./help.ts";
 import { baseRef, commitsInRange, findRepoRoot } from "./outcomes/git.ts";
+import { answerQuestion, askLoop, openQuestions, renderQuestion } from "./outcomes/questions.ts";
 import { prCost, renderPr } from "./pr/cost.ts";
 import { linkOutcomes } from "./outcomes/link.ts";
 import { ingestClaudeCode } from "./ledger/ingest.ts";
@@ -64,12 +65,13 @@ import { realDeps } from "./alerts/deliver.ts";
 import { parseAmount } from "./billing/amounts.ts";
 import { estimateTask, pastTasks, renderEstimate } from "./estimate/estimate.ts";
 import { buildGauge, gaugeLine, renderGauge } from "./gauge/gauge.ts";
+import { buildReview, renderReview, weekRange } from "./review/review.ts";
 import { gaugeCachePath, newestMtimeMs, watchLogs, writeGaugeCache } from "./gauge/watch.ts";
 import { backfillClaudeCodeFields } from "./ledger/backfill.ts";
 import { costVersions, listRepricings, renderRepricing, repriceLedger } from "./pricing/reprice.ts";
 import { refreshTasks } from "./tasks/assign.ts";
 import { taskCommand } from "./tasks/command.ts";
-import { appendMarker, defaultMarkerPath } from "./tasks/markers.ts";
+import { appendMarker, defaultMarkerPath, readMarkers } from "./tasks/markers.ts";
 import { summariseEgress } from "./security/egress.ts";
 
 const regretPath = (): string => (sampleMode ? join(values.out, "regret.db") : "data/desk/regret.db");
@@ -158,6 +160,8 @@ const { values, positionals } = parseOrExit({
     type: { type: "string" },
     cap: { type: "string" },
     person: { type: "string" },
+    limit: { type: "string" },
+    week: { type: "string" },
     "gate-db": { type: "string", default: "data/desk/gate.db" },
     desktop: { type: "boolean", default: false },
     webhook: { type: "string" },
@@ -201,6 +205,45 @@ const db = command === "card" || command === "status" || command === "lab" ? ope
 
 if (command === "help") {
   console.log(helpText());
+} else if (command === "review") {
+  refreshTasks(db, { useLabels: !sampleMode, markerPath: defaultMarkerPath() });
+  if (values.week !== undefined) weekRange(values.week, 0); // a week that is not a week is refused before anything else is said
+  const last = (db.prepare("SELECT MAX(ts) t FROM model_call").get() as { t: string | null }).t;
+  if (last === null) console.log("Nothing to review: the ledger has no call. Run desk ingest first.");
+  else {
+    // The week asked for, else the last complete one; a ledger that ends before it is shown the week it ends in. A sample is dated in the future, so its week is where the sample ends.
+    let range = weekRange(values.week, sampleMode ? Date.parse(last) + 7 * 86_400_000 : Date.now());
+    if (values.week === undefined && Date.parse(last) < range.startMs) range = weekRange(undefined, Date.parse(last) + 7 * 86_400_000);
+    console.log(renderReview(buildReview({ db, snapshot: loadSnapshot(pricesPath), range, markers: sampleMode ? [] : readMarkers(defaultMarkerPath()) }), values.markdown));
+  }
+} else if (command === "questions") {
+  const sub = positionals[1];
+  const relink = (): string => {
+    const roots = (db.prepare("SELECT root FROM repo").all() as unknown as { root: string }[]).map((r) => r.root).filter((r) => existsSync(r));
+    if (roots.length === 0) return "Landing is recomputed the next time it runs (desk landing).";
+    linkOutcomes(db, roots, Date.now());
+    return `Landing recomputed for ${roots.length} repositor${roots.length === 1 ? "y" : "ies"}.`;
+  };
+  if (sub === "answer") {
+    const [id, a] = [positionals[2], positionals[3]?.toLowerCase()];
+    if (!id || (a !== "yes" && a !== "no")) throw new Error("Use: desk questions answer <id> yes|no   (a skipped question stays open; just do not answer it)");
+    const r = answerQuestion(db, id, a);
+    console.log(r.kind === "unknown" ? `No single question matches ${id}. desk questions lists them.` : `Recorded: ${a}. ${relink()}`);
+  } else if (sub === "ask") {
+    const r = await askLoop(db, process.stdin, process.stdout);
+    if (r.answered > 0) console.log(relink());
+  } else {
+    const limit = Number(values.limit ?? 10);
+    const qs = openQuestions(db, 100_000);
+    if (qs.length === 0) console.log("No open question. Nothing the Desk linked is in doubt.");
+    else {
+      console.log(`${qs.length} open question${qs.length === 1 ? "" : "s"} (the session that cost the most first):`);
+      for (const [i, q] of qs.slice(0, limit).entries()) console.log(`
+${renderQuestion(q, i + 1, qs.length)}`);
+      console.log(`
+Answer one with: desk questions answer <id> yes|no. Or go through them: desk questions ask. A skipped question stays open.`);
+    }
+  }
 } else if (command === "alerts") {
   const sub = positionals[1];
   if (sub === "schedule") console.log(scheduleSnippet(process.cwd(), process.platform, values.policy?.[0] ? `--policy ${values.policy[0]}` : ""));
@@ -218,12 +261,11 @@ if (command === "help") {
     );
   } else console.log(alertsAdmin(sub, positionals[2], db));
 } else if (command === "estimate") {
-  refreshTasks(db, { useLabels: !sampleMode, markerPath: defaultMarkerPath() });
   const cap = values.cap === undefined ? null : parseAmount(values.cap);
   if (values.cap !== undefined && (cap === null || cap.micros < 0)) throw new Error("--cap must be an amount in dollars, such as 25 or 25.50");
   // With no --repo the repository the person is in, if any, is the one asked about.
   const repo = values.repo?.[0] ?? findRepoRoot(process.cwd()) ?? undefined;
-  console.log(renderEstimate(estimateTask(pastTasks(db), { ...(values.type ? { type: values.type } : {}), ...(repo ? { repo } : {}), ...(cap ? { capMicros: cap.micros } : {}), nowMs: Date.now() })));
+  console.log(renderEstimate(estimateTask(pastTasks(db, sampleMode ? [] : readMarkers(defaultMarkerPath())), { ...(values.type ? { type: values.type } : {}), ...(repo ? { repo } : {}), ...(cap ? { capMicros: cap.micros } : {}), nowMs: Date.now() })));
 } else if (command === "gauge") {
   const snapshot = loadSnapshot(pricesPath);
   const hours = Number(values.hours);
@@ -663,14 +705,16 @@ ${t.pass} PASS, ${t.fail} FAIL, ${t.notRun} NOT RUN. NOT RUN is not a pass: it n
   try {
     const would = forgetPreview(db, scope);
     if (!values.yes) {
-      console.log(`forget would remove ${would.sessions} sessions and ${would.calls} model calls from ${ledgerPath}${values.all ? ", the cards and the egress log" : ""}. Nothing was changed. Add --yes to do it.`);
+      console.log(`forget would remove ${would.sessions} sessions and ${would.calls} model calls from ${ledgerPath}${values.all ? ", the cards, the egress log, the status line readings, the task labels and the gauge cache" : ""}. Nothing was changed. Add --yes to do it.`);
     } else {
       const done = forgetLedger(db, scope);
       if (values.all) {
         rmSync(values["card-dir"], { recursive: true, force: true });
         rmSync(process.env["DESK_EGRESS_LOG"] ?? "data/desk/egress.jsonl", { force: true });
+        // The Desk's own files beside the ledger hold the same kinds of data: plan readings, the labels you set, the gauge.
+        for (const f of [statuslineLogPath(), defaultMarkerPath(), gaugeCachePath()]) rmSync(f, { force: true });
       }
-      console.log(`forgot ${done.sessions} sessions and ${done.calls} model calls from ${ledgerPath}${values.all ? "; removed the cards and the egress log" : ""}. The file was compacted, so removed text is not left in free pages.`);
+      console.log(`forgot ${done.sessions} sessions and ${done.calls} model calls from ${ledgerPath}${values.all ? "; removed the cards, the egress log, the status line readings, the task labels and the gauge cache" : ""}. The file was compacted, so removed text is not left in free pages.`);
     }
   } catch (e) {
     console.error(e instanceof Error ? e.message : String(e));

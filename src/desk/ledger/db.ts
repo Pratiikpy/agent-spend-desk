@@ -407,7 +407,19 @@ CREATE TABLE alert_event (
 CREATE INDEX alert_event_day ON alert_event (suite, disposition, ts);
 `;
 
-const MIGRATIONS: readonly string[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8, SCHEMA_V9, SCHEMA_V10, SCHEMA_V11];
+// What the owner said when asked whether a commit came from a session (DF-006). Kept by repository folder, not by id, so it survives a rescan.
+const SCHEMA_V12 = `
+CREATE TABLE owner_answer (
+  session_id TEXT NOT NULL,
+  repo_root TEXT NOT NULL,
+  sha TEXT NOT NULL,
+  answer TEXT NOT NULL CHECK (answer IN ('yes', 'no')),
+  answered_at TEXT NOT NULL,
+  PRIMARY KEY (session_id, repo_root, sha)
+);
+`;
+
+const MIGRATIONS: readonly string[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8, SCHEMA_V9, SCHEMA_V10, SCHEMA_V11, SCHEMA_V12];
 
 /** The schema version this build writes: the number of migrations. A reader compares a ledger's `user_version` with it. */
 export const SCHEMA_VERSION = MIGRATIONS.length;

@@ -1,6 +1,6 @@
 import type { Ledger } from "../ledger/db.ts";
 import { formatUsd } from "../money.ts";
-import type { TaskMethod } from "../tasks/identity.ts";
+import { identify, type TaskMarker, type TaskMethod } from "../tasks/identity.ts";
 
 /**
  * A cost range for a task you are about to start (DF-009), from what similar tasks cost before. It is a range with a sample
@@ -37,15 +37,28 @@ export function taskType(method: TaskMethod, label: string): string {
   return "session";
 }
 
-export function pastTasks(db: Ledger): PastTask[] {
+/**
+ * Every task the ledger holds with what it cost. Tasks are worked out here from the sessions and the owner's labels, the same way
+ * `assignTasks` works them out, so it reads a ledger it cannot write to and never depends on the task table being up to date.
+ */
+export function pastTasks(db: Ledger, markers: readonly TaskMarker[] = []): PastTask[] {
   const rows = db
     .prepare(
-      `SELECT t.task_id id, t.method method, t.label label, t.project_path project, MAX(m.ts) lastTs, SUM(c.total_micros) micros
-       FROM task t JOIN task_session ts ON ts.task_id = t.task_id JOIN model_call m ON m.session_id = ts.session_id
-       JOIN cost_event c ON c.call_id = m.call_id AND c.class = 'estimated' GROUP BY t.task_id HAVING micros > 0`,
+      `SELECT s.session_id id, s.project_path project, s.git_branch branch, s.started_at startedAt, MAX(m.ts) lastTs, SUM(c.total_micros) micros
+       FROM session s JOIN model_call m ON m.session_id = s.session_id JOIN cost_event c ON c.call_id = m.call_id AND c.class = 'estimated' GROUP BY s.session_id HAVING micros > 0`,
     )
-    .all() as unknown as { id: string; method: TaskMethod; label: string; project: string | null; lastTs: string; micros: number }[];
-  return rows.map((r) => ({ taskId: r.id, method: r.method, label: r.label, projectPath: r.project, type: taskType(r.method, r.label), lastMs: Date.parse(r.lastTs), micros: r.micros })).sort((a, b) => a.lastMs - b.lastMs);
+    .all() as unknown as { id: string; project: string | null; branch: string | null; startedAt: string | null; lastTs: string; micros: number }[];
+  const byTask = new Map<string, PastTask>();
+  for (const r of rows) {
+    const id = identify({ sessionId: r.id, projectPath: r.project, gitBranch: r.branch, startedAt: r.startedAt }, markers);
+    const last = Date.parse(r.lastTs);
+    const t = byTask.get(id.taskId);
+    if (t) {
+      t.micros += r.micros;
+      t.lastMs = Math.max(t.lastMs, last);
+    } else byTask.set(id.taskId, { taskId: id.taskId, method: id.method, label: id.label, projectPath: r.project, type: taskType(id.method, id.label), lastMs: last, micros: r.micros });
+  }
+  return [...byTask.values()].sort((a, b) => a.lastMs - b.lastMs);
 }
 
 const norm = (p: string): string => p.replace(/\\/g, "/").replace(/\/+$/, "").toLowerCase();
