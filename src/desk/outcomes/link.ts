@@ -12,6 +12,13 @@ export interface LinkReport {
   sessions: number;
   links: number;
   byState: Record<LandingState, number>;
+  /** Commits whose agent-or-human reading was set by something the owner said about their author, not by the trailer (DF-116). */
+  overridden: number;
+}
+
+export interface LinkOptions {
+  /** What the owner said about authors, by the pseudonym the ledger stores: `human` removes an agent trailer's weight for that author's commits, `agent` gives it. */
+  authorRules?: ReadonlyMap<string, { kind: "human" | "agent" }>;
 }
 
 function normal(path: string): string {
@@ -31,8 +38,8 @@ function isUnder(root: string, path: string): boolean {
  * after the session). Sessions that touch no repository stay `unlinked`, and that share is reported,
  * never folded into waste.
  */
-export function linkOutcomes(db: Ledger, repoRoots: readonly string[], nowMs: number): LinkReport {
-  const report: LinkReport = { repos: 0, commits: 0, sessions: 0, links: 0, byState: { unlinked: 0, committed: 0, merged: 0, kept: 0, reverted: 0 } };
+export function linkOutcomes(db: Ledger, repoRoots: readonly string[], nowMs: number, opts: LinkOptions = {}): LinkReport {
+  const report: LinkReport = { repos: 0, commits: 0, sessions: 0, links: 0, byState: { unlinked: 0, committed: 0, merged: 0, kept: 0, reverted: 0 }, overridden: 0 };
   const sessions = db
     .prepare(
       `SELECT s.session_id, s.project_path, MIN(m.ts) AS start_ts, MAX(m.ts) AS end_ts, COUNT(*) AS calls
@@ -67,6 +74,16 @@ export function linkOutcomes(db: Ledger, repoRoots: readonly string[], nowMs: nu
 
     for (const root of repoRoots) {
       const scan = scanRepo(root, since);
+      // What the owner said about an author outranks a trailer, which anyone can write.
+      if (opts.authorRules !== undefined && opts.authorRules.size > 0) {
+        for (const c of scan.commits) {
+          const rule = opts.authorRules.get(pseudonym(c.authorEmail));
+          if (rule !== undefined && c.agentTrailer !== (rule.kind === "agent")) {
+            c.agentTrailer = rule.kind === "agent";
+            report.overridden += 1;
+          }
+        }
+      }
       const repoId = (insertRepo.get(root, scan.defaultRef, new Date(nowMs).toISOString()) as { repo_id: number }).repo_id;
       report.repos += 1;
       for (const c of scan.commits) {

@@ -62,6 +62,8 @@ export const COMMANDS: readonly CommandHelp[] = [
   { name: "remember", group: "Ask and remember", summary: "Store a note for Ask to use later, such as an exception someone granted." },
   { name: "verify-answer", group: "Ask and remember", summary: "Check an answer's claims against the ledger." },
   { name: "lessons", group: "Ask and remember", summary: "Learn rules from past mistakes, and show whether they would have helped on held-out questions." },
+  { name: "precedents", group: "Ask and remember", summary: "Policy changes you approved and what they did afterwards, shown to the next proposal that touches the same rules." },
+  { name: "memory", group: "Ask and remember", summary: "What the Desk remembers: mine statements from what you say, mark a memory helpful or wrong, and run the sleep cycle with a backup." },
   { name: "regret", group: "Ask and remember", summary: "Score earlier proposals against what happened afterwards." },
   { name: "calibrate", group: "Ask and remember", summary: "How well the confidence of a session-to-commit link and the simulator match answers we know." },
 

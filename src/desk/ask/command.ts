@@ -79,11 +79,11 @@ export async function askCommand(o: AskCommandOptions): Promise<string> {
   }
 }
 
-export async function rememberCommand(o: { memoryDir: string; text: string; outcome: boolean }): Promise<string> {
+export async function rememberCommand(o: { memoryDir: string; text: string; outcome: boolean; replaces?: string }): Promise<string> {
   const memory = await OwnerMemory.open({ persistDir: o.memoryDir });
   try {
-    const rec = memory.remember({ content: o.text, kind: o.outcome ? "outcome_definition" : "note" });
-    return `remembered ${rec.id} (${o.outcome ? "outcome definition" : "note"})`;
+    const rec = memory.remember({ content: o.text, kind: o.outcome ? "outcome_definition" : "note", ...(o.replaces ? { supersedes: o.replaces } : {}) });
+    return `remembered ${rec.id} (${o.outcome ? "outcome definition" : "note"})${o.replaces ? `, replacing ${o.replaces}, which is kept and marked replaced` : ""}`;
   } catch (e) {
     return `Not remembered: ${(e as Error).message}`;
   }

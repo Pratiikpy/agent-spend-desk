@@ -626,7 +626,36 @@ CREATE TABLE autonomy_event (
 CREATE INDEX autonomy_event_workflow ON autonomy_event (workflow, event_id);
 `;
 
-const MIGRATIONS: readonly string[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8, SCHEMA_V9, SCHEMA_V10, SCHEMA_V11, SCHEMA_V12, SCHEMA_V13, SCHEMA_V14, SCHEMA_V15, SCHEMA_V16, SCHEMA_V17, SCHEMA_V18, SCHEMA_V19, SCHEMA_V20, SCHEMA_V21, SCHEMA_V22, SCHEMA_V23, SCHEMA_V24, SCHEMA_V25];
+// Policy changes the owner approved, kept as precedents with what they did afterwards at 7, 14 and 30 days (DF-105).
+const SCHEMA_V26 = `
+CREATE TABLE policy_precedent (
+  precedent_id TEXT PRIMARY KEY,
+  memory_id TEXT NOT NULL,
+  adopted_at_ms INTEGER NOT NULL,
+  rule_ids TEXT NOT NULL,
+  summary TEXT NOT NULL,
+  diff TEXT NOT NULL,
+  forecast TEXT NOT NULL,
+  policy_yaml TEXT NOT NULL,
+  superseded_by TEXT
+);
+
+CREATE TABLE precedent_outcome (
+  precedent_id TEXT NOT NULL REFERENCES policy_precedent (precedent_id) ON DELETE CASCADE,
+  horizon_days INTEGER NOT NULL CHECK (horizon_days IN (7, 14, 30)),
+  measured_at TEXT NOT NULL,
+  sessions INTEGER NOT NULL,
+  paused INTEGER NOT NULL,
+  asked_calls INTEGER NOT NULL,
+  denied_calls INTEGER NOT NULL,
+  saved_micros INTEGER NOT NULL,
+  landed_total INTEGER NOT NULL,
+  landed_blocked INTEGER NOT NULL,
+  PRIMARY KEY (precedent_id, horizon_days)
+);
+`;
+
+const MIGRATIONS: readonly string[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8, SCHEMA_V9, SCHEMA_V10, SCHEMA_V11, SCHEMA_V12, SCHEMA_V13, SCHEMA_V14, SCHEMA_V15, SCHEMA_V16, SCHEMA_V17, SCHEMA_V18, SCHEMA_V19, SCHEMA_V20, SCHEMA_V21, SCHEMA_V22, SCHEMA_V23, SCHEMA_V24, SCHEMA_V25, SCHEMA_V26];
 
 /** The schema version this build writes: the number of migrations. A reader compares a ledger's `user_version` with it. */
 export const SCHEMA_VERSION = MIGRATIONS.length;

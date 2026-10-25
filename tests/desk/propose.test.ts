@@ -185,6 +185,46 @@ describe("the command", () => {
     expect(parsed.approver).toBeNull();
   }, 120_000);
 
+  it("shows the proposal the closest earlier change and what it did, or says there is none, and never stops the draft for want of a memory", async () => {
+    const { runCard } = await import("../../src/desk/card/run.ts");
+    const root = mkdtempSync(join(tmpdir(), "desk-propose-precedent-"));
+    try {
+      await runCard({ mode: "sample", claudeDir: "", dbPath: "", pricesPath: base.pricesPath, outDir: join(root, "card"), sampleDir: join(root, "sample"), days: 14, hours: 5, repos: [], color: false });
+      const dbPath = join(root, "sample", "ledger.db");
+      const memoryDir = join(root, "memory");
+      const run = (extra: Record<string, unknown> = {}) => proposeCommand({ ...base, dbPath, sampleMode: true, cassetteDir: "data/sample/cassettes", policyPath: "policies/daily-cap.yaml", personFromBranch: true, outDir: join(root, "out"), memoryDir, ...extra });
+      const first = await run();
+      expect(first).toContain("Earlier changes like this one:\n  No historical precedent found.\n");
+      // Approve the change it proposed, as `desk approve` would leave it, and ask again.
+      const written = /written: (\S+\.yaml),/.exec(first)![1]!;
+      const proposed = parsePolicyYaml(readFileSync(written, "utf8"));
+      const current = parsePolicyYaml(readFileSync("policies/daily-cap.yaml", "utf8"));
+      const { policyDiff, ruleIdsOf } = await import("../../src/desk/precedent/diff.ts");
+      const { OwnerMemory } = await import("../../src/desk/engines/memory.ts");
+      const diff = policyDiff(current, proposed);
+      expect(diff.length).toBeGreaterThan(0);
+      const memory = await OwnerMemory.open({ persistDir: memoryDir, clock: () => Date.parse("2026-10-20T00:00:00Z") });
+      const rec = memory.addPrecedent({ content: `Policy change approved 2026-09-20: ${diff.map((d) => d.text).join("; ")}`, ruleIds: ruleIdsOf(diff), decisionId: "d-earlier" });
+      const db = openLedger(dbPath);
+      db.prepare("INSERT INTO policy_precedent (precedent_id, memory_id, adopted_at_ms, rule_ids, summary, diff, forecast, policy_yaml, superseded_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL)").run(
+        "d-earlier", rec.id, Date.parse("2026-09-20T00:00:00Z"), JSON.stringify(ruleIdsOf(diff)), "earlier", JSON.stringify(diff), JSON.stringify({ lowMicros: null, highMicros: null, meanMicros: null, historyMayNotPredict: null, historySessions: 0 }), readFileSync("policies/daily-cap.yaml", "utf8"),
+      );
+      db.close();
+      const second = await run();
+      expect(second).toMatch(/Earlier changes like this one:\n {2}On 2026-09-20 you approved: /);
+      // With the memory engine off (--ablate hmem) the same proposal says no memory was available, and the citation is gone: that is what the engine changes here.
+      const ablated = await run({ memoryOff: true });
+      expect(ablated).toContain("Earlier changes like this one:\n  No memory is available, so no earlier precedent was read.\n");
+      expect(ablated).not.toContain("you approved");
+      // Without a memory folder the section is not written, and a draft is still made.
+      const bare = await run({ memoryDir: undefined });
+      expect(bare).not.toContain("Earlier changes like this one");
+      expect(bare).toContain("policy hash sha256:");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  }, 240_000);
+
   it("chooses cassettes in SAMPLE_MODE, no model when nothing is configured, and the live model when configured", () => {
     expect(choosePort({ sampleMode: true, record: false, cassetteDir: dir, env: {} }).label).toMatch(/SAMPLE_MODE/);
     const none = choosePort({ sampleMode: false, record: false, cassetteDir: dir, env: {} });

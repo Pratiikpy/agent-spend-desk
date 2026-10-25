@@ -86,12 +86,24 @@ export interface HmemLike {
     all(): HmemRecord[];
     get(id: string): HmemRecord | undefined;
     update(id: string, patch: Partial<HmemRecord>): HmemRecord;
+    snapshotAll(): { records: HmemRecord[]; seq: number };
+    restoreAll(records: HmemRecord[], seq: number): void;
   };
   query(query: string, opts?: { topN?: number; threshold?: number }): { memories: { memory: HmemRecord; relevance: number }[]; context: string; trace: { retrievalReason: string; strategy: string; scores: Record<string, number> } };
   conflicts: {
     scan(): { id: string; memoryA: string; memoryB: string; reason: string; confidence: number; resolved: boolean }[];
     autoResolve(c: { id: string; memoryA: string; memoryB: string; reason: string; confidence: number; resolved: boolean }): "resolved" | "queued";
   };
+  /** A memory that helped, did not, or was wrong moves its confidence by the engine's fixed steps (+0.05, -0.03, -0.2). */
+  feedback(memoryId: string, kind: "helpful" | "not_helpful" | "wrong"): void;
+  /** Durable statements taken from something the owner said or did. Without a generator this is the engine's model-free path. */
+  mine(event: "chat_message" | "user_correction" | "file_save" | "file_open" | "file_edit" | "model_response" | "plan_completion", text: string): Promise<HmemRecord[]>;
+  sleep: {
+    preview(): { toConsolidate: string[]; toArchive: string[]; toSynthesize: string[][] };
+    execute(preview?: { toConsolidate: string[]; toArchive: string[]; toSynthesize: string[][] }): { backupId: string; consolidated: number; archived: number; synthesized: number; actionLog: string[] };
+    restore(backupId: string): void;
+  };
+  ledger: { history(memoryId: string): { action: string; actor: string; timestamp: number; details?: Record<string, unknown> }[] };
 }
 
 export interface MarkovianRunLike {

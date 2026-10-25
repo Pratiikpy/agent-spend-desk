@@ -4,7 +4,10 @@ import { readFileSync } from "node:fs";
 import { Budget, DRAFT_LIVE } from "../agents/budget.ts";
 import { CassettePort, portFromEnv, RecordingPort, ReplayOrRecordPort, type ModelPort } from "../agents/model.ts";
 import { MemoryTrace } from "../agents/trace.ts";
-import { openLedger } from "../ledger/db.ts";
+import { openLedger, type Ledger } from "../ledger/db.ts";
+import { OwnerMemory } from "../engines/memory.ts";
+import { citePrecedents } from "../precedent/cite.ts";
+import type { Policy } from "../policy/types.ts";
 import { parsePolicyYaml, usdToMicros } from "../policy/parse.ts";
 import { loadSnapshot } from "../pricing/pricebook.ts";
 import { replaySessionsFromLedger } from "../replay/from-ledger.ts";
@@ -35,6 +38,10 @@ export interface ProposeCommandOptions {
   dossier?: DossierPaths;
   /** Where the decision regret ledger keeps what was expected of each option. Written only when an approval request is issued. */
   regretPath?: string;
+  /** Where the owner's memory is kept. With it, the proposal is shown the closest earlier policy changes and what they did (DF-105). */
+  memoryDir?: string;
+  /** Read the proposal as if the memory engine were off (`--ablate hmem`): the section says no memory was available, so the ablation shows what the memory changes. */
+  memoryOff?: boolean;
   env: Record<string, string | undefined>;
 }
 
@@ -49,6 +56,19 @@ export function choosePort(o: Pick<ProposeCommandOptions, "sampleMode" | "record
   } catch (e) {
     return { port: null, label: `no model (${(e as Error).message.split(":")[0]}): the rule brain drafts` };
   }
+}
+
+/** The precedents a proposal is shown, or the plain statement that there are none. Never stops a draft: a memory that cannot be opened is said so. */
+async function precedentSection(db: Ledger, current: Policy, proposed: Policy, memoryDir: string | undefined, off: boolean | undefined): Promise<string> {
+  if (memoryDir === undefined) return "";
+  let memory: OwnerMemory | null = null;
+  try {
+    if (off !== true) memory = await OwnerMemory.open({ persistDir: memoryDir });
+  } catch {
+    memory = null;
+  }
+  const c = citePrecedents(db, memory, { before: current, after: proposed }, Date.now());
+  return `Earlier changes like this one:\n${c.citations.length === 0 ? `  ${c.note}` : c.citations.map((x) => `  ${x.line}`).join("\n")}\n`;
 }
 
 export async function proposeCommand(o: ProposeCommandOptions): Promise<string> {
@@ -98,7 +118,8 @@ export async function proposeCommand(o: ProposeCommandOptions): Promise<string> 
         tail = "\n" + "\n" + issued.text;
       }
     }
-    return `${renderProposal(result, { sessions, splitMs })}\nmodel route: ${label}\nwritten: ${files.policyPath}, ${files.tracePath}\n${recordLine}${tail}`;
+    const precedents = await precedentSection(db, current, result.final, o.memoryDir, o.memoryOff);
+    return `${renderProposal(result, { sessions, splitMs })}\n${precedents}model route: ${label}\nwritten: ${files.policyPath}, ${files.tracePath}\n${recordLine}${tail}`;
   } finally {
     db.close();
   }

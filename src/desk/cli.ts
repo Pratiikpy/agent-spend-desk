@@ -1,3 +1,6 @@
+import { OwnerMemory } from "./engines/memory.ts";
+import type { AuthorRules } from "./outcomes/author-rules.ts";
+import { memoryCommand, precedentsCommand } from "./precedent/command.ts";
 import { autonomyCommand, gatePush } from "./autonomy/command.ts";
 import { adaptersCommand, eventsCommand } from "./open/command.ts";
 import { auditCommand } from "./billing/audit-command.ts";
@@ -41,7 +44,7 @@ import { windTunnel } from "./replay/wind-tunnel.ts";
 import { buildSample, sampleLogsDir, sampleReposDir } from "./sample/gen.ts";
 import { runCard } from "./card/run.ts";
 import { loadDotenv } from "./env.ts";
-import { proposeCommand } from "./propose/command.ts";
+import { choosePort, proposeCommand } from "./propose/command.ts";
 import { silosCommand, silosSeed } from "./silo/command.ts";
 import { askCommand, rememberCommand, verifyAnswerCommand } from "./ask/command.ts";
 import { runGateCli } from "./gate/cli.ts";
@@ -207,6 +210,8 @@ const { values, positionals } = parseOrExit({
     kind: { type: "string" },
     origin: { type: "string" },
     "write-golden": { type: "boolean", default: false },
+    model: { type: "boolean", default: false },
+    replaces: { type: "string" },
     apply: { type: "boolean", default: false },
     "with-paths": { type: "boolean", default: false },
     "adapters-dir": { type: "string" },
@@ -404,6 +409,23 @@ Answer one with: desk questions answer <id> yes|no. Or go through them: desk que
     });
     await watchLogs({ poll: () => newestMtimeMs(findJsonlLogs(values["claude-dir"])), refresh: draw, sleep: (ms) => new Promise((r) => setTimeout(r, ms)), intervalMs: 3000, shouldStop: () => stop });
   } else await draw();
+} else if (command === "precedents") {
+  const done = await precedentsCommand(positionals.slice(1), { db, snapshot: loadSnapshot(pricesPath), memoryDir: values["memory-dir"], regretPath: regretPath() });
+  console.log(done.text);
+  if (!done.ok) process.exitCode = 1;
+} else if (command === "memory") {
+  // `--model` lets the model take the statements out of the text, through the same route Ask uses; the text is masked for secrets on the way out like any model call.
+  let miner: ((prompt: string) => Promise<string>) | undefined;
+  if (values.model) {
+    loadDotenv(".env");
+    const route = choosePort({ sampleMode, record: false, cassetteDir: values.cassettes, env: process.env });
+    const port = route.port;
+    if (port === null) throw new Error(`--model needs a model: ${route.label}`);
+    miner = async (prompt) => (await port.complete({ role: "memory_miner", messages: [{ role: "user", content: prompt }], maxTokens: 600 }, 120_000)).content;
+  }
+  const done = await memoryCommand([...positionals.slice(1), ...(values.apply ? ["--apply"] : [])], { memoryDir: values["memory-dir"], ...(miner ? { miner } : {}) });
+  console.log(done.text);
+  if (!done.ok) process.exitCode = 1;
 } else if (command === "autonomy") {
   const done = await autonomyCommand(positionals.slice(1), db, { push: gatePush(process.env), ...(values.apply ? { apply: true } : {}), ...(values.reason ? { reason: values.reason } : {}) });
   console.log(done.text);
@@ -620,6 +642,8 @@ written: ${r.files.join(", ")}`);
       personFromBranch: values["person-from-branch"],
       outDir: "data/desk/proposals",
       ...(values.dossier ? { dossier: DOSSIER_PATHS, regretPath: regretPath() } : {}),
+      memoryDir: values["memory-dir"],
+      ...(values.ablate?.split(",").map((x) => x.trim()).includes("hmem") ? { memoryOff: true } : {}),
       env: process.env,
     }),
   );
@@ -638,7 +662,7 @@ written: ${r.files.join(", ")}`);
     await askCommand({ dbPath: ledgerPath, question: positionals.slice(1).join(" "), ablate: values.ablate, noModel: values["no-model"], record: values.record, sampleMode, cassetteDir: values.cassettes, memoryDir: values["memory-dir"], env: process.env }),
   );
 } else if (command === "remember") {
-  console.log(await rememberCommand({ memoryDir: values["memory-dir"], text: positionals.slice(1).join(" "), outcome: values.outcome }));
+  console.log(await rememberCommand({ memoryDir: values["memory-dir"], text: positionals.slice(1).join(" "), outcome: values.outcome, ...(values.replaces ? { replaces: values.replaces } : {}) }));
 } else if (command === "verify-answer") {
   console.log(await verifyAnswerCommand(ledgerPath, positionals[1] ?? "", values["memory-dir"], { perturb: values.perturb === true }));
 } else if (command === "sources") {
@@ -660,6 +684,8 @@ written: ${r.files.join(", ")}`);
   const r = approve(positionals[1] ?? "", positionals[2] ?? "", DOSSIER_PATHS);
   if (r.ok) recordApproval(regretPath(), positionals[1] ?? "");
   console.log(r.text);
+  // An approved change becomes a precedent: what it changed, what was expected of it, and, as the days pass, what it did.
+  if (r.ok) console.log((await precedentsCommand(["sync"], { db, snapshot: loadSnapshot(pricesPath), memoryDir: values["memory-dir"], regretPath: regretPath() })).text);
   if (!r.ok) process.exitCode = 1;
 } else if (command === "ui") {
   loadDotenv(".env");
@@ -841,8 +867,19 @@ ${t.pass} PASS, ${t.fail} FAIL, ${t.notRun} NOT RUN. NOT RUN is not a pass: it n
     repos = [...roots];
     console.log(`found ${repos.length} repositories from session folders`);
   }
-  const report = linkOutcomes(db, repos, Date.now());
+  // What the owner told the memory about authors ("commits by x@y are human") is read here; with the memory engine ablated it is not, so the difference is on show.
+  let authorRules: AuthorRules | null = null;
+  if (!values.ablate?.split(",").map((x) => x.trim()).includes("hmem")) {
+    try {
+      authorRules = (await OwnerMemory.open({ persistDir: values["memory-dir"] })).authorRules();
+    } catch {
+      authorRules = null;
+    }
+  }
+  const report = linkOutcomes(db, repos, Date.now(), authorRules === null ? {} : { authorRules: authorRules.byPseudonym });
   console.log(`read ${report.repos} repositories, ${report.commits} commits; ${report.sessions} sessions, ${report.links} links`);
+  if (report.overridden > 0) console.log(`${report.overridden} commit${report.overridden === 1 ? "" : "s"} read as ${report.overridden === 1 ? "the" : "your"} memory says about their author, not as the trailer says.`);
+  if (authorRules !== null && authorRules.conflicts.length > 0) console.log(`Two notes disagree about ${authorRules.conflicts.join(", ")}; neither is applied. Replace one: desk remember "..." --replaces <memory id> (desk memory list shows the ids).`);
   if (values.prs) {
     if (profileOf(process.env) === "local") console.log("pull requests not asked for: the local profile allows nothing to leave this machine, and `gh` talks to api.github.com.");
     else {
