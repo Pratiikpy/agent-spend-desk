@@ -13,7 +13,7 @@ function questionsSection(d) {
   if (!q || q.open === 0) return null;
   return section(
     "Questions",
-    `${int(q.open)} open`,
+    `estimated, ${int(q.open)} open`,
     h("p", { class: "note" }, "A link the Desk is not sure of is not counted as landed. Your yes or no is kept and applied the next time landing is computed; a question you skip stays open."),
     table(
       "Is this commit from this session?",
@@ -38,7 +38,7 @@ function tasksSection(d) {
   if (!d.tasks || !d.tasks.assigned) return section("Tasks", "not identified yet", h("p", { class: "note" }, "Tasks are identified when logs are read: run `desk ingest`, then `desk task list`. Set a label for the work you start with `desk task <label>`."));
   return section(
     "Tasks",
-    "how sessions were grouped",
+    "estimated, how sessions were grouped",
     h("p", { class: "note" }, "A task is the work a session belongs to: your label, else a ticket key or pull request number in the branch name, else the feature branch, else the session itself."),
     h(
       "div",
@@ -68,7 +68,7 @@ export async function render(ctx) {
     head("Outcomes", "What the work became", `${int(d.repos)} repositories, ${int(d.commits.total)} commits, ${int(d.commits.merged)} merged, ${int(d.commits.reverted)} reverted.`),
     section(
       "By state",
-      "spend",
+      "estimated spend",
       h(
         "div",
         { class: "pair wide" },
@@ -86,7 +86,7 @@ export async function render(ctx) {
     tasksSection(d),
     section(
       "Largest sessions",
-      "by spend",
+      "estimated, by spend",
       table(
         "Sessions",
         [
@@ -100,6 +100,6 @@ export async function render(ctx) {
         { maxh: true },
       ),
     ),
-    footnote("Landing comes from git alone here. Whether checks passed needs the CI silo: see Organisation."),
+    footnote("Spend is a list-price estimate, not an invoice. Landing comes from git alone here. Whether checks passed needs the CI silo: see Organisation."),
   );
 }

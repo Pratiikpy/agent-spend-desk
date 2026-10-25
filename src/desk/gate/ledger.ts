@@ -65,6 +65,11 @@ export class GateLedger {
     return Math.max(0, this.lastStampMs() - this.wall());
   }
 
+  /** A write that must succeed for a check to count: if the ledger cannot be written, this throws and the caller fails closed. */
+  heartbeat(): void {
+    this.db.prepare("INSERT INTO gate_heartbeat (id, at) VALUES (1, ?) ON CONFLICT (id) DO UPDATE SET at = excluded.at").run(this.nowIso());
+  }
+
   /** Run `fn` under BEGIN IMMEDIATE. A lock that cannot be taken in time throws, and the caller must fail closed. */
   tx<T>(fn: () => T): T {
     if (this.inTx) return fn();

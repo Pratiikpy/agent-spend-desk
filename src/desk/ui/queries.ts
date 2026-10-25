@@ -1,3 +1,5 @@
+import { baselineReproduction, withheldNotice } from "../replay/reproduction.ts";
+import type { GateHealth } from "../gate/health.ts";
 import { flagsFor, flagTotals } from "../security/flag.ts";
 import { summariseEgress } from "../security/egress.ts";
 import { manifestFromEnv } from "../security/net.ts";
@@ -70,6 +72,8 @@ export interface UiContext {
   gateDbPath?: string | null;
   /** Where the canary's stored runs are; default the Desk's own. */
   canaryRunsPath?: string;
+  /** Asked once for each load of the shell: is the hook installed, and is the gate answering? Unset, nothing is probed and nothing is said. */
+  gateHealth?: () => Promise<GateHealth>;
   /** A second source of list prices to check ours against, when one is on disk. */
   otherPrices?: { label: string; fetchedAt: string; models: Readonly<Record<string, ForeignRow>> } | null;
 }
@@ -176,6 +180,14 @@ function hasLinks(db: Ledger): boolean {
 
 // ---------------------------------------------------------------------------------------------- meta
 
+/** How old the price list is. Past 60 days every estimate rests on prices that may have changed, and the shell says so on every screen. */
+export const STALE_PRICE_DAYS = 60;
+function priceFreshness(ctx: UiContext): { snapshotId: string; fetchedAt: string; ageDays: number | null; stale: boolean } {
+  const fetched = Date.parse(ctx.snapshot.fetchedAt);
+  const ageDays = Number.isNaN(fetched) ? null : Math.max(0, Math.floor((ctx.nowMs() - fetched) / DAY));
+  return { snapshotId: ctx.snapshot.snapshotId, fetchedAt: ctx.snapshot.fetchedAt, ageDays, stale: ageDays !== null && ageDays > STALE_PRICE_DAYS };
+}
+
 export function meta(ctx: UiContext): object {
   const b = one<{ a: string | null; b: string | null; n: number }>(ctx.db, "SELECT MIN(ts) a, MAX(ts) b, COUNT(*) n FROM model_call");
   const sessions = one<{ n: number }>(ctx.db, "SELECT COUNT(*) n FROM session")?.n ?? 0;
@@ -187,7 +199,7 @@ export function meta(ctx: UiContext): object {
     sessions,
     firstIso: b?.a ?? null,
     lastIso: b?.b ?? null,
-    price: { snapshotId: ctx.snapshot.snapshotId, fetchedAt: ctx.snapshot.fetchedAt },
+    price: priceFreshness(ctx),
     screens: SCREENS,
   };
 }
@@ -315,7 +327,7 @@ export function bill(ctx: UiContext, span: Span): object {
       billedClass(ctx, span),
       reportedClass(reported),
       { cls: "estimated", calls: t.pricedCalls, micros: t.estimatedMicros, note: "List price times logged tokens." },
-      { cls: "unpriced", calls: t.unpricedCalls, note: "Models with no price row: tokens counted, no dollars invented." },
+      { cls: "unpriced", calls: t.unpricedCalls, note: "Models with no price row: tokens counted, no dollars invented. To say what a token of one is worth to you, run `desk prices add MODEL=IN,OUT` (dollars per million tokens), then `desk prices reprice`." },
     ],
     reconciliation: reconciliationSummary(reported),
     deskOwn: deskOwnBlock(ctx, span),
@@ -858,12 +870,15 @@ export function session(ctx: UiContext, id: string): object {
   if (!head) return { state: "empty", reason: "No such session in this ledger.", hint: "Pick a session from the Sessions list." };
   const span = one<{ a: string; b: string; n: number }>(ctx.db, "SELECT MIN(ts) a, MAX(ts) b, COUNT(*) n FROM model_call WHERE session_id = ?", id);
   if (!span || span.n === 0) return { state: "empty", reason: "This session has no model calls.", hint: "It may have contained only prompts." };
+  // A log whose clock ran backwards or forwards is shown in the order the log wrote it, and says so.
+  const skew = one<{ s: number; f: number }>(ctx.db, "SELECT COALESCE(SUM(skewed_lines),0) s, COALESCE(SUM(future_lines),0) f FROM ingest_source WHERE id IN (SELECT DISTINCT source_id FROM model_call WHERE session_id = ?)", id);
+  const skewed = Number(skew?.s ?? 0) > 0 || Number(skew?.f ?? 0) > 0;
   const LIMIT = 3000;
   const calls = all<{ call_id: string; ts: string; model: string; is_sidechain: number; input_tokens: number; output_tokens: number; reasoning_tokens: number; cache_read_tokens: number; cw5: number; cw1: number; stop_reason: string | null; is_api_error: number; tool_names: string; class: string | null; snapshot_id: string | null; total_micros: number | null; unpriced_reason: string | null }>(
     ctx.db,
     `SELECT m.call_id, m.ts, m.model, m.is_sidechain, m.input_tokens, m.output_tokens, m.reasoning_tokens, m.cache_read_tokens, m.cache_write_5m_tokens cw5, m.cache_write_1h_tokens cw1,
             m.stop_reason, m.is_api_error, m.tool_names, c.class, c.snapshot_id, c.total_micros, c.unpriced_reason
-     FROM model_call m LEFT JOIN cost_event c ON c.call_id = m.call_id WHERE m.session_id = ? ORDER BY m.ts, m.call_id LIMIT ?`,
+     FROM model_call m LEFT JOIN cost_event c ON c.call_id = m.call_id WHERE m.session_id = ? ORDER BY ${skewed ? "m.source_id, m.rowid" : "m.ts, m.call_id"} LIMIT ?`,
     id,
     LIMIT,
   );
@@ -924,6 +939,7 @@ export function session(ctx: UiContext, id: string): object {
     byCause,
     blocks: blocks.slice(0, 50).map((b) => ({ id: b.id, kind: b.kind, rule: b.rule, calls: b.calls.length, micros: b.totalMicros, unpricedCalls: b.unpricedCalls, confidence: b.confidence ?? "high", stopOffsetSec: Math.round((b.startMs - start) / 1000), durationSec: Math.round((b.endMs - b.startMs) / 1000) })),
     blockCount: blocks.length,
+    clock: skewed ? { skewedLines: Number(skew?.s ?? 0), futureLines: Number(skew?.f ?? 0) } : null,
     delegation: delegationBlock(ctx, id),
     untrusted: flagsFor(ctx.db, id).map((f) => ({ field: f.field, kind: f.kind, excerpt: f.excerpt })),
     landing: {
@@ -1123,8 +1139,9 @@ export function policy(ctx: UiContext, span: Span, fromName: string | null, toNa
   let replay: object | null = null;
   if ("policy" in candidate && !ledgerIsEmpty(ctx)) {
     const sessions = replaySessionsFromLedger(ctx.db, ctx.snapshot, span.sinceIso, span.untilIso);
+    const reproduction = baselineReproduction(ctx.db, sessions, span.sinceIso, span.untilIso);
     const r = replayPolicy(candidate.policy, sessions);
-    replay = {
+    replay = !reproduction.reproduces ? { withheld: true, notice: withheldNotice(reproduction), mismatched: reproduction.mismatchedCount, sessions: sessions.length } : {
       policy: to,
       sessions: sessions.length,
       totalMicros: r.totalMicros,
@@ -1165,6 +1182,8 @@ export function tunnel(ctx: UiContext, span: Span, name: string): object {
   if (!("policy" in l)) return { state: "error", message: l.error };
   if (ledgerIsEmpty(ctx)) return emptyState(ctx)!;
   const sessions = replaySessionsFromLedger(ctx.db, ctx.snapshot, span.sinceIso, span.untilIso);
+  const reproduction = baselineReproduction(ctx.db, sessions, span.sinceIso, span.untilIso);
+  if (!reproduction.reproduces) return { state: "error", message: withheldNotice(reproduction) };
   const t = windTunnel(l.policy, sessions);
   return { state: "ok", policy: name, ...t, measured: measuredCoverage() };
 }
@@ -1174,7 +1193,7 @@ export function tunnel(ctx: UiContext, span: Span, name: string): object {
 export function sources(ctx: UiContext): object {
   const ingest = all<{ kind: string; files: number; bytes: number | null; last: string | null }>(ctx.db, "SELECT kind, COUNT(*) files, SUM(size_bytes) bytes, MAX(last_ingested_at) last FROM ingest_source GROUP BY kind");
   const run = one<{ finished_at: string; files: number; lines_read: number; calls_new: number; malformed_lines: number; truncated_tails: number; usage_conflicts: number }>(ctx.db, "SELECT finished_at, files, lines_read, calls_new, malformed_lines, truncated_tails, usage_conflicts FROM ingest_run ORDER BY run_id DESC LIMIT 1");
-  const totals = one<{ m: number; t: number; u: number }>(ctx.db, "SELECT COALESCE(SUM(malformed_lines),0) m, COALESCE(SUM(truncated_tails),0) t, COALESCE(SUM(usage_conflicts),0) u FROM ingest_run");
+  const totals = one<{ m: number; t: number; u: number; s: number; f: number }>(ctx.db, "SELECT COALESCE(SUM(malformed_lines),0) m, COALESCE(SUM(truncated_tails),0) t, COALESCE(SUM(usage_conflicts),0) u, COALESCE(SUM(skewed_lines),0) s, COALESCE(SUM(future_lines),0) f FROM ingest_run");
   const unpriced = all<{ model: string; reason: string | null; calls: number; tokens: number }>(
     ctx.db,
     `SELECT m.model, c.unpriced_reason reason, COUNT(*) calls, SUM(m.input_tokens + m.output_tokens + m.cache_read_tokens + m.cache_write_5m_tokens + m.cache_write_1h_tokens) tokens
@@ -1209,7 +1228,7 @@ export function sources(ctx: UiContext): object {
     }),
     noAdapter: NO_ADAPTER.map((n) => ({ tool: n.tool, why: n.why })),
     lastRun: run ?? null,
-    skipped: { malformedLines: totals?.m ?? 0, truncatedTails: totals?.t ?? 0, usageConflicts: totals?.u ?? 0 },
+    skipped: { malformedLines: totals?.m ?? 0, truncatedTails: totals?.t ?? 0, usageConflicts: totals?.u ?? 0, skewedLines: totals?.s ?? 0, futureLines: totals?.f ?? 0 },
     price: { snapshotId: ctx.snapshot.snapshotId, source: ctx.snapshot.source, fetchedAt: ctx.snapshot.fetchedAt, ageDays, models: Object.keys(ctx.snapshot.models).length, license: ctx.snapshot.license },
     unpriced,
     repos,

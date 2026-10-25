@@ -62,7 +62,7 @@ export async function render(ctx) {
     ),
     section(
       "Rules",
-      cur ? `version of ${cur.name}` : "",
+      cur ? `policy limits, version of ${cur.name}` : "policy limits",
       cur && cur.rules.length > 0
         ? h("div", null, ...cur.rules.map((x) => h("div", { class: "rule" }, h("span", { class: "id" }, x.id), pill(x.kind, x.kind === "forbid" ? "risk" : x.kind === "route" ? "ink" : ""), h("span", { class: "what" }, x.summary))))
         : h("p", { class: "note" }, "This file has no rules."),
@@ -98,8 +98,10 @@ export async function render(ctx) {
     ),
     section(
       "Replay",
-      "recorded sessions, counterfactual",
-      rp
+      "estimated, recorded sessions, counterfactual",
+      rp && rp.withheld
+        ? h("div", { class: "state error", role: "alert" }, h("span", { class: "kicker" }, "Replay withheld"), ...rp.notice.split("\n").map((l) => h("p", null, l)))
+        : rp
         ? h(
             "div",
             null,
@@ -116,6 +118,6 @@ export async function render(ctx) {
       h("p", { class: "note" }, "A replay re-runs recorded sessions through the policy. It cannot say a paused task would have finished, or that the owner would have approved an ask."),
     ),
     section("Wind tunnel", "how a month could go", h("div", { class: "controls" }, runTunnel), tunnelBox),
-    footnote("The interpreter that decides here is the one the gate uses.", "Nothing on this page changes a policy."),
+    footnote("The interpreter that decides here is the one the gate uses.", "Nothing on this page changes a policy.", "Savings and spend are list-price estimates on recorded sessions, not an invoice."),
   );
 }

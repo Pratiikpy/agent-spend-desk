@@ -1,3 +1,5 @@
+import { explainSqliteError, rollbackQuietly } from "./db.ts";
+import { assertChain, sealIngest } from "./chain.ts";
 import { flagUntrustedText } from "../security/flag.ts";
 import { statSync } from "node:fs";
 
@@ -17,6 +19,10 @@ export interface IngestReport {
   malformedReasons: Record<string, number>;
   truncatedTails: number;
   usageConflicts: number;
+  /** Lines whose time is more than a minute earlier than a line before it in the same file: a clock that was set back, or a log stitched from two. */
+  skewedLines: number;
+  /** Lines stamped later than five minutes after the ingest: a clock that was set forward. */
+  futureLines: number;
   /** A later line of a call reported a smaller output count than an earlier one (read order, not data loss). */
   outputRegressions: number;
   resetFiles: number;
@@ -59,12 +65,16 @@ export function recordSnapshot(db: Ledger, snapshot: PriceSnapshot): void {
  * messages into a new file is not counted twice). A final line without a newline that is not
  * yet valid JSON is left for the next run and is not counted as bad data.
  */
+const SKEW_MS = 60_000;
+const FUTURE_MS = 5 * 60_000;
+
 export async function ingestClaudeCode(
   db: Ledger,
   files: readonly string[],
   snapshot: PriceSnapshot,
   now: () => Date = () => new Date(),
 ): Promise<IngestReport> {
+  assertChain(db);
   const started = now().toISOString();
   recordSnapshot(db, snapshot);
   const report: IngestReport = {
@@ -76,6 +86,8 @@ export async function ingestClaudeCode(
     malformedReasons: {},
     truncatedTails: 0,
     usageConflicts: 0,
+    skewedLines: 0,
+    futureLines: 0,
     outputRegressions: 0,
     resetFiles: 0,
     toolCalls: 0,
@@ -156,8 +168,16 @@ export async function ingestClaudeCode(
     // The latest message time seen in this file so far, so a cost record can say how far its counter reached. A file read
     // in several runs starts from what the earlier runs stored.
     let lastTs: string | null = (db.prepare("SELECT MAX(m.ts) AS t FROM model_call m JOIN ingest_source s ON s.id = m.source_id WHERE s.path = ?").get(file) as { t: string | null }).t;
+    let fileSkew = 0;
+    let fileFuture = 0;
     const seenAt = (ts: string): void => {
-      if (lastTs === null || Date.parse(ts) > Date.parse(lastTs)) lastTs = ts;
+      const t = Date.parse(ts);
+      if (!Number.isNaN(t)) {
+        // The order of lines in the file is the order they were written; a time that falls behind what came before it is flagged, and a time in the future is too.
+        if (lastTs !== null && t < Date.parse(lastTs) - SKEW_MS) fileSkew += 1;
+        if (t > Date.parse(started) + FUTURE_MS) fileFuture += 1;
+      }
+      if (lastTs === null || t > Date.parse(lastTs)) lastTs = ts;
     };
 
     db.exec("BEGIN");
@@ -218,10 +238,13 @@ export async function ingestClaudeCode(
         committedOffset = line.endOffset;
       }
       putSource.run(file, stat.size, committedOffset, started);
+      if (fileSkew > 0 || fileFuture > 0) db.prepare("UPDATE ingest_source SET skewed_lines = skewed_lines + ?, future_lines = future_lines + ? WHERE id = ?").run(fileSkew, fileFuture, sourceId);
+      report.skewedLines += fileSkew;
+      report.futureLines += fileFuture;
       db.exec("COMMIT");
     } catch (error) {
-      db.exec("ROLLBACK");
-      throw error;
+      rollbackQuietly(db);
+      throw explainSqliteError(db, error);
     }
   }
 
@@ -229,10 +252,11 @@ export async function ingestClaudeCode(
   updateSessionSpans(db, touchedSessions);
 
   db.prepare(
-    `INSERT INTO ingest_run (kind, started_at, finished_at, files, lines_read, calls_new, calls_merged, malformed_lines, truncated_tails, usage_conflicts)
-     VALUES ('claude_code', ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-  ).run(started, now().toISOString(), report.files, report.linesRead, report.callsNew, report.callsMerged, report.malformedLines, report.truncatedTails, report.usageConflicts);
+    `INSERT INTO ingest_run (kind, started_at, finished_at, files, lines_read, calls_new, calls_merged, malformed_lines, truncated_tails, usage_conflicts, skewed_lines, future_lines)
+     VALUES ('claude_code', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  ).run(started, now().toISOString(), report.files, report.linesRead, report.callsNew, report.callsMerged, report.malformedLines, report.truncatedTails, report.usageConflicts, report.skewedLines, report.futureLines);
   flagUntrustedText(db, new Date().toISOString());
+  sealIngest(db, "claude_code", started, { files: report.files, callsNew: report.callsNew, callsMerged: report.callsMerged });
   return report;
 
   function mergeOrInsert(call: ParsedCall, sourceId: number): void {
@@ -323,8 +347,8 @@ export function recomputeCosts(db: Ledger, snapshot: PriceSnapshot, callIds: Rea
     }
     db.exec("COMMIT");
   } catch (error) {
-    db.exec("ROLLBACK");
-    throw error;
+    rollbackQuietly(db);
+    throw explainSqliteError(db, error);
   }
 }
 
@@ -339,7 +363,7 @@ export function updateSessionSpans(db: Ledger, sessionIds: ReadonlySet<string>):
     for (const id of sessionIds) update.run(id, id, id);
     db.exec("COMMIT");
   } catch (error) {
-    db.exec("ROLLBACK");
-    throw error;
+    rollbackQuietly(db);
+    throw explainSqliteError(db, error);
   }
 }

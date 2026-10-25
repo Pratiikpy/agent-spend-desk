@@ -1,3 +1,5 @@
+import { rollbackQuietly } from "../ledger/db.ts";
+import { sealLedger } from "../ledger/chain.ts";
 import type { Ledger } from "../ledger/db.ts";
 
 /**
@@ -87,7 +89,7 @@ export function forgetLedger(db: Ledger, scope: ForgetScope): ForgetReport {
     }
     db.exec("COMMIT");
   } catch (e) {
-    db.exec("ROLLBACK");
+    rollbackQuietly(db);
     throw e;
   }
   try {
@@ -96,5 +98,7 @@ export function forgetLedger(db: Ledger, scope: ForgetScope): ForgetReport {
     /* an in-memory ledger has no write-ahead log */
   }
   db.exec("VACUUM");
+  // A forget is an event too: the sources' digests are taken again over what is left, so the chain still holds and a deletion made by hand does not.
+  sealLedger(db, "forget", { all: scope.all === true, by_project: scope.project !== undefined, before: scope.before ?? null, sessions: ids.length, calls }, { sources: "all" });
   return { sessions: ids.length, calls };
 }

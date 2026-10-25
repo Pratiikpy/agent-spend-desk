@@ -373,7 +373,7 @@ Two things only: Meterless's three reference engines and conformance suites (Apa
 About 50 sources, recorded with their licence class in `docs/design/desk/01-adoption-register.md` and profiled in `docs/design/prior-art/profiles/`. What each has that we do not use is in `docs/design/desk/06-prior-art-gap-list.md`.
 
 - Spend and observability: ccusage, CodexBar, Claude-Code-Usage-Monitor, agentsview, LiteLLM, Portkey gateway, Helicone, tokencost, agentbudget, figuard-core, loopguard, tokencast, Langfuse, Opik, Phoenix, OpenTelemetry GenAI conventions, Entire CLI, Apache DevLake, codelens-ai, openllmetry, claude-devtools, OpenCost, claude-code-cache-fix, vibe-kanban.
-- Evaluation, replay, governance and proof: promptfoo, Inspect AI, livenerf, dedrift, container-use, LangGraph, agent-bisect, Reenact, Kitaru, Microsoft agent-governance-toolkit, NeMo Guardrails, Cedar, coder/boundary, coding-agent-flight-recorder, SWE-bench, DeepEval, autoevals, Cline, in-toto attestation, Sigstore cosign, lm-evaluation-harness, A-Mem, Reflexion, ALCE, FActScore.
+- Evaluation, replay, governance and verification: promptfoo, Inspect AI, livenerf, dedrift, container-use, LangGraph, agent-bisect, Reenact, Kitaru, Microsoft agent-governance-toolkit, NeMo Guardrails, Cedar, coder/boundary, coding-agent-flight-recorder, SWE-bench, DeepEval, autoevals, Cline, in-toto attestation, Sigstore cosign, lm-evaluation-harness, A-Mem, Reflexion, ALCE, FActScore.
 - Licence rule applied: MIT, Apache and BSD sources are adapted with credit; GPL, AGPL, ELv2, source-available and unclear sources (dedrift, Phoenix, coder/coder, figuard) are ideas only.
 
 ### 8.4 Papers and methods

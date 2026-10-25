@@ -159,7 +159,7 @@ main { max-width: 1240px; margin: 0 auto; padding: 0 var(--gutter) 96px; }
 .head .lead { font-size: 19px; color: var(--muted); max-width: 62ch; }
 .sec { padding: 36px 0; border-bottom: 1px solid var(--border); display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
 .sec:last-child { border-bottom: 0; }
-.sec > .meta { font-family: var(--mono); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); line-height: 22px; }
+.sec > .meta { font-family: var(--mono); font-size: 12px; font-weight: 400; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); line-height: 22px; margin: 0; }
 .sec > .meta .sub { display: block; text-transform: none; letter-spacing: 0; margin-top: 6px; font-size: 12px; line-height: 18px; }
 .sec h2 { font-size: 28px; line-height: 1.15; margin-bottom: 14px; }
 @media (min-width: 960px) {
@@ -266,7 +266,8 @@ tbody tr:hover td { background: var(--surface); }
 .fix .saving { font-family: var(--mono); font-size: 13px; color: var(--muted); margin-top: 4px; }
 pre.src { margin: 0; padding: 14px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r1); overflow: auto; font-family: var(--mono); font-size: 12.5px; line-height: 1.55; max-height: 320px; }
 .controls { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
-.controls label { font-family: var(--mono); font-size: 12px; color: var(--muted); display: inline-flex; gap: 8px; align-items: center; }
+.controls label { font-family: var(--mono); font-size: 12px; color: var(--muted); display: inline-flex; flex-wrap: wrap; gap: 8px; align-items: center; max-width: 100%; }
+.controls select { max-width: 100%; min-width: 0; }
 .rule { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; padding: 10px 0; border-top: 1px solid var(--border); align-items: baseline; }
 .rule:first-child { border-top: 0; }
 .rule .id { font-family: var(--mono); font-size: 13px; }
@@ -335,4 +336,9 @@ input[type="checkbox"] { accent-color: var(--text); width: 15px; height: 15px; m
   .tablewrap td::before { content: attr(data-label); font: 11.5px var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); padding-top: 2px; }
   .tablewrap td.num { text-align: left; white-space: normal; }
   .tablewrap td + td { border-top: 1px solid var(--border); }
+}
+
+/* On a narrow screen the header wraps to several rows. Kept at the top it would cover a third of the screen and could hide the control a keyboard has just moved to, so it scrolls away. */
+@media (max-width: 520px) {
+  .bar { position: static; }
 }

@@ -34,7 +34,7 @@ export async function render(ctx) {
     section("Sources", "how each was read", served, d.reasons.length ? h("ul", { class: "list" }, ...d.reasons.map((r) => h("li", null, r))) : null, h("p", { class: "note" }, "All silo data is synthetic, derived from the constructed sample.")),
     section(
       "Spend per landed pull request",
-      "by team",
+      "estimated, by team",
       d.headline.length === 0
         ? h("p", { class: "note" }, "The joined statement returned no rows.")
         : table("Teams", [

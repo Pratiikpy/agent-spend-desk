@@ -59,7 +59,7 @@ export async function render(ctx) {
       "read-only",
       h("div", { class: "controls" }, box, submit),
       h("div", { class: "controls" }, ...first.suggestions.slice(0, 5).map((s) => h("a", { class: "btn", href: ctx.link("ask", { q: s, ...(ablate.length ? { ablate: ablate.join(",") } : {}) }) }, s))),
-      h("p", { class: "note" }, "Engines. Switch one off and ask again: the answer changes, and the change is the proof the engine does something."),
+      h("p", { class: "note" }, "Engines. Switch one off and ask again: the answer changes, and the change is the evidence that the engine does something."),
       h("div", { class: "controls" }, ...checks.map((c) => h("label", { for: `eng-${c.name}` }, c.cb, `off: ${c.name.replace("_", " ")} (${ENGINE_NOTE[c.name]})`))),
     ),
     out,

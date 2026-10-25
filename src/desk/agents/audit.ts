@@ -1,6 +1,7 @@
+import { lintWording } from "../lint/wording.ts";
 import type { Claim, ClaimLedger, Sentence } from "./claims.ts";
 
-export type RejectReason = "no_support" | "number_mismatch" | "class_mismatch" | "comparative_unsupported" | "quote_absent";
+export type RejectReason = "no_support" | "number_mismatch" | "class_mismatch" | "comparative_unsupported" | "quote_absent" | "wording";
 
 export interface Rejection {
   sentence: Sentence;
@@ -86,6 +87,10 @@ function audit(s: Sentence, ledger: ClaimLedger): { reason: RejectReason; detail
     const quoted = q[1] as string;
     if (!cited.some((c) => c.kind === "quote" && c.text.includes(quoted))) return { reason: "quote_absent", detail: `"${quoted}" is not in a cited quote` };
   }
+
+  // Wording that overclaims is refused whatever the figures say. "billed" and "as good as" have their own checks below, against the cited claims.
+  const worded = lintWording(s.text, { generated: true, skip: ["billed", "as-good-as"] });
+  if (worded.length > 0) return { reason: "wording", detail: `${worded[0]!.rule}: ${worded[0]!.why}` };
 
   if (BILLED_WORDS.test(s.text) && !cited.some((c) => c.class === "billed")) {
     const cls = cited.map((c) => c.class).filter((x) => x !== undefined);

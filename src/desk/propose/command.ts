@@ -1,3 +1,4 @@
+import { baselineReproduction, withheldNotice } from "../replay/reproduction.ts";
 import { readFileSync } from "node:fs";
 
 import { Budget, DRAFT_LIVE } from "../agents/budget.ts";
@@ -53,6 +54,8 @@ export async function proposeCommand(o: ProposeCommandOptions): Promise<string> 
   try {
     const sessions = replaySessionsFromLedger(db, loadSnapshot(o.pricesPath), o.window?.sinceIso ?? "0000", o.window?.untilIso ?? "9999", { personFromBranch: o.sampleMode || o.personFromBranch });
     if (sessions.length === 0) return "No sessions in the ledger yet. Run `desk card` (or `desk ingest`) first.";
+    const reproduction = baselineReproduction(db, sessions, o.window?.sinceIso ?? "0000", o.window?.untilIso ?? "9999");
+    if (!reproduction.reproduces) return withheldNotice(reproduction);
     const first = sessions[0]!.startMs;
     const last = sessions[sessions.length - 1]!.startMs;
     let splitMs = first + Math.floor((last - first) / 2);

@@ -48,7 +48,7 @@ export async function render(ctx) {
     ),
     section(
       "Seats",
-      "beyond the people who landed work",
+      "estimated, beyond the people who landed work",
       d.seats.state !== "ok"
         ? missing(d.seats)
         : h("div", null, table(`Last ${d.seats.windowDays} days`, [{ label: "Team", render: (r) => r.team }, { label: "Plan", render: (r) => r.plan }, { label: "Seats", num: true, render: (r) => r.seats }, { label: "Landed work", num: true, render: (r) => r.active }, { label: "Beyond", num: true, render: (r) => r.idle }, { label: "A month", num: true, render: (r) => (r.idleUsd === null ? "no price" : usd(r.idleUsd * 1_000_000)) }], d.seats.lines), h("p", { class: "note" }, "A seat count, not a verdict on anyone: a person can hold a seat for work that does not show as a commit.")),
@@ -70,7 +70,7 @@ export async function render(ctx) {
     ),
     section(
       "Decisions",
-      "expected, then scored on the month that followed",
+      "forecast, then scored (estimated) on the month that followed",
       d.regret.state !== "ok"
         ? missing(d.regret)
         : h(
@@ -94,6 +94,6 @@ export async function render(ctx) {
             h("p", { class: "note" }, "No model weights change. A lesson changes only which earlier plans the Planner is shown."),
           ),
     ),
-    footnote("Every block is read from a recorded file or a check run now. Nothing here is estimated by the model.", "The commands: desk bench report, route, seats, calibrate, regret, lessons report."),
+    footnote("Every block is read from a recorded file or a check run now. Nothing here is estimated by the model. Dollar figures are list-price estimates, not an invoice.", "The commands: desk bench report, route, seats, calibrate, regret, lessons report."),
   );
 }

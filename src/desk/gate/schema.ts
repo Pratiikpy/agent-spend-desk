@@ -69,6 +69,12 @@ BEGIN SELECT RAISE(ABORT, 'gate_event_budget is append-only'); END;
 CREATE TRIGGER IF NOT EXISTS gate_event_budget_no_delete BEFORE DELETE ON gate_event_budget
 BEGIN SELECT RAISE(ABORT, 'gate_event_budget is append-only'); END;
 
+-- One row, written on every hook check: an allow records nothing else, so a gate whose ledger can no longer be written would otherwise go on allowing in silence.
+CREATE TABLE IF NOT EXISTS gate_heartbeat (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  at TEXT NOT NULL
+);
+
 -- Tool-call idempotency (22.3). This table is state, not events: a key moves from in_flight to completed.
 CREATE TABLE IF NOT EXISTS gate_tool_key (
   idempotency_key TEXT PRIMARY KEY,

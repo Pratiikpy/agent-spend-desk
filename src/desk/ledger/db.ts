@@ -529,7 +529,27 @@ CREATE TABLE desk_call (
 CREATE INDEX desk_call_ts ON desk_call (ts);
 `;
 
-const MIGRATIONS: readonly string[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8, SCHEMA_V9, SCHEMA_V10, SCHEMA_V11, SCHEMA_V12, SCHEMA_V13, SCHEMA_V14, SCHEMA_V15, SCHEMA_V16, SCHEMA_V17, SCHEMA_V18, SCHEMA_V19];
+const SCHEMA_V20 = `
+ALTER TABLE ingest_source ADD COLUMN skewed_lines INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE ingest_source ADD COLUMN future_lines INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE ingest_run ADD COLUMN skewed_lines INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE ingest_run ADD COLUMN future_lines INTEGER NOT NULL DEFAULT 0;
+`;
+
+const SCHEMA_V21 = `
+CREATE TABLE ledger_event (
+  seq INTEGER PRIMARY KEY,
+  ts TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  data TEXT NOT NULL,
+  sources_root TEXT NOT NULL,
+  prev_hash TEXT NOT NULL,
+  row_hash TEXT NOT NULL
+);
+ALTER TABLE ingest_source ADD COLUMN content_digest TEXT;
+`;
+
+const MIGRATIONS: readonly string[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8, SCHEMA_V9, SCHEMA_V10, SCHEMA_V11, SCHEMA_V12, SCHEMA_V13, SCHEMA_V14, SCHEMA_V15, SCHEMA_V16, SCHEMA_V17, SCHEMA_V18, SCHEMA_V19, SCHEMA_V20, SCHEMA_V21];
 
 /** The schema version this build writes: the number of migrations. A reader compares a ledger's `user_version` with it. */
 export const SCHEMA_VERSION = MIGRATIONS.length;
@@ -578,5 +598,33 @@ function migrate(db: Ledger): void {
     } finally {
       if (offDuring) db.exec("PRAGMA foreign_keys = ON");
     }
+  }
+}
+
+/**
+ * A write that failed because the disk was full or the file reached its size limit is said in words, with the path: a bare "database or disk is full" tells a person
+ * neither which file nor what to do. Every other error passes through unchanged.
+ */
+export function explainSqliteError(db: Ledger, error: unknown): unknown {
+  const e = error as { errcode?: number; message?: string } | null;
+  if (e !== null && typeof e === "object" && (e.errcode === 13 || /database or disk is full|SQLITE_FULL/i.test(String(e.message)))) {
+    let path = "the ledger";
+    try {
+      const main = (db.prepare("PRAGMA database_list").all() as { name: string; file: string }[]).find((d) => d.name === "main");
+      path = main !== undefined && main.file !== "" ? main.file : "an in-memory ledger";
+    } catch {
+      /* the path is a courtesy; the message stands without it */
+    }
+    return Object.assign(new Error(`E_DISK_FULL: the ledger at ${path} could not be written, because the disk is full or the file reached its size limit. The file this run was reading was not kept, and every file before it was kept whole. Free some space and run the same command again: it carries on from where each file was left.`), { code: "E_DISK_FULL" });
+  }
+  return error;
+}
+
+/** Roll back, and say nothing if there is nothing to roll back: after a full disk or an I/O error SQLite has already ended the transaction, and a second error would hide the first. */
+export function rollbackQuietly(db: Ledger): void {
+  try {
+    db.exec("ROLLBACK");
+  } catch {
+    /* already rolled back by SQLite */
   }
 }

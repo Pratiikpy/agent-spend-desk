@@ -1,3 +1,4 @@
+import { maskSecrets } from "../security/secrets.ts";
 import { homedir, userInfo } from "node:os";
 import { basename, join } from "node:path";
 import type { DatabaseSync } from "node:sqlite";
@@ -30,9 +31,14 @@ import { derivedKey, parseGateRequest, parseSettle, parseVoid, str, asObject, op
 export const APPROVAL_TTL_MS = 15 * 60_000;
 export const TOOL_KEY_TTL_MS = 300_000;
 
+/** Tools that read and change nothing, which pass through the exactly-once guard unless the caller flags one. Every other tool, and every tool the guard does not know, is treated as one that mutates. */
+export const READ_ONLY_TOOLS: ReadonlySet<string> = new Set(["Read", "Glob", "Grep", "LS", "NotebookRead", "WebSearch", "WebFetch", "TaskOutput"]);
+
 export type GateMode = "enforce" | "shadow";
 
 export interface GateConfig {
+  /** Tools beyond the built-in list that change nothing and may pass the exactly-once guard. */
+  readOnlyTools?: readonly string[];
   db: DatabaseSync;
   prices: PriceSnapshot;
   policy: PolicySource;
@@ -93,6 +99,8 @@ export interface ToolBeginResult {
   decision: GateDecision | null;
   cachedResponse: unknown;
   resultHash: string | null;
+  /** A read-only tool: no key was recorded and nothing is deduplicated. */
+  passthrough?: boolean;
 }
 
 export interface HookDecision {
@@ -948,11 +956,23 @@ export class Gate {
     const argsHash = hashJson(args);
     const key = `tk_${hashJson({ s: sessionId, t: toolName, a: args }).slice(7, 55)}`;
     if (canonical.length > 65_536) throw new GateError("E_INVALID", "arguments are too large", 413);
+    const readOnly = o["dedupe"] !== true && (READ_ONLY_TOOLS.has(toolName) || (this.cfg.readOnlyTools ?? []).includes(toolName));
     return this.ledger.tx(() => {
       const nowIso = this.ledger.nowIso();
+      // A tool that cannot change anything is not held to one run: the key is not recorded and a retry is not suppressed. Its spend, if the caller asked to reserve it, is still reserved.
+      if (readOnly) {
+        let decision: GateDecision | null = null;
+        const rr = o["reserve"];
+        if (rr !== undefined && rr !== null) decision = this.authorizeParsed(parseGateRequest({ session_id: sessionId, tool: toolName, ...asObject(rr, "reserve"), idempotency_key: key }));
+        return { status: "proceed", idempotencyKey: key, decision, cachedResponse: null, resultHash: null, passthrough: true };
+      }
       const row = this.cfg.db.prepare("SELECT * FROM gate_tool_key WHERE idempotency_key = ?").get(key) as
-        | { status: "in_flight" | "completed" | "failed"; response_json: string | null; response_hash: string | null; expires_at: string }
+        | { status: "in_flight" | "completed" | "failed"; response_json: string | null; response_hash: string | null; expires_at: string; session_id: string; tool_name: string; arguments_hash: string }
         | undefined;
+      // A key is a hash of the session, the tool and the arguments. A row that holds the key for different ones is a collision, or an edit: the call must not run on a guard that cannot tell.
+      if (row !== undefined && (row.session_id !== sessionId || row.tool_name !== toolName || row.arguments_hash !== argsHash)) {
+        throw new GateError("E_KEY_COLLISION", "the key for this tool call is held by a different call, so the guard cannot tell whether it already ran; the call is not run", 409);
+      }
       if (row !== undefined && row.expires_at > nowIso) {
         if (row.status === "in_flight") {
           this.ledger.append({ kind: "idempotent_replayed", idempotency_key: key, session_id: sessionId, tool: toolName, reason_code: "idempotent_in_flight", reason: "duplicate suppressed: the same tool call is still running" });
@@ -994,11 +1014,14 @@ export class Gate {
       throw new GateError("E_INVALID", "response must be plain JSON", 400);
     }
     if (json.length > 262_144) throw new GateError("E_INVALID", "response is too large to cache", 413);
+    // A response is kept so that a retry can be answered from it. Credential-shaped strings are masked before it is stored, and what is stored is what a retry gets back.
+    const stored = failed ? null : (JSON.parse(maskSecrets(json).text) as unknown);
+    if (!failed) json = canonicalJson(stored);
     return this.ledger.tx(() => {
       const row = this.cfg.db.prepare("SELECT status FROM gate_tool_key WHERE idempotency_key = ?").get(key) as { status: string } | undefined;
       if (row === undefined) throw new GateError("E_UNKNOWN_KEY", "no tool call began under that key", 404);
       const status = failed ? "failed" : "completed";
-      const hash = failed ? null : hashJson(response);
+      const hash = failed ? null : hashJson(stored);
       this.cfg.db.prepare("UPDATE gate_tool_key SET status = ?, response_hash = ?, response_json = ? WHERE idempotency_key = ?").run(status, hash, failed ? null : json, key);
       return { idempotencyKey: key, status, resultHash: hash };
     });
@@ -1055,6 +1078,8 @@ export class Gate {
   /** Evaluate a request without reserving anything. Denials and asks are recorded; an allow writes nothing. */
   checkOnly(g: GateRequest): GateDecision {
     return this.ledger.tx(() => {
+      // An allow writes nothing, so prove the ledger can be written before one is given: a gate that cannot record must not look as if it is controlling.
+      this.ledger.heartbeat();
       this.ledger.expireDue();
       const nowIso = this.ledger.nowIso();
       const key = derivedKey(g, Math.floor(this.ledger.now() / 1000));

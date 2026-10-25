@@ -1,3 +1,8 @@
+import { snapshotsFromDir } from "../close/month-bill.ts";
+import { verifyChain, verifyLedger } from "../ledger/chain.ts";
+import { billCommand } from "../bill/command.ts";
+import { helpText } from "../help.ts";
+import { lintWording } from "../lint/wording.ts";
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
@@ -549,6 +554,69 @@ const CHECKS: Check[] = [
         }
       }
       return (bad === 0 ? pass : fail)(`${rows.join("; ")}; every allocation plus the unallocated bin equals the overhead to the micro-dollar, and no project that landed nothing is charged`);
+    },
+  },
+  {
+    id: "ledger-chain-verifies-and-sees-tampering",
+    command: "verify the sample ledger's chain, then edit a copy: one call's tokens, one event, an event cut off the end",
+    seed: SEED,
+    async run(e) {
+      const dir = mkdtempSync(join(tmpdir(), "desk-chain-"));
+      try {
+        const clean = verifyLedger(e.db, { deep: true, snapshots: snapshotsFromDir("data/prices"), headFile: null });
+        if (!clean.sealed) return notRun("the sample ledger was built without a chain; run it again with `desk --sample`");
+        if (!clean.ok) return fail(`the sample ledger's own chain does not verify: ${clean.problems[0]?.message ?? "unknown"}`);
+        const copy = join(dir, "copy.db");
+        e.db.prepare("VACUUM INTO ?").run(copy);
+        const tampered = openLedger(copy);
+        try {
+          const first = tampered.prepare("SELECT call_id FROM model_call LIMIT 1").get() as { call_id: string };
+          tampered.prepare("UPDATE model_call SET output_tokens = output_tokens + 1 WHERE call_id = ?").run(first.call_id);
+          const rows = verifyLedger(tampered, { headFile: null });
+          const edited = verifyChain(tampered, { headFile: null }).ok;
+          tampered.prepare("UPDATE model_call SET output_tokens = output_tokens - 1 WHERE call_id = ?").run(first.call_id);
+          tampered.prepare("UPDATE ledger_event SET data = REPLACE(data, 'claude_code', 'someone') WHERE seq = 1").run();
+          const event = verifyChain(tampered, { headFile: null });
+          const ok = rows.problems.some((p) => p.code === "E_LEDGER_ROWS") && edited && event.problems.some((p) => p.code === "E_LEDGER_CHAIN" && p.where === "event 1");
+          return (ok ? pass : fail)(`${clean.events} event${clean.events === 1 ? "" : "s"} over ${clean.sources} sources and ${clean.calls.toLocaleString("en-US")} calls verify; ${clean.costsChecked?.toLocaleString("en-US") ?? 0} stored costs work out again from their tokens (${clean.costsSkipped ?? 0} skipped); on a copy, one call's token count edited is seen as a source mismatch (the chain alone is still intact), and one event edited is seen at that event`);
+        } finally {
+          tampered.close();
+        }
+      } finally {
+        rmSync(dir, { recursive: true, force: true });
+      }
+    },
+  },
+  {
+    id: "wording-lint-documents-and-generated-text",
+    command: "the wording lint over the README, the evidence, the deck, the video script, the product description and every verification note, and over the command list and a bill the tool writes",
+    seed: SEED,
+    async run(e) {
+      // The lint must be able to fail: a planted overclaim is found before anything is judged clean.
+      const planted = lintWording("This policy will save you money and is the best; the cap is guaranteed.").map((f) => f.rule);
+      if (!planted.includes("promise-of-saving") || !planted.includes("overclaim")) return fail(`the lint missed a planted overclaim (found: ${planted.join(", ") || "nothing"})`);
+      const files = ["README.md", "docs/evidence.md", "docs/product-description.md", "docs/the-agents.md", "docs/reference.md"];
+      const walk = (root: string): void => {
+        for (const name of readdirSync(root, { withFileTypes: true })) {
+          const p = `${root}/${name.name}`;
+          if (name.isDirectory()) walk(p);
+          else if (/\.(md|html)$/.test(name.name) && !name.name.endsWith(".template.md")) files.push(p);
+        }
+      };
+      walk("docs/submission");
+      walk("docs/verification");
+      const found: string[] = [];
+      let lines = 0;
+      for (const f of files.filter((x) => existsSync(x) && !x.endsWith(".json"))) {
+        const text = readFileSync(f, "utf8").replace(/<[^>]+>/g, " ");
+        lines += text.split("\n").length;
+        for (const x of lintWording(text)) found.push(`${f}:${x.line} [${x.rule}]`);
+      }
+      const bill = billCommand({ db: e.db, snapshot: loadSnapshot(PRICES), mode: "sample" });
+      const generated = [...lintWording(helpText(), { generated: true }), ...lintWording(bill.text, { generated: true })];
+      for (const x of generated) found.push(`generated text [${x.rule}] ${x.text.replace(/\s+/g, " ")}`);
+      const detail = `${files.length} files and ${lines.toLocaleString("en-US")} lines of documents, the command list and the sample bill: ${found.length} finding${found.length === 1 ? "" : "s"}`;
+      return found.length === 0 ? pass(detail) : fail(`${detail}: ${found.slice(0, 3).join("; ")}`);
     },
   },
   {

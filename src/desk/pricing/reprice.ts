@@ -1,3 +1,5 @@
+import { rollbackQuietly } from "../ledger/db.ts";
+import { sealLedger } from "../ledger/chain.ts";
 import { priceCall } from "../cost/price-call.ts";
 import { recordSnapshot } from "../ledger/ingest.ts";
 import type { Ledger } from "../ledger/db.ts";
@@ -170,9 +172,11 @@ export function repriceLedger(db: Ledger, snapshot: PriceSnapshot, opts: Reprice
     db.exec("COMMIT");
     report.repricingId = id;
   } catch (e) {
-    db.exec("ROLLBACK");
+    rollbackQuietly(db);
     throw e;
   }
+  // The costs changed and the usage facts did not: the event says which price list the ledger moved to, and each cost can be worked out again from it.
+  sealLedger(db, "reprice", { repricing_id: report.repricingId, to_snapshot: snapshot.snapshotId, calls_changed: changes.length }, { sources: [] });
   return report;
 }
 

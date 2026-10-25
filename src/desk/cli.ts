@@ -1,3 +1,4 @@
+import { baselineReproduction, withheldNotice } from "./replay/reproduction.ts";
 import { homedir } from "node:os";
 import { spawnSync } from "node:child_process";
 import { dirname, join } from "node:path";
@@ -20,6 +21,10 @@ import { formatUsd } from "./money.ts";
 import { comparePrices, parsePortkey, renderComparison } from "./pricing/compare.ts";
 import { readCleanupDays, renderRetention, retentionReport, scanLogs, scheduleSnippets } from "./retention/retention.ts";
 import { priceSensitivity, renderSensitivity } from "./pricing/sensitivity.ts";
+import { gateHealth } from "./gate/health.ts";
+import { renderChainReport, verifyLedger } from "./ledger/chain.ts";
+import { snapshotsFromDir } from "./close/month-bill.ts";
+import { activateOwnerPrices, addOwnerPrice, describeOwnerPrices, removeOwnerPrice } from "./pricing/owner.ts";
 import { ledgerSink } from "./agents/own-ledger.ts";
 import { setOwnCallSink } from "./agents/own-calls.ts";
 import { loadSnapshot } from "./pricing/pricebook.ts";
@@ -181,6 +186,7 @@ const { values, positionals } = parseOrExit({
     evidence: { type: "string" },
     format: { type: "string" },
     "print-workflow": { type: "boolean", default: false },
+    deep: { type: "boolean", default: false },
     live: { type: "boolean", default: false },
     export: { type: "string" },
     "if-due": { type: "boolean", default: false },
@@ -241,6 +247,9 @@ if (sampleMode && ["propose", "silos", "ask", "ui", "verify-answer", "bench", "s
 const db = command === "card" || command === "status" || command === "lab" ? openLedger(":memory:") : openLedger(ledgerPath);
 
 // The Desk's own model calls are written to the ledger it keeps, priced like any other call, and held to DESK_OWN_DAILY_CAP_USD when that is set.
+// Prices the owner set for models the vendor list does not cover apply to every command, except where the result must not depend on this machine.
+if (!sampleMode && !["card", "status", "lab", "help", "prove", "demo", "bench"].includes(command)) activateOwnerPrices(process.env["DESK_OWNER_PRICES"] ?? undefined);
+
 if (!["card", "status", "lab", "help", "prove", "demo"].includes(command)) {
   let ownPrices = null;
   try {
@@ -425,8 +434,19 @@ Answer one with: desk questions answer <id> yes|no. Or go through them: desk que
     if (rows.length === 0) console.log("No repricing yet. Every call still costs what the price book said when it was read.");
     for (const r of rows) console.log(`#${r.repricingId}  ${r.at.slice(0, 16).replace("T", " ")}  to ${r.toSnapshot}  ${r.callsChanged.toLocaleString("en-US")} calls  ${r.deltaMicros < 0 ? "-" : "+"}${formatUsd(Math.abs(r.deltaMicros))}  ${r.reason}`);
   }
+} else if (command === "prices" && positionals[1] === "add") {
+  const spec = positionals[2];
+  if (spec === undefined) throw new Error("Use: desk prices add MODEL=IN,OUT, the dollars per million tokens of input and output, for example: desk prices add nvidia/nemotron=0.5,2.5");
+  const row = addOwnerPrice(spec);
+  console.log(`Added ${row.model}: $${row.price.inputUsdPerMTok} in and $${row.price.outputUsdPerMTok} out per million tokens, as the owner's price and not a vendor's. Calls already read are priced when you run: desk prices reprice`);
+} else if (command === "prices" && positionals[1] === "remove") {
+  const model = positionals[2];
+  if (model === undefined) throw new Error("Use: desk prices remove MODEL");
+  console.log(removeOwnerPrice(model) ? `Removed the owner price for ${model}. Run desk prices reprice to price calls already read again.` : `There is no owner price for ${model}.`);
+} else if (command === "prices" && positionals[1] === "owner") {
+  console.log(describeOwnerPrices(loadSnapshot(pricesPath)).join("\n"));
 } else if (command === "prices" && positionals[1] !== "compare") {
-  throw new Error("Use: desk prices compare | reprice [--prices FILE] [--since D] [--until D] [--reason TEXT] [--preview] | history [--call ID]");
+  throw new Error("Use: desk prices compare | add MODEL=IN,OUT | owner | remove MODEL | reprice [--prices FILE] [--since D] [--until D] [--reason TEXT] [--preview] | history [--call ID]");
 } else if (command === "prices") {
   const other = values.portkey ?? "data/prices/portkey-anthropic-2026-10-24.json";
   const body = JSON.parse(readFileSync(other, "utf8")) as { snapshotId?: string; fetchedAt?: string; models: unknown };
@@ -508,6 +528,7 @@ ${sensitivity}`);
   console.log(`read ${r.files} files, ${r.linesRead} lines in ${seconds}s`);
   console.log(`calls: ${r.callsNew} new, ${r.callsMerged} extra content-block lines merged, ${r.usageConflicts} input/cache conflicts, ${r.outputRegressions} output regressions`);
   console.log(`skipped: ${r.malformedLines} malformed lines, ${r.truncatedTails} unfinished last lines`);
+  if (r.skewedLines > 0 || r.futureLines > 0) console.log(`clock: ${r.skewedLines} lines stamped more than a minute before the line above them, ${r.futureLines} stamped in the future; calls are kept in the order the log wrote them, and the session says so`);
   if (r.unpricedCalls > 0) console.log(`unpriced: ${r.unpricedCalls} calls on ${Object.entries(r.unpricedModels).map(([m, why]) => `${m} (${why})`).join(", ")}`);
 } else if (command === "card") {
   const r = await runCard({
@@ -586,7 +607,7 @@ written: ${r.files.join(", ")}`);
   if (!r.ok) process.exitCode = 1;
 } else if (command === "ui") {
   loadDotenv(".env");
-  const ui = await startUiServer({ ledgerPath: ledgerPath, pricesPath: pricesPath, policiesDir: "policies", port: Number(values.port), mode: sampleMode ? "sample" : "own_logs", ...(values.at ? { nowMs: () => new Date(values.at as string).getTime() } : {}), otherPricesPath: values.portkey ?? "data/prices/portkey-anthropic-2026-10-24.json" });
+  const ui = await startUiServer({ gateHealth: () => gateHealth({ env: process.env }), ledgerPath: ledgerPath, pricesPath: pricesPath, policiesDir: "policies", port: Number(values.port), mode: sampleMode ? "sample" : "own_logs", ...(values.at ? { nowMs: () => new Date(values.at as string).getTime() } : {}), otherPricesPath: values.portkey ?? "data/prices/portkey-anthropic-2026-10-24.json" });
   console.log(`desk ui is running. Open this address (it carries a one-time token):
   ${ui.url}
 Ctrl+C stops it.`);
@@ -652,6 +673,12 @@ ${t.pass} PASS, ${t.fail} FAIL, ${t.notRun} NOT RUN. NOT RUN is not a pass: it n
   });
   console.log(result.text);
   if (!result.ok) process.exitCode = 1;
+} else if (command === "ledger") {
+  if (positionals[1] !== "verify") throw new Error("Use: desk ledger verify [--deep]");
+  const report = verifyLedger(db, { deep: values.deep, ...(values.deep ? { snapshots: snapshotsFromDir("data/prices") } : {}) });
+  console.log(renderChainReport(report));
+  if (values.deep && report.costsChecked !== undefined) console.log(`Costs worked out again: ${report.costsChecked.toLocaleString("en-US")} from their tokens and the price list each names, ${(report.costsSkipped ?? 0).toLocaleString("en-US")} skipped because that list was not found in data/prices.`);
+  process.exitCode = report.ok ? 0 : 1;
 } else if (command === "ci") {
   if (values["print-workflow"]) {
     console.log(ciWorkflowSnippet());
@@ -769,7 +796,12 @@ ${t.pass} PASS, ${t.fail} FAIL, ${t.notRun} NOT RUN. NOT RUN is not a pass: it n
   const since = values.since ?? "0000-00-00";
   const until = values.until ?? "9999-99-99";
   const sessions = replaySessionsFromLedger(db, loadSnapshot(pricesPath), since, until, { personFromBranch: sampleMode || values["person-from-branch"] });
-  for (const file of values.policy ?? []) {
+  const reproduction = baselineReproduction(db, sessions, since, until);
+  if (!reproduction.reproduces) {
+    // A replay whose baseline does not reproduce the record says nothing about the policy: it is withheld, with the sessions that differ.
+    console.log(withheldNotice(reproduction));
+    process.exitCode = 1;
+  } else for (const file of values.policy ?? []) {
     const policy = parsePolicyYaml(readFileSync(file, "utf8"));
     if (command === "replay") {
       const r = replayPolicy(policy, sessions);

@@ -1,3 +1,4 @@
+import { sealLedger } from "./chain.ts";
 import { readJsonlLines } from "../ingest/jsonl.ts";
 import { parseClaudeCodeLine, workflowRunOfPath } from "../ingest/claude-code.ts";
 import type { Ledger } from "./db.ts";
@@ -78,5 +79,6 @@ export async function backfillClaudeCodeFields(db: Ledger, files: readonly strin
       throw e;
     }
   }
+  sealLedger(db, "backfill", { result_facts: report.resultFactsFilled, tool_versions: report.toolVersionFilled, compactions: report.compactionsFilled, delegations: report.delegationsFilled }, { sources: [] });
   return report;
 }

@@ -64,6 +64,7 @@ export const COMMANDS: readonly CommandHelp[] = [
   { name: "egress", group: "Privacy", summary: "What was sent to a model: host, size and a count of masked secrets for every request, never the text." },
   { name: "forget", group: "Privacy", summary: "Delete sessions by --project, by --before a date, or --all, and say what was removed; without --yes it only shows what would go." },
 
+  { name: "ledger", group: "Evidence", summary: "Check the usage ledger's chain: no event changed or removed, no source's calls edited. `ledger verify --deep` also works each cost out again." },
   { name: "prove", group: "Evidence", summary: "Run every check against the code and print PASS, FAIL or NOT RUN with the reason." },
   { name: "bench", group: "Evidence", summary: "The recorded benchmark: Ask against plain baselines on questions with known answers." },
   { name: "demo", group: "Evidence", summary: "The scripted demonstration run, from recordings, with no network." },

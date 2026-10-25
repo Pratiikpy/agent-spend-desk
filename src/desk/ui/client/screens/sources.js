@@ -24,7 +24,7 @@ export async function render(ctx) {
       "read-only",
       table("Adapters", [{ label: "Adapter", render: (r) => r.title }, { label: "Files", num: true, render: (r) => int(r.found) }, { label: "Size", num: true, render: (r) => bytes(r.bytes) }, { label: "Last read", render: (r) => (r.lastIngestedAt ? stamp(r.lastIngestedAt) : "never") }], d.adapters),
       d.lastRun ? h("p", { class: "note" }, `Last run: ${int(d.lastRun.files)} files, ${int(d.lastRun.lines_read)} lines, ${int(d.lastRun.calls_new)} new calls.`) : h("p", { class: "note" }, "No ingest has run yet."),
-      d.skipped.malformedLines + d.skipped.truncatedTails + d.skipped.usageConflicts > 0 ? h("p", { class: "note" }, `Skipped so far: ${int(d.skipped.malformedLines)} unreadable lines, ${int(d.skipped.truncatedTails)} unfinished last lines, ${int(d.skipped.usageConflicts)} usage conflicts.`) : null,
+      d.skipped.malformedLines + d.skipped.truncatedTails + d.skipped.usageConflicts + (d.skipped.skewedLines || 0) + (d.skipped.futureLines || 0) > 0 ? h("p", { class: "note" }, `Skipped so far: ${int(d.skipped.malformedLines)} unreadable lines, ${int(d.skipped.truncatedTails)} unfinished last lines, ${int(d.skipped.usageConflicts)} usage conflicts${d.skipped.skewedLines > 0 || d.skipped.futureLines > 0 ? `, ${int(d.skipped.skewedLines)} lines stamped before the line above them and ${int(d.skipped.futureLines)} stamped in the future (a clock set back or forward; those calls are kept in the order the log wrote them)` : ""}.`) : null,
     ),
     section(
       "What each source can tell",
@@ -57,6 +57,7 @@ export async function render(ctx) {
         h("dt", null, "Models priced"), h("dd", null, int(d.price.models)),
         h("dt", null, "Licence"), h("dd", null, d.price.license),
       ),
+      d.unpriced.length > 0 ? h("p", { class: "note" }, "To say what a token of one of these is worth to you, run desk prices add MODEL=IN,OUT (dollars per million tokens), then desk prices reprice. The row is yours, is marked as the owner's in the price snapshot, and is ignored once the list prices the model.") : null,
       stale ? h("p", { class: "note" }, "This snapshot is old. Prices change; rebuild it with scripts/build-price-snapshot.ts.") : null,
       d.unpriced.length === 0 ? h("p", { class: "note" }, "Every model in the ledger has a price row.") : table("Unpriced models", [{ label: "Model", id: true, render: (r) => r.model }, { label: "Why", render: (r) => r.reason || "no row" }, { label: "Calls", num: true, render: (r) => int(r.calls) }, { label: "Tokens", num: true, render: (r) => int(r.tokens) }], d.unpriced),
     ),

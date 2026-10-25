@@ -47,7 +47,7 @@ function deskOwnSection(o) {
   if (!o) return null;
   return section(
     "The Desk's own calls",
-    "kept apart from the agents' spend",
+    "estimated, kept apart from the agents' spend",
     h("p", null, `${int(o.calls)} model call${o.calls === 1 ? "" : "s"}, ${int(o.tokensIn)} tokens in and ${int(o.tokensOut)} out: ${o.priced === 0 ? "no call was priced" : `${usd(o.micros)} estimated on ${int(o.priced)} priced call${o.priced === 1 ? "" : "s"}`}.${o.unpriced > 0 ? ` ${int(o.unpriced)} ran on a model with no price: counted, not priced.` : ""}${o.failed > 0 ? ` ${int(o.failed)} failed; whether they were billed is not known.` : ""}`),
     table("By role", [{ label: "Role", id: true, render: (r) => r.role }, { label: "Calls", num: true, render: (r) => int(r.calls) }, { label: "Estimated", num: true, render: (r) => (r.priced === 0 ? "not priced" : usd(r.micros)) }], o.byRole),
     h("p", { class: "note" }, o.dailyCapMicros === null ? "No daily limit is set for the Desk's own calls (DESK_OWN_DAILY_CAP_USD); each run is still bounded in calls and seconds." : `Today ${usd(o.spentTodayMicros)} of a daily limit of ${usd(o.dailyCapMicros)}; a call that could pass it is refused before it is sent.`),
@@ -65,14 +65,14 @@ function overheadSection(o) {
     const wider = o.alternatives.filter((a) => a.projects > 0 && a.bar !== o.bar);
     return section(
       "Shared overhead",
-      "unallocated",
+      "estimated, unallocated",
       h("p", null, lead),
       h("p", { class: "note" }, `Nothing is allocated: no project has work that reached "${BAR_WORDS[o.bar]}", so ${usd(o.unallocatedMicros)} stays unallocated rather than being divided by guess.${wider.length > 0 ? ` At a lower bar it would be shared: ${wider.map((a) => `"${a.bar}" among ${a.projects} project${a.projects === 1 ? "" : "s"}`).join("; ")}.` : " Few commits are linked, and a missing link is unknown, not proof that nothing landed."}`),
     );
   }
   return section(
     "Shared overhead",
-    `among projects that ${BAR_WORDS[o.bar]} work`,
+    `estimated, among projects that ${BAR_WORDS[o.bar]} work`,
     h("p", null, lead),
     table(
       "Overhead by project",
@@ -128,7 +128,7 @@ export async function render(ctx) {
     ),
     section(
       "Kinds of dollars",
-      "the class of each figure",
+      "billed, reported and estimated: the class of each figure",
       h("p", { "data-coverage": "true" }, d.coverageLine),
       h("ul", { class: "list" }, ...d.classes.map((c) => h("li", null, pill(c.cls, c.cls === "estimated" ? "ink" : ""), " ", c.processes !== undefined ? (c.processes > 0 ? `${int(c.processes)} processes, ${usd(c.micros)}. ` : "none. ") : c.invoices > 0 ? `${int(c.invoices)} invoice${c.invoices === 1 ? "" : "s"}, ${usd(c.micros)}. ` : c.calls > 0 ? `${int(c.calls)} calls${c.micros ? `, ${usd(c.micros)}` : ""}. ` : "none. ", c.note))),
       reconciliationTable(d.reconciliations),
@@ -138,7 +138,7 @@ export async function render(ctx) {
     ),
     section(
       "What it bought",
-      "by landing state",
+      "estimated, by landing state",
       d.landing.linked
         ? h(
             "div",
@@ -158,10 +158,10 @@ export async function render(ctx) {
         : h("p", { class: "note" }, "No repository is linked, so every session is unlinked and nothing can be called landed. Run `desk landing` with your repositories."),
       unlinked && unlinked.micros > 0 ? h("p", { class: "note" }, `Unlinked is ${pct(unlinked.share)} of spend. It means the sources cannot tie the session to a commit: unknowable, not waste.`) : null,
     ),
-    section("By day", "spend", h("div", { class: "pair" }, dailyBars(d.daily), table("Last days", [{ label: "Day", render: (r) => r.day }, { label: "Calls", num: true, render: (r) => int(r.calls) }, { label: "Spend", num: true, render: (r) => num(usd(r.micros), PROV.estimated(d.snapshotId, { Rows: open({}, dayWindow(r.day)) })) }], d.daily.slice(-14).reverse(), { maxh: true }))),
+    section("By day", "estimated spend", h("div", { class: "pair" }, dailyBars(d.daily), table("Last days", [{ label: "Day", render: (r) => r.day }, { label: "Calls", num: true, render: (r) => int(r.calls) }, { label: "Spend", num: true, render: (r) => num(usd(r.micros), PROV.estimated(d.snapshotId, { Rows: open({}, dayWindow(r.day)) })) }], d.daily.slice(-14).reverse(), { maxh: true }))),
     section(
       "Where it went",
-      "by cause",
+      "estimated, by cause",
       h("div", { class: "pair wide" }, hbars(d.causes.map((c) => ({ name: CAUSE_LABEL[c.cause] || c.cause, share: c.share, value: `${pct(c.share)}  ${usd(c.micros)}` }))), h("p", { class: "note" }, `Cache misses alone cost about ${usd(d.missSavingMicros)} more than a cache hit would have.`)),
     ),
     section(

@@ -8,7 +8,8 @@ export function head(kicker, title, lead) {
 }
 
 export function section(label, sub, ...body) {
-  return h("section", { class: "sec" }, h("div", { class: "meta" }, label, sub ? h("span", { class: "sub" }, sub) : null), h("div", { class: "body" }, ...body));
+  // The label is the section's heading, so a screen reader can list and jump between the sections; it is drawn as the small label it always was.
+  return h("section", { class: "sec" }, h("h2", { class: "meta" }, label, sub ? h("span", { class: "sub" }, sub) : null), h("div", { class: "body" }, ...body));
 }
 
 export function stat(label, value, foot, risk) {

@@ -125,13 +125,13 @@ export async function render(ctx) {
     ),
     section(
       "Where it went",
-      "by cause",
+      "estimated, by cause",
       hbars(d.causes.map((c) => ({ name: CAUSE_LABEL[c.cause] || c.cause, share: c.share, value: `${pct(c.share)}  ${usd(c.micros)}` }))),
       h("p", { class: "note" }, "A cause is a part of the day's cost, not a verdict. Re-reading the conversation is normal; a loop is not. ", rows({}, "The calls are in the day's sessions.")),
     ),
     section(
       "What it bought",
-      d.landing.linked ? "by landing state" : "repositories not linked",
+      d.landing.linked ? "estimated, by landing state" : "repositories not linked",
       d.landing.linked
         ? h(
             "div",
@@ -149,7 +149,7 @@ export async function render(ctx) {
     ),
     section(
       "Projects and models",
-      "yesterday",
+      "estimated, yesterday",
       h(
         "div",
         { class: "cards" },

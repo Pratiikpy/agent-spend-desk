@@ -57,7 +57,7 @@ export async function render(ctx) {
     ),
     section(
       "Cost per landed task",
-      "the last four weeks",
+      "estimated, the last four weeks",
       table(
         "Trend",
         [
@@ -113,6 +113,6 @@ export async function render(ctx) {
             ),
           ),
     ),
-    footnote("Every figure is a list-price estimate from logged tokens. A suggestion appears only when a rule can show its saving in your own calls; none is a promise."),
+    footnote("Every figure is a list-price estimate from logged tokens, not an invoice. A suggestion appears only when a rule can show its saving in your own calls; none is a promise."),
   );
 }

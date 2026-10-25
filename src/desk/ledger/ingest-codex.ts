@@ -1,3 +1,5 @@
+import { explainSqliteError, rollbackQuietly } from "./db.ts";
+import { assertChain, sealIngest } from "./chain.ts";
 import { flagUntrustedText } from "../security/flag.ts";
 import { statSync } from "node:fs";
 
@@ -39,6 +41,7 @@ export interface CodexIngestReport {
  * reason: Codex is mostly used on a plan whose limit, not a price, is the currency.
  */
 export async function ingestCodex(db: Ledger, files: readonly string[], snapshot: PriceSnapshot, now: () => Date = () => new Date()): Promise<CodexIngestReport> {
+  assertChain(db);
   const started = now().toISOString();
   recordSnapshot(db, snapshot);
   const report: CodexIngestReport = { files: 0, unchangedFiles: 0, skippedFiles: 0, callsNew: 0, mergedRequests: 0, replayedCalls: 0, replayedTokens: 0, limitSamples: 0, malformedLines: 0, inconsistentBuckets: 0, implausibleSize: 0, counterResets: 0, unpricedCalls: 0, unpricedModels: {} };
@@ -121,8 +124,8 @@ export async function ingestCodex(db: Ledger, files: readonly string[], snapshot
       }
       db.exec("COMMIT");
     } catch (error) {
-      db.exec("ROLLBACK");
-      throw error;
+      rollbackQuietly(db);
+      throw explainSqliteError(db, error);
     }
   }
 
@@ -133,5 +136,6 @@ export async function ingestCodex(db: Ledger, files: readonly string[], snapshot
      VALUES ('codex', ?, ?, ?, 0, ?, ?, ?, 0, ?)`,
   ).run(started, now().toISOString(), report.files, report.callsNew, report.mergedRequests, report.malformedLines, report.inconsistentBuckets + report.implausibleSize);
   flagUntrustedText(db, new Date().toISOString());
+  sealIngest(db, "codex", started, { files: report.files, callsNew: report.callsNew, callsMerged: report.mergedRequests });
   return report;
 }

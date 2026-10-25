@@ -1,3 +1,5 @@
+import { explainSqliteError, rollbackQuietly } from "./db.ts";
+import { assertChain, sealIngest } from "./chain.ts";
 import { flagUntrustedText } from "../security/flag.ts";
 import { statSync } from "node:fs";
 
@@ -25,6 +27,7 @@ export interface OpenCodeIngestReport {
  * snapshot only for first-party models; a model reached through another provider is unpriced, with the reason.
  */
 export async function ingestOpenCode(db: Ledger, dbPath: string, snapshot: PriceSnapshot, now: () => Date = () => new Date()): Promise<OpenCodeIngestReport> {
+  assertChain(db);
   const started = now().toISOString();
   recordSnapshot(db, snapshot);
   const known = new Set((db.prepare("SELECT call_id FROM model_call WHERE call_id LIKE 'opencode:%'").all() as { call_id: string }[]).map((r) => r.call_id));
@@ -76,8 +79,8 @@ export async function ingestOpenCode(db: Ledger, dbPath: string, snapshot: Price
     }
     db.exec("COMMIT");
   } catch (error) {
-    db.exec("ROLLBACK");
-    throw error;
+    rollbackQuietly(db);
+    throw explainSqliteError(db, error);
   }
   recomputeCosts(db, snapshot, inserted, report);
   updateSessionSpans(db, sessions);
@@ -86,5 +89,6 @@ export async function ingestOpenCode(db: Ledger, dbPath: string, snapshot: Price
      VALUES ('opencode', ?, ?, 1, ?, ?, 0, ?, 0, 0)`,
   ).run(started, now().toISOString(), read.messages, report.callsNew, read.skipped["malformed"] ?? 0);
   flagUntrustedText(db, new Date().toISOString());
+  sealIngest(db, "opencode", started, { files: 1, callsNew: report.callsNew, callsMerged: 0 });
   return report;
 }

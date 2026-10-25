@@ -72,7 +72,7 @@ async function list(ctx) {
       ),
       pager,
     ),
-    footnote("Spend is a list-price estimate. Sub-agent calls are counted inside the session that started them."),
+    footnote("Spend is a list-price estimate, not an invoice. Sub-agent calls are counted inside the session that started them."),
   );
 }
 
@@ -130,6 +130,11 @@ function delegationSection(d) {
 
 const FIELD_NOTE = { project_path: "the folder", git_branch: "the branch", tool_version: "the client version", edited_path: "an edited file's path", model: "a model name" };
 const KIND_NOTE = { ignore_instructions: "tells a reader to ignore its rules", role_markup: "carries markup that imitates a system message", persona_change: "tells a reader it is now someone else", reveal_secrets: "asks a reader to reveal secrets", jailbreak: "asks a reader to drop its limits", tool_call_syntax: "imitates a tool call" };
+
+function clockNote(d) {
+  if (!d.clock) return null;
+  return h("p", { class: "note" }, `The log this session came from has ${int(d.clock.skewedLines)} line${d.clock.skewedLines === 1 ? "" : "s"} stamped more than a minute before the line above ${d.clock.skewedLines === 1 ? "it" : "them"}${d.clock.futureLines > 0 ? ` and ${int(d.clock.futureLines)} stamped in the future` : ""}: a clock that was set back or forward. Calls are shown in the order the log wrote them, not by their stamps, and spend by day uses the stamps as they are.`);
+}
 
 function untrustedSection(d) {
   if (!d.untrusted || d.untrusted.length === 0) return null;
@@ -309,6 +314,7 @@ async function detail(ctx, id) {
     ),
     blocksSection(ctx, d),
     delegationSection(d),
+    clockNote(d),
     untrustedSection(d),
     section(
       "Commits",

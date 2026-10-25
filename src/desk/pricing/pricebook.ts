@@ -219,8 +219,16 @@ export function applyModifiers(base: PriceSnapshot, sup: ModifierSupplement): Pr
   });
 }
 
+let overlay: ((snapshot: PriceSnapshot) => PriceSnapshot) | null = null;
+
+/** A function applied to every snapshot loaded from now on: the owner's rows for models the list does not price. Unset (the default, and in the tests) nothing is added. */
+export function setSnapshotOverlay(fn: ((snapshot: PriceSnapshot) => PriceSnapshot) | null): void {
+  overlay = fn;
+}
+
 export function loadSnapshot(path: string): PriceSnapshot {
-  return parseSnapshot(JSON.parse(readFileSync(path, "utf8")));
+  const snapshot = parseSnapshot(JSON.parse(readFileSync(path, "utf8")));
+  return overlay === null ? snapshot : overlay(snapshot);
 }
 
 /**

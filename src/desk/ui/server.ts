@@ -1,3 +1,5 @@
+import { RESTORE, verifyChain } from "../ledger/chain.ts";
+import type { GateHealth } from "../gate/health.ts";
 import { randomBytes, timingSafeEqual } from "node:crypto";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
@@ -56,6 +58,8 @@ export interface UiOptions {
   gateDbPath?: string | null;
   /** Where the canary's runs are stored; default the Desk's own. */
   canaryRunsPath?: string;
+  /** See `UiContext.gateHealth`. */
+  gateHealth?: () => Promise<GateHealth>;
 }
 
 export interface UiServer {
@@ -149,6 +153,9 @@ function readOtherPrices(path: string): q.UiContext["otherPrices"] {
 
 export async function startUiServer(opts: UiOptions): Promise<UiServer> {
   const { db, problem } = openReadOnly(opts.ledgerPath);
+  // A broken chain is fatal news: the shell says it on every screen, with the event and the way back. The screens still read, because the person needs to see what is there.
+  const chainReport = problem === null ? verifyChain(db, { headFile: opts.ledgerPath === ":memory:" ? null : `${opts.ledgerPath}.head.jsonl` }) : null;
+  const chainProblem = chainReport !== null && !chainReport.ok ? `${chainReport.problems.map((p) => `${p.code} at ${p.where}: ${p.message}`).join(" ")} ${RESTORE}.` : null;
   const snapshot = loadSnapshot(opts.pricesPath);
   const ctx: q.UiContext = {
     db,
@@ -163,6 +170,7 @@ export async function startUiServer(opts: UiOptions): Promise<UiServer> {
     timeZone: opts.timeZone ?? (opts.mode === "own_logs" ? systemTimeZone() : "UTC"),
     gateDbPath: opts.gateDbPath === undefined ? (opts.mode === "own_logs" ? "data/desk/gate.db" : null) : opts.gateDbPath,
     ...(opts.canaryRunsPath ? { canaryRunsPath: opts.canaryRunsPath } : {}),
+    ...(opts.gateHealth ? { gateHealth: opts.gateHealth } : {}),
   };
   const token = opts.token ?? randomBytes(24).toString("hex");
   const statics = staticMap();
@@ -176,7 +184,10 @@ export async function startUiServer(opts: UiOptions): Promise<UiServer> {
   const route = async (path: string, p: URLSearchParams): Promise<unknown> => {
     switch (path) {
       case "/api/meta":
-        return { ...(q.meta(ctx) as object), ledgerProblem: problem };
+      {
+        const gate = ctx.gateHealth ? await ctx.gateHealth().catch(() => null) : null;
+        return { ...(q.meta(ctx) as object), ledgerProblem: problem, chainProblem, gate };
+      }
       case "/api/brief":
         return withProblem(q.brief(ctx, p.get("day")));
       case "/api/bill":

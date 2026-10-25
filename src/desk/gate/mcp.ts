@@ -116,10 +116,10 @@ export const TOOLS: readonly ToolDef[] = [
   {
     name: "tool_begin",
     description:
-      "Before a tool call that must not run twice: returns proceed, in_flight (the same call is already running) or replayed (it completed recently; the cached response is returned).",
+      "Before a tool call that must not run twice: returns proceed, in_flight (the same call is already running) or replayed (it completed recently; the cached response is returned). A read-only tool such as Read passes through unless dedupe is true; every other tool is held to one run for five minutes.",
     inputSchema: {
       type: "object",
-      properties: { session_id: STR, tool_name: STR, arguments: { type: "object" }, reserve: { type: "object", properties: REQUEST_PROPS } },
+      properties: { session_id: STR, tool_name: STR, arguments: { type: "object" }, dedupe: { type: "boolean" }, reserve: { type: "object", properties: REQUEST_PROPS } },
       required: ["session_id", "tool_name"],
       additionalProperties: false,
     },

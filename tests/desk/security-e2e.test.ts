@@ -1,3 +1,4 @@
+import { lintWording } from "../../src/desk/lint/wording.ts";
 import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -76,6 +77,8 @@ afterAll(async () => {
 describe("a credential planted in a log appears nowhere the product writes or serves", () => {
   it("is not in the card text, the card files or the ledger file", () => {
     expect(cardText).not.toContain(PLANTED);
+    // The card is text the Desk writes; it passes the wording lint too.
+    expect(lintWording(cardText, { generated: true })).toEqual([]);
     expect(written.length).toBeGreaterThan(2);
     for (const f of written) expect(readFileSync(f).includes(Buffer.from(PLANTED)), f).toBe(false);
     // The run did read the planted session: it is in the ledger, with the credential masked.

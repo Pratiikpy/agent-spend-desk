@@ -128,6 +128,15 @@ async function boot() {
   if (meta.mode === "sample") {
     banners.append(h("div", { class: "banner" }, h("div", { class: "banner-in" }, h("span", { class: "kicker" }, "Sample"), h("span", null, "A constructed scenario with planted waste, not a real team's history. Every figure is computed from it by the same code that reads your logs."))));
   }
+  if (meta.chainProblem) {
+    banners.append(h("div", { class: "banner risk", role: "alert" }, h("div", { class: "banner-in" }, h("span", { class: "kicker" }, "Ledger chain broken"), h("span", null, meta.chainProblem))));
+  }
+  if (meta.gate && meta.gate.hookInstalled && !meta.gate.reachable) {
+    banners.append(h("div", { class: "banner risk", role: "alert" }, h("div", { class: "banner-in" }, h("span", { class: "kicker" }, "Enforcement down"), h("span", null, `The spend hook is installed and the gate is not answering at ${meta.gate.url}, so every tool call it guards is being blocked. Start the gate with \`desk gate serve\`, or open it for 30 minutes with \`desk gate open --for 30m\` (owner only; the opening is signed and every call it lets through is logged).`))));
+  }
+  if (meta.price && meta.price.stale) {
+    banners.append(h("div", { class: "banner risk", role: "status" }, h("div", { class: "banner-in" }, h("span", { class: "kicker" }, "Stale"), h("span", null, `The price list is ${meta.price.ageDays} days old, so every estimate on these screens rests on prices that may have changed. Rebuild it with scripts/build-price-snapshot.ts.`))));
+  }
   if (meta.ledgerProblem) {
     banners.append(h("div", { class: "banner risk", role: "alert" }, h("div", { class: "banner-in" }, h("span", { class: "kicker" }, "Ledger"), h("span", null, meta.ledgerProblem))));
   }

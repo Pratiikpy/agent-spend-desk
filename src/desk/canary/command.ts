@@ -83,6 +83,15 @@ export function canaryCommand(o: { runsPath: string; sample: boolean; day?: numb
   }
   const ctl = servedChanges(rows, "control");
   if (ctl.length > 0) lines.push(`  the control arm's served model also changed on day ${ctl[0]!.day}`);
+  if (v.reason === "too_early") {
+    // Say on which day the first call becomes possible, not only how many days after the pin: "the baseline completes on 3 November".
+    const first = dates.get(1);
+    const ms = first ? Date.parse(`${first}T00:00:00Z`) : NaN;
+    if (!Number.isNaN(ms)) {
+      const when = new Date(ms + (v.earliestCallDay - 1) * 86_400_000).toISOString().slice(0, 10);
+      lines.push(`  the first call is possible on ${when} (day ${v.earliestCallDay}), if a run is recorded each day until then`);
+    }
+  }
   for (const n of v.notes) lines.push(`  note: ${n}`);
 
   // The score line the verdict rests on, so the card can be read without the statistic.

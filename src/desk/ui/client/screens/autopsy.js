@@ -34,7 +34,7 @@ export async function render(ctx) {
         stat("Idle, loops and cache misses", share(c.wasteShare, "the window's cost"), "causes a rule can see without judgement", c.wasteShare >= 0.25),
       ),
     ),
-    section("Causes", "every cost sits in exactly one", hbars(c.causes.map((x) => ({ name: CAUSE_LABEL[x.cause] || x.label, share: x.share, value: `${pct(x.share)}  ${usd(x.micros)}` })))),
+    section("Causes", "estimated, every cost sits in exactly one", hbars(c.causes.map((x) => ({ name: CAUSE_LABEL[x.cause] || x.label, share: x.share, value: `${pct(x.share)}  ${usd(x.micros)}` })))),
     section(
       "Fixes",
       "ranked by what the cause cost",
