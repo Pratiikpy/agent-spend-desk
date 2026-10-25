@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 
 import { ASK_LIVE, Budget, BudgetError } from "../agents/budget.ts";
 import { ClaimLedger, type Claim, type Sentence } from "../agents/claims.ts";
-import { explain } from "../agents/explain.ts";
+import { explain, MAX_REFLEXIONS } from "../agents/explain.ts";
 import { callModel, ModelError, type ChatMessage, type ModelPort } from "../agents/model.ts";
 import { NULL_TRACE, type Trace } from "../agents/trace.ts";
 import { engineInfo } from "../engines/registry.ts";
@@ -20,9 +20,30 @@ import { DEFAULT_CLAIM_TOKENS, ledgerCoverage, runStep, type Coverage, type Engi
 
 export type AskStatus = "answered" | "unknowable" | "refused";
 
+/**
+ * Which roles of the answer pipeline run. All of them, in the product. The role-necessity ablation (DF-085) switches one off at a time to measure what it does:
+ * a role that changes nothing measurable is code, or is not claimed.
+ */
+export interface RoleSwitches {
+  /** The Planner: `model` proposes the program, `rules` is the rule planner (code). */
+  planner: "model" | "rules";
+  /** The plan critic: code that names a figure the question asks for and the program has no step for, so the Planner revises once. */
+  planCritic: boolean;
+  /** The Explainer: `model` drafts the sentences, `rules` states each claim as its own sentence (code). */
+  explainer: "model" | "rules";
+  /** The Auditor: when false the Explainer's first draft is the answer and nothing is checked. */
+  auditor: boolean;
+  /** The revision loop: when false the Auditor still removes an unsupported sentence, but the Explainer is not asked to revise it. */
+  reflexion: boolean;
+}
+
+export const ALL_ROLES: RoleSwitches = { planner: "model", planCritic: true, explainer: "model", auditor: true, reflexion: true };
+
 export interface AskOptions {
   db: Ledger;
   question: string;
+  /** Roles to switch off for this run (ablation only). Omit for the product. */
+  roles?: Partial<RoleSwitches>;
   /** Engines to switch off for this run. An ablated run uses the rule planner so the same program runs with and without an engine. */
   ablate?: ReadonlySet<EngineName>;
   port: ModelPort | null;
@@ -178,6 +199,7 @@ function engineLines(trace: Trace, ablated: ReadonlySet<EngineName>, file: strin
 export async function ask(o: AskOptions): Promise<AskResult> {
   const trace = o.trace ?? NULL_TRACE;
   const ablate = o.ablate ?? new Set<EngineName>();
+  const roles: RoleSwitches = { ...ALL_ROLES, ...o.roles };
   const budget = o.budget ?? new Budget(ASK_LIVE);
   const answerId = `ans-${randomUUID().slice(0, 12)}`;
   const base = { answerId, question: o.question, ablated: [...ablate].sort() as EngineName[] };
@@ -203,7 +225,7 @@ export async function ask(o: AskOptions): Promise<AskResult> {
   let program: AnswerProgram | null = null;
   let planner: AskResult["planner"] = "rules";
   let servedModel: string | null = null;
-  if (o.port && ablate.size === 0) {
+  if (o.port && ablate.size === 0 && roles.planner === "model") {
     const precedents = o.precedents ?? [];
     if (precedents.length > 0) trace.emit({ event: "desk.precedent.used", why: "computed", role: "ask_planner", detail: { lessons: precedents.map((p) => p.id) } });
     let planned = await planWithModel({ port: o.port, budget, trace, question: o.question, cov, models, precedents });
@@ -232,7 +254,7 @@ export async function ask(o: AskOptions): Promise<AskResult> {
       }
     }
     // The plan critic: code that names a figure the question asks for and the program has no step to compute. The Planner revises once.
-    if ("program" in planned) {
+    if ("program" in planned && roles.planCritic) {
       const missing = critiquePlan(o.question, planned.program);
       if (missing.length > 0) {
         trace.emit({ event: "desk.plan.critique", why: "computed", role: "plan_critic", detail: { missing } });
@@ -317,7 +339,7 @@ export async function ask(o: AskOptions): Promise<AskResult> {
     return finish({ route: "read", flags: routed.flags, status: "unknowable", planner, explainer: "none", servedModel, program, steps, sentences: [], note: reasons.length > 0 ? reasons.join(" ") : "Nothing could be stated from the ledger for this question." });
   }
 
-  const ex = await explain(topicOf(program), ledger, { port: o.port && ablate.size === 0 ? o.port : null, budget, trace });
+  const ex = await explain(topicOf(program), ledger, { port: o.port && ablate.size === 0 && roles.explainer === "model" ? o.port : null, budget, trace, audit: roles.auditor, reflexions: roles.reflexion ? MAX_REFLEXIONS : 0 });
   const byStep = new Map(steps.map((s) => [s.id, s]));
   const sentences: AnswerSentence[] = ex.sentences.map((s) => {
     const stepIds = [...new Set(s.cites.map((c) => c.split(".")[0] as string))];
@@ -325,7 +347,7 @@ export async function ask(o: AskOptions): Promise<AskResult> {
     return { ...s, queryHashes: used.map((u) => u.queryHash), resultHashes: used.map((u) => u.resultHash) };
   });
   const notes = [ex.note, ...steps.filter((s) => s.unknowable).map((s) => s.unknowable)].filter((x): x is string => !!x);
-  return finish({ route: "read", flags: routed.flags, status: sentences.length > 0 ? "answered" : "unknowable", planner, explainer: ex.usedFallback || !o.port || ablate.size > 0 ? "rules" : "model", servedModel, program, steps, sentences, note: notes.length > 0 ? notes.join(" ") : null });
+  return finish({ route: "read", flags: routed.flags, status: sentences.length > 0 ? "answered" : "unknowable", planner, explainer: ex.usedFallback || !o.port || ablate.size > 0 || roles.explainer === "rules" ? "rules" : "model", servedModel, program, steps, sentences, note: notes.length > 0 ? notes.join(" ") : null });
 }
 
 function record(db: Ledger, r: AskResult, at: string): void {

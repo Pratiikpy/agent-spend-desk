@@ -22,8 +22,14 @@ export const BENCH_SEED_C = 20261025;
  * this one was written before the third version was run on it and is held out for it entirely.
  */
 export const BENCH_SEED_D = 20261027;
-export type QuestionSet = "A" | "B" | "C" | "D";
-export const seedOf = (set: QuestionSet): number => (set === "B" ? BENCH_SEED_B : set === "C" ? BENCH_SEED_C : set === "D" ? BENCH_SEED_D : BENCH_SEED);
+/**
+ * The fifth set, for the role-necessity ablation (DF-085). It has the first set's templates and the four extra shapes the Desk has steps for (the busiest day, the
+ * gap between two models, the median day, a count of sessions), with new parameters, and none of the shapes nothing was built for: the ablation asks what each
+ * role does on questions the full Desk can answer, so a miss in an ablated arm is the role's and not a missing step.
+ */
+export const BENCH_SEED_E = 20261028;
+export type QuestionSet = "A" | "B" | "C" | "D" | "E";
+export const seedOf = (set: QuestionSet): number => (set === "B" ? BENCH_SEED_B : set === "C" ? BENCH_SEED_C : set === "D" ? BENCH_SEED_D : set === "E" ? BENCH_SEED_E : BENCH_SEED);
 
 export type Category = "lookup" | "multi_hop" | "counterfactual" | "unanswerable" | "adversarial" | "numeric";
 
@@ -387,6 +393,34 @@ export function buildQuestions(db: Ledger, seed: number = BENCH_SEED, set: Quest
       const r = randomRange(rng, t.coverage, 3, 20);
       const s = t.spend(r);
       swap(58, { category: "numeric", text: `What was the average cost per model call ${both(r)}? Answer in dollars to four decimals.`, expect: { kind: "answer", required: [{ type: "number", value: round(s.micros / s.calls / 1_000_000, 4), decimals: 4, label: "per call" }], allowed: [usdOf(s.micros), s.calls] } }, true);
+    }
+    {
+      const r = randomRange(rng, t.coverage, 5, 20);
+      swap(59, { category: "numeric", text: `How many sessions started ${both(r)}?`, expect: { kind: "answer", required: [{ type: "number", value: t.sessionsStarted(r), decimals: 0, label: "sessions" }], allowed: [daysIn(r)] } });
+    }
+  }
+
+  if (set === "E") {
+    // The four shapes the third version has steps for, written out as in set D so that a shape means the same on both; set D's own draws are not disturbed.
+    const swap = (i: number, q: Omit<Question, "id" | "split">): void => void (out[i] = q);
+    {
+      const r = randomRange(rng, t.coverage, 8, 30);
+      const days = t.daily(r);
+      const best = days.reduce((a, b) => (b.micros > a.micros ? b : a));
+      swap(8, { category: "lookup", text: `Which single day ${both(r)} had the highest spend, and how much was it? Give the date and the dollar amount.`, expect: { kind: "answer", required: [{ type: "word", value: best.day, label: "day" }, usd(usdOf(best.micros), "day spend")], allowed: [usdOf(t.spend(r).micros)] } });
+    }
+    {
+      const r = randomRange(rng, t.coverage, 10, 40);
+      const [big, small] = t.spend(r, t.models[0]).micros >= t.spend(r, t.models[1]).micros ? [t.models[0]!, t.models[1]!] : [t.models[1]!, t.models[0]!];
+      const a = t.spend(r, big).micros;
+      const b = t.spend(r, small).micros;
+      swap(18, { category: "multi_hop", text: `How much more did ${big} cost than ${small} ${both(r)}? Give the dollar amount.`, expect: { kind: "answer", required: [usd(usdOf(a - b), "difference")], allowed: [usdOf(a), usdOf(b)] } });
+    }
+    {
+      const r = randomRange(rng, t.coverage, 9, 21);
+      const sorted = t.daily(r).map((d) => d.micros).sort((x, y) => x - y);
+      const mid = sorted.length % 2 === 1 ? sorted[(sorted.length - 1) / 2]! : (sorted[sorted.length / 2 - 1]! + sorted[sorted.length / 2]!) / 2;
+      swap(56, { category: "numeric", text: `What was the median daily spend ${both(r)}, counting only days with any spend? Give the dollar amount to the cent.`, expect: { kind: "answer", required: [usd(usdOf(mid), "median day")], allowed: [sorted.length] } });
     }
     {
       const r = randomRange(rng, t.coverage, 5, 20);

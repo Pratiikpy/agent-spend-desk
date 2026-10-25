@@ -24,7 +24,7 @@ import { learningInputs, LEARNING_CASSETTES, LEARNING_REPORT, type StoredReport 
 import { DEFAULT_LEARN, runLearning } from "../lessons/learn.ts";
 import { allLessons, openLessons } from "../lessons/store.ts";
 import { buildQuestions, questionSetHash, type QuestionSet } from "../bench/questions.ts";
-import { ARMS, passK, readResults, runBench, tally } from "../bench/run.ts";
+import { ALL_ARMS, ARMS, passK, readResults, runBench, tally } from "../bench/run.ts";
 import { CONTROL_FILE, COVERAGE_FILE } from "../calibrate/command.ts";
 import { attributionReliability } from "../calibrate/attribution.ts";
 import { calibrationOf, summarise as summariseTunnel, type TunnelCoverage } from "../calibrate/windtunnel.ts";
@@ -136,12 +136,13 @@ function benchCheck(id: string, set: QuestionSet): Check {
       try {
         const out = join(dir, "replay.jsonl");
         const trials = [...new Set(recorded.map((r) => r.trial))].sort((a, b) => a - b);
-        await runBench({ db: e.db, port: new CassettePort(files.cassettes), arms: ARMS, split: "all", set, trials, out });
+        const arms = ALL_ARMS.filter((a) => recorded.some((x) => x.arm === a));
+        await runBench({ db: e.db, port: new CassettePort(files.cassettes), arms, split: "all", set, trials, out });
         const again = new Map(readResults(out).map((x) => [`${x.qid}|${x.arm}|${x.trial}`, x]));
         const answered = recorded.filter((x) => !x.error);
         const differs = answered.filter((x) => { const y = again.get(`${x.qid}|${x.arm}|${x.trial}`); return !y || y.answer !== x.answer || y.exact !== x.exact || y.close !== x.close; });
         const greedy = answered.filter((x) => x.trial === 0);
-        const line = ARMS.map((a) => { const c = tally(greedy.filter((x) => x.arm === a)); return `${a} ${c.exact}/${c.n}`; }).join(", ");
+        const line = arms.map((a) => { const c = tally(greedy.filter((x) => x.arm === a)); return `${a} ${c.exact}/${c.n}`; }).join(", ");
         const errors = recorded.length - answered.length;
         return (differs.length === 0 ? pass : fail)(`${answered.length} recorded runs replayed from recordings, ${differs.length} differ${differs.length > 0 ? ` (${differs.slice(0, 4).map((x) => `${x.qid} ${x.arm} t${x.trial}`).join(", ")})` : ""}; exact answers ${line}${errors > 0 ? `; ${errors} recorded runs ended in an error and are not replayed` : ""}; this reproduces the table, it does not say the Desk wins`);
       } finally {

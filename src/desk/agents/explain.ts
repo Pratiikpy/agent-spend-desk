@@ -73,6 +73,13 @@ export interface ExplainOptions {
   port: ModelPort | null;
   budget: Budget;
   trace?: Trace;
+  /**
+   * False runs the Explainer without its Auditor: the first draft is the answer and nothing is checked. It exists for the role-necessity ablation (DF-085),
+   * which has to be able to take the Auditor out to measure what it does. The product never turns it off.
+   */
+  audit?: boolean;
+  /** How many times the Explainer may be asked to revise a rejected draft. The product allows `MAX_REFLEXIONS`; the ablation of the revision loop sets 0. */
+  reflexions?: number;
 }
 
 /**
@@ -85,6 +92,8 @@ export async function explain(question: string, ledger: ClaimLedger, opts: Expla
   const trace = opts.trace ?? NULL_TRACE;
   const claims = ledger.all();
   const rejections: Rejection[] = [];
+  const audit = opts.audit ?? true;
+  const reflexions = opts.reflexions ?? MAX_REFLEXIONS;
   let attempts = 0;
   let usedFallback = false;
 
@@ -108,12 +117,12 @@ export async function explain(question: string, ledger: ClaimLedger, opts: Expla
   };
 
   draft = await ask(null);
-  let result = auditSentences(draft, ledger);
+  let result = audit ? auditSentences(draft, ledger) : { accepted: draft, rejected: [] as Rejection[] };
   attempts = 1;
-  trace.emit({ event: "desk.audit", why: "computed", role: "auditor", detail: { attempt: attempts, accepted: result.accepted.length, rejected: result.rejected.map((r) => ({ reason: r.reason, text: r.sentence.text })) } });
+  trace.emit({ event: "desk.audit", why: "computed", role: "auditor", detail: { attempt: attempts, accepted: result.accepted.length, audited: audit, rejected: result.rejected.map((r) => ({ reason: r.reason, text: r.sentence.text })) } });
   rejections.push(...result.rejected);
 
-  while (result.rejected.length > 0 && attempts <= MAX_REFLEXIONS && !usedFallback) {
+  while (result.rejected.length > 0 && attempts <= reflexions && !usedFallback) {
     const revised = await ask({ rejected: result.rejected, draft });
     if (usedFallback) {
       // The model failed during revision: the rule brain's sentences replace the draft, and are audited like any other.

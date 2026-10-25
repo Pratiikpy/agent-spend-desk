@@ -3,11 +3,15 @@ import { dirname } from "node:path";
 
 import type { ModelPort, ModelRequest } from "../agents/model.ts";
 import type { Ledger } from "../ledger/db.ts";
+import { formatAblation } from "./ablation.ts";
 import { runArm, type ArmId } from "./arms.ts";
 import { BENCH_SEED, buildQuestions, seedOf, questionSetHash, type Category, type Question, type QuestionSet } from "./questions.ts";
 import { score } from "./score.ts";
 
+/** The three arms of the head-to-head. The ablation arms are separate: a replay of the head-to-head must not reach for recordings they do not have. */
 export const ARMS: readonly ArmId[] = ["A0", "A1", "A2"];
+export const ABLATION_ARMS: readonly ArmId[] = ["A3", "A4", "A5", "A6", "A7", "A2F", "A4F"];
+export const ALL_ARMS: readonly ArmId[] = [...ARMS, ...ABLATION_ARMS];
 export const CATEGORIES: readonly Category[] = ["lookup", "multi_hop", "counterfactual", "unanswerable", "adversarial", "numeric"];
 
 export interface BenchRow {
@@ -154,7 +158,7 @@ export function passK(rows: readonly BenchRow[], arm: ArmId, k: number): { value
 
 export function formatReport(allRows: readonly BenchRow[], questions: readonly Question[], note = ""): string {
   const rows = allRows.filter((r) => r.trial === 0);
-  const arms = ARMS.filter((a) => rows.some((r) => r.arm === a));
+  const arms = ALL_ARMS.filter((a) => rows.some((r) => r.arm === a));
   const lines: string[] = [];
   const ids = new Set(rows.map((r) => r.qid));
   lines.push(`Questions run: ${ids.size} of ${questions.length}; question set ${questionSetHash(questions).slice(0, 19)}${note ? `; ${note}` : ""}`);
@@ -194,6 +198,8 @@ export function formatReport(allRows: readonly BenchRow[], questions: readonly Q
     const varies = arms.map((a) => { const by = new Map<string, boolean[]>(); for (const r of trialRows) if (r.arm === a && !r.error) by.set(r.qid, [...(by.get(r.qid) ?? []), r.exact]); return [...by.values()].filter((c) => c.some(Boolean) && c.some((x) => !x)).length; });
     lines.push(["questions whose answer changed between trials".padEnd(44), ...varies.map((v) => String(v).padStart(10))].join(" "));
   }
+  const ablated = formatAblation(allRows);
+  if (ablated !== "") lines.push("", ablated);
   return lines.join("\n");
 }
 
