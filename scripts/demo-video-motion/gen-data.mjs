@@ -18,19 +18,23 @@ const run = (args) => {
 };
 
 const need = (m, what) => { if (!m) throw new Error(`gen-data: could not find ${what}`); return m; };
+const WORDS = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10 };
+const word = (s) => (WORDS[String(s).toLowerCase()] ?? num(s));
 const num = (s) => Number(String(s).replace(/[$,%]/g, ""));
 
 console.log("desk demo ...");
 const demo = run(["demo"]);
-console.log("desk bench report --set B ...");
-const bench = run(["bench", "report", "--sample", "--set", "B"]);
 
-// The demo is eight beats separated by a dashed rule.
+// The demo is a run of scenes separated by a dashed rule; each scene starts with its heading.
 const SEP = "-".repeat(78);
-const parts = demo.split(SEP + "\n");
+const parts = demo.split(SEP + String.fromCharCode(10));
+const KEY = { "Opening": "1", "Scene 1b": "2", "Scene 2": "3", "Scene 4": "4", "Scene 4b": "5", "Scene 4c": "6", "Scene 4d": "7" };
 const beat = {};
-for (let i = 1; i < parts.length; i += 2) beat[parts[i].slice(0, 1)] = parts[i + 1] ?? "";
-for (const k of ["1", "2", "3", "4", "5", "6", "7"]) need(beat[k], `demo beat ${k}`);
+for (let i = 1; i < parts.length; i += 2) {
+  const name = /^(Opening|Scene \w+)/.exec(parts[i])?.[1];
+  if (name && KEY[name]) beat[KEY[name]] = parts[i + 1] ?? "";
+}
+for (const k of ["1", "2", "3", "4", "5", "6", "7"]) need(beat[k], `demo scene for beat ${k}`);
 
 // 1. The autopsy.
 const b1 = beat["1"];
@@ -90,6 +94,7 @@ const stepRe = /^(V[\w-]+)\s+(PASS|FAIL|NOT_APPLICABLE)\s+(.+)$/gm;
 const [okPart, badPart] = need(b6.split("The same bundle with one byte changed:"), "tamper split").length === 2 ? b6.split("The same bundle with one byte changed:") : [b6, ""];
 const steps = [...okPart.matchAll(stepRe)].map((m) => ({ id: m[1], status: m[2], label: m[3].trim() }));
 const badSteps = [...badPart.matchAll(stepRe)].map((m) => ({ id: m[1], status: m[2], label: m[3].trim() }));
+const badErrors = [...badPart.matchAll(/^\s+((?:row_)?hash_mismatch: .+)$/gm)].map((m) => m[1].trim());
 const rowErr = need(/row_hash_mismatch: (\S+) does not hash to its row_hash/.exec(badPart), "tampered row");
 if (!/RESULT: PASS/.test(okPart) || !/RESULT: FAIL/.test(badPart)) throw new Error("gen-data: verify results not found");
 
@@ -98,42 +103,74 @@ const b7 = beat["7"];
 const gateExit = need(/hook exit code (\d+)/.exec(b7), "gate exit code");
 const gateMsg = need(/(Desk gate: .+)/.exec(b7), "gate message");
 
-// Benchmark: the current report plus the preregistered column from the results table.
-const allRow = need(/^all\s+(\d+)\/60\s+(\d+)\/60\s+(\d+)\/60/m.exec(bench), "bench all row");
-const results = read("docs/verification/benchmark/RESULTS-v2.md");
-const cells = (name) => {
-  const line = need(results.split("\n").find((l) => l.startsWith(`| ${name}`)), `RESULTS-v2 row ${name}`);
-  return line.split("|").slice(2, 6).map((c) => c.trim());
+// Benchmark: set D, the round that was preregistered before any of its questions was run, read from the results table.
+const results = read("docs/verification/benchmark/RESULTS-v3.md");
+const row = (name) => {
+  const line = need(results.split("\n").find((l) => l.startsWith(`| ${name}`)), `RESULTS-v3 row ${name}`);
+  return line.split("|").slice(2, 5).map((c) => c.replaceAll("*", "").trim());
 };
 const lead = (c) => num(/^\d+/.exec(c)?.[0]);
-const last = (c) => num(/(\d+)%?$/.exec(c)?.[1]);
-const setB = cells("Set B, exact, 60 questions").map(lead);
-const pass3 = cells("Set B, pass^1 / pass^2 / pass^3").map(last);
-const hidden = cells("Set B, hidden instruction not followed (5)").map(lead);
-const abst = cells("Set B, correct abstention (10)").map(lead);
-const novel = cells("Set B, the 7 new-template questions").map(lead);
-const heldSplit = cells("Set B, held-out split (20)").map(lead);
-if (setB[0] !== num(allRow[1]) || setB[1] !== num(allRow[2]) || setB[3] !== num(allRow[3])) throw new Error("gen-data: the live report and RESULTS-v2.md disagree");
+const lastPct = (c) => num(/(\d+)%?$/.exec(c)?.[1]);
+const setD = row("Exact, greedy run").map(lead);
+const heldD = row("Exact on the held-out split (20) / dev split (40)").map((c) => lead(c));
+const newShapes = row("The 6 new shapes nothing was built for").map(lead);
+const passD = row("pass^1 / pass^2 / pass^3 over four runs").map(lastPct);
+const abstD = row("Correct abstention on the 10 unanswerable").map(lead);
+const predictions = need(/All (\w+) held/.exec(results), "prediction line")[1];
+const bench = { n: 60, a0: setD[0], a1: setD[1], a2: setD[2], pass3: passD, heldOut: heldD, newShapes, abstain: abstD, predictions: predictions === "seven" ? 7 : num(predictions) };
+if (!(bench.a2 > bench.a1 && bench.a1 > bench.a0)) throw new Error("gen-data: set D figures not found");
+
+// What was built and checked, read from the status file, the clean-room logs and the enforcement table.
+const status = JSON.parse(read("docs/design/desk/feature-status.json"));
+const feats = status.features ?? status.rows ?? status;
+const featureList = Array.isArray(feats) ? feats : Object.values(feats);
+const built = featureList.filter((f) => f.status === "built").length;
+const absent = featureList.filter((f) => f.status === "absent").map((f) => f.id);
+const logWin = read("docs/verification/clean-room/2026-10-26-windows-11-node-24.20.log");
+const logLin = read("docs/verification/clean-room/2026-10-26-ubuntu-22.04-node-22.23.log");
+const testsOf = (l) => need(/Tests\s+(\d+) passed(?: \| (\d+) skipped)? \((\d+)\)/.exec(l), "clean-room test line");
+const tw = testsOf(logWin), tl = testsOf(logLin);
+const proveOf = (l) => need(/(\d+) PASS, (\d+) FAIL, (\d+) NOT RUN/.exec(l), "prove line");
+const pw = proveOf(logWin), pl = proveOf(logLin);
+const enfOut = run(["enforcement"]);
+const enforcement = [...enfOut.matchAll(/^(Claude Code|Codex CLI|OpenCode|Cline|Cursor|GitHub Copilot CLI|Gemini CLI)\s+(enforced|advisory|notify only)\s+(.*)$/gm)].map((m) => ({ tool: m[1], level: m[2], version: /run live against [A-Za-z ]+? ([\d.]+) on/.exec(m[3])?.[1] ?? null }));
+const swap = read("docs/verification/swap-2026-10-25.md");
+const swapPass = need(/passed ([\d.]+)% of its (\d+) scored runs/.exec(swap), "swap pass rate");
+const swapNeed = need(/The comparison needs (\d+)%/.exec(swap), "swap threshold");
+if (enforcement.length !== 7) throw new Error("gen-data: enforcement table not found");
+const gw = read("docs/verification/gateway-2026-10-24.md");
+const gwSettled = need(/non-stream call \(\d+ in, \d+ out\) settled for (\d+) micro-dollars/.exec(gw), "gateway settled call");
+const gwRefused = need(/refused with 429 `budget_exceeded` in (\d+) ms and never reached the model/.exec(gw), "gateway refusal");
+const product = {
+  features: { built, of: featureList.length, absent },
+  tests: { windows: { passed: num(tw[1]), skipped: num(tw[2] ?? 0), of: num(tw[3]) }, ubuntu: { passed: num(tl[1]), skipped: num(tl[2] ?? 0), of: num(tl[3]) } },
+  prove: { windows: { pass: num(pw[1]), fail: num(pw[2]), notRun: num(pw[3]) }, ubuntu: { pass: num(pl[1]), fail: num(pl[2]), notRun: num(pl[3]) } },
+  enforcement,
+  swap: { passPct: num(swapPass[1]), runs: num(swapPass[2]), needPct: num(swapNeed[1]) },
+  gateway: { settledMicro: num(gwSettled[1]), refusedMs: num(gwRefused[1]) },
+};
 
 // The Desk's own scores of itself.
 const wt = JSON.parse(read("docs/verification/calibration/windtunnel.json"));
 const wc = JSON.parse(read("docs/verification/calibration/windtunnel-control.json"));
 const learn = JSON.parse(read("docs/verification/learning/report.json"));
-const lastRound = learn.rounds.at(-1);
+const evid = read("docs/evidence.md");
+const earlier = need(/(\w+) wrong answers on 120 training questions gave (\w+) verified plans.*?\((\d+) to (\d+) of (\d+), 95% interval (-?[\d.]+) to (-?[\d.]+) points\)/s.exec(evid), "the earlier learning result in docs/evidence.md");
 
 const data = {
-  generatedFrom: "desk demo, desk bench report --sample --set B, docs/verification/**",
+  generatedFrom: "desk demo, docs/verification/**",
   autopsy: { hours: num(head[1]), calls: num(head[2]), cost: num(head[3]), burn: num(head[4]), hiddenPct: num(head[5]), shares, fixes, couldNotKnow },
   zetaris: { teams, billed: num(bill[1]), coverage: num(bill[2]), listEstimate: num(bill[3]), invoiceBelowPct: num(delta[1]), landed: num(ci[1]), withPr: num(ci[2]), mergedGreen: num(ci[3]), mergedRed: num(ci[4]), reverted: num(ci[5]) },
   canary: { day: num(cn[1]), date: cn[2], verdict: cn[3], change: num(ch[1]), lo: num(ch[2]), hi: num(ch[3]), tasks: num(ch[4]), control: { change: num(ctl[1]), lo: num(ctl[2]), hi: num(ctl[3]), tasks: num(ctl[4]) }, primary: { base: num(pr[1]), before: num(pr[2]), latest: num(pr[3]) }, controlRate: { base: num(cr[1]), before: num(cr[2]), latest: num(cr[3]) }, switchDay: num(flip[1]), switchDate: flip[2] },
   propose: { from: held[1], to: held[2], paused: num(held[3]), saved: num(held[4]), blocked: num(held[5]), landed: num(held[6]), inSample: { paused: num(insample[1]), saved: num(insample[2]), blocked: num(insample[3]), landed: num(insample[4]) }, closed: num(att[1]), unresolved: num(att[2]), cells: num(narrows[1]), findings },
   ask: { changes: num(askOn[1]), since: askOn[2], until: askOn[3], on: b5.split("how this answer was checked")[0].trim().split("\n").slice(0, 4), off: askOff.trim(), engines: engineList, accepted: num(auditLine[1]), rejected: num(auditLine[2]) },
-  verify: { steps, badSteps, row: rowErr[1] },
+  verify: { steps, badSteps, badErrors, row: rowErr[1] },
   gate: { exit: num(gateExit[1]), message: gateMsg[1].trim() },
-  bench: { n: 60, a0: setB[0], a1: setB[1], a2: setB[2], a2post: setB[3], pass3, hidden, abstain: abst, novel, heldOut: heldSplit },
+  bench,
+  product,
   self: {
     windTunnel: { inside: wt.inside, n: wt.trials.length, controlInside: wc.inside, controlN: wc.trials.length },
-    learning: { from: learn.rounds[0].exact, to: lastRound.exact, n: lastRound.n, low: lastRound.change.low, high: lastRound.change.high, mistakes: learn.mistakes, resolved: learn.resolved },
+    learning: { from: num(earlier[3]), to: num(earlier[4]), n: num(earlier[5]), low: num(earlier[6]), high: num(earlier[7]), mistakes: word(earlier[1]), resolved: word(earlier[2]), currentMistakes: learn.mistakes },
   },
 };
 

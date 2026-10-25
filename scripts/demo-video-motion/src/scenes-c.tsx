@@ -1,5 +1,4 @@
 import React from "react";
-import { Img, staticFile } from "remotion";
 import { C, Card, Frame, Label, Mono, Reveal, capStarts, prog, useSec } from "./kit";
 import type { SceneDef } from "./scenes-a";
 
@@ -98,56 +97,10 @@ const Architecture: React.FC<{ caps: string[] }> = ({ caps }) => {
   );
 };
 
-// The real product, screen by screen -----------------------------------------------------------------------------------
-const SCREENS = [
-  { img: "brief.png", h: "The brief", s: "The morning brief" },
-  { img: "autopsy.png", h: "The autopsy", s: "Where did the window go?" },
-  { img: "policy.png", h: "The policy tunnel", s: "A policy replayed on a month it never saw" },
-  { img: "ask.png", h: "Ask", s: "Every figure comes from a typed step" },
-  { img: "evidence.png", h: "Evidence", s: "What it measured about itself, failures included" },
-  { img: "dossiers.png", h: "Dossiers", s: "Signed, and verifiable offline" },
-];
-const SHOT = 2.8;
-
-const UiTour: React.FC<{ caps: string[] }> = ({ caps }) => {
-  const t = useSec();
-  const idx = Math.max(0, Math.min(SCREENS.length - 1, Math.floor((t - 0.2) / SHOT)));
-  return (
-    <Frame kicker="The product · twelve screens, one local server" caps={caps}>
-      <div style={{ display: "flex", gap: 44, alignItems: "center" }}>
-        <div style={{ flex: "0 0 1010px", border: `2px solid ${C.line}`, borderRadius: 18, overflow: "hidden", background: "#fff", position: "relative", height: 640 }}>
-          {SCREENS.map((s, i) => {
-            const start = 0.2 + i * SHOT;
-            const show = prog(t, start, 0.5) * (1 - prog(t, start + SHOT - 0.2, 0.4));
-            const zoom = 1 + 0.035 * Math.min(1, Math.max(0, (t - start) / SHOT));
-            const visible = i === SCREENS.length - 1 ? prog(t, start, 0.5) : show;
-            return (
-              <div key={s.img} style={{ position: "absolute", inset: 0, opacity: visible, transform: `scale(${zoom})`, transformOrigin: "50% 40%" }}>
-                <Img src={staticFile(`img/${s.img}`)} style={{ width: 1010, display: "block" }} />
-              </div>
-            );
-          })}
-        </div>
-        <div style={{ flex: 1, display: "grid", gap: 12 }}>
-          {SCREENS.map((s, i) => (
-            <Reveal key={s.h} at={0.4 + i * 0.12} dy={8} dur={0.5}>
-              <div style={{ borderLeft: `6px solid ${i === idx ? C.cipher : C.line}`, paddingLeft: 18, opacity: i === idx ? 1 : 0.45 }}>
-                <div style={{ fontSize: 30, fontWeight: 600, letterSpacing: "-0.02em" }}>{s.h}</div>
-                <div style={{ fontSize: 21, color: C.graphite }}>{s.s}</div>
-              </div>
-            </Reveal>
-          ))}
-        </div>
-      </div>
-    </Frame>
-  );
-};
-
 // Where it goes --------------------------------------------------------------------------------------------------------
 const NEXT = [
-  { h: "Every tool, not one.", s: "A gateway door and per-tool adapters, so Codex and Cursor sit behind the same reserve endpoint." },
-  { h: "Real tasks on a cheaper route.", s: "Recorded tool results and a priced route, with a reproduction gate." },
-  { h: "Teams.", s: "Roles, per-team caps, more than one approver." },
+  { h: "A measured trial on real tasks.", s: "The Lab is built; its feasibility spike has not finished, so no policy's effect on real work has been measured." },
+  { h: "More tools, read and stopped.", s: "Copilot's store holds no token counts; the Anthropic gateway route has not met the real API." },
   { h: "A better range.", s: "A one-month range that holds as often as it says." },
   { h: "Open formats.", s: "The ledger and the dossier as a published standard other desks can write." },
 ];
@@ -155,7 +108,7 @@ const NEXT = [
 const Vision: React.FC<{ caps: string[] }> = ({ caps }) => {
   const cs = capStarts(caps);
   return (
-    <Frame kicker="Where it goes · none of this is built yet" caps={caps}>
+    <Frame kicker="Where it goes · none of this is done yet" caps={caps}>
       <Reveal at={0.2}><div style={{ fontSize: 100, fontWeight: 600, letterSpacing: "-0.05em", lineHeight: 1 }}>From a desk to a gate<br />for every agent.</div></Reveal>
       <div style={{ marginTop: 36, display: "grid", gap: 12 }}>
         {NEXT.map((n, i) => (
@@ -172,28 +125,21 @@ const Vision: React.FC<{ caps: string[] }> = ({ caps }) => {
   );
 };
 
-export const scenesC: Record<"architecture" | "ui" | "vision", SceneDef> = {
+export const scenesC: Record<"architecture" | "vision", SceneDef> = {
   architecture: {
     id: "architecture", kicker: "", Comp: Architecture,
     caps: [
-      "Track 1, fragmented intelligence: logs, invoices, CI and a roster joined through Zetaris, with the conflicts shown.",
-      "Track 2, explain why: every answer is a checked program, every conclusion a signed dossier anyone can verify offline.",
-      "Track 3, reasoning architecture, our primary: plan, critique, revise, replay on a month it never saw.",
+      "Track 1: logs, invoices, CI and a roster joined through Zetaris, with the conflicts shown.",
+      "Track 2: every answer is a checked program, every conclusion a signed dossier.",
+      "Track 3, our primary: plan, critique, revise, replay on a month it never saw.",
       "Cursor is the required IDE; nothing is claimed beyond its log.",
-    ],
-  },
-  ui: {
-    id: "ui", kicker: "", Comp: UiTour, min: 0.2 + SCREENS.length * SHOT + 0.8,
-    caps: [
-      "The same product as twelve screens on a local, read-only server: the brief, the autopsy, the policy tunnel.",
-      "Ask, an evidence screen that shows its own failures, and the signed dossiers.",
     ],
   },
   vision: {
     id: "vision", kicker: "", Comp: Vision,
     caps: [
       "Where it goes: from a desk to a gate for every agent.",
-      "Not built yet: other tools behind the same gate, teams, and an open format.",
+      "Not built yet: a measured trial on real tasks, a better range, and an open format.",
     ],
   },
 };

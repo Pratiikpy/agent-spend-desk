@@ -12,7 +12,7 @@ Code, tests and checks: every numbered feature but DF-121 is built (128 of 129);
 
 Done and checked: slide deck (`docs/submission/deck/deck.html` and `desk-deck.pdf`, 25 slides with the architecture diagram, the stack, both sponsors' use, product screens, the head-to-head and canary evidence, what is not proven); sponsor technology explanation; README run from a fresh clone (verified on Windows 11 and Ubuntu 22.04, Node 22 and 24); sample inputs and a cleaned trace under `input_examples/` and `output_examples/`; `desk prove` with the checks listed in the README; secret scan on the tree and on history; size check.
 
-Built, not uploaded: a 3:49 captioned motion-graphic video (`scripts/demo-video-motion/`, rendered with Remotion; the render of 2026-10-24 is outside the repository). Every figure in it is read from a real run or a committed result file, it has no voice, and the scene-by-scene script is `demo-video-script.md`. The older screen recording (`scripts/demo-video/`) is not to be uploaded: its title card claims Cursor use the repository does not support.
+Built, not uploaded: a 3:56 captioned motion-graphic video (`scripts/demo-video-motion/`, rendered with Remotion; the render of 2026-10-26 is outside the repository). Every figure in it is read from a real run or a committed result file, it has no voice, and the scene-by-scene script is `demo-video-script.md`. The older screen recording (`scripts/demo-video/`) is not to be uploaded: its title card claims Cursor use the repository does not support.
 
 Not done, and only Prateek can do it:
 - Upload the video and put its link in the HackOS form; create the submission (it locks the team); choose Track 3.

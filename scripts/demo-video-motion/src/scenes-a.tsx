@@ -279,13 +279,13 @@ const Propose: React.FC<{ caps: string[] }> = ({ caps }) => {
 
 export const scenesA: SceneDef[] = [
   {
-    id: "hook", kicker: "", Comp: Hook, min: 9,
+    id: "hook", kicker: "", Comp: Hook, min: 8,
     caps: [
       `${autopsy.hours} hours in, the limit appears and I do not know why. A constructed scenario; every figure comes from it.`,
     ],
   },
   {
-    id: "title", kicker: "", Comp: Title, min: 8,
+    id: "title", kicker: "", Comp: Title, min: 7,
     caps: [
       `desk. is a local desk for whoever pays for AI coding agents: it explains, checks, tests and signs.`,
     ],
@@ -301,8 +301,8 @@ export const scenesA: SceneDef[] = [
   {
     id: "zetaris", kicker: "", Comp: Silos,
     caps: [
-      `The bill is not in the logs: invoices in a bucket, CI in Postgres, a roster behind a service.`,
-      `One Zetaris statement joins the three. Invoices land ${zetaris.invoiceBelowPct}% under my list-price estimate.`,
+      `The bill is in three silos: invoices in a bucket, CI in Postgres, a roster behind a service.`,
+      `One Zetaris statement joins them: invoices land ${zetaris.invoiceBelowPct}% under my estimate.`,
       `And ${zetaris.mergedRed} landed sessions merged although the checks were red.`,
     ],
   },
@@ -317,7 +317,7 @@ export const scenesA: SceneDef[] = [
     id: "propose", kicker: "", Comp: Propose,
     caps: [
       `Nemotron drafts a cap policy; code checks it only narrows the one in force.`,
-      `An Attacker looks for requests that step around it. Then it meets a month it never saw.`,
+      `An Attacker hunts for evasions. Then it meets a month it never saw.`,
       `${propose.blocked} of ${propose.landed} landed sessions would have been blocked: the headline, not the savings.`,
     ],
   },

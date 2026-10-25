@@ -186,7 +186,7 @@ Open Agent Hackathon 2026 (GenAI Works): 144 hours, 22 to 27 October 2026, one p
 | Impact | 30 | A meaningful real problem for a clearly defined user, consistent with the challenge statement | The problem sentence; five public quotes; `docs/design/desk/04-evidence-table.md` (146 claims). **Gap: no real user has used it; willingness to pay NOT VERIFIED** |
 | Technical | 20 | Implementation, reliability, architecture | 1,451 tests; `desk prove` with 35 named checks; budgets in code; fallbacks; a pre-registered benchmark whose losing first run is published |
 | Innovation | 15 | Originality | Restrict-only policy check fuzzed against an oracle; an Explainer that never reads the question; a signed dossier a stranger verifies offline; the Desk's own judgement recorded and scored |
-| Demo | 15 | Shows the solution, its functionality and value | 3:49 captioned motion video; `npm run desk -- demo`. **The video is rendered but not uploaded** |
+| Demo | 15 | Shows the solution, its functionality and value | 3:56 captioned motion video; `npm run desk -- demo`. **The video is rendered but not uploaded** |
 | Product and UX | 10 | Intuitive, accessible, easy for the intended user | Thirteen screens, light and dark, phone width |
 | Sponsor tech | 10 | Effective use of sponsor technology | Section 5.4 |
 
@@ -210,7 +210,7 @@ Reward: a clear problem and named user; agents that do real work; critique and r
 | Bounded, predictable runtime (organisers target 5 to 10 minutes) | Offline paths replay recordings; the live path has variable latency (0.4 s to 56 s measured for the same small call) |
 | Save or print agent activity | JSONL trace per run |
 | Declare pre-existing components | `docs/submission/pre-existing-components.md` |
-| Demo video 1 to 4 minutes, naming Zetaris and Meterless and where each sits | 3:49, not yet uploaded |
+| Demo video 1 to 4 minutes, naming Zetaris and Meterless and where each sits | 3:56, not yet uploaded |
 | Slide deck with problem, solution, architecture, stack, sponsor use, visuals, future | `docs/submission/desk-deck.pdf`, 25 slides |
 | README with setup, usage, dependencies | `README.md` |
 | Sponsor technology explanation | `docs/submission/sponsor-technology-explanation.md` |

@@ -13,13 +13,42 @@ Built for the Open Agent Hackathon 2026, Track 3 (Reasoning Architecture), with 
 | ![The morning brief](docs/submission/deck/img/brief.png) | ![The canary calling a regression](docs/submission/deck/img/canary-top.png) | ![An answer checked by code](docs/submission/deck/img/ask.png) |
 | The brief | The canary: a regression called, control arm flat | Ask: every figure comes from a typed step |
 
-Skim path: [The idea](#the-idea), [One product, three tracks](#one-product-three-tracks), [Try it](#try-it), [The evidence](#the-evidence), [Where it goes](#where-it-goes).
+Skim path: [The idea](#the-idea), [Try it](#try-it), [Check it yourself](#check-it-yourself), [One product, three tracks](#one-product-three-tracks), [The evidence](#the-evidence), [What is not built](#what-is-not-built-and-what-is-not-verified).
 
 ## The idea
 
 Most tools that watch AI spend show a number. desk. treats every number as a claim: it must carry the rows it came from, say what it could not know, and survive a test on data it never saw. The same discipline runs through the whole product. A figure is computed by code, never by the model. A policy is replayed on a month it was not drafted from, and the headline is the landed work it would have blocked. A regression is called only against a control arm. A conclusion is signed so that a stranger can verify it offline. Where it fell short of its own label (a "90%" range that held 73% of the time), it says so on screen.
 
 Usage trackers such as ccusage and CodexBar read agent logs and show cost; as far as we read them on 2026-10-20 (`docs/design/desk/05-track-coverage-and-sources.md`), none ties each dollar to landed work, replays a policy on a month it did not see, calls a regression against a control arm, or signs the result. desk. takes their log-reading and pace ideas and adds those.
+
+## Try it
+
+Needs Node 22.19 or later (run on 22.23 and 24.20; 22.19 itself is NOT VERIFIED). Nothing else for the sample.
+
+```
+git clone https://github.com/Pratiikpy/agent-spend-desk.git && cd agent-spend-desk
+npm install
+npm run desk -- --sample      # the limit autopsy card, on a constructed sample, offline (about 20 seconds)
+npm run desk -- demo          # the whole demo in scenes, offline (under a minute); add --compare to see every figure move on a changed sample
+npm run desk -- ui --sample   # fourteen screens on a local, read-only server
+npm run desk -- prove         # every check, each PASS, FAIL or NOT RUN
+npm run desk -- help          # every command, grouped by what you are trying to do
+npm test                      # the unit and integration tests
+```
+
+**On your own logs:** `npm run desk` reads `~/.claude/projects` read-only and prints your own limit autopsy in under three minutes: where your last heavy window went, which fix is worth making, and what the Desk could not know. Add `--repo <path>` to tie sessions to commits. Nothing is written outside `data/desk/`.
+
+Verified from fresh clones at commit `4485f52` (every commit after it changes documents only, starting with this line): typecheck clean, 2,655 tests (2,654 passed and one skipped on Windows, 2,653 passed and two skipped on Ubuntu, the skips being tests that need tools or a platform the machine lacks) and `desk prove` at 60 PASS, 0 FAIL, 0 NOT RUN, on Windows 11 with Node 24.20 and Ubuntu 22.04 (WSL) with Node 22.23 (`docs/verification/clean-room/`). Node 22.19 and macOS are NOT VERIFIED. On PowerShell, `$env:SAMPLE_MODE="true"` does the same as `--sample`.
+
+## Check it yourself
+
+Five things that take a few minutes each and need no key, so that no figure has to be taken on trust:
+
+1. **Move the figures.** `npm run desk -- demo --compare` runs the demonstration on a changed sample and shows every figure move; nothing in it is typed in.
+2. **Switch an engine off.** `npm run desk -- ask "What changed before 2026-10-15?" --sample`, then the same with `--ablate world_model`: the answer becomes "unknowable", which is the evidence that the engine does something.
+3. **Verify a conclusion as a stranger.** `npm run desk -- propose --sample --dossier` drafts and replays a policy and prints an approval line; run that line, and the output ends with the exact `desk-verify` command for the signed dossier it wrote. It recomputes the figures on plain Node with the network off. Change one byte in a row file in that folder and run it again: it names the row.
+4. **See what it can stop.** `npm run desk -- enforcement` lists each agent tool as enforced, advisory or notify only, with the version and the date of the test behind each; `npm run desk -- prove` runs every check and says PASS, FAIL or NOT RUN.
+5. **Try to step around a policy.** `npm run desk -- attack policies/stop-loops.yaml` runs the attacker corpus against a policy file and says how many generated policy pairs the restrict check was held to (2,000 here, and that is the number tried, not a proof).
 
 ## At a glance
 
@@ -43,25 +72,6 @@ One primary track is judged, and we submit under **Track 3**. The same product a
 | 1. Solving fragmented intelligence | Agent logs, plus invoices (files), CI (Postgres) and a seat roster (REST) joined by one Zetaris statement into one ledger. The three silos are synthetic, derived from the constructed sample; the single statement that joins them and the conflicts it finds are real code. It shows where the sources disagree: invoices land 1.2% under the list-price estimate, and 60 of 644 landed sessions merged although the checks were red. | `desk silos`, `desk landing` |
 | 2. The agent that can explain why | Ask turns a question into a typed program that read-only specialists run, and an Auditor rejects any figure no claim supports. Every conclusion is a signed dossier that a stranger verifies offline; one changed byte names the row. | `desk ask`, `npm run desk-verify` |
 | 3. Reasoning architecture (primary) | Plan, critique, revise, replay: a Planner and its critic, specialists, an Auditor and Explainer, a Drafter, a restrict-only check and an Attacker, a canary with a control arm, Meterless engines as memory, Nemotron in every language role, and a pre-registered head-to-head against a tool agent. | `desk propose`, `desk bench report` |
-
-## Try it
-
-Needs Node 22.19 or later (run on 22.23 and 24.20; 22.19 itself is NOT VERIFIED). Nothing else for the sample.
-
-```
-git clone https://github.com/Pratiikpy/agent-spend-desk.git && cd agent-spend-desk
-npm install
-npm run desk -- --sample      # the limit autopsy card, on a constructed sample, offline (about 20 seconds)
-npm run desk -- demo          # the whole demo in scenes, offline (under a minute); add --compare to see every figure move on a changed sample
-npm run desk -- ui --sample   # fourteen screens on a local, read-only server
-npm run desk -- prove         # every check, each PASS, FAIL or NOT RUN
-npm run desk -- help          # every command, grouped by what you are trying to do
-npm test                      # the unit and integration tests
-```
-
-**On your own logs:** `npm run desk` reads `~/.claude/projects` read-only and prints your own limit autopsy in under three minutes: where your last heavy window went, which fix is worth making, and what the Desk could not know. Add `--repo <path>` to tie sessions to commits. Nothing is written outside `data/desk/`.
-
-Verified from fresh clones at commit `4485f52` (every commit after it changes documents only, starting with this line): typecheck clean, 2,655 tests (2,654 passed and one skipped on Windows, 2,653 passed and two skipped on Ubuntu, the skips being tests that need tools or a platform the machine lacks) and `desk prove` at 60 PASS, 0 FAIL, 0 NOT RUN, on Windows 11 with Node 24.20 and Ubuntu 22.04 (WSL) with Node 22.23 (`docs/verification/clean-room/`). Node 22.19 and macOS are NOT VERIFIED. On PowerShell, `$env:SAMPLE_MODE="true"` does the same as `--sample`.
 
 ## The problem
 
