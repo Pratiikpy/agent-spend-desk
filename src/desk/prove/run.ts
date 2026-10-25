@@ -1,4 +1,5 @@
 import { snapshotsFromDir } from "../close/month-bill.ts";
+import { adapterProve } from "./adapter-check.ts";
 import { auditProve } from "./audit-check.ts";
 import { verifyChain, verifyLedger } from "../ledger/chain.ts";
 import { billCommand } from "../bill/command.ts";
@@ -638,6 +639,15 @@ const CHECKS: Check[] = [
     seed: SEED,
     async run(e) {
       const r = auditProve(e.db, loadSnapshot(PRICES));
+      return r.ok ? pass(r.detail) : fail(r.detail);
+    },
+  },
+  {
+    id: "open-format-and-adapter-harness-refuse-what-is-broken",
+    command: "write the sample ledger as desk.events/1 and read it back, load the shipped reference adapter in its sandbox, and try four broken copies of it",
+    seed: SEED,
+    async run(e) {
+      const r = adapterProve(e.db, "adapters/example-usage-jsonl");
       return r.ok ? pass(r.detail) : fail(r.detail);
     },
   },

@@ -2,7 +2,7 @@
 
 Generated from `feature-status.json` by `npm run desk -- status` and checked by `tests/desk/feature-status.test.ts`. The specification is `02-feature-list.md`, which was written as design; this page says how much of it exists.
 
-**91 built, 23 partial, 15 absent** of 129.
+**92 built, 23 partial, 14 absent** of 129.
 
 How to read a status. *Built*: the core of the feature as specified exists and a test, a `desk prove` check or a verification record exercises it. *Partial*: a real part exists and the missing part is named. *Absent*: no code was found. A status is a judgement made by reading and searching, which is why every row cites the files it rests on. A built feature can still be shallow; the "missing" column says so where known.
 
@@ -70,7 +70,7 @@ How to read a status. *Built*: the core of the feature as specified exists and a
 | DF-060 CI gate | built | `src/desk/ci/gate.ts`, `src/desk/ci/command.ts`, `src/desk/ci/simulate.ts`, `tests/desk/ci.test.ts`, `docs/verification/ci-gate-2026-10-25.md` | Not run in a real pipeline with a live model; false-alarm study is on simulated packs |
 | DF-061 Seat return and renewal sheet | built | `src/desk/seats/seats.ts`, `src/desk/seats/command.ts`, `src/desk/prove/run.ts` | the renewal sheet export is not verified |
 | DF-062 Bill auditor and dispute pack | built | `src/desk/billing/audit.ts`, `src/desk/billing/audit-pack.ts`, `src/desk/billing/audit-report.ts`, `src/desk/billing/audit-command.ts`, `src/desk/prove/audit-check.ts`, `src/desk/prove/run.ts`, `tests/desk/billing-audit.test.ts`, `docs/verification/bill-auditor-2026-10-25.md` | Judges lines by day against the owner's side of the logs only; no named vendor's per-outcome export was available, only CSV in the generic columns; no join on a vendor id |
-| DF-063 Adapter SDK and open ledger format | absent | none | no adapter SDK or published ledger format |
+| DF-063 Adapter SDK and open ledger format | built | `src/desk/open/events.ts`, `src/desk/open/export.ts`, `src/desk/open/adapter.ts`, `src/desk/open/adapter-runner.mjs`, `src/desk/open/command.ts`, `src/desk/ledger/ingest-events.ts`, `src/desk/ledger/db.ts`, `src/desk/prove/adapter-check.ts`, `src/desk/prove/run.ts`, `adapters/example-usage-jsonl/adapter.json`, `tests/desk/open-events.test.ts`, `tests/desk/open-adapter.test.ts`, `docs/verification/open-ledger-and-adapters-2026-10-25.md` | No adapter built from a real third-party sample (the shipped one is constructed and cannot import); the sandbox rests on Node's permission model and an import allow-list, not audited; no independent writer of the format tried |
 | DF-064 Opt-in public regression index | absent | none | no public regression index |
 | DF-065 Shareable rule packs and canary templates | absent | none | no shareable rule packs or canary templates |
 | DF-066 Claim ledger with exact quote, number and comparative checks | built | `src/desk/agents/claims.ts`, `src/desk/agents/audit.ts`, `tests/desk/agents.test.ts` | - |

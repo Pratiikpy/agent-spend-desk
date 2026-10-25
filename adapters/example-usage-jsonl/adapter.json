@@ -1,0 +1,26 @@
+{
+  "id": "example-usage-jsonl",
+  "tool": "Acme CLI (made-up example)",
+  "version": "0.1.0",
+  "description": "Reads the usage log of a made-up tool, to show how an adapter is written.",
+  "license": "MIT",
+  "schema": "desk.events/1",
+  "entry": "adapter.mjs",
+  "sample": {
+    "file": "fixtures/sample.jsonl",
+    "sha256": "63d3351e18f70182e5e89402fbaa823e85d6ac43a4869173c9f604d63748d526",
+    "kind": "constructed",
+    "origin": "Written by the SDK authors to show how an adapter is made; Acme CLI does not exist and this is not a real tool's file.",
+    "capturedAt": "2026-10-25"
+  },
+  "fixtures": [
+    {
+      "input": "fixtures/sample.jsonl",
+      "golden": "fixtures/sample.jsonl.golden.jsonl"
+    },
+    {
+      "input": "fixtures/edge.jsonl",
+      "golden": "fixtures/edge.jsonl.golden.jsonl"
+    }
+  ]
+}

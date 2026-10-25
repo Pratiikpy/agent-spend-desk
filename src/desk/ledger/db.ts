@@ -577,7 +577,29 @@ CREATE TABLE question_decision (
 );
 `;
 
-const MIGRATIONS: readonly string[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8, SCHEMA_V9, SCHEMA_V10, SCHEMA_V11, SCHEMA_V12, SCHEMA_V13, SCHEMA_V14, SCHEMA_V15, SCHEMA_V16, SCHEMA_V17, SCHEMA_V18, SCHEMA_V19, SCHEMA_V20, SCHEMA_V21, SCHEMA_V22, SCHEMA_V23];
+// One more kind of source: a file of desk.events/1 records written by another tool or by an adapter (DF-063).
+const SCHEMA_V24 = `${FOREIGN_KEYS_OFF}
+
+CREATE TABLE ingest_source_v24 (
+  id INTEGER PRIMARY KEY,
+  kind TEXT NOT NULL CHECK (kind IN ('claude_code', 'codex', 'opencode', 'gateway', 'otel', 'events')),
+  path TEXT NOT NULL UNIQUE,
+  size_bytes INTEGER NOT NULL CHECK (size_bytes >= 0),
+  offset_bytes INTEGER NOT NULL CHECK (offset_bytes >= 0),
+  last_ingested_at TEXT NOT NULL,
+  agent_id TEXT,
+  workflow_run TEXT,
+  skewed_lines INTEGER NOT NULL DEFAULT 0,
+  future_lines INTEGER NOT NULL DEFAULT 0,
+  content_digest TEXT
+);
+INSERT INTO ingest_source_v24 (id, kind, path, size_bytes, offset_bytes, last_ingested_at, agent_id, workflow_run, skewed_lines, future_lines, content_digest)
+  SELECT id, kind, path, size_bytes, offset_bytes, last_ingested_at, agent_id, workflow_run, skewed_lines, future_lines, content_digest FROM ingest_source;
+DROP TABLE ingest_source;
+ALTER TABLE ingest_source_v24 RENAME TO ingest_source;
+`;
+
+const MIGRATIONS: readonly string[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8, SCHEMA_V9, SCHEMA_V10, SCHEMA_V11, SCHEMA_V12, SCHEMA_V13, SCHEMA_V14, SCHEMA_V15, SCHEMA_V16, SCHEMA_V17, SCHEMA_V18, SCHEMA_V19, SCHEMA_V20, SCHEMA_V21, SCHEMA_V22, SCHEMA_V23, SCHEMA_V24];
 
 /** The schema version this build writes: the number of migrations. A reader compares a ledger's `user_version` with it. */
 export const SCHEMA_VERSION = MIGRATIONS.length;

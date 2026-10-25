@@ -1,3 +1,4 @@
+import { adaptersCommand, eventsCommand } from "./open/command.ts";
 import { auditCommand } from "./billing/audit-command.ts";
 import { readAttentionLoad } from "./gate/readout.ts";
 import { baselineReproduction, withheldNotice } from "./replay/reproduction.ts";
@@ -199,6 +200,14 @@ const { values, positionals } = parseOrExit({
     export: { type: "string" },
     "if-due": { type: "boolean", default: false },
     output: { type: "string" },
+    id: { type: "string" },
+    tool: { type: "string" },
+    from: { type: "string" },
+    kind: { type: "string" },
+    origin: { type: "string" },
+    "write-golden": { type: "boolean", default: false },
+    "with-paths": { type: "boolean", default: false },
+    "adapters-dir": { type: "string" },
     definition: { type: "string" },
     pack: { type: "string" },
     sign: { type: "boolean", default: false },
@@ -393,6 +402,24 @@ Answer one with: desk questions answer <id> yes|no. Or go through them: desk que
     });
     await watchLogs({ poll: () => newestMtimeMs(findJsonlLogs(values["claude-dir"])), refresh: draw, sleep: (ms) => new Promise((r) => setTimeout(r, ms)), intervalMs: 3000, shouldStop: () => stop });
   } else await draw();
+} else if (command === "events" || command === "adapters") {
+  const opts = {
+    snapshot: loadSnapshot(pricesPath),
+    ...(values.output ? { out: values.output } : {}),
+    ...(values.since ? { since: values.since } : {}),
+    ...(values.until ? { until: values.until } : {}),
+    ...(values.tool ? { tool: values.tool, toolName: values.tool } : {}),
+    ...(values["with-paths"] ? { withPaths: true } : {}),
+    ...(values["adapters-dir"] ? { adaptersDir: values["adapters-dir"] } : {}),
+    ...(values.id ? { id: values.id } : {}),
+    ...(values.from ? { sample: values.from } : {}),
+    ...(values.kind ? { kind: values.kind } : {}),
+    ...(values.origin ? { origin: values.origin } : {}),
+    ...(values["write-golden"] ? { writeGolden: true } : {}),
+  };
+  const done = command === "events" ? await eventsCommand(positionals.slice(1), db, opts) : await adaptersCommand(positionals.slice(1), db, opts);
+  console.log(done.text);
+  if (!done.ok) process.exitCode = 1;
 } else if (command === "invoices" && positionals[1] === "audit") {
   const audited = auditCommand(db, {
     snapshot: loadSnapshot(pricesPath),

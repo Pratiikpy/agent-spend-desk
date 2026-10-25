@@ -1,0 +1,247 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "desk.events/1",
+  "description": "One record of a desk.events/1 file (JSON Lines). The first record is the header.",
+  "oneOf": [
+    {
+      "title": "header",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "type",
+        "tool"
+      ],
+      "properties": {
+        "schema": {
+          "const": "desk.events/1"
+        },
+        "type": {
+          "const": "header"
+        },
+        "tool": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_-]{1,39}$"
+        },
+        "tool_version": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 64
+        },
+        "produced_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?Z$",
+          "description": "ISO 8601 UTC, ending in Z"
+        }
+      }
+    },
+    {
+      "title": "session",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "session_id"
+      ],
+      "properties": {
+        "type": {
+          "const": "session"
+        },
+        "session_id": {
+          "type": "string",
+          "maxLength": 200,
+          "minLength": 1
+        },
+        "tool": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[a-z][a-z0-9_-]{1,39}$"
+        },
+        "project_path": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 1024
+        },
+        "git_branch": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 1024
+        },
+        "tool_version": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 64
+        }
+      }
+    },
+    {
+      "title": "call",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "call_id",
+        "session_id",
+        "ts",
+        "model",
+        "input_tokens",
+        "output_tokens"
+      ],
+      "properties": {
+        "type": {
+          "const": "call"
+        },
+        "call_id": {
+          "type": "string",
+          "maxLength": 200,
+          "minLength": 1
+        },
+        "session_id": {
+          "type": "string",
+          "maxLength": 200,
+          "minLength": 1
+        },
+        "ts": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?Z$",
+          "description": "ISO 8601 UTC, ending in Z"
+        },
+        "model": {
+          "type": "string",
+          "maxLength": 200,
+          "minLength": 1
+        },
+        "input_tokens": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000000000
+        },
+        "output_tokens": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000000000
+        },
+        "request_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 200
+        },
+        "reasoning_tokens": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 10000000000
+        },
+        "cache_read_tokens": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 10000000000
+        },
+        "cache_write_tokens": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 10000000000
+        },
+        "cache_write_5m_tokens": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 10000000000
+        },
+        "cache_write_1h_tokens": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 10000000000
+        },
+        "service_tier": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 64
+        },
+        "speed": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 64
+        },
+        "stop_reason": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 64
+        },
+        "is_sidechain": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "is_api_error": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "tool_names": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "maxItems": 100,
+          "items": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1
+          }
+        },
+        "reported_cost_micros": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 10000000000
+        },
+        "reported_currency": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[A-Z]{3}$"
+        }
+      }
+    }
+  ]
+}
