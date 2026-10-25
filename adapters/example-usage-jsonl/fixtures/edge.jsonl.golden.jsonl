@@ -1,0 +1,4 @@
+{"schema":"desk.events/1","type":"header","tool":"example-usage-jsonl","tool_version":"0.1.0","produced_at":null}
+{"type":"session","session_id":"acme-s9"}
+{"type":"call","call_id":"e-1","session_id":"acme-s9","ts":"2026-10-21T00:00:00Z","model":"claude-haiku-5-5","input_tokens":10,"output_tokens":2}
+{"type":"call","call_id":"e-3","session_id":"acme-s9","ts":"2026-10-21T00:00:05Z","model":"claude-haiku-5-5","input_tokens":11,"output_tokens":3,"tool_names":[]}

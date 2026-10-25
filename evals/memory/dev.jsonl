@@ -1,0 +1,28 @@
+{"id": "dev-01", "question": "What did I say about the billing module?", "about": ["n01"]}
+{"id": "dev-02", "question": "When does a piece of payments code count as finished?", "about": ["n01"]}
+{"id": "dev-03", "question": "Which of my notes are about dependabot?", "about": ["n02"]}
+{"id": "dev-04", "question": "Should automated dependency bumps be treated as people's work?", "about": ["n02"]}
+{"id": "dev-05", "question": "Who gets the credit for what the interns did?", "about": ["n03"]}
+{"id": "dev-06", "question": "What did I tell you about seats shared between several people?", "about": ["n03"]}
+{"id": "dev-07", "question": "Where is the expensive model allowed?", "about": ["n04"]}
+{"id": "dev-08", "question": "What did I say about when to use the biggest model?", "about": ["n04"]}
+{"id": "dev-09", "question": "What day does the accounting period end?", "about": ["n05"]}
+{"id": "dev-10", "question": "On which weekdays are the Northwind people around?", "about": ["n06"]}
+{"id": "dev-11", "question": "Is anything exempt from the spending limit when things are on fire?", "about": ["n07"]}
+{"id": "dev-12", "question": "What did I tell you about the data platform?", "about": ["n07"]}
+{"id": "dev-13", "question": "Is trying a refactor again a loss?", "about": ["n08"]}
+{"id": "dev-14", "question": "Can a trial that gets dropped be called a failure?", "about": ["n09"]}
+{"id": "dev-15", "question": "Who signs off on big daily amounts?", "about": ["n10"]}
+{"id": "dev-16", "question": "Who has to approve spend over a threshold?", "about": ["n10"]}
+{"id": "dev-17", "question": "What happens to work that gets undone?", "about": ["n11"]}
+{"id": "dev-18", "question": "When do the bills show up?", "about": ["n12"]}
+{"id": "dev-19", "question": "Which model do the phone app developers like?", "about": ["n13"]}
+{"id": "dev-20", "question": "Who pays for what the scheduled jobs run?", "about": ["n14"]}
+{"id": "dev-21", "question": "What is the weather in Paris?", "about": []}
+{"id": "dev-22", "question": "Who won the football match last night?", "about": []}
+{"id": "dev-23", "question": "What is the capital of Australia?", "about": []}
+{"id": "dev-24", "question": "Remind me how to bake bread.", "about": []}
+{"id": "dev-25", "question": "How many moons does Jupiter have?", "about": []}
+{"id": "dev-26", "question": "What did I tell you about my holiday plans?", "about": []}
+{"id": "dev-27", "question": "Translate good morning into Japanese.", "about": []}
+{"id": "dev-28", "question": "What is the tallest mountain?", "about": []}

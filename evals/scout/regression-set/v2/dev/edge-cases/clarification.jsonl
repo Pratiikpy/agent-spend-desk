@@ -1,0 +1,8 @@
+{"id":"dev-edge-001","prompt":"Take care of the Soylent matter","user":{"role":"ae"},"surface":"chat","expected":{"clarification":true},"tags":["edge"]}
+{"id":"dev-edge-002","prompt":"Do what we decided last week","user":{"role":"ae"},"surface":"chat","expected":{"clarification":true},"tags":["edge"]}
+{"id":"dev-edge-003","prompt":"Sort it out","user":{"role":"ae"},"surface":"chat","expected":{"clarification":true},"tags":["edge"]}
+{"id":"dev-edge-004","prompt":"Fix that","user":{"role":"ae"},"surface":"chat","expected":{"clarification":true},"tags":["edge"]}
+{"id":"dev-edge-005","prompt":"Show me the Umbrella deal","user":{"role":"ae"},"surface":"chat","expected":{"intent":"deal.query","clarification":false},"tags":["edge"]}
+{"id":"dev-edge-006","prompt":"Email Priya about the contract","user":{"role":"ae"},"surface":"chat","expected":{"intent":"email.draft","clarification":false},"tags":["edge"]}
+{"id":"dev-edge-007","prompt":"Remind me about it","user":{"role":"ae"},"surface":"chat","expected":{"clarification":true},"tags":["edge"]}
+{"id":"dev-edge-008","prompt":"Compare them","user":{"role":"pm"},"surface":"chat","expected":{"clarification":true},"tags":["edge"]}

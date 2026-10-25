@@ -71,3 +71,5 @@ docs/plan/external-blueprint-*.md
 
 # The vendored Scout runner writes its report here on every run
 evals/scout/reports/
+!adapters/**/*.jsonl
+!evals/**/*.jsonl

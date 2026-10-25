@@ -1,0 +1,5 @@
+{"acme_usage":1,"id":"e-1","at":"2026-10-21T00:00:00Z","session":"acme-s9","model":"claude-haiku-5-5","in":10,"out":2}
+
+{"acme_usage":0,"id":"e-2"}
+{"acme_usage":1,"id":"e-3","at":"2026-10-21T00:00:05Z","session":"acme-s9","model":"claude-haiku-5-5","in":11,"out":3,"tools":[]}
+{"acme_usage":1,"id":"e-4","at":"2026-10-21T00:0

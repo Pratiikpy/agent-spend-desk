@@ -1,0 +1,14 @@
+{"id":"test-edge-001","prompt":"Take care of the Contoso thing","user":{"role":"ae"},"surface":"chat","expected":{"clarification":true},"tags":["edge"]}
+{"id":"test-edge-002","prompt":"Do what we agreed last time","user":{"role":"ae"},"surface":"chat","expected":{"clarification":true},"tags":["edge"]}
+{"id":"test-edge-003","prompt":"Handle it","user":{"role":"ae"},"surface":"chat","expected":{"clarification":true},"tags":["edge"]}
+{"id":"test-edge-004","prompt":"Sort out Q3","user":{"role":"ae"},"surface":"chat","expected":{"clarification":true},"tags":["edge"]}
+{"id":"test-edge-005","prompt":"The usual please","user":{"role":"ae"},"surface":"chat","expected":{"clarification":true},"tags":["edge"]}
+{"id":"test-edge-006","prompt":"Fix that","user":{"role":"ae"},"surface":"chat","expected":{"clarification":true},"tags":["edge"]}
+{"id":"test-edge-007","prompt":"Show me the Contoso deal","user":{"role":"ae"},"surface":"chat","expected":{"intent":"deal.query","clarification":false},"tags":["edge"]}
+{"id":"test-edge-008","prompt":"Email Pat about the invoice","user":{"role":"ae"},"surface":"chat","expected":{"intent":"email.draft","clarification":false},"tags":["edge"]}
+{"id":"test-edge-009","prompt":"Remind me about it","user":{"role":"ae"},"surface":"chat","expected":{"clarification":true},"tags":["edge"]}
+{"id":"test-edge-010","prompt":"What about the other one?","user":{"role":"ae"},"surface":"chat","expected":{"clarification":true},"tags":["edge"]}
+{"id":"test-edge-011","prompt":"Schedule the review","user":{"role":"ae"},"surface":"chat","expected":{"intent":"calendar.create","clarification":false},"tags":["edge"]}
+{"id":"test-edge-012","prompt":"Summarize it","user":{"role":"exec"},"surface":"chat","expected":{"clarification":true},"tags":["edge"]}
+{"id":"test-edge-013","prompt":"Compare them","user":{"role":"pm"},"surface":"chat","expected":{"clarification":true},"tags":["edge"]}
+{"id":"test-edge-014","prompt":"Move the Hooli deal to closed-won","user":{"role":"ae"},"surface":"chat","expected":{"intent":"deal.update","clarification":true},"tags":["edge"]}
