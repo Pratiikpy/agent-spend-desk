@@ -66,6 +66,7 @@ export const COMMANDS: readonly CommandHelp[] = [
   { name: "precedents", group: "Ask and remember", summary: "Policy changes you approved and what they did afterwards, shown to the next proposal that touches the same rules." },
   { name: "memory", group: "Ask and remember", summary: "What the Desk remembers: mine statements from what you say, mark a memory helpful or wrong, and run the sleep cycle with a backup." },
   { name: "replay-decision", group: "Evidence", summary: "Re-execute an approved policy decision from its signed dossier, offline, and compare every stage with what was attested." },
+  { name: "embed", group: "Ask and remember", summary: "Where meaning comes from for routing and for your notes: status, a recall evaluation, and recording vectors from the endpoint." },
   { name: "scout", group: "Ask and remember", summary: "How a request is read before Ask plans anything: a question, or a change to spend or policy. \"scout eval\" measures it." },
   { name: "scorecard", group: "Ask and remember", summary: "The reasoning and sponsor scorecard, recomputed: which roles matter, what each engine and Zetaris change, with NOT VERIFIED where unmeasured." },
   { name: "engines", group: "Ask and remember", summary: "The engines on a long ledger: year-long questions with Markovian on and off, the kept carry state, and the engine's own run record." },

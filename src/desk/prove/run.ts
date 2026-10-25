@@ -1,6 +1,7 @@
 import { snapshotsFromDir } from "../close/month-bill.ts";
 import { adapterProve } from "./adapter-check.ts";
 import { decisionProve } from "./decision-check.ts";
+import { embedProve } from "./embed-check.ts";
 import { scoutProve } from "./scout-check.ts";
 import { sampleEnv, type Env } from "./env.ts";
 import { auditProve } from "./audit-check.ts";
@@ -644,6 +645,15 @@ const CHECKS: Check[] = [
     seed: SEED,
     async run() {
       const r = await scoutProve();
+      return r.ok ? pass(r.detail) : fail(r.detail);
+    },
+  },
+  {
+    id: "owner-notes-are-found-by-meaning-and-fall-back-to-words",
+    command: "recompute how the owner's notes are found with the recorded embedding vectors and by words alone, compare with the recorded file, then fail the embedder and remove the vectors",
+    seed: SEED,
+    async run() {
+      const r = await embedProve();
       return r.ok ? pass(r.detail) : fail(r.detail);
     },
   },

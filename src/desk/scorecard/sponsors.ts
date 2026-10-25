@@ -6,6 +6,8 @@ import { RESULTS_FILE_D, RESULTS_FILE_E } from "../bench/command.ts";
 import { readResults } from "../bench/run.ts";
 import { OwnerMemory } from "../engines/memory.ts";
 import { runYearCheck } from "../engines/year-check.ts";
+import { DEFAULT_EMBED_MODEL } from "../embed/port.ts";
+import { RECALL_RECORD, type RecallRecord } from "../engines/recall-eval.ts";
 import { scoutEvaluation } from "../scout/command.ts";
 import type { EngineName } from "../engines/load.ts";
 import { MemoryTrace } from "../agents/trace.ts";
@@ -80,7 +82,7 @@ export async function enginesSection(db: Ledger, truth: Truth): Promise<Section>
 
   // Scout Intent: the router that reads a request before Ask plans anything. Measured on the questions written for the Desk, with the engine on, the older rules alone, and the engine off.
   const scout = await scoutEvaluation();
-  const sc = (split: "dev" | "test") => scout.routes[split].scores;
+  const sc = (split: "dev" | "test") => scout.standIn.routes[split].scores;
   const ts = sc("test");
   const d = sc("dev");
   const share = (x: number): string => pct(Math.round(x * 1000), 1000);
@@ -90,13 +92,28 @@ export async function enginesSection(db: Ledger, truth: Truth): Promise<Section>
   metrics.push(measured("engines.scout_intent.test.recall", "Scout Intent: test requests caught, by kind (spend change, policy change, unsafe), with Scout", `${share(ts.default.recall.spend_action)}, ${share(ts.default.recall.policy_change)}, ${share(ts.default.recall.unsafe)}`));
   metrics.push(measured("engines.scout_intent.test.flags", `Scout Intent: of ${ts.default.counts.flagged} test questions that carry instruction-like text, the share flagged; of the clean ones, the share flagged anyway`, `${share(ts.default.flag_recall)}, ${share(ts.default.flag_false_positive)}`));
   metrics.push(measured("engines.scout_intent.dev.accuracy", `Scout Intent: the ${d.default.counts.total} development questions the router was tuned on, same three settings`, `${share(d.default.accuracy)}, ${share(d.rules.accuracy)}, ${share(d.off.accuracy)}`, "tuned on, so higher than it would be on questions nobody has looked at"));
-  const v1 = scout.evaluations.v1;
-  const v2 = scout.evaluations.test;
+  const v1 = scout.standIn.evaluations.v1;
+  const v2 = scout.standIn.evaluations.test;
   metrics.push(measured("engines.scout_intent.harness.v1", `Scout Intent: the Meterless harness's gate on its ${v1.examples}-example regression set`, v1.gate.pass ? "pass" : "fail", "the examples are the registry's own prompts, so this shows the harness runs, not that routing generalises"));
   metrics.push(measured("engines.scout_intent.harness.v2", `Scout Intent: the Meterless harness's gate on ${v2.examples} paraphrases written for its registry (intent top-1, top-3, tool precision)`, `${v2.gate.pass ? "pass" : "fail"}: ${v2.metrics["intent_top1"]?.toFixed(3)}, ${v2.metrics["intent_top3_recall"]?.toFixed(3)}, ${v2.metrics["tool_precision"]?.toFixed(3)}`, `hard lines missed: ${v2.gate.failures.length}; the specification asks for intent top-1 of 0.85 or more`));
   if (ts.default.action_as_read < ts.rules.action_as_read) {
     findings.push(`Scout Intent: on ${ts.default.counts.total} test questions (${ts.default.counts.read} plain, ${ts.default.counts.nonRead} that ask for a change or a secret) ${share(ts.default.action_as_read)} of the requests reach the planner as questions with Scout, ${share(ts.rules.action_as_read)} with the older word rules alone and ${share(ts.off.action_as_read)} with Scout off; ${share(ts.default.false_refusal)} of the plain questions are refused. The router reads the request before any step runs, and on a failure it refuses.`);
   } else dropped.push("Scout Intent");
+
+  // The same router with recorded embedding vectors in its second stage, and the owner's notes found by words and with vectors.
+  if (scout.embedded) {
+    const eb = scout.embedded;
+    const et = eb.routes.test.scores;
+    const ev2 = eb.evaluations.test;
+    metrics.push(measured("engines.scout_intent.embedded.harness.v2", `Scout Intent with recorded ${DEFAULT_EMBED_MODEL} vectors: the harness's gate on the same ${ev2.examples} paraphrases (intent top-1, top-3, tool precision)`, `${ev2.gate.pass ? "pass" : "fail"}: ${ev2.metrics["intent_top1"]?.toFixed(3)}, ${ev2.metrics["intent_top3_recall"]?.toFixed(3)}, ${ev2.metrics["tool_precision"]?.toFixed(3)}`, `hard lines missed: ${ev2.gate.failures.length}; the merge range was chosen on the development paraphrases`));
+    metrics.push(measured("engines.scout_intent.embedded.test.accuracy", `Scout Intent with recorded vectors: ${et.default.counts.total} test questions routed to the right kind, and requests to change something that reach the planner as questions`, `${share(et.default.accuracy)}, ${share(et.default.action_as_read)}`, `with the built-in comparison: ${share(ts.default.accuracy)}, ${share(ts.default.action_as_read)}; the difference is ${Math.round((et.default.action_as_read - ts.default.action_as_read) * et.default.counts.nonRead)} of ${et.default.counts.nonRead} requests`));
+    findings.push(`Scout Intent with recorded ${DEFAULT_EMBED_MODEL} vectors in its second stage: intent top-1 on the paraphrases written for Meterless's registry goes from ${v2.metrics["intent_top1"]?.toFixed(3)} to ${ev2.metrics["intent_top1"]?.toFixed(3)} (the gate still ${ev2.gate.pass ? "passes" : "fails"}); the Desk's own four-way routing goes from ${share(ts.default.accuracy)} to ${share(et.default.accuracy)} right, which is not a difference this question set can show.`);
+  }
+  const rr = JSON.parse(readFileSync(RECALL_RECORD, "utf8")) as RecallRecord;
+  const share2 = (a: number, b: number): string => pct(a, b);
+  metrics.push(measured("engines.hmem.recall.vectors.test", `Owner's notes with recorded ${rr.model} vectors and by words alone: test questions that find a note they are about, and notes recalled that were not about the question`, `${ofN(rr.test.vectors.about.found, rr.test.vectors.about.total)}, ${share2(rr.test.vectors.wrongNotes.wrong, rr.test.vectors.wrongNotes.recalled)}`, `words alone: ${ofN(rr.test.words.about.found, rr.test.words.about.total)}, ${share2(rr.test.words.wrongNotes.wrong, rr.test.words.wrongNotes.recalled)}; ${rr.notes} notes, ${rr.test.words.questions} questions, ${rr.test.vectors.unrelated.recalledSomething} of ${rr.test.vectors.unrelated.total} questions about nothing found a note (words: ${rr.test.words.unrelated.recalledSomething})`));
+  metrics.push(measured("engines.hmem.recall.vectors.dev", `Owner's notes, development questions the thresholds were chosen on: questions that find a note they are about, and notes recalled that were not about the question, with vectors`, `${ofN(rr.dev.vectors.about.found, rr.dev.vectors.about.total)}, ${share2(rr.dev.vectors.wrongNotes.wrong, rr.dev.vectors.wrongNotes.recalled)}`, `words alone: ${ofN(rr.dev.words.about.found, rr.dev.words.about.total)}, ${share2(rr.dev.words.wrongNotes.wrong, rr.dev.words.wrongNotes.recalled)}`));
+  findings.push(`H-MEM: the engine ranks with its own hash embedder and is left as it is; beside it, ${rr.model}'s recorded vectors read each note against the question. On ${rr.test.vectors.questions} test questions the notes recalled that were not about the question fall from ${share2(rr.test.words.wrongNotes.wrong, rr.test.words.wrongNotes.recalled)} to ${share2(rr.test.vectors.wrongNotes.wrong, rr.test.vectors.wrongNotes.recalled)} and the number of questions that find a note they are about stays at ${rr.test.vectors.about.found} of ${rr.test.vectors.about.total}; on the development questions, which the thresholds were chosen on, it rises from ${rr.dev.words.about.found} to ${rr.dev.vectors.about.found} of ${rr.dev.vectors.about.total}.`);
 
   // Conformance of the three vendored engines, recorded by `desk prove`.
   if (existsSync(CONFORMANCE)) {
@@ -111,11 +128,12 @@ export async function enginesSection(db: Ledger, truth: Truth): Promise<Section>
     question: "Asked the same question with the engine on and off, does the answer change, and is the changed answer the right one?",
     reproduce: ["npm run desk -- prove", "npm run desk -- engines year", "npm run desk -- ask \"What changed before 2026-10-15?\" --sample --ablate world_model"],
     seed: 20261030,
-    inputs: [input("src/desk/sample/year.ts"), input("evals/scout/desk/dev/routes.jsonl"), input("evals/scout/desk/test/routes.jsonl"), input("evals/scout/regression-set/v1/"), input("evals/scout/regression-set/v2/"), input("src/desk/scout/registry.ts")],
+    inputs: [input("src/desk/sample/year.ts"), input("evals/scout/desk/dev/routes.jsonl"), input("evals/scout/desk/test/routes.jsonl"), input("evals/scout/regression-set/v1/"), input("evals/scout/regression-set/v2/"), input("src/desk/scout/registry.ts"), input("evals/memory/"), input(RECALL_RECORD), input("data/sample/cassettes/")],
     metrics,
     findings,
     limits: [
-      "Scout Intent is the Desk's own implementation of Meterless's specification (Meterless ships no reference code for it): its second stage is a hashed character-trigram stand-in for the specification's embedding, with the weights changed to match, and the question sets were written by the people who built the router.",
+      "Scout Intent is the Desk's own implementation of Meterless's specification (Meterless ships no reference code for it): with no embedder its second stage is a hashed character-trigram stand-in for the specification's embedding, with the weights changed to match; with the recorded vectors it uses the specification's weights. The question sets, for routing and for the owner's notes, were written by the people who built the router.",
+      "The embedding vectors are recorded from one model (nvidia/nemotron-3-embed-1b) and replayed; nothing here shows how a different model or a live endpoint would score, and live use sends the text of questions and notes to the endpoint only when DESK_EMBED=on.",
       "The three vendored engines are the Meterless reference implementations vendored into this repository, with the Desk's own wrappers. The Markovian chunk generator is code, not a language model.",
       "Each comparison is a handful of questions on a constructed ledger. They show the engine changes the answer, not how often it would on a real one.",
       "The twelve-month ledger is generated from a seed; no real user's year has been read.",

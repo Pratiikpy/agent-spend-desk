@@ -27,7 +27,11 @@ function eventLine(e) {
   }
   if (e.event === "desk.route") {
     const by = d.source === "off" ? "Scout Intent is off, so every question is read as a question" : d.intent ? `Scout read it as ${d.intent} (${d.band}, ${Number(d.score).toFixed(2)}), the older rules as ${d.rules_route}; ${d.source === "both" ? "they agree" : `${d.source} decided`}` : d.source === "failed" ? "the router failed, so nothing ran" : "";
-    return `route ${d.route}${by ? `: ${by}` : ""}${d.flags && d.flags.length ? `, flags ${d.flags.join(", ")}` : ""}`;
+    const second = d.stage2 === "embedded" ? `; second stage with ${d.embedder}` : d.stage2 === "degraded" ? "; the embedder failed, so the built-in comparison was used" : "";
+    return `route ${d.route}${by ? `: ${by}` : ""}${second}${d.flags && d.flags.length ? `, flags ${d.flags.join(", ")}` : ""}`;
+  }
+  if (e.event === "desk.embed") {
+    return d.used ? `your notes were read by meaning as well as by words (${d.embedder}, ${d.source === "cassette" ? "recorded vectors" : "live"})` : `the embedder failed (${String(d.failure || "no reason given").slice(0, 100)}), so your notes were read by words alone`;
   }
   if (e.event === "desk.plan") return `plan: ${d.intent ? `rules (${d.intent})` : "from the model"}, ops ${(d.ops || []).join(", ")}`;
   return e.event;
@@ -64,6 +68,7 @@ export async function render(ctx) {
       h("div", { class: "controls" }, box, submit),
       h("div", { class: "controls" }, ...first.suggestions.slice(0, 5).map((s) => h("a", { class: "btn", href: ctx.link("ask", { q: s, ...(ablate.length ? { ablate: ablate.join(",") } : {}) }) }, s))),
       h("p", { class: "note" }, "Engines. Switch one off and ask again: the answer changes, and the change is the evidence that the engine does something."),
+      first.embeddings ? h("p", { class: "note", "data-embeddings": "true" }, `Meaning for routing and for your notes: ${first.embeddings}.`) : null,
       h("div", { class: "controls" }, ...checks.map((c) => h("label", { for: `eng-${c.name}` }, c.cb, `off: ${c.name.replace("_", " ")} (${ENGINE_NOTE[c.name]})`))),
     ),
     out,

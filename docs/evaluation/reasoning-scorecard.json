@@ -505,6 +505,18 @@
         {
           "path": "src/desk/scout/registry.ts",
           "digest": "sha256:e9162d9427a265e2578e505f60368e9b89384cd90152a13d85acf47c135246b8"
+        },
+        {
+          "path": "evals/memory/",
+          "digest": "sha256:e8072c0c4fa56e0f4d89d3c68135d094f41bb56dc8a2d275f03c4f96875f8925"
+        },
+        {
+          "path": "docs/verification/embed/recall.json",
+          "digest": "sha256:0d038f7983c17279c439b0f569c383db96537be065afa07e745f7d0732ba14fb"
+        },
+        {
+          "path": "data/sample/cassettes/",
+          "digest": "sha256:8eecacdc120ecf26248ed3a839334d9705cd3b6906a3f180628ea5e6da158a37"
         }
       ],
       "metrics": [
@@ -624,6 +636,34 @@
           "note": "hard lines missed: 15; the specification asks for intent top-1 of 0.85 or more"
         },
         {
+          "id": "engines.scout_intent.embedded.harness.v2",
+          "label": "Scout Intent with recorded nvidia/nemotron-3-embed-1b vectors: the harness's gate on the same 142 paraphrases (intent top-1, top-3, tool precision)",
+          "value": "fail: 0.764, 0.944, 0.750",
+          "status": "measured",
+          "note": "hard lines missed: 9; the merge range was chosen on the development paraphrases"
+        },
+        {
+          "id": "engines.scout_intent.embedded.test.accuracy",
+          "label": "Scout Intent with recorded vectors: 218 test questions routed to the right kind, and requests to change something that reach the planner as questions",
+          "value": "96.8%, 5.9%",
+          "status": "measured",
+          "note": "with the built-in comparison: 96.3%, 2.9%; the difference is 2 of 68 requests"
+        },
+        {
+          "id": "engines.hmem.recall.vectors.test",
+          "label": "Owner's notes with recorded nvidia/nemotron-3-embed-1b vectors and by words alone: test questions that find a note they are about, and notes recalled that were not about the question",
+          "value": "15 of 16, 50.0%",
+          "status": "measured",
+          "note": "words alone: 15 of 16, 63.6%; 14 notes, 24 questions, 0 of 8 questions about nothing found a note (words: 1)"
+        },
+        {
+          "id": "engines.hmem.recall.vectors.dev",
+          "label": "Owner's notes, development questions the thresholds were chosen on: questions that find a note they are about, and notes recalled that were not about the question, with vectors",
+          "value": "15 of 20, 34.8%",
+          "status": "measured",
+          "note": "words alone: 13 of 20, 53.6%"
+        },
+        {
           "id": "engines.conformance.world_model",
           "label": "world_model: the vendored engine's own conformance checks passed",
           "value": "8 of 8",
@@ -647,10 +687,13 @@
         "H-MEM: with a definition of landed remembered, the answer to \"How much of our spend landed?\" states it with the engine and does not state it without; \"What did I tell you about landed work?\" returns 2 of the owner's notes with the engine and none without, and a question no note is about returns 0.",
         "Markovian: on a generated twelve-month ledger of 3,744 calls, 5 of 5 year-long answers match the rows with the engine and 2 without it. The carry stays inside its budget and does not grow with the range; at this size it saves no tokens.",
         "Scout Intent: on 218 test questions (150 plain, 68 that ask for a change or a secret) 2.9% of the requests reach the planner as questions with Scout, 61.8% with the older word rules alone and 100.0% with Scout off; 0.7% of the plain questions are refused. The router reads the request before any step runs, and on a failure it refuses.",
+        "Scout Intent with recorded nvidia/nemotron-3-embed-1b vectors in its second stage: intent top-1 on the paraphrases written for Meterless's registry goes from 0.625 to 0.764 (the gate still fails); the Desk's own four-way routing goes from 96.3% to 96.8% right, which is not a difference this question set can show.",
+        "H-MEM: the engine ranks with its own hash embedder and is left as it is; beside it, nvidia/nemotron-3-embed-1b's recorded vectors read each note against the question. On 24 test questions the notes recalled that were not about the question fall from 63.6% to 50.0% and the number of questions that find a note they are about stays at 15 of 16; on the development questions, which the thresholds were chosen on, it rises from 13 to 15 of 20.",
         "The three vendored engines pass their own conformance runners (world_model 8/8, markovian 8/8, hmem 13/13) against https://github.com/Meterless/Meterless commit 0aa7417."
       ],
       "limits": [
-        "Scout Intent is the Desk's own implementation of Meterless's specification (Meterless ships no reference code for it): its second stage is a hashed character-trigram stand-in for the specification's embedding, with the weights changed to match, and the question sets were written by the people who built the router.",
+        "Scout Intent is the Desk's own implementation of Meterless's specification (Meterless ships no reference code for it): with no embedder its second stage is a hashed character-trigram stand-in for the specification's embedding, with the weights changed to match; with the recorded vectors it uses the specification's weights. The question sets, for routing and for the owner's notes, were written by the people who built the router.",
+        "The embedding vectors are recorded from one model (nvidia/nemotron-3-embed-1b) and replayed; nothing here shows how a different model or a live endpoint would score, and live use sends the text of questions and notes to the endpoint only when DESK_EMBED=on.",
         "The three vendored engines are the Meterless reference implementations vendored into this repository, with the Desk's own wrappers. The Markovian chunk generator is code, not a language model.",
         "Each comparison is a handful of questions on a constructed ledger. They show the engine changes the answer, not how often it would on a real one.",
         "The twelve-month ledger is generated from a seed; no real user's year has been read."
@@ -668,7 +711,7 @@
       "inputs": [
         {
           "path": "data/sample/cassettes/",
-          "digest": "sha256:c09a67d3ed28bedc14b263386dfca38a90cdded92b64133914319197ad520210"
+          "digest": "sha256:8eecacdc120ecf26248ed3a839334d9705cd3b6906a3f180628ea5e6da158a37"
         }
       ],
       "metrics": [

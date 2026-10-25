@@ -9,6 +9,7 @@ import { callModel, ModelError, type ChatMessage, type ModelPort } from "../agen
 import { NULL_TRACE, type Trace } from "../agents/trace.ts";
 import { engineInfo } from "../engines/registry.ts";
 import type { AblateName } from "../engines/load.ts";
+import type { Embedder } from "../embed/port.ts";
 import { questionHash, routeDeskQuestion, type DeskRouteResult } from "../scout/router.ts";
 import { scoutInfo } from "../scout/info.ts";
 import type { Scout } from "../../scout-intent/scout.ts";
@@ -55,6 +56,8 @@ export interface AskOptions {
   trace?: Trace;
   /** The Scout that routes the question; omit for the Desk's own. A test passes one that fails to show the router fails closed. */
   router?: Scout;
+  /** Embeddings for the router's second stage (and, with `memory`, for recalling the owner's notes). Omit to run on the built-in text comparison. */
+  embedder?: Embedder | null;
   /** The owner's memory (H-MEM). Omit to run without one. */
   memory?: OwnerMemory | null;
   conformanceFile?: string;
@@ -253,8 +256,8 @@ export async function ask(o: AskOptions): Promise<AskResult> {
     return result;
   };
 
-  const routed: DeskRouteResult = await routeDeskQuestion(o.question, { off: ablate.has("scout_intent"), ...(o.router ? { scout: o.router } : {}) });
-  trace.emit({ event: "desk.route", why: routed.source === "off" ? "rule" : "computed", role: "risk_router", detail: { route: routed.route, flags: routed.flags, source: routed.source, scout_route: routed.scoutRoute, rules_route: routed.rulesRoute, ...(routed.scout ? { intent: routed.scout.intent, band: routed.scout.band, score: routed.scout.score, trace_id: routed.scout.traceId, clarification: routed.scout.clarification, latency_ms: routed.scout.latencyMs } : {}) } });
+  const routed: DeskRouteResult = await routeDeskQuestion(o.question, { off: ablate.has("scout_intent"), ...(o.router ? { scout: o.router } : {}), ...(o.embedder ? { embedder: o.embedder } : {}) });
+  trace.emit({ event: "desk.route", why: routed.source === "off" ? "rule" : "computed", role: "risk_router", detail: { route: routed.route, flags: routed.flags, source: routed.source, scout_route: routed.scoutRoute, rules_route: routed.rulesRoute, ...(routed.scout ? { intent: routed.scout.intent, band: routed.scout.band, score: routed.scout.score, stage2: routed.scout.stage2, embedder: routed.scout.embedder, trace_id: routed.scout.traceId, clarification: routed.scout.clarification, latency_ms: routed.scout.latencyMs } : {}) } });
   routing = routed;
   if (routed.route !== "read") {
     return finish({ route: routed.route, flags: routed.flags, status: "refused", planner: "none", explainer: "none", servedModel: null, program: null, steps: [], sentences: [], note: routed.reason ?? REFUSAL[routed.route] });
@@ -354,6 +357,16 @@ export async function ask(o: AskOptions): Promise<AskResult> {
     memory: ablate.has("hmem") ? null : (o.memory ?? null),
     markovian: !ablate.has("markovian"),
   };
+  // The owner's notes are read by meaning as well as by words when an embedder is given. Recall is synchronous, so the questions and the notes are given vectors first; if that
+  // fails, the notes are read by words alone, and the trace says so.
+  if (engines.memory && o.embedder) {
+    engines.memory.attach(o.embedder);
+    const asked = program.steps.flatMap((s) => (s.op === "recall" ? [s.query] : []));
+    if (asked.length > 0) {
+      await engines.memory.prime(asked);
+      trace.emit({ event: "desk.embed", why: "computed", role: "memory", detail: { embedder: o.embedder.id, source: o.embedder.source, used: engines.memory.lastEmbedFailure === null, ...(engines.memory.lastEmbedFailure ? { failure: engines.memory.lastEmbedFailure } : {}) } });
+    }
+  }
   const results = new Map<string, StepResult>();
   const ctx = { db: o.db, engines, coverage: cov, claimTokenBudget: DEFAULT_CLAIM_TOKENS, results, trace };
   const steps: StepResult[] = [];
@@ -405,8 +418,8 @@ function record(db: Ledger, r: AskResult, at: string): void {
     );
     if (r.routing) {
       const g = r.routing;
-      db.prepare("INSERT INTO route_decision (answer_id, decided_at, question_hash, route, source, scout_route, rules_route, intent, band, score, clarification, flags, trace_id, contract_id, registry_version, policy_pack, latency_ms) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").run(
-        r.answerId, at, questionHash(r.question), g.route, g.source, g.scoutRoute, g.rulesRoute, g.scout?.intent ?? null, g.scout?.band ?? null, g.scout?.score ?? null, g.scout?.clarification ?? null, JSON.stringify(g.flags), g.scout?.traceId ?? null, g.scout?.contractId ?? null, g.scout?.registryVersion ?? null, g.scout?.policyPack ?? null, g.scout?.latencyMs ?? null,
+      db.prepare("INSERT INTO route_decision (answer_id, decided_at, question_hash, route, source, scout_route, rules_route, intent, band, score, clarification, flags, trace_id, contract_id, registry_version, policy_pack, latency_ms, stage2, embedder) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").run(
+        r.answerId, at, questionHash(r.question), g.route, g.source, g.scoutRoute, g.rulesRoute, g.scout?.intent ?? null, g.scout?.band ?? null, g.scout?.score ?? null, g.scout?.clarification ?? null, JSON.stringify(g.flags), g.scout?.traceId ?? null, g.scout?.contractId ?? null, g.scout?.registryVersion ?? null, g.scout?.policyPack ?? null, g.scout?.latencyMs ?? null, g.scout?.stage2 ?? null, g.scout?.embedder ?? null,
       );
     }
     for (const s of r.steps) {
@@ -436,7 +449,7 @@ export interface VerifyReport {
 }
 
 /** Run an answer's steps again against the ledger as it is now and compare result hashes. */
-export async function verifyAnswer(db: Ledger, answerId: string, opts: { memory?: OwnerMemory | null } = {}): Promise<VerifyReport> {
+export async function verifyAnswer(db: Ledger, answerId: string, opts: { memory?: OwnerMemory | null; embedder?: Embedder | null } = {}): Promise<VerifyReport> {
   ensureAskSchema(db);
   const row = db.prepare("SELECT program_json, ablated FROM ask_answer WHERE answer_id = ?").get(answerId) as { program_json: string | null; ablated: string } | undefined;
   if (!row) return { answerId, found: false, same: [], changed: [], sentencesHolding: 0, sentencesTotal: 0, note: "No such answer is recorded." };
@@ -446,6 +459,11 @@ export async function verifyAnswer(db: Ledger, answerId: string, opts: { memory?
   const ablate = new Set(JSON.parse(row.ablated) as AblateName[]);
   const cov = ledgerCoverage(db);
   const engines: Engines = { world: ablate.has("world_model") ? null : await buildWorldModel(db), memory: ablate.has("hmem") ? null : (opts.memory ?? null), markovian: !ablate.has("markovian") };
+  // A recall that matched a note by meaning needs the same embedder to be run again; without it the step may differ, and the report says it changed.
+  if (engines.memory && opts.embedder) {
+    engines.memory.attach(opts.embedder);
+    await engines.memory.prime(parsed.value.steps.flatMap((st) => (st.op === "recall" ? [st.query] : [])));
+  }
   const ctx = { db, engines, coverage: cov, claimTokenBudget: DEFAULT_CLAIM_TOKENS, results: new Map<string, StepResult>(), trace: NULL_TRACE };
   const before = new Map((db.prepare("SELECT step_id, result_hash FROM ask_step WHERE answer_id = ?").all(answerId) as unknown as { step_id: string; result_hash: string }[]).map((r) => [r.step_id, r.result_hash]));
   const same: string[] = [];

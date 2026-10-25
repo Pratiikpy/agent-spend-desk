@@ -234,6 +234,8 @@ export interface Evaluation {
   /** Examples whose decision differed from the label on a measure the label covers, for reading the misses. */
   misses: { id: string; prompt: string; why: string }[];
   skipped: { id: string; why: string }[];
+  /** Decisions made with the built-in comparison because a configured embedder failed or lacked a vector: a measurement with any of these is not a measurement of the embedder. */
+  degraded: number;
 }
 
 /** Run every example through `decide` and score the decisions. An example that throws is reported as skipped and counted against nothing, so the report names it. */
@@ -242,10 +244,12 @@ export async function evaluate(scout: { decide(i: { prompt: string; user: { id: 
   const results: Result[] = [];
   const skipped: Evaluation["skipped"] = [];
   const misses: Evaluation["misses"] = [];
+  let degraded = 0;
   for (const ex of corpus) {
     try {
       const out = (await scout.decide({ prompt: ex.prompt, user: { id: `eval-${ex.id}`, role: ex.user?.role ?? "ae" }, surface: ex.surface ?? "chat" })) as Result["out"];
       results.push({ ex, out });
+      if (out.stage2 === "degraded") degraded += 1;
       const e = ex.expected;
       const got = out.executionContract?.intent?.primary?.id;
       if (e.intent && !e.policy && got !== e.intent) misses.push({ id: ex.id, prompt: ex.prompt, why: `intent ${got ?? (out.clarification ? `clarification (${out.clarification.trigger})` : out.risk.level === "block" ? "block" : "none")}, wanted ${e.intent}` });
@@ -263,5 +267,5 @@ export async function evaluate(scout: { decide(i: { prompt: string; user: { id: 
   const t = tally(results);
   const metrics = toMetrics(t);
   const slices = computeSlices(results, thresholds);
-  return { corpus: corpusRoot, examples: corpus.length, metrics, slices, gate: gate(metrics, slices, thresholds), misses, skipped };
+  return { corpus: corpusRoot, examples: corpus.length, metrics, slices, gate: gate(metrics, slices, thresholds), misses, skipped, degraded };
 }

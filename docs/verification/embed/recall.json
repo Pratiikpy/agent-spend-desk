@@ -1,0 +1,236 @@
+{
+  "version": 1,
+  "model": "nvidia/nemotron-3-embed-1b",
+  "notes": 14,
+  "dev": {
+    "words": {
+      "split": "dev",
+      "questions": 28,
+      "about": {
+        "total": 20,
+        "found": 13,
+        "foundAll": 13
+      },
+      "wrongNotes": {
+        "recalled": 28,
+        "wrong": 15
+      },
+      "unrelated": {
+        "total": 8,
+        "recalledSomething": 1
+      },
+      "misses": [
+        {
+          "id": "dev-07",
+          "question": "Where is the expensive model allowed?",
+          "wanted": [
+            "n04"
+          ],
+          "got": []
+        },
+        {
+          "id": "dev-08",
+          "question": "What did I say about when to use the biggest model?",
+          "wanted": [
+            "n04"
+          ],
+          "got": []
+        },
+        {
+          "id": "dev-15",
+          "question": "Who signs off on big daily amounts?",
+          "wanted": [
+            "n10"
+          ],
+          "got": [
+            "n07"
+          ]
+        },
+        {
+          "id": "dev-17",
+          "question": "What happens to work that gets undone?",
+          "wanted": [
+            "n11"
+          ],
+          "got": [
+            "n06",
+            "n02",
+            "n01"
+          ]
+        },
+        {
+          "id": "dev-18",
+          "question": "When do the bills show up?",
+          "wanted": [
+            "n12"
+          ],
+          "got": [
+            "n01"
+          ]
+        },
+        {
+          "id": "dev-19",
+          "question": "Which model do the phone app developers like?",
+          "wanted": [
+            "n13"
+          ],
+          "got": []
+        },
+        {
+          "id": "dev-20",
+          "question": "Who pays for what the scheduled jobs run?",
+          "wanted": [
+            "n14"
+          ],
+          "got": [
+            "n04"
+          ]
+        },
+        {
+          "id": "dev-22",
+          "question": "Who won the football match last night?",
+          "wanted": [],
+          "got": [
+            "n05",
+            "n14"
+          ]
+        }
+      ],
+      "embedder": null,
+      "fellBack": 0
+    },
+    "vectors": {
+      "split": "dev",
+      "questions": 28,
+      "about": {
+        "total": 20,
+        "found": 15,
+        "foundAll": 15
+      },
+      "wrongNotes": {
+        "recalled": 23,
+        "wrong": 8
+      },
+      "unrelated": {
+        "total": 8,
+        "recalledSomething": 0
+      },
+      "misses": [
+        {
+          "id": "dev-07",
+          "question": "Where is the expensive model allowed?",
+          "wanted": [
+            "n04"
+          ],
+          "got": []
+        },
+        {
+          "id": "dev-08",
+          "question": "What did I say about when to use the biggest model?",
+          "wanted": [
+            "n04"
+          ],
+          "got": []
+        },
+        {
+          "id": "dev-17",
+          "question": "What happens to work that gets undone?",
+          "wanted": [
+            "n11"
+          ],
+          "got": [
+            "n01"
+          ]
+        },
+        {
+          "id": "dev-19",
+          "question": "Which model do the phone app developers like?",
+          "wanted": [
+            "n13"
+          ],
+          "got": []
+        },
+        {
+          "id": "dev-20",
+          "question": "Who pays for what the scheduled jobs run?",
+          "wanted": [
+            "n14"
+          ],
+          "got": []
+        }
+      ],
+      "embedder": "nvidia/nemotron-3-embed-1b",
+      "fellBack": 0
+    }
+  },
+  "test": {
+    "words": {
+      "split": "test",
+      "questions": 24,
+      "about": {
+        "total": 16,
+        "found": 15,
+        "foundAll": 15
+      },
+      "wrongNotes": {
+        "recalled": 44,
+        "wrong": 28
+      },
+      "unrelated": {
+        "total": 8,
+        "recalledSomething": 1
+      },
+      "misses": [
+        {
+          "id": "test-04",
+          "question": "For which jobs should the cheapest models be used?",
+          "wanted": [
+            "n13",
+            "n04"
+          ],
+          "got": []
+        },
+        {
+          "id": "test-24",
+          "question": "What is two plus two?",
+          "wanted": [],
+          "got": [
+            "n10"
+          ]
+        }
+      ],
+      "embedder": null,
+      "fellBack": 0
+    },
+    "vectors": {
+      "split": "test",
+      "questions": 24,
+      "about": {
+        "total": 16,
+        "found": 15,
+        "foundAll": 15
+      },
+      "wrongNotes": {
+        "recalled": 32,
+        "wrong": 16
+      },
+      "unrelated": {
+        "total": 8,
+        "recalledSomething": 0
+      },
+      "misses": [
+        {
+          "id": "test-04",
+          "question": "For which jobs should the cheapest models be used?",
+          "wanted": [
+            "n13",
+            "n04"
+          ],
+          "got": []
+        }
+      ],
+      "embedder": "nvidia/nemotron-3-embed-1b",
+      "fellBack": 0
+    }
+  }
+}

@@ -3,8 +3,10 @@ import { join } from "node:path";
 
 import { loadEngineModule, type HmemLike, type HmemRecord } from "./load.ts";
 import { sanitizeLabel } from "./label.ts";
+import type { Embedder } from "../embed/port.ts";
+import { SemanticIndex } from "./semantic.ts";
 import { sharesTopic, topicStems } from "./topic.ts";
-import { authorRulesFrom, type AuthorRules } from "../outcomes/author-rules.ts";
+import { authorRulesFrom, parseAuthorRule, type AuthorRules } from "../outcomes/author-rules.ts";
 import type { LandingState } from "../outcomes/attribute.ts";
 
 /**
@@ -47,9 +49,30 @@ export interface Recalled {
   content: string;
   relevance: number;
   superseded: boolean;
+  /** How the note matched: by a word it shares with the question, by meaning (the embedder's cosine), both, or because the question names no topic and this is among the newest. */
+  via: "words" | "meaning" | "both" | "newest";
+  /** The embedder's cosine of the question with this note, when both had a vector. */
+  similarity?: number;
+}
+
+/**
+ * The cosine at and above which a note counts as being about a question when it shares no word with it, and the range that maps a cosine to a score. Chosen on the development
+ * recall questions (`evals/memory/`) for the default embedding model; another model needs its own.
+ */
+export const MEANING_MIN = 0.3;
+/** When the embedder has read both, a note that shares only a word with the question and is this far from it in meaning is a coincidence of wording, and is left out. */
+export const WORDS_MIN = 0.2;
+const MEANING_FLOOR = 0.15;
+const MEANING_CEIL = 0.55;
+
+export interface RecallTuning {
+  meaningMin?: number;
+  wordsMin?: number;
 }
 
 const MAX_MEMORY_CHARS = 500;
+
+const clamp01 = (x: number): number => Math.min(1, Math.max(0, x));
 
 /**
  * Reads a plain-language definition of "landed". The strictest state the owner names wins: a note that
@@ -68,11 +91,39 @@ export function parseLandedStates(content: string): LandingState[] | null {
 const same = (a: readonly string[], b: readonly string[]): boolean => a.length === b.length && a.every((x, i) => x === b[i]);
 
 export class OwnerMemory {
+  private semantic: SemanticIndex | null = null;
+  /** Why the embedder was not used on the last `prime`, or null. Shown with the answer, so that a recall that fell back to words says so. */
+  lastEmbedFailure: string | null = null;
+
   private constructor(
     private readonly hmem: HmemLike,
     private readonly clock: () => number,
     private readonly dir: string | null = null,
   ) {}
+
+  /** Read the notes by meaning as well as by words, with this embedder; null puts it back to words alone. */
+  private tuning: Required<RecallTuning> = { meaningMin: MEANING_MIN, wordsMin: WORDS_MIN };
+
+  attach(embedder: Embedder | null, tuning: RecallTuning = {}): void {
+    this.tuning = { meaningMin: tuning.meaningMin ?? MEANING_MIN, wordsMin: tuning.wordsMin ?? WORDS_MIN };
+    if (embedder !== null && this.semantic?.embedder === embedder) return;
+    this.semantic = embedder === null ? null : new SemanticIndex(embedder, this.dir);
+    this.lastEmbedFailure = null;
+  }
+
+  get embedderId(): string | null {
+    return this.semantic?.embedder.id ?? null;
+  }
+
+  /**
+   * Give the questions about to be asked, and every note, a vector. Recall is synchronous; the embedder is not, so it is asked here, first. If it fails, the questions are read by
+   * words alone and `lastEmbedFailure` says why.
+   */
+  async prime(queries: readonly string[], deadlineMs?: number): Promise<void> {
+    if (this.semantic === null) return;
+    const notes = this.hmem.store.all().map((m) => ({ id: m.id, content: m.content }));
+    this.lastEmbedFailure = await this.semantic.prime(notes, queries, deadlineMs);
+  }
 
   /** `miner` is the generator the engine uses to take memories out of text; without one it reads text by its model-free rule. */
   static async open(opts: { persistDir?: string; clock?: () => number; miner?: (prompt: string) => Promise<string> } = {}): Promise<OwnerMemory> {
@@ -104,7 +155,37 @@ export class OwnerMemory {
     if (input.supersedes) this.hmem.store.update(input.supersedes, { supersededBy: record.id });
     // The engine's own conflict pass; it settles a pair only when it is at least 0.70 sure and queues the rest.
     for (const c of this.hmem.conflicts.scan()) this.hmem.conflicts.autoResolve(c);
+    this.settleAuthorConflicts();
     return record;
+  }
+
+  /**
+   * Two live statements that say different things about one author ("commits by ci@acme.test are human" and "... are agent work") are a conflict the engine's detector does not see,
+   * because it looks for always/never and on/off, not human/agent. They are put to the engine's own gate as a conflict that is certain to be one: it settles it only when its decision
+   * confidence reaches 0.70 (its scores of the two statements: how recently and how often each was used, its confidence, its origin), the loser is marked superseded and kept, and
+   * below that the pair is left as it is, which `authorRules` reports as a conflict and applies neither side of.
+   */
+  private settleAuthorConflicts(): void {
+    const live = this.hmem.store.all().filter((m) => m.tags.includes(NOTE_TAG) && !m.supersededBy);
+    const by = new Map<string, { rec: HmemRecord; kind: string }[]>();
+    for (const rec of live) {
+      const rule = parseAuthorRule(rec.content);
+      if (rule === null) continue;
+      by.set(rule.author, [...(by.get(rule.author) ?? []), { rec, kind: rule.kind }]);
+    }
+    let n = 0;
+    for (const [author, list] of by) {
+      const ordered = list.slice().sort((a, b) => a.rec.timestamp - b.rec.timestamp);
+      for (let i = 0; i < ordered.length; i += 1) {
+        for (let j = i + 1; j < ordered.length; j += 1) {
+          const a = ordered[i] as { rec: HmemRecord; kind: string };
+          const b = ordered[j] as { rec: HmemRecord; kind: string };
+          if (a.kind === b.kind || a.rec.supersededBy !== undefined || b.rec.supersededBy !== undefined) continue;
+          n += 1;
+          this.hmem.conflicts.autoResolve({ id: `author-${n}`, memoryA: a.rec.id, memoryB: b.rec.id, reason: `contradictory statements about ${author}`, confidence: 1, resolved: false });
+        }
+      }
+    }
   }
 
   /** The definition of "landed" in force. Conflicting live definitions are not guessed between. */
@@ -131,14 +212,30 @@ export class OwnerMemory {
     // The engine ranks every note (threshold 0); a note is recalled only if it shares a topic word with the question. A question that names no topic ("what did I tell you?") gets the newest notes.
     const topics = topicStems(query);
     const r = this.hmem.query(query, { topN: Math.max(topN, 200), threshold: 0 });
-    const kept = topics.size === 0 ? [...r.memories].sort((x, y) => y.memory.timestamp - x.memory.timestamp) : r.memories.filter(({ memory }) => sharesTopic(topics, memory.content));
-    return kept.slice(0, topN).map(({ memory, relevance }) => ({
+    const sem = (content: string, id: string): number | null => this.semantic?.similarity(query, id, content) ?? null;
+    // A note is recalled by a word it shares with the question, or by meaning when the embedder says it is close enough; a question that names no topic gets the newest notes.
+    const scored = r.memories.map(({ memory, relevance }) => {
+      const cos = sem(memory.content, memory.id);
+      // A shared word counts unless the embedder has read both and finds them unrelated.
+      const words = topics.size > 0 && sharesTopic(topics, memory.content) && (cos === null || cos >= this.tuning.wordsMin);
+      const meaning = cos !== null && cos >= this.tuning.meaningMin;
+      return { memory, relevance, words, meaning, cos };
+    });
+    const picked = topics.size === 0
+      ? scored.sort((x, y) => y.memory.timestamp - x.memory.timestamp).map((s) => ({ ...s, via: "newest" as const, score: s.relevance }))
+      : scored
+          .filter((s) => s.words || s.meaning)
+          .map((s) => ({ ...s, via: (s.words && s.meaning ? "both" : s.words ? "words" : "meaning") as Recalled["via"], score: Math.max(s.words ? s.relevance : 0, s.cos === null ? 0 : clamp01((s.cos - MEANING_FLOOR) / (MEANING_CEIL - MEANING_FLOOR))) }))
+          .sort((x, y) => y.score - x.score || y.memory.timestamp - x.memory.timestamp);
+    return picked.slice(0, topN).map(({ memory, score, via, cos }) => ({
       id: memory.id,
       learnedAt: new Date(memory.timestamp).toISOString().slice(0, 10),
       kind: memory.tags.includes(OUTCOME_TAG) ? "outcome_definition" : memory.tags.includes(NOTE_TAG) ? "note" : "other",
       content: memory.content,
-      relevance: Math.round(relevance * 1000) / 1000,
+      relevance: Math.round(score * 1000) / 1000,
       superseded: memory.supersededBy !== undefined,
+      via,
+      ...(cos !== null ? { similarity: Math.round(cos * 1000) / 1000 } : {}),
     }));
   }
 
@@ -161,6 +258,7 @@ export class OwnerMemory {
     if (!rec) throw new RangeError(`no memory ${sanitizeLabel(id)}`);
     const before = rec.confidence;
     this.hmem.feedback(id, kind);
+    this.settleAuthorConflicts();
     return { before, after: this.hmem.store.get(id)?.confidence ?? before };
   }
 

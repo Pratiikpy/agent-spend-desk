@@ -633,7 +633,7 @@ function recall(step: Extract<Step, { op: "recall" }>, ctx: RunContext): Outcome
     return { data: { query: step.query, memory: false }, rowCount: 0, claims: [r], meta: [fact], unknowable: r.text };
   }
   const found = m.recall(step.query);
-  const data: Json = { query: step.query, memory: true, found: found.map((f) => ({ id: f.id, learnedAt: f.learnedAt, kind: f.kind, relevance: f.relevance, superseded: f.superseded, content: f.content })), fingerprint: hashJson(m.fingerprint()) };
+  const data: Json = { query: step.query, memory: true, found: found.map((f) => ({ id: f.id, learnedAt: f.learnedAt, kind: f.kind, relevance: f.relevance, superseded: f.superseded, via: f.via, ...(f.similarity !== undefined ? { similarity: f.similarity } : {}), content: f.content })), fingerprint: hashJson(m.fingerprint()) };
   const evidence: Evidence[] = found.map((f) => ({ kind: "owner_note", id: f.id, learnedAt: f.learnedAt, content: f.content }));
   if (found.length === 0) {
     const r = say`No note of yours matches this question.`;

@@ -171,7 +171,12 @@ export interface Decision {
   /** More than one intent when two candidates are both High and cover different parts of the prompt. */
   intents: IntentCandidate[];
   band: Band["name"];
-  stage2: "used" | "skipped";
+  /** "used": the built-in comparison ran; "embedded": a real embedder's vectors did; "degraded": an embedder was configured and failed, so the built-in comparison ran; "skipped": Stage 2 is off. */
+  stage2: "used" | "embedded" | "degraded" | "skipped";
+  /** Why the embedder was not used, when it was configured and failed. */
+  degradedBecause?: string;
+  /** The model that made the vectors, when one was configured. */
+  embedder?: string;
   intent: string | null;
   parameters: Record<string, unknown>;
   references: Record<string, string>;

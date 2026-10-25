@@ -57,3 +57,19 @@ Source: a live request from this machine with the participant's own key from bui
 
 Consequence for the design: model-call timeout 120 s, retries with jittered backoff, a rule-brain and cassette fallback, and `enable_thinking: false` for short structured calls.
 
+
+## Embeddings, measured on 2026-10-25 (live calls with the hackathon key from `.env`, never printed)
+
+| Check | Result |
+|---|---|
+| Endpoint | `POST https://integrate.api.nvidia.com/v1/embeddings`, OpenAI-compatible, same bearer key as chat |
+| Models listed under that key | `nvidia/nemotron-3-embed-1b`, `nvidia/nemotron-3.5-embed-1b`, `nvidia/nemotron-3.5-embed-8b`, `nvidia/llama-3.2-nv-embedqa-1b-v1`, `nvidia/nv-embedqa-mistral-7b-v2`, `nvidia/embed-qa-4`, `snowflake/arctic-embed-l`, and two vision-language embedders |
+| Used here | `nvidia/nemotron-3-embed-1b`: 2,048 dimensions, answered for a pair of short texts (21 prompt tokens). `nvidia/nemotron-3.5-embed-1b` answered the same way. `nvidia/llama-3.2-nv-embedqa-1b-v1` is listed and returned HTTP 404 for this account |
+| Retired | `nvidia/nv-embedqa-e5-v5`: HTTP 410, "has reached its end of life on 2026-08-25" |
+| Required parameter | `input_type` of `query` or `passage`; anything else is HTTP 400 |
+| Length | a single text over 65,536 characters is refused (HTTP 400) unless `truncate: "END"` is sent, which was accepted |
+| Dimensions | `dimensions` other than 2,048 is refused (HTTP 400, "must be one of 2048") |
+| Batches | 32 texts per request were used without error |
+| Not verified | rate limits and quota for embeddings, behaviour of the other embedding models, latency under sustained use |
+
+The Desk calls it only when `DESK_EMBED=on` (or for the recording command), and records the vectors it needs in `data/sample/cassettes/` so that sample mode and `desk prove` need no key.

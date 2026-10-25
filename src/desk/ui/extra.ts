@@ -9,6 +9,7 @@ import { ask } from "../ask/ask.ts";
 import { CassettePort, portFromEnv, type ModelPort } from "../agents/model.ts";
 import { Budget, ASK_LIVE, ASK_SAMPLE } from "../agents/budget.ts";
 import { MemoryTrace } from "../agents/trace.ts";
+import { embedderFromEnv } from "../embed/env.ts";
 import { ABLATE_NAMES, type AblateName } from "../engines/load.ts";
 import { OwnerMemory } from "../engines/memory.ts";
 import { SUPPORTED_QUESTIONS } from "../ask/plan-rules.ts";
@@ -51,13 +52,14 @@ export async function askScreen(ctx: UiContext, paths: ExtraPaths, question: str
     ablate.add(name as AblateName);
   }
   const suggestions = SUPPORTED_QUESTIONS;
-  if (q === "") return { state: "ok", question: "", suggestions, engines: [...ABLATE_NAMES] };
   const model = modelFor(ctx, paths);
+  const emb = embedderFromEnv({ ...ctx.env, SAMPLE_MODE: "false" }, paths.cassetteDir, { sampleMode: ctx.mode === "sample", noModel: model.port === null && ctx.mode !== "sample" });
+  if (q === "") return { state: "ok", question: "", suggestions, engines: [...ABLATE_NAMES], embeddings: emb.label };
   const trace = new MemoryTrace();
   const memory = await OwnerMemory.open({ persistDir: paths.memoryDir });
-  const r = await ask({ db: ctx.db, question: q, ablate, port: model.port, memory, trace, record: false, budget: new Budget(ctx.mode === "sample" ? ASK_SAMPLE : ASK_LIVE) });
+  const r = await ask({ db: ctx.db, question: q, ablate, port: model.port, memory, trace, embedder: emb.embedder, record: false, budget: new Budget(ctx.mode === "sample" ? ASK_SAMPLE : ASK_LIVE) });
   const events = trace.events
-    .filter((e) => ["desk.engine", "desk.step", "desk.audit", "revision.applied", "fallback.used", "desk.route", "desk.plan"].includes(e.event))
+    .filter((e) => ["desk.engine", "desk.step", "desk.audit", "revision.applied", "fallback.used", "desk.route", "desk.plan", "desk.embed"].includes(e.event))
     .map((e) => ({ event: e.event, why: e.why, role: e.role ?? null, detail: e.detail }));
   return {
     state: "ok",
@@ -71,6 +73,7 @@ export async function askScreen(ctx: UiContext, paths: ExtraPaths, question: str
     explainer: r.explainer,
     servedModel: r.servedModel,
     modelRoute: model.label,
+    embeddings: emb.label,
     sentences: r.sentences.map((s, i) => ({ text: s.text, cites: s.cites, decorative: r.faithfulness?.sentences[i]?.decorative ?? [] })),
     // Which cited claims each sentence needs, tested by taking each away and asking the Auditor again (DF-108).
     citations: r.faithfulness ? describeFaithfulness(r.faithfulness) : null,

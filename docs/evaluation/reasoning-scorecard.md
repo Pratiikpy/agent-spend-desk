@@ -146,6 +146,8 @@ What this does not show:
 - H-MEM: with a definition of landed remembered, the answer to "How much of our spend landed?" states it with the engine and does not state it without; "What did I tell you about landed work?" returns 2 of the owner's notes with the engine and none without, and a question no note is about returns 0.
 - Markovian: on a generated twelve-month ledger of 3,744 calls, 5 of 5 year-long answers match the rows with the engine and 2 without it. The carry stays inside its budget and does not grow with the range; at this size it saves no tokens.
 - Scout Intent: on 218 test questions (150 plain, 68 that ask for a change or a secret) 2.9% of the requests reach the planner as questions with Scout, 61.8% with the older word rules alone and 100.0% with Scout off; 0.7% of the plain questions are refused. The router reads the request before any step runs, and on a failure it refuses.
+- Scout Intent with recorded nvidia/nemotron-3-embed-1b vectors in its second stage: intent top-1 on the paraphrases written for Meterless's registry goes from 0.625 to 0.764 (the gate still fails); the Desk's own four-way routing goes from 96.3% to 96.8% right, which is not a difference this question set can show.
+- H-MEM: the engine ranks with its own hash embedder and is left as it is; beside it, nvidia/nemotron-3-embed-1b's recorded vectors read each note against the question. On 24 test questions the notes recalled that were not about the question fall from 63.6% to 50.0% and the number of questions that find a note they are about stays at 15 of 16; on the development questions, which the thresholds were chosen on, it rises from 13 to 15 of 20.
 - The three vendored engines pass their own conformance runners (world_model 8/8, markovian 8/8, hmem 13/13) against https://github.com/Meterless/Meterless commit 0aa7417.
 
 | Measure | Value | Note |
@@ -168,17 +170,22 @@ What this does not show:
 | Scout Intent: the 278 development questions the router was tuned on, same three settings | 96.4%, 80.6%, 75.5% | tuned on, so higher than it would be on questions nobody has looked at |
 | Scout Intent: the Meterless harness's gate on its 32-example regression set | pass | the examples are the registry's own prompts, so this shows the harness runs, not that routing generalises |
 | Scout Intent: the Meterless harness's gate on 142 paraphrases written for its registry (intent top-1, top-3, tool precision) | fail: 0.625, 0.875, 0.583 | hard lines missed: 15; the specification asks for intent top-1 of 0.85 or more |
+| Scout Intent with recorded nvidia/nemotron-3-embed-1b vectors: the harness's gate on the same 142 paraphrases (intent top-1, top-3, tool precision) | fail: 0.764, 0.944, 0.750 | hard lines missed: 9; the merge range was chosen on the development paraphrases |
+| Scout Intent with recorded vectors: 218 test questions routed to the right kind, and requests to change something that reach the planner as questions | 96.8%, 5.9% | with the built-in comparison: 96.3%, 2.9%; the difference is 2 of 68 requests |
+| Owner's notes with recorded nvidia/nemotron-3-embed-1b vectors and by words alone: test questions that find a note they are about, and notes recalled that were not about the question | 15 of 16, 50.0% | words alone: 15 of 16, 63.6%; 14 notes, 24 questions, 0 of 8 questions about nothing found a note (words: 1) |
+| Owner's notes, development questions the thresholds were chosen on: questions that find a note they are about, and notes recalled that were not about the question, with vectors | 15 of 20, 34.8% | words alone: 13 of 20, 53.6% |
 | world_model: the vendored engine's own conformance checks passed | 8 of 8 |  |
 | markovian: the vendored engine's own conformance checks passed | 8 of 8 |  |
 | hmem: the vendored engine's own conformance checks passed | 13 of 13 |  |
 
 Reproduce: `npm run desk -- prove`; `npm run desk -- engines year`; `npm run desk -- ask "What changed before 2026-10-15?" --sample --ablate world_model`. Seed 20261030.
 
-Inputs: `src/desk/sample/year.ts` sha256:1cbf763a70dd; `evals/scout/desk/dev/routes.jsonl` sha256:338611fc155d; `evals/scout/desk/test/routes.jsonl` sha256:1887a3f77bd7; `evals/scout/regression-set/v1/` sha256:e3b0c44298fc; `evals/scout/regression-set/v2/` sha256:e3b0c44298fc; `src/desk/scout/registry.ts` sha256:e9162d9427a2
+Inputs: `src/desk/sample/year.ts` sha256:1cbf763a70dd; `evals/scout/desk/dev/routes.jsonl` sha256:338611fc155d; `evals/scout/desk/test/routes.jsonl` sha256:1887a3f77bd7; `evals/scout/regression-set/v1/` sha256:e3b0c44298fc; `evals/scout/regression-set/v2/` sha256:e3b0c44298fc; `src/desk/scout/registry.ts` sha256:e9162d9427a2; `evals/memory/` sha256:e8072c0c4fa5; `docs/verification/embed/recall.json` sha256:0d038f7983c1; `data/sample/cassettes/` sha256:8eecacdc120e
 
 What this does not show:
 
-- Scout Intent is the Desk's own implementation of Meterless's specification (Meterless ships no reference code for it): its second stage is a hashed character-trigram stand-in for the specification's embedding, with the weights changed to match, and the question sets were written by the people who built the router.
+- Scout Intent is the Desk's own implementation of Meterless's specification (Meterless ships no reference code for it): with no embedder its second stage is a hashed character-trigram stand-in for the specification's embedding, with the weights changed to match; with the recorded vectors it uses the specification's weights. The question sets, for routing and for the owner's notes, were written by the people who built the router.
+- The embedding vectors are recorded from one model (nvidia/nemotron-3-embed-1b) and replayed; nothing here shows how a different model or a live endpoint would score, and live use sends the text of questions and notes to the endpoint only when DESK_EMBED=on.
 - The three vendored engines are the Meterless reference implementations vendored into this repository, with the Desk's own wrappers. The Markovian chunk generator is code, not a language model.
 - Each comparison is a handful of questions on a constructed ledger. They show the engine changes the answer, not how often it would on a real one.
 - The twelve-month ledger is generated from a seed; no real user's year has been read.
@@ -200,7 +207,7 @@ What this does not show:
 
 Reproduce: `npm run desk -- silos --sample`; `npm run desk -- silos --sample --no-zetaris`.
 
-Inputs: `data/sample/cassettes/` sha256:c09a67d3ed28
+Inputs: `data/sample/cassettes/` sha256:8eecacdc120e
 
 What this does not show:
 

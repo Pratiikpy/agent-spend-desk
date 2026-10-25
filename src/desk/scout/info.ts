@@ -11,8 +11,8 @@ export function scoutInfo(file = SCOUT_RECORD): { impl: string; conformance: str
   const impl = `desk/scout-intent@${SPEC}`;
   if (!existsSync(file)) return { impl, conformance: "no harness run recorded" };
   try {
-    const r = JSON.parse(readFileSync(file, "utf8")) as { examples: number; gate: { pass: boolean; failures: string[] } };
-    return { impl, conformance: `harness v1 gate ${r.gate.pass ? "PASS" : "FAIL"} (${r.examples} examples)` };
+    const r = JSON.parse(readFileSync(file, "utf8")) as { standIn: { examples: number; gate: { pass: boolean } } };
+    return { impl, conformance: `harness v1 gate ${r.standIn.gate.pass ? "PASS" : "FAIL"} (${r.standIn.examples} examples)` };
   } catch {
     return { impl, conformance: "harness record unreadable" };
   }

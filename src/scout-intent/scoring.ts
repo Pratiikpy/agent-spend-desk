@@ -20,6 +20,17 @@ import type { Band, DecideContext, Intent } from "./types.ts";
  *    intent. It is not a trained model and is labelled as such wherever it is reported.
  */
 export const CANONICAL_WEIGHTS = { lexical: 0.4, semantic: 0.35, contextual: 0.2, recency: 0.05 } as const;
+/**
+ * What a real embedder gives the merge: for each intent, the cosine of the prompt with the nearest of that intent's examples or its description. The floor and ceiling turn a cosine
+ * into the 0 to 1 the merge uses (an embedding's cosines sit in a different range from the trigram stand-in's), and the weights are the specification's, which assume a trained model.
+ */
+export interface EmbeddedSimilarity {
+  nearest: ReadonlyMap<string, number>;
+  weights?: Weights;
+  floor?: number;
+  ceil?: number;
+}
+
 export type Weights = { lexical: number; semantic: number; contextual: number; recency: number };
 
 /**
@@ -277,19 +288,27 @@ export class Scorer {
     return { text, grams, content, lexical, unmatched, matchedWeight, ms: performance.now() - t0 };
   }
 
+  /** The texts a real embedder is asked to vector once, so that a prompt can be compared with each intent: its examples and its description, with the intent each belongs to. */
+  prototypeTexts(): { intent: string; text: string }[] {
+    return this.intents.flatMap((i) => [...i.examples, i.description].map((text) => ({ intent: i.id, text })));
+  }
+
   /** Stage 2 and the merge: add the semantic and contextual terms to a scan and return every intent scored, best first. */
-  rescore(prompt: string, scan: Scan, o: { stage2: boolean; context?: DecideContext | undefined; sessionRecents?: readonly string[] | undefined }): ScoredCandidate[] {
-    const w = this.weights;
+  rescore(prompt: string, scan: Scan, o: { stage2: boolean; context?: DecideContext | undefined; sessionRecents?: readonly string[] | undefined; semantic?: EmbeddedSimilarity | undefined }): ScoredCandidate[] {
+    // A real embedder's similarities replace the character-trigram stand-in, and with them the weights the specification gives a trained model.
+    const w = o.semantic?.weights ?? this.weights;
+    const floor = o.semantic?.floor ?? this.semFloor;
+    const ceil = o.semantic?.ceil ?? this.semCeil;
     const hasContext = o.context !== undefined && (o.context.activeWorkflow !== undefined || (o.context.recentIntents?.length ?? 0) > 0 || (o.context.memory?.length ?? 0) > 0);
     const hasSession = (o.sessionRecents?.length ?? 0) > 0;
-    const q = o.stage2 ? embedTrigrams(scan.content.map((c) => c.stem).join(" ")) : null;
+    const q = o.stage2 && !o.semantic ? embedTrigrams(scan.content.map((c) => c.stem).join(" ")) : null;
     const memStems = hasContext ? new Set((o.context?.memory ?? []).flatMap((m) => this.stemsOf(m).map((s) => s.stem))) : new Set<string>();
     const recents = [...(o.context?.recentIntents ?? []), ...(o.sessionRecents ?? [])];
     const out: ScoredCandidate[] = [];
     for (const i of this.intents) {
       const lex = scan.lexical.get(i.id) as { score: number; spanStart: number; spanEnd: number };
-      const nearest = q ? Math.max(0, ...(this.prototypes.get(i.id) ?? []).map((p) => cosine(q, p))) : 0;
-      const semantic = q ? Math.min(1, Math.max(0, (nearest - this.semFloor) / (this.semCeil - this.semFloor))) : 0;
+      const nearest = o.semantic ? o.semantic.nearest.get(i.id) ?? 0 : q ? Math.max(0, ...(this.prototypes.get(i.id) ?? []).map((p) => cosine(q, p))) : 0;
+      const semantic = o.stage2 ? Math.min(1, Math.max(0, (nearest - floor) / (ceil - floor))) : 0;
       let contextual = 0;
       if (hasContext) {
         if (o.context?.activeWorkflow === i.id) contextual = 1;

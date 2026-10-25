@@ -101,6 +101,8 @@ export interface RouteEvaluation {
   /** Examples on which the configurations disagree with the default, for reading what Scout adds. */
   scoutAdds: { id: string; prompt: string; expected: DeskRoute; rules: DeskRoute; scout: DeskRoute }[];
   scoutOnlyWrong: { id: string; prompt: string; expected: DeskRoute; rules: DeskRoute; scout: DeskRoute }[];
+  /** Questions routed with the built-in comparison because a configured embedder failed or lacked a vector. */
+  degraded: number;
 }
 
 /** Run the corpus through Scout once and score all four configurations from the same decisions. */
@@ -125,7 +127,7 @@ export async function evaluateRoutes(examples: readonly RouteExample[], scout: S
     if (rules !== ex.expected.route && sc === ex.expected.route) scoutAdds.push({ id: ex.id, prompt: ex.prompt, expected: ex.expected.route, rules, scout: sc });
     if (sc !== ex.expected.route && rules === ex.expected.route) scoutOnlyWrong.push({ id: ex.id, prompt: ex.prompt, expected: ex.expected.route, rules, scout: sc });
   });
-  return { scores, scoutAdds, scoutOnlyWrong };
+  return { scores, scoutAdds, scoutOnlyWrong, degraded: decided.filter((r) => r.scout?.stage2 === "degraded").length };
 }
 
 const pct = (x: number): string => `${(x * 100).toFixed(1)}%`;

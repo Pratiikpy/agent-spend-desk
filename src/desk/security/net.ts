@@ -8,7 +8,7 @@
  *
  * What this covers: the connections the Desk's own code makes. A tool the Desk watches, or one it launches for a live test, makes its own.
  */
-export type DestinationKind = "model" | "zetaris" | "gate" | "webhook" | "gateway_upstream" | "lab_upstream";
+export type DestinationKind = "model" | "embedding" | "zetaris" | "gate" | "webhook" | "gateway_upstream" | "lab_upstream";
 
 export interface Destination {
   kind: DestinationKind;
@@ -87,6 +87,9 @@ export function manifestFromEnv(env: Record<string, string | undefined>, extra: 
   };
   const model = env["MODEL_BASE_URL"] ?? env["NVIDIA_BASE_URL"];
   if (model) push(destination("model", model, "model requests, with credential shapes masked and only what the question needs", env["MODEL_BASE_URL"] ? "MODEL_BASE_URL" : "NVIDIA_BASE_URL"));
+  // Embeddings are asked of NVIDIA's endpoint unless another is set; the chat model may be a local Nightshift that serves none.
+  const embed = env["DESK_EMBED_BASE_URL"] ?? env["NVIDIA_BASE_URL"];
+  if (embed && (env["DESK_EMBED_API_KEY"] ?? env["NVIDIA_API_KEY"])) push(destination("embedding", embed, "text to embed (the question, the owner's notes and the registry's examples), with credential shapes masked", env["DESK_EMBED_BASE_URL"] ? "DESK_EMBED_BASE_URL" : "NVIDIA_BASE_URL"));
   const zetaris = env["ZETARIS_REST_URL"];
   if (zetaris) push(destination("zetaris", zetaris, "read-only SQL statements over the invoice, CI and roster silos", "ZETARIS_REST_URL"));
   push(destination("gate", env["DESK_GATE_URL"] ?? "http://127.0.0.1:8765", "the local spend gate, on this machine", env["DESK_GATE_URL"] ? "DESK_GATE_URL" : "the default"));

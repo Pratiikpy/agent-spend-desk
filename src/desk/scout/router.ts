@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 
 import { routeQuestion as legacyRoute } from "../ask/risk.ts";
 import { BUILT_IN_PACKS, type PolicyPack } from "../../scout-intent/guard.ts";
-import { Scout } from "../../scout-intent/scout.ts";
+import { Scout, type TextEmbedder } from "../../scout-intent/scout.ts";
 import type { Decision } from "../../scout-intent/types.ts";
 import { moodPenalty } from "./mood.ts";
 import { deskRegistry, DESK_CONCEPT_WEIGHT, DESK_SYNONYMS } from "./registry.ts";
@@ -34,6 +34,11 @@ export interface ScoutDetail {
   registryVersion: number;
   policyPack: string;
   contractId: string | null;
+  /** "used": the built-in comparison; "embedded": a real embedder's vectors; "degraded": an embedder was set and failed; "skipped": the second stage is off. */
+  stage2: string;
+  /** The embedding model, when one was set. */
+  embedder: string | null;
+  degradedBecause: string | null;
 }
 
 export interface DeskRouteResult {
@@ -65,7 +70,8 @@ export function deskPack(): PolicyPack {
   };
 }
 
-export function createDeskScout(clock?: () => number): Scout {
+export function createDeskScout(clock?: (() => number) | { clock?: () => number; embedder?: TextEmbedder | null }): Scout {
+  const o = typeof clock === "function" ? { clock } : clock ?? {};
   return new Scout({
     intentRegistry: deskRegistry(),
     policyPack: deskPack(),
@@ -74,14 +80,20 @@ export function createDeskScout(clock?: () => number): Scout {
     selfTest: true,
     // Each question stands alone: the same question gets the same decision whatever was asked before it.
     sessionMemory: false,
-    ...(clock ? { clock } : {}),
+    ...(o.clock ? { clock: o.clock } : {}),
+    // The cosine range of the default embedding model for this registry, chosen on the development questions: its requests are all about spend, so the cosines between kinds
+    // are higher than the engine's default range assumes.
+    ...(o.embedder ? { embedder: o.embedder, embeddedFloor: 0.2, embeddedCeil: 0.6 } : {}),
   });
 }
 
-let shared: Scout | null = null;
-/** One Scout for the process: building it runs the Stage-1 startup self-test. */
-export function deskScout(): Scout {
-  return (shared ??= createDeskScout());
+const shared = new Map<string, Scout>();
+/** One Scout for the process per embedder: building it runs the Stage-1 startup self-test, and a Scout with an embedder holds the vectors of its registry's examples. */
+export function deskScout(embedder?: TextEmbedder | null): Scout {
+  const key = embedder ? `${embedder.id}` : "none";
+  let s = shared.get(key);
+  if (!s) shared.set(key, (s = createDeskScout({ embedder: embedder ?? null })));
+  return s;
 }
 
 /** What kind of request a decision is. The kind of the intent that won, or the strictest kind among intents that tie or are planned together. */
@@ -114,6 +126,8 @@ const sha = (s: string): string => createHash("sha256").update(s).digest("hex");
 
 export interface DeskRouterOptions {
   scout?: Scout | null;
+  /** Use this embedder for the second stage of the Desk's own Scout. Ignored when a Scout is given. */
+  embedder?: TextEmbedder | null;
   /** Switch Scout off (the ablation): every question is a read. */
   off?: boolean;
 }
@@ -125,7 +139,7 @@ export async function routeDeskQuestion(question: string, o: DeskRouterOptions =
   if (o.off) return { route: "read", flags: [], source: "off", scout: null, scoutRoute: null, rulesRoute };
   let decision: Decision;
   try {
-    decision = await (o.scout ?? deskScout()).decide({ prompt: question, user: { id: "owner", role: "owner" }, surface: "ask" });
+    decision = await (o.scout ?? deskScout(o.embedder)).decide({ prompt: question, user: { id: "owner", role: "owner" }, surface: "ask" });
   } catch (e) {
     return { route: "unsafe", flags: rules.flags, source: "failed", scout: null, scoutRoute: null, rulesRoute, reason: `The router could not decide (${e instanceof Error ? e.message.slice(0, 120) : "an error"}), so nothing was run.` };
   }
@@ -141,7 +155,7 @@ export async function routeDeskQuestion(question: string, o: DeskRouterOptions =
   const top = decision.candidates[0];
   const detail: ScoutDetail = {
     traceId: decision.traceId, intent: decision.intent, band: decision.band, score: top?.score ?? 0, alternates: decision.candidates.slice(0, 3), clarification: decision.clarification?.trigger ?? null,
-    riskLevel: decision.risk.level, latencyMs: decision.latencyMs, registryVersion: (o.scout ?? deskScout()).registry.registryVersion, policyPack: (o.scout ?? deskScout()).policyPackVersion, contractId: decision.executionContract?.contractId ?? null,
+    riskLevel: decision.risk.level, latencyMs: decision.latencyMs, registryVersion: (o.scout ?? deskScout(o.embedder)).registry.registryVersion, policyPack: (o.scout ?? deskScout(o.embedder)).policyPackVersion, stage2: decision.stage2, embedder: decision.embedder ?? null, degradedBecause: decision.degradedBecause ?? null, contractId: decision.executionContract?.contractId ?? null,
   };
   return { route, flags: [...flags], source: scoutRoute === rulesRoute ? "both" : ORDER.indexOf(scoutRoute) > ORDER.indexOf(rulesRoute) ? "scout" : "rules", scout: detail, scoutRoute, rulesRoute };
 }

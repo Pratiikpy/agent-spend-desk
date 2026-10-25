@@ -1,5 +1,7 @@
 import { Budget, ASK_LIVE, ASK_SAMPLE } from "../agents/budget.ts";
 import { MemoryTrace } from "../agents/trace.ts";
+import { embedderFromEnv } from "../embed/env.ts";
+import type { Embedder } from "../embed/port.ts";
 import { ABLATE_NAMES, type AblateName } from "../engines/load.ts";
 import { OwnerMemory } from "../engines/memory.ts";
 import { openLedger } from "../ledger/db.ts";
@@ -76,8 +78,9 @@ export async function askCommand(o: AskCommandOptions): Promise<string> {
     const route = o.noModel ? { port: null, label: "no model (--no-model): the rule planner and rule explainer run" } : choosePort({ sampleMode: o.sampleMode, record: o.record, cassetteDir: o.cassetteDir, env: o.env });
     const memory = await OwnerMemory.open({ persistDir: o.memoryDir });
     const trace = new MemoryTrace();
-    const r = await ask({ db, question: o.question, ablate: names, port: route.port, memory, trace, budget: new Budget(o.sampleMode ? ASK_SAMPLE : ASK_LIVE) });
-    return `${renderAnswer(r, trace)}\n  model route: ${route.label}`;
+    const emb = embedderFromEnv(o.env, o.cassetteDir, { sampleMode: o.sampleMode, record: o.record, noModel: o.noModel });
+    const r = await ask({ db, question: o.question, ablate: names, port: route.port, memory, trace, embedder: emb.embedder, budget: new Budget(o.sampleMode ? ASK_SAMPLE : ASK_LIVE) });
+    return `${renderAnswer(r, trace)}\n  model route: ${route.label}\n  embeddings: ${emb.label}`;
   } finally {
     db.close();
   }
@@ -93,11 +96,11 @@ export async function rememberCommand(o: { memoryDir: string; text: string; outc
   }
 }
 
-export async function verifyAnswerCommand(dbPath: string, answerId: string, memoryDir: string, o: { perturb?: boolean } = {}): Promise<string> {
+export async function verifyAnswerCommand(dbPath: string, answerId: string, memoryDir: string, o: { perturb?: boolean; embedder?: Embedder | null } = {}): Promise<string> {
   const db = openLedger(dbPath);
   try {
     const memory = await OwnerMemory.open({ persistDir: memoryDir });
-    const r = await verifyAnswer(db, answerId, { memory });
+    const r = await verifyAnswer(db, answerId, { memory, ...(o.embedder ? { embedder: o.embedder } : {}) });
     if (!r.found) return r.note;
     const lines = [`${r.note}\nsteps unchanged: ${r.same.join(", ") || "none"}; changed: ${r.changed.join(", ") || "none"}; sentences still holding: ${r.sentencesHolding} of ${r.sentencesTotal}`];
     if (o.perturb) {

@@ -1,0 +1,19 @@
+{
+  "about": "Fourteen things an owner might tell the Desk, written for the recall evaluation. Each question set (dev.jsonl, test.jsonl) names the notes a question is about. Written by the people who built the recall, as the other question sets are.",
+  "notes": [
+    { "id": "n01", "content": "Work on the billing module counts as landed once it is merged and the checks are green." },
+    { "id": "n02", "content": "Never count commits by dependabot as human work." },
+    { "id": "n03", "content": "The interns team shares one seat, so attribute their sessions to the team lead." },
+    { "id": "n04", "content": "Opus is only for architecture reviews; everything else should run on Sonnet or Haiku." },
+    { "id": "n05", "content": "Our month closes on the 25th, not on the last day." },
+    { "id": "n06", "content": "Contractors from Northwind work Tuesday to Thursday only." },
+    { "id": "n07", "content": "The data-platform repo is exempt from the daily cap during incident weeks." },
+    { "id": "n08", "content": "Refactor sessions are cheap to retry, so do not treat a retry as waste." },
+    { "id": "n09", "content": "Anything tagged experiment may be abandoned without counting as a failure." },
+    { "id": "n10", "content": "Dana approves any spend above two hundred dollars a day." },
+    { "id": "n11", "content": "Treat sessions that end with a revert as not landed." },
+    { "id": "n12", "content": "Invoices from the vendor arrive by email on the first Monday of the month." },
+    { "id": "n13", "content": "The mobile team prefers Haiku for lint fixes and test generation." },
+    { "id": "n14", "content": "Sessions started by the nightly job should never be charged to a person." }
+  ]
+}

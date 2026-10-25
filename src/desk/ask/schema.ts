@@ -42,7 +42,9 @@ CREATE TABLE IF NOT EXISTS route_decision (
   contract_id TEXT,
   registry_version INTEGER,
   policy_pack TEXT,
-  latency_ms REAL
+  latency_ms REAL,
+  stage2 TEXT,
+  embedder TEXT
 );
 
 CREATE TABLE IF NOT EXISTS ask_step (
@@ -72,4 +74,8 @@ CREATE TABLE IF NOT EXISTS ask_sentence (
 
 export function ensureAskSchema(db: Ledger): void {
   db.exec(DDL);
+  // A ledger written before the router recorded its second stage has the table without these two columns.
+  const have = new Set((db.prepare("PRAGMA table_info(route_decision)").all() as { name: string }[]).map((c) => c.name));
+  if (!have.has("stage2")) db.exec("ALTER TABLE route_decision ADD COLUMN stage2 TEXT");
+  if (!have.has("embedder")) db.exec("ALTER TABLE route_decision ADD COLUMN embedder TEXT");
 }

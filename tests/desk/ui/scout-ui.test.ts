@@ -63,3 +63,23 @@ describe("Scout Intent on the Ask screen", () => {
     expect(res.status).toBe(400);
   });
 });
+
+describe("meaning on the Ask screen", () => {
+  it("says where meaning comes from for routing and for the notes, and shows the second stage in the trace of a question it has vectors for", async () => {
+    const first = await api("");
+    expect(String(first.embeddings)).toMatch(/recorded .* vectors \(sample mode\)/);
+    const shown = await textOf("How much did we spend in September?");
+    expect(shown).toContain("Meaning for routing and for your notes: recorded");
+    expect(shown).toContain("second stage with nvidia/nemotron-3-embed-1b");
+  });
+
+  it("says the second stage fell back to the built-in comparison for a question with no recorded vector, and still answers", async () => {
+    const a = await api("How much did we spend between the first and the last day of the third week in September, in total?");
+    const events = a.events as { event: string; detail: Record<string, unknown> }[];
+    const route = events.find((e) => e.event === "desk.route")!.detail;
+    expect(route["stage2"]).toBe("degraded");
+    expect(["answered", "unknowable"]).toContain(a.status);
+    const shown = await textOf("How much did we spend between the first and the last day of the third week in September, in total?");
+    expect(shown).toContain("the embedder failed, so the built-in comparison was used");
+  });
+});

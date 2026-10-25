@@ -7,7 +7,7 @@ import { Guard, type PolicyPack } from "./guard.ts";
 import { interpret, type Interpretation } from "./interpret.ts";
 import { DEFAULT_PROFILES, ModelRouter, dataClassOf } from "./models.ts";
 import { IntentRegistry } from "./registry.ts";
-import { bandOf, DEFAULT_BANDS, Scorer, type ScoredCandidate, type ScorerOptions, type Weights } from "./scoring.ts";
+import { bandOf, CANONICAL_WEIGHTS, DEFAULT_BANDS, Scorer, type EmbeddedSimilarity, type ScoredCandidate, type ScorerOptions, type Weights } from "./scoring.ts";
 import { contentStems, normalize, tokenize } from "./text.ts";
 import type {
   ApprovalRecord, Band, Clarification, DecideInput, Decision, ExecutionContract, Intent, IntentCandidate, ModelProfile, Redaction, Risk, RiskFlag, TelemetryEvent, TelemetrySink, ToolStep, UserRef,
@@ -47,11 +47,37 @@ export interface ScoutOptions {
   injectionModel?: (text: string) => number;
   /** Prompts longer than this are cut before scoring, and the cut is flagged. */
   maxPromptChars?: number;
+  /**
+   * A text embedder for the second stage's semantic term, in place of the built-in character-trigram comparison. It is asked for the registry's examples once, as passages, and for each
+   * prompt as a query. If it fails, the decision is made with the built-in comparison and says so (`stage2: "degraded"`); a failing embedder never blocks a decision.
+   */
+  embedder?: TextEmbedder;
+  /** Merge weights with a real embedder; the specification's by default, which assume a trained model. */
+  embeddedWeights?: Weights;
+  /** The cosines that map to 0 and to 1 for the semantic term with a real embedder. */
+  embeddedFloor?: number;
+  embeddedCeil?: number;
+  /** How long one prompt may wait for the embedder. */
+  embedDeadlineMs?: number;
   /** Keep what each user did last, for the recency term and the continuity check. On by default; a surface whose requests are independent of one another turns it off so that a decision does not depend on the ones before it. */
   sessionMemory?: boolean;
 }
 
 const MAX_SESSIONS = 10_000;
+const RETRY_EMBEDDER_AFTER_MS = 30_000;
+/**
+ * The cosines that map to 0 and to 1 for the semantic term. Chosen on the development paraphrases for the default model (nvidia/nemotron-3-embed-1b, whose cosines between a request
+ * and the nearest example of its own intent are about 0.3 to 0.5, and between unrelated ones 0.1 to 0.2); another model needs its own range, which `embeddedFloor` and
+ * `embeddedCeil` set. The specification's merge weights are kept.
+ */
+const EMBEDDED_FLOOR = 0.1;
+const EMBEDDED_CEIL = 0.35;
+
+/** What Scout needs of an embedder: vectors for texts, unit length, in the order given. The Desk's embedder port has exactly this shape. */
+export interface TextEmbedder {
+  readonly id: string;
+  embed(texts: readonly string[], kind: "query" | "passage", deadlineMs?: number): Promise<ArrayLike<number>[]>;
+}
 
 const SEGMENT = /\s*(?:[;,]|\band then\b|\bthen\b|\band also\b|\bplus\b|\bafter that\b|\band\b)\s*/i;
 const CONFIDENCE_FOR_HIGH_RISK = 0.95;
@@ -76,6 +102,8 @@ export class Scout {
   private readonly opts: ScoutOptions;
   private readonly sessions = new Map<string, string[]>();
   private readonly remember: boolean;
+  private protoVectors: { at: number; value: Promise<Map<string, ArrayLike<number>[]> | null> } | null = null;
+  private lastEmbedFailure: string | null = null;
   private readonly issued = new Map<string, ExecutionContract>();
   private readonly log: TelemetryEvent[] = [];
   readonly startup: { medianMs: number; probes: number } | null;
@@ -149,17 +177,95 @@ export class Scout {
    * is of High candidates on disjoint spans, and the secondary ones are everything at or above the Medium floor). Segments are cut at commas, semicolons and conjunctions, so the
    * spans are disjoint by construction.
    */
-  private multi(prompt: string, context: DecideInput["context"]): IntentCandidate[] {
+  private multi(prompt: string, context: DecideInput["context"], sem: ReadonlyMap<string, EmbeddedSimilarity> = new Map()): IntentCandidate[] {
     const parts = this.segments(prompt);
     if (parts.length < 2 || parts.length > 5) return [];
     const found: IntentCandidate[] = [];
     const medium = this.bands.find((b) => b.name === "medium")?.min ?? 0.55;
     for (const p of parts) {
       const scan = this.scorer.scan(p.text);
-      const top = this.scorer.rescore(p.text, scan, { stage2: this.stage2, context }).find((c) => c.intent !== "GENERAL");
+      const top = this.scorer.rescore(p.text, scan, { stage2: this.stage2, context, semantic: sem.get(p.text) }).find((c) => c.intent !== "GENERAL");
       if (top && top.score >= medium && !found.some((f) => f.intent === top.intent)) found.push({ intent: top.intent, score: round(top.score), span: p.text });
     }
     return found.length >= 2 && found.some((f) => bandOf(f.score, this.bands) === "high") ? found : [];
+  }
+
+  /** The registry's examples and descriptions as passage vectors, asked for once. A failure is remembered for half a minute and then tried again. */
+  private prototypes(): Promise<Map<string, ArrayLike<number>[]> | null> {
+    const embedder = this.opts.embedder;
+    if (!embedder) return Promise.resolve(null);
+    const now = this.clock();
+    if (this.protoVectors && (this.protoVectors.at < 0 || now - this.protoVectors.at < RETRY_EMBEDDER_AFTER_MS)) return this.protoVectors.value;
+    const texts = this.scorer.prototypeTexts();
+    const value = embedder.embed(texts.map((t) => t.text), "passage", Math.max(30_000, this.opts.embedDeadlineMs ?? 0)).then(
+      (vectors) => {
+        const by = new Map<string, ArrayLike<number>[]>();
+        texts.forEach((t, i) => by.set(t.intent, [...(by.get(t.intent) ?? []), vectors[i] as ArrayLike<number>]));
+        if (this.protoVectors) this.protoVectors.at = -1;
+        return by;
+      },
+      (e: unknown) => {
+        this.lastEmbedFailure = e instanceof Error ? e.message.slice(0, 160) : "the embedder failed";
+        return null;
+      },
+    );
+    this.protoVectors = { at: now, value };
+    return value;
+  }
+
+  /**
+   * For each of the texts, the cosine with the nearest example of every intent, or a failure when the embedder cannot be reached (the decision is then made with the built-in
+   * comparison). The prompt and its segments go in one request. Null means no embedder is configured.
+   */
+  private async semantics(texts: readonly string[]): Promise<{ per: Map<string, EmbeddedSimilarity>; failure: string | null } | null> {
+    const embedder = this.opts.embedder;
+    if (!embedder || !this.stage2) return null;
+    const protos = await this.prototypes();
+    if (protos === null) return { per: new Map(), failure: this.lastEmbedFailure ?? "the registry's examples could not be embedded" };
+    try {
+      const unique = [...new Set(texts)];
+      const vectors = await embedder.embed(unique, "query", this.opts.embedDeadlineMs ?? 8_000);
+      const per = new Map<string, EmbeddedSimilarity>();
+      unique.forEach((t, k) => {
+        const q = vectors[k] as ArrayLike<number>;
+        const nearest = new Map<string, number>();
+        for (const [id, vs] of protos) {
+          let best = 0;
+          for (const v of vs) {
+            let d = 0;
+            const n = Math.min(q.length, v.length);
+            for (let j = 0; j < n; j += 1) d += (q[j] as number) * (v[j] as number);
+            if (d > best) best = d;
+          }
+          nearest.set(id, best);
+        }
+        per.set(t, { nearest, weights: this.opts.embeddedWeights ?? CANONICAL_WEIGHTS, floor: this.opts.embeddedFloor ?? EMBEDDED_FLOOR, ceil: this.opts.embeddedCeil ?? EMBEDDED_CEIL });
+      });
+      return { per, failure: null };
+    } catch (e) {
+      this.lastEmbedFailure = e instanceof Error ? e.message.slice(0, 160) : "the embedder failed";
+      return { per: new Map(), failure: this.lastEmbedFailure };
+    }
+  }
+
+  /**
+   * What is read for intent: the prompt cut to its length limit, with the instruction-like text of a surface that strips it taken out, and the texts a real embedder is asked about
+   * (that text and the segments it may be cut into).
+   */
+  private sensing(raw: string): { prompt: string; stripped: ReturnType<Guard["injectionSpans"]>; sensed: string; texts: string[] } {
+    const max = this.opts.maxPromptChars ?? 8_000;
+    const prompt = raw.length > max ? raw.slice(0, max) : raw;
+    // A surface that reads text as data takes the injection patterns' matches out of what is scored for intent: the instruction aimed at the assistant is evidence of an attack,
+    // and it must not also steer what the request is taken to be. The guard still judges the whole prompt.
+    const stripped = this.guard.pack.injection?.strip === true ? this.guard.injectionSpans(prompt, new Set(), this.capabilities.knownToolIds()).filter((h) => h.score >= (this.guard.pack.injection?.warnAt ?? 0.4)) : [];
+    const sensed = stripped.length === 0 ? prompt : stripSpans(normalize(prompt), stripped);
+    const parts = this.segments(sensed);
+    return { prompt, stripped, sensed, texts: [sensed, ...(parts.length >= 2 && parts.length <= 5 ? parts.map((p) => p.text) : [])] };
+  }
+
+  /** The query texts a decision on this prompt asks an embedder for, and the passage texts it needs once. */
+  embeddingTexts(prompt: string): { queries: string[]; passages: string[] } {
+    return { queries: [...new Set(this.sensing(prompt).texts)], passages: this.scorer.prototypeTexts().map((t) => t.text) };
   }
 
   async decide(input: DecideInput): Promise<Decision> {
@@ -167,24 +273,20 @@ export class Scout {
     if (!input || typeof input.prompt !== "string" || typeof input.surface !== "string") throw new TypeError("decide needs a prompt and a surface, both strings");
     const traceId = this.ulid.next();
     const user: UserRef = { id: input.user?.id ?? "anonymous", role: input.user?.role ?? "anonymous" };
-    const max = this.opts.maxPromptChars ?? 8_000;
-    const prompt = input.prompt.length > max ? input.prompt.slice(0, max) : input.prompt;
     const recents = this.remember ? this.sessions.get(user.id) ?? [] : [];
     const context = input.context;
+    const { prompt, stripped, sensed, texts } = this.sensing(input.prompt);
 
-    // A surface that reads text as data takes the injection patterns' matches out of what is scored for intent: the instruction aimed at the assistant is evidence of an attack,
-    // and it must not also steer what the request is taken to be. The guard still judges the whole prompt.
-    const stripped = this.guard.pack.injection?.strip === true ? this.guard.injectionSpans(prompt, new Set(), this.capabilities.knownToolIds()).filter((h) => h.score >= (this.guard.pack.injection?.warnAt ?? 0.4)) : [];
-    const sensed = stripped.length === 0 ? prompt : stripSpans(normalize(prompt), stripped);
-
-    // Sense.
+    // Sense. With a real embedder the prompt and the segments it may be cut into are embedded together, so one request serves the whole decision.
+    const semantics = await this.semantics(texts);
+    const stage2: Decision["stage2"] = !this.stage2 ? "skipped" : semantics === null ? "used" : semantics.failure === null ? "embedded" : "degraded";
     const scan = this.scorer.scan(sensed);
-    const scored = this.scorer.rescore(sensed, scan, { stage2: this.stage2, context, sessionRecents: recents });
+    const scored = this.scorer.rescore(sensed, scan, { stage2: this.stage2, context, sessionRecents: recents, semantic: semantics?.failure === null ? semantics.per.get(sensed) : undefined });
     const candidates: IntentCandidate[] = scored.slice(0, 5).map((c) => ({ intent: c.intent, score: round(c.score) }));
     const top = scored[0] as ScoredCandidate;
     const second = scored[1];
     let band = bandOf(top.score, this.bands);
-    const plan = this.multi(sensed, context);
+    const plan = this.multi(sensed, context, semantics?.failure === null ? semantics.per : undefined);
     let intents: IntentCandidate[];
     let primary: Intent;
     if (plan.length >= 2 && band !== "high") {
@@ -228,9 +330,9 @@ export class Scout {
     const finish = (d: Omit<Decision, "traceId" | "candidates" | "intents" | "band" | "stage2" | "latencyMs" | "intent" | "parameters" | "references" | "risk"> & Partial<Pick<Decision, "risk">>): Decision => {
       const decision: Decision = {
         ...(stripped.length > 0 ? { injection: { ids: [...new Set(stripped.map((h) => h.id))], residual: sensed } } : {}),
-        traceId, candidates, intents, band, stage2: this.stage2 ? "used" : "skipped", intent: primary.id, parameters: reading.parameters, references: reading.references, risk, latencyMs: Math.round((performance.now() - t0) * 100) / 100, ...d,
+        traceId, candidates, intents, band, stage2, ...(semantics?.failure ? { degradedBecause: semantics.failure } : {}), ...(this.opts.embedder ? { embedder: this.opts.embedder.id } : {}), intent: primary.id, parameters: reading.parameters, references: reading.references, risk, latencyMs: Math.round((performance.now() - t0) * 100) / 100, ...d,
       };
-      this.emit("scout.decision", traceId, { intent: decision.intent, band, risk: decision.risk.level, stage2: decision.stage2, latencyMs: decision.latencyMs, clarification: decision.clarification?.trigger ?? null, contract: decision.executionContract?.contractId ?? null, blocked: decision.risk.reason ?? null });
+      this.emit("scout.decision", traceId, { intent: decision.intent, band, risk: decision.risk.level, stage2: decision.stage2, ...(decision.degradedBecause ? { degradedBecause: decision.degradedBecause } : {}), latencyMs: decision.latencyMs, clarification: decision.clarification?.trigger ?? null, contract: decision.executionContract?.contractId ?? null, blocked: decision.risk.reason ?? null });
       return decision;
     };
 
