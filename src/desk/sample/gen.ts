@@ -260,7 +260,7 @@ export function buildSample(partial: Partial<SampleOptions> & { outDir: string }
   changeAt = opts.changeAtMs === undefined ? PLANTED_CHANGE_AT : opts.changeAtMs === null ? Number.POSITIVE_INFINITY : opts.changeAtMs;
   const r = seeded(opts.seed);
   const out = resolve(opts.outDir);
-  rmSync(out, { recursive: true, force: true });
+  rmSync(out, { recursive: true, force: true, maxRetries: 10, retryDelay: 300 });
   const claudeRoot = join(out, "claude", "projects");
   const reposRoot = join(out, "repos");
   for (const repo of REPOS) {
