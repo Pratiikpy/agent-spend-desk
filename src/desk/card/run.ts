@@ -11,6 +11,7 @@ import { linkOutcomes } from "../outcomes/link.ts";
 import { refreshTasks } from "../tasks/assign.ts";
 import { defaultMarkerPath } from "../tasks/markers.ts";
 import { loadSnapshot } from "../pricing/pricebook.ts";
+import { SAMPLE_NOW_MS } from "../sample/clock.ts";
 import { buildSample, DEFAULT_SAMPLE, sampleLogsDir, sampleReposDir } from "../sample/gen.ts";
 import { renderCardAnsi } from "./ansi.ts";
 import { buildCard, type Card, type CardMode } from "./build.ts";
@@ -100,7 +101,7 @@ export async function runCard(o: RunCardOptions): Promise<RunCardResult> {
       repos = [...roots];
     }
     say(repos.length > 0 ? `Tying sessions to commits in ${repos.length} repositor${repos.length === 1 ? "y" : "ies"}.` : "No repository to tie sessions to.");
-    const linked = repos.length > 0 ? linkOutcomes(db, repos, Date.now()) : null;
+    const linked = repos.length > 0 ? linkOutcomes(db, repos, o.mode === "sample" ? SAMPLE_NOW_MS : Date.now()) : null;
     say("Building the card.");
     const calls = loadAutopsyCalls(db, snapshot, "0000", "9999");
     const built = buildCard({

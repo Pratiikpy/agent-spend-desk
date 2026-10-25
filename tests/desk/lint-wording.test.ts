@@ -110,7 +110,7 @@ describe("what is written by hand and shipped is clean", () => {
     return out;
   }
   // A scaffold from the organisers' template is theirs, not a claim of ours.
-  const files = ["README.md", "docs/evidence.md", "docs/product-description.md", "docs/the-agents.md", "docs/reference.md", ...walk("docs/submission", /\.(md|html)$/).filter((f) => !f.endsWith(".template.md")), ...walk("docs/verification", /\.md$/)];
+  const files = ["README.md", "docs/evidence.md", "docs/product-description.md", "docs/the-agents.md", "docs/reference.md", "docs/evaluation/reasoning-scorecard.md", "docs/open-ledger-format.md", "docs/adapter-sdk.md", ...walk("docs/submission", /\.(md|html)$/).filter((f) => !f.endsWith(".template.md")), ...walk("docs/verification", /\.md$/)];
 
   it("has no overclaiming word in the README, the evidence, the deck, the video script, the product description or a verification note", () => {
     const found: string[] = [];

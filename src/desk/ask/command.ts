@@ -36,6 +36,10 @@ export function renderAnswer(r: AskResult, trace: MemoryTrace): string {
   else if (r.status === "unknowable") out.push(`Unknowable. ${r.note ?? ""}`.trim());
   else {
     for (const s of r.sentences) out.push(s.text);
+    if (r.yourWords && r.yourWords.length > 0) {
+      out.push("", "Your words (quoted, not claims of the Desk):");
+      for (const w of r.yourWords) out.push(`  ${w.id}, recorded on ${w.recordedOn}: "${w.text}"`);
+    }
     if (r.note) out.push("", `Note: ${r.note}`);
   }
   out.push("", "how this answer was checked");

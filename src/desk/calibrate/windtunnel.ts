@@ -11,6 +11,7 @@ import { loadSnapshot } from "../pricing/pricebook.ts";
 import { replaySessionsFromLedger } from "../replay/from-ledger.ts";
 import { replayPolicy } from "../replay/policy-replay.ts";
 import { windTunnel } from "../replay/wind-tunnel.ts";
+import { SAMPLE_NOW_MS } from "../sample/clock.ts";
 import { buildSample, sampleLogsDir, sampleReposDir } from "../sample/gen.ts";
 import { TEAM_OF_REPO } from "../silo/seed.ts";
 import { wilson } from "./attribution.ts";
@@ -115,7 +116,7 @@ export async function windTunnelTrial(o: { seed: number; policyFile: string; pri
     const db = openLedger(join(dir, "ledger.db"));
     try {
       await ingestClaudeCode(db, findJsonlLogs(sampleLogsDir(dir)), loadSnapshot(o.pricesPath));
-      linkOutcomes(db, Object.keys(TEAM_OF_REPO).map((n) => join(sampleReposDir(dir), n)), Date.now());
+      linkOutcomes(db, Object.keys(TEAM_OF_REPO).map((n) => join(sampleReposDir(dir), n)), SAMPLE_NOW_MS);
       const sessions = replaySessionsFromLedger(db, loadSnapshot(o.pricesPath), "0000", "9999", { personFromBranch: true });
       const t0 = Math.min(...sessions.map((s) => s.startMs));
       const history = sessions.filter((s) => s.startMs < t0 + 30 * DAY);

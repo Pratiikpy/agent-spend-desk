@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { NULL_TRACE } from "../agents/trace.ts";
-import { buildWorldModel } from "../engines/world.ts";
+import { buildWorldModelUncached } from "../engines/world.ts";
 import type { Ledger } from "../ledger/db.ts";
 import { parseProgram, type AnswerProgram } from "./program.ts";
 import { DEFAULT_CLAIM_TOKENS, ledgerCoverage, runStep, type Engines, type StepResult } from "./specialists.ts";
@@ -62,7 +62,7 @@ function dated(p: AnswerProgram): { steps: DatedStep[]; anchor: DatedStep; earli
 }
 
 async function run(db: Ledger, program: AnswerProgram): Promise<Map<string, StepResult>> {
-  const engines: Engines = { world: await buildWorldModel(db), memory: null, markovian: true };
+  const engines: Engines = { world: await buildWorldModelUncached(db), memory: null, markovian: true };
   const results = new Map<string, StepResult>();
   const ctx = { db, engines, coverage: ledgerCoverage(db), claimTokenBudget: DEFAULT_CLAIM_TOKENS, results, trace: NULL_TRACE };
   for (const step of program.steps) results.set(step.id, await runStep(step, ctx));

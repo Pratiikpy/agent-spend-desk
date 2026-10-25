@@ -1,7 +1,10 @@
 import { snapshotsFromDir } from "../close/month-bill.ts";
 import { adapterProve } from "./adapter-check.ts";
+import { decisionProve } from "./decision-check.ts";
+import { sampleEnv, type Env } from "./env.ts";
 import { auditProve } from "./audit-check.ts";
 import { yearProve } from "../engines/year-check.ts";
+import { buildScorecard, checkScorecard } from "../scorecard/command.ts";
 import { verifyChain, verifyLedger } from "../ledger/chain.ts";
 import { billCommand } from "../bill/command.ts";
 import { helpText } from "../help.ts";
@@ -22,12 +25,13 @@ import { loadAutopsyCalls } from "../autopsy/load.ts";
 import { ask } from "../ask/ask.ts";
 import { buildCard } from "../card/build.ts";
 import { createRedactor } from "../card/redact.ts";
-import { filesFor, setARows } from "../bench/command.ts";
+import { filesFor } from "../bench/command.ts";
 import { learningInputs, LEARNING_CASSETTES, LEARNING_REPORT, type StoredReport } from "../lessons/command.ts";
 import { DEFAULT_LEARN, runLearning } from "../lessons/learn.ts";
 import { allLessons, openLessons } from "../lessons/store.ts";
-import { buildQuestions, questionSetHash, type QuestionSet } from "../bench/questions.ts";
-import { ALL_ARMS, ARMS, passK, readResults, runBench, tally } from "../bench/run.ts";
+import type { QuestionSet } from "../bench/questions.ts";
+import { replaySet } from "../bench/replay.ts";
+import { ARMS, passK, readResults } from "../bench/run.ts";
 import { CONTROL_FILE, COVERAGE_FILE } from "../calibrate/command.ts";
 import { attributionReliability } from "../calibrate/attribution.ts";
 import { calibrationOf, summarise as summariseTunnel, type TunnelCoverage } from "../calibrate/windtunnel.ts";
@@ -58,18 +62,13 @@ import { startGateway } from "../gateway/server.ts";
 import { Gate } from "../gate/gate.ts";
 import { fixedPolicy } from "../gate/policy-source.ts";
 import { GateError } from "../gate/types.ts";
-import { findJsonlLogs } from "../ingest/discover.ts";
-import { openLedger, type Ledger } from "../ledger/db.ts";
-import { ingestClaudeCode } from "../ledger/ingest.ts";
-import { linkOutcomes } from "../outcomes/link.ts";
+import { openLedger } from "../ledger/db.ts";
 import { parsePolicyYaml } from "../policy/parse.ts";
 import { comparePrices, parsePortkey } from "../pricing/compare.ts";
 import { loadSnapshot } from "../pricing/pricebook.ts";
 import { propose } from "../propose/run.ts";
 import { replaySessionsFromLedger } from "../replay/from-ledger.ts";
-import { buildSample, DEFAULT_SAMPLE, readTruth, sampleLogsDir, sampleReposDir, type Truth } from "../sample/gen.ts";
 import { ciSummary, fetchSiloFacts, reconcile, teamOfProject } from "../silo/facts.ts";
-import { TEAM_OF_REPO } from "../silo/seed.ts";
 import { readBundleDir } from "../verify/read-dir.ts";
 import { verifyBundle } from "../verify/verify.ts";
 import { fuzzRestrictCheck } from "./fuzz.ts";
@@ -87,20 +86,6 @@ export interface ProveLine {
 
 export const SEED = 20261022;
 const PRICES = "data/prices/anthropic-litellm-2026-10-22.json";
-
-interface Env {
-  db: Ledger;
-  truth: Truth;
-}
-
-async function sampleEnv(dir: string): Promise<Env> {
-  const out = join(dir, "sample");
-  if (!existsSync(sampleLogsDir(out))) buildSample({ ...DEFAULT_SAMPLE, outDir: out });
-  const db = openLedger(join(out, "ledger.db"));
-  await ingestClaudeCode(db, findJsonlLogs(sampleLogsDir(out)), loadSnapshot(PRICES));
-  linkOutcomes(db, Object.keys(TEAM_OF_REPO).map((n) => join(sampleReposDir(out), n)), Date.now());
-  return { db, truth: readTruth(out) };
-}
 
 class Scripted implements ModelPort {
   constructor(private readonly byRole: Record<string, (r: ModelRequest) => Partial<ModelResponse>>) {}
@@ -128,29 +113,11 @@ function benchCheck(id: string, set: QuestionSet): Check {
     command: `replay every recorded run of benchmark set ${set} from the recorded replies and score it again`,
     seed: files.seed,
     async run(e) {
-      if (!existsSync(files.results) || !existsSync(files.cassettes) || !existsSync(files.questions)) return notRun(`no recorded benchmark at ${files.results}; run it with: desk bench run --set ${set} --record`);
-      // The first version of the Desk (A2 in results.jsonl) ran before the plan critic and cannot be replayed by today's code; its rows are history.
-      const recorded = set === "A" ? setARows().rows : readResults(files.results);
-      if (recorded.length === 0) return notRun("the recorded benchmark has no rows");
-      const registered = (JSON.parse(readFileSync(files.questions, "utf8")) as { hash: string }).hash;
-      const hash = questionSetHash(buildQuestions(e.db, files.seed, set));
-      if (hash !== registered) return fail(`the question set built from this ledger is ${hash.slice(0, 19)}, not the pre-registered ${registered.slice(0, 19)}`);
-      const dir = mkdtempSync(join(tmpdir(), "desk-bench-"));
-      try {
-        const out = join(dir, "replay.jsonl");
-        const trials = [...new Set(recorded.map((r) => r.trial))].sort((a, b) => a - b);
-        const arms = ALL_ARMS.filter((a) => recorded.some((x) => x.arm === a));
-        await runBench({ db: e.db, port: new CassettePort(files.cassettes), arms, split: "all", set, trials, out });
-        const again = new Map(readResults(out).map((x) => [`${x.qid}|${x.arm}|${x.trial}`, x]));
-        const answered = recorded.filter((x) => !x.error);
-        const differs = answered.filter((x) => { const y = again.get(`${x.qid}|${x.arm}|${x.trial}`); return !y || y.answer !== x.answer || y.exact !== x.exact || y.close !== x.close; });
-        const greedy = answered.filter((x) => x.trial === 0);
-        const line = arms.map((a) => { const c = tally(greedy.filter((x) => x.arm === a)); return `${a} ${c.exact}/${c.n}`; }).join(", ");
-        const errors = recorded.length - answered.length;
-        return (differs.length === 0 ? pass : fail)(`${answered.length} recorded runs replayed from recordings, ${differs.length} differ${differs.length > 0 ? ` (${differs.slice(0, 4).map((x) => `${x.qid} ${x.arm} t${x.trial}`).join(", ")})` : ""}; exact answers ${line}${errors > 0 ? `; ${errors} recorded runs ended in an error and are not replayed` : ""}; this reproduces the table, it does not say the Desk wins`);
-      } finally {
-        rmSync(dir, { recursive: true, force: true });
-      }
+      const r = await replaySet(e.db, set);
+      if (r.status === "no_recording") return notRun(r.detail);
+      if (r.status === "question_set_changed") return fail(r.detail);
+      const line = r.exact.map((x) => `${x.arm} ${x.exact}/${x.n}`).join(", ");
+      return (r.status === "same" ? pass : fail)(`${r.replayed} recorded runs replayed from recordings, ${r.differ.length} differ${r.differ.length > 0 ? ` (${r.differ.slice(0, 4).map((x) => `${x.qid} ${x.arm} t${x.trial}`).join(", ")})` : ""}; exact answers ${line}${r.errors > 0 ? `; ${r.errors} recorded runs ended in an error and are not replayed` : ""}; this reproduces the table, it does not say the Desk wins`);
     },
   };
 }
@@ -659,6 +626,26 @@ const CHECKS: Check[] = [
     async run() {
       const r = await yearProve();
       return r.ok ? pass(r.detail) : fail(r.detail);
+    },
+  },
+  {
+    id: "decision-replays-byte-for-byte-and-a-changed-record-is-refused",
+    command: "approve a proposal on the sample, replay its decision from the dossier alone, then change the signed record three ways",
+    seed: SEED,
+    async run(e) {
+      const r = await decisionProve(e.db, PRICES, "policies/daily-cap.yaml");
+      return r.ok ? pass(r.detail) : fail(r.detail);
+    },
+  },
+  {
+    id: "scorecard-recomputes-byte-for-byte",
+    command: "recompute the reasoning and sponsor scorecard from the repository and from runs of the code, and compare it with the committed page and its JSON, and with its signature when it is signed",
+    seed: SEED,
+    async run(e) {
+      const card = await buildScorecard(undefined, e);
+      const r = checkScorecard(card);
+      const measures = card.sections.reduce((n, s) => n + s.metrics.length, 0);
+      return r.ok ? pass(`${card.sections.length} sections and ${measures} measures recompute to the committed scorecard byte for byte; ${card.sections.reduce((n, s) => n + s.metrics.filter((m) => m.status !== "measured").length, 0)} are marked not measured on the page`) : fail(r.problems.join("; "));
     },
   },
   {

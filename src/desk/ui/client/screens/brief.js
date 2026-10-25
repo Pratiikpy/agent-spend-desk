@@ -109,6 +109,27 @@ export async function render(ctx) {
           h("p", { class: "note" }, "The outlook is how past windows of the same plan and length ended when they stood where this one does. It is checked against that plan's own history (docs/verification/runway-2026-10-24.md) and is not a promise."),
         )
       : null,
+    d.quota && d.quota.length > 0
+      ? section(
+          "Where the next task should go",
+          "a plan is close to a limit",
+          h(
+            "div",
+            { class: "cards", "data-quota": "true" },
+            ...d.quota.map((q) =>
+              h(
+                "div",
+                { class: "card" },
+                h("h3", null, q.action === "route" ? `${q.fromLabel} to ${q.toLabel}` : q.action === "wait" ? `${q.fromLabel}: wait` : `${q.fromLabel}: no room`),
+                h("p", null, q.text[0]),
+                h("ul", { class: "list" }, ...q.text.slice(1).map((line) => h("li", { class: "note" }, line.trim()))),
+                q.costsMoney ? h("p", { class: "note" }, pill("costs money", "risk"), " This route is paid by the token.") : null,
+              ),
+            ),
+          ),
+          h("p", { class: "note" }, "A suggestion, not an action: the Desk does not start work in another tool. It never moves work between two accounts of one vendor to get past a limit. desk quota next --from <plan> writes the handoff."),
+        )
+      : null,
     section(
       "Yesterday",
       "list-price estimates",

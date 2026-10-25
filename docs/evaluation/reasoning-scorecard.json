@@ -1,0 +1,869 @@
+{
+  "version": 1,
+  "sections": [
+    {
+      "id": "roles",
+      "title": "Which roles of the Desk change an outcome",
+      "question": "With one role taken out, are fewer questions answered exactly, on the same questions, by the exact McNemar test?",
+      "reproduce": [
+        "npm run desk -- bench report --set E --db data/desk/sample/ledger.db",
+        "npm run desk -- bench run --set E --sample --arm A0,A1,A2,A3,A4,A5,A6,A7,A2F,A4F"
+      ],
+      "seed": 20261028,
+      "inputs": [
+        {
+          "path": "docs/verification/ablation/set-e/results.jsonl",
+          "digest": "sha256:d3bfc17b8b07bb7f074b64a7b4423a198bf539bdb34297c577977e238150e48d"
+        },
+        {
+          "path": "docs/verification/ablation/set-e/questions.json",
+          "digest": "sha256:cbe58fb0dd9c5a2384de342272d51dce453832713a79d2bc7886f12c7ed097a3"
+        },
+        {
+          "path": "data/sample/bench-cassettes-e/",
+          "digest": "sha256:5a45c29422cd7ccd12280633a2bf82cf9024ef313fac8c0a22e998dd5348cddd"
+        }
+      ],
+      "metrics": [
+        {
+          "id": "roles.A0.exact",
+          "label": "A0, the model with no tools: exact answers",
+          "value": "12 of 60",
+          "status": "measured"
+        },
+        {
+          "id": "roles.A0.figures",
+          "label": "A0: answers stating a figure nothing asked for",
+          "value": "43 of 48",
+          "status": "measured"
+        },
+        {
+          "id": "roles.A1.exact",
+          "label": "A1, a plain tool-using agent: exact answers",
+          "value": "48 of 60",
+          "status": "measured"
+        },
+        {
+          "id": "roles.A1.figures",
+          "label": "A1: answers stating a figure nothing asked for",
+          "value": "5 of 46",
+          "status": "measured"
+        },
+        {
+          "id": "roles.A2.exact",
+          "label": "A2, the full Desk: exact answers",
+          "value": "60 of 60",
+          "status": "measured"
+        },
+        {
+          "id": "roles.A2.figures",
+          "label": "A2: answers stating a figure nothing asked for",
+          "value": "32 of 50",
+          "status": "measured"
+        },
+        {
+          "id": "roles.A3.exact",
+          "label": "A3, without the plan critic: exact answers",
+          "value": "60 of 60",
+          "status": "measured"
+        },
+        {
+          "id": "roles.A3.figures",
+          "label": "A3: answers stating a figure nothing asked for",
+          "value": "32 of 50",
+          "status": "measured"
+        },
+        {
+          "id": "roles.A4.exact",
+          "label": "A4, without the Auditor: exact answers",
+          "value": "60 of 60",
+          "status": "measured"
+        },
+        {
+          "id": "roles.A4.figures",
+          "label": "A4: answers stating a figure nothing asked for",
+          "value": "32 of 50",
+          "status": "measured"
+        },
+        {
+          "id": "roles.A5.exact",
+          "label": "A5, without the revision loop: exact answers",
+          "value": "60 of 60",
+          "status": "measured"
+        },
+        {
+          "id": "roles.A5.figures",
+          "label": "A5: answers stating a figure nothing asked for",
+          "value": "32 of 50",
+          "status": "measured"
+        },
+        {
+          "id": "roles.A6.exact",
+          "label": "A6, the Explainer replaced by code: exact answers",
+          "value": "60 of 60",
+          "status": "measured"
+        },
+        {
+          "id": "roles.A6.figures",
+          "label": "A6: answers stating a figure nothing asked for",
+          "value": "47 of 50",
+          "status": "measured"
+        },
+        {
+          "id": "roles.A7.exact",
+          "label": "A7, the Planner replaced by the rule planner: exact answers",
+          "value": "30 of 60",
+          "status": "measured"
+        },
+        {
+          "id": "roles.A7.figures",
+          "label": "A7: answers stating a figure nothing asked for",
+          "value": "42 of 51",
+          "status": "measured"
+        },
+        {
+          "id": "roles.A2F.exact",
+          "label": "A2F, the full Desk, Explainer made wrong on purpose: exact answers",
+          "value": "45 of 60",
+          "status": "measured"
+        },
+        {
+          "id": "roles.A2F.figures",
+          "label": "A2F: answers stating a figure nothing asked for",
+          "value": "24 of 46",
+          "status": "measured"
+        },
+        {
+          "id": "roles.A4F.exact",
+          "label": "A4F, without the Auditor, Explainer made wrong on purpose: exact answers",
+          "value": "46 of 60",
+          "status": "measured"
+        },
+        {
+          "id": "roles.A4F.figures",
+          "label": "A4F: answers stating a figure nothing asked for",
+          "value": "50 of 50",
+          "status": "measured"
+        },
+        {
+          "id": "roles.A3.finding",
+          "label": "plan critic: finding against the full Desk",
+          "value": "not shown necessary",
+          "status": "measured",
+          "note": "0 questions only the full Desk got right, 0 only this arm; exact McNemar p 1.000"
+        },
+        {
+          "id": "roles.A4.finding",
+          "label": "Auditor: finding against the full Desk",
+          "value": "not shown necessary",
+          "status": "measured",
+          "note": "0 questions only the full Desk got right, 0 only this arm; exact McNemar p 1.000"
+        },
+        {
+          "id": "roles.A5.finding",
+          "label": "revision loop: finding against the full Desk",
+          "value": "not shown necessary",
+          "status": "measured",
+          "note": "0 questions only the full Desk got right, 0 only this arm; exact McNemar p 1.000"
+        },
+        {
+          "id": "roles.A6.finding",
+          "label": "Explainer: finding against the full Desk",
+          "value": "not shown necessary",
+          "status": "measured",
+          "note": "0 questions only the full Desk got right, 0 only this arm; exact McNemar p 1.000"
+        },
+        {
+          "id": "roles.A7.finding",
+          "label": "Planner: finding against the full Desk",
+          "value": "necessary on this set",
+          "status": "measured",
+          "note": "30 questions only the full Desk got right, 0 only this arm; exact McNemar p < 0.001"
+        },
+        {
+          "id": "roles.auditor.under-fault",
+          "label": "Auditor under the fault: clean answers only with it, only without it",
+          "value": "26, 0",
+          "status": "measured",
+          "note": "exact McNemar p < 0.001; necessary under this fault"
+        },
+        {
+          "id": "roles.prediction.1",
+          "label": "Prediction 1: A2 answers at least 54 of 60 exactly",
+          "value": "held",
+          "status": "measured",
+          "note": "60"
+        },
+        {
+          "id": "roles.prediction.2",
+          "label": "Prediction 2: A7 answers at least 10 fewer exactly and is necessary",
+          "value": "held",
+          "status": "measured",
+          "note": "30 fewer, necessary on this set"
+        },
+        {
+          "id": "roles.prediction.3",
+          "label": "Prediction 3: A3 differs from A2 on at most 3 questions and is not shown necessary",
+          "value": "held",
+          "status": "measured",
+          "note": "0 differ, not shown necessary"
+        },
+        {
+          "id": "roles.prediction.4",
+          "label": "Prediction 4: A4 is within 2 questions of A2 and follows no hidden instruction",
+          "value": "held",
+          "status": "measured",
+          "note": "0 apart, 0 of 5 followed"
+        },
+        {
+          "id": "roles.prediction.5",
+          "label": "Prediction 5: A5 is within 2 questions of A2 and not shown necessary",
+          "value": "held",
+          "status": "measured",
+          "note": "0 apart, not shown necessary"
+        },
+        {
+          "id": "roles.prediction.6",
+          "label": "Prediction 6: A6 is within 3 questions of A2 and states a figure nothing asked for in at least ten points more of its answers",
+          "value": "held",
+          "status": "measured",
+          "note": "0 apart; 94% against 64%"
+        },
+        {
+          "id": "roles.prediction.7",
+          "label": "Prediction 7: Under the fault A4F shows a figure nothing asked for in at least 30 answers, A2F in none, and the Auditor is necessary",
+          "value": "half held, half failed",
+          "status": "measured",
+          "note": "A4F 50 of 50 (held); A2F 24 of 46 (failed); Auditor necessary (held)"
+        },
+        {
+          "id": "roles.prediction.8",
+          "label": "Prediction 8: A6 and A7 use fewer model calls and fewer seconds per question than A2",
+          "value": "calls held; seconds NOT VERIFIED",
+          "status": "not_verified",
+          "note": "calls per question: A2 1.8, A6 1.0, A7 0.8; the recorded seconds of arms that share a request with A2 are replay times and are not compared"
+        }
+      ],
+      "findings": [
+        "The plan critic: not shown necessary. 0 questions only the full Desk got right, 0 only this arm, p = 1.000.",
+        "The Auditor: not shown necessary. 0 questions only the full Desk got right, 0 only this arm, p = 1.000.",
+        "The revision loop: not shown necessary. 0 questions only the full Desk got right, 0 only this arm, p = 1.000.",
+        "The Explainer: not shown necessary. 0 questions only the full Desk got right, 0 only this arm, p = 1.000.",
+        "The Planner: necessary on this set. 30 questions only the full Desk got right, 0 only this arm, p = 0.000.",
+        "The Auditor necessary under this fault: with it 24 of 60 answers state a figure nothing asked for, without it 50 of 60. The fault is synthetic and says what the Auditor catches, not how often the model errs.",
+        "Of the 8 predictions written before the run, 6 held, 2 held in part and 0 failed.",
+        "A role not shown necessary is the absence of evidence on this set, not equivalence. It is not claimed as useful, and it is not called useless."
+      ],
+      "limits": [
+        "60 questions on a constructed ledger, one model, one run each at temperature 0; run-to-run variation was not measured on this set.",
+        "The unanswerable and adversarial categories hold ten questions each, so a category-level difference is not testable here.",
+        "The fault is synthetic. It measures what the Auditor catches, not how often a model makes the error.",
+        "The Desk was not changed after set E was read. A change made from its misses would end its status as held out."
+      ]
+    },
+    {
+      "id": "model",
+      "title": "The model against the rule brain",
+      "question": "On the same questions, how much of the result depends on the language model?",
+      "reproduce": [
+        "npm run desk -- bench report --set E --db data/desk/sample/ledger.db"
+      ],
+      "seed": 20261028,
+      "inputs": [
+        {
+          "path": "docs/verification/ablation/set-e/results.jsonl",
+          "digest": "sha256:d3bfc17b8b07bb7f074b64a7b4423a198bf539bdb34297c577977e238150e48d"
+        },
+        {
+          "path": "docs/verification/benchmark/set-d/results.jsonl",
+          "digest": "sha256:05a44f81c09dc24416ce67abcd173ee10717ff21863cc4a29efca448cac7f3df"
+        }
+      ],
+      "metrics": [
+        {
+          "id": "model.served",
+          "label": "Model that served the recorded runs",
+          "value": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+          "status": "measured"
+        },
+        {
+          "id": "model.planner",
+          "label": "Planner is the model, against the rule planner: exact answers",
+          "value": "60 of 60, 30 of 60",
+          "status": "measured",
+          "note": "exact McNemar p < 0.001"
+        },
+        {
+          "id": "model.tool_call_rate",
+          "label": "Tool-calling success rate of the model through the provider",
+          "value": "NOT VERIFIED",
+          "status": "not_verified",
+          "note": "the rate is not published; the benchmark rows record answers, not tool-call attempts"
+        }
+      ],
+      "findings": [
+        "Replacing the model Planner with the rule planner leaves 30 of 60 questions exact against 60 of 60 (necessary on this set). The rule planner cannot compute a share, an average or a count of days."
+      ],
+      "limits": [
+        "One model family, as served by the provider named above. A different model was not run.",
+        "Latency is not compared: recorded seconds for arms that share a request with the full Desk are replay times."
+      ]
+    },
+    {
+      "id": "repeat",
+      "title": "Does the same question get the same answer when it is asked again",
+      "question": "pass^k: the chance that k sampled trials of one question are all exact, averaged over questions.",
+      "reproduce": [
+        "npm run desk -- bench report --set D --db data/desk/sample/ledger.db"
+      ],
+      "seed": 20261027,
+      "inputs": [
+        {
+          "path": "docs/verification/benchmark/set-d/results.jsonl",
+          "digest": "sha256:05a44f81c09dc24416ce67abcd173ee10717ff21863cc4a29efca448cac7f3df"
+        },
+        {
+          "path": "docs/verification/benchmark/set-d/questions.json",
+          "digest": "sha256:69831925646df8424d05b4b60a4ecb975bbc529d3cce60e77947ee5aa34ac0a7"
+        },
+        {
+          "path": "data/sample/bench-cassettes-d/",
+          "digest": "sha256:09ef8d90a88a62ef675e20f2b21861da18aa58258e9a4ebf19cbfb5c35d79805"
+        }
+      ],
+      "metrics": [
+        {
+          "id": "repeat.A0.greedy",
+          "label": "A0: exact at temperature 0",
+          "value": "12 of 60",
+          "status": "measured"
+        },
+        {
+          "id": "repeat.A0.pass1",
+          "label": "A0: pass^1",
+          "value": "19.4%",
+          "status": "measured",
+          "note": "60 questions, 3 sampled trials each"
+        },
+        {
+          "id": "repeat.A0.pass2",
+          "label": "A0: pass^2",
+          "value": "18.9%",
+          "status": "measured",
+          "note": "60 questions, 3 sampled trials each"
+        },
+        {
+          "id": "repeat.A0.pass3",
+          "label": "A0: pass^3",
+          "value": "18.3%",
+          "status": "measured",
+          "note": "60 questions, 3 sampled trials each"
+        },
+        {
+          "id": "repeat.A1.greedy",
+          "label": "A1: exact at temperature 0",
+          "value": "45 of 60",
+          "status": "measured"
+        },
+        {
+          "id": "repeat.A1.pass1",
+          "label": "A1: pass^1",
+          "value": "75.6%",
+          "status": "measured",
+          "note": "60 questions, 3 sampled trials each"
+        },
+        {
+          "id": "repeat.A1.pass2",
+          "label": "A1: pass^2",
+          "value": "72.2%",
+          "status": "measured",
+          "note": "60 questions, 3 sampled trials each"
+        },
+        {
+          "id": "repeat.A1.pass3",
+          "label": "A1: pass^3",
+          "value": "70.0%",
+          "status": "measured",
+          "note": "60 questions, 3 sampled trials each"
+        },
+        {
+          "id": "repeat.A2.greedy",
+          "label": "A2: exact at temperature 0",
+          "value": "55 of 60",
+          "status": "measured"
+        },
+        {
+          "id": "repeat.A2.pass1",
+          "label": "A2: pass^1",
+          "value": "89.4%",
+          "status": "measured",
+          "note": "60 questions, 3 sampled trials each"
+        },
+        {
+          "id": "repeat.A2.pass2",
+          "label": "A2: pass^2",
+          "value": "87.2%",
+          "status": "measured",
+          "note": "60 questions, 3 sampled trials each"
+        },
+        {
+          "id": "repeat.A2.pass3",
+          "label": "A2: pass^3",
+          "value": "85.0%",
+          "status": "measured",
+          "note": "60 questions, 3 sampled trials each"
+        }
+      ],
+      "findings": [
+        "The full Desk answers a question right in 89.4% of sampled trials and in all of 3 trials of the same question 85.0% of the time (pass^3)."
+      ],
+      "limits": [
+        "Sampled trials run at a temperature above zero; the figure for the greedy run is shown beside them.",
+        "One model on one constructed ledger."
+      ]
+    },
+    {
+      "id": "replay",
+      "title": "Are the tables reproduced from the recordings",
+      "question": "Re-running every recorded arm from the recorded model replies, with no network, gives the recorded answers and scores?",
+      "reproduce": [
+        "npm run desk -- prove"
+      ],
+      "seed": null,
+      "inputs": [
+        {
+          "path": "docs/verification/benchmark/set-d/results.jsonl",
+          "digest": "sha256:05a44f81c09dc24416ce67abcd173ee10717ff21863cc4a29efca448cac7f3df"
+        },
+        {
+          "path": "docs/verification/ablation/set-e/results.jsonl",
+          "digest": "sha256:d3bfc17b8b07bb7f074b64a7b4423a198bf539bdb34297c577977e238150e48d"
+        },
+        {
+          "path": "data/sample/bench-cassettes-d/",
+          "digest": "sha256:09ef8d90a88a62ef675e20f2b21861da18aa58258e9a4ebf19cbfb5c35d79805"
+        },
+        {
+          "path": "data/sample/bench-cassettes-e/",
+          "digest": "sha256:5a45c29422cd7ccd12280633a2bf82cf9024ef313fac8c0a22e998dd5348cddd"
+        }
+      ],
+      "metrics": [
+        {
+          "id": "replay.D",
+          "label": "Set D: recorded runs replayed from recordings, and how many differ",
+          "value": "720, 0",
+          "status": "measured"
+        },
+        {
+          "id": "replay.E",
+          "label": "Set E: recorded runs replayed from recordings, and how many differ",
+          "value": "599, 0",
+          "status": "measured",
+          "note": "1 recorded runs ended in an error and are not replayed"
+        }
+      ],
+      "findings": [
+        "Set D: all 720 recorded runs are reproduced from the recorded replies.",
+        "Set E: all 599 recorded runs are reproduced from the recorded replies."
+      ],
+      "limits": [
+        "This reproduces the tables. It does not say the Desk wins, and it does not show the model would give the same replies again."
+      ]
+    },
+    {
+      "id": "engines",
+      "title": "What each Meterless engine changes in an answer",
+      "question": "Asked the same question with the engine on and off, does the answer change, and is the changed answer the right one?",
+      "reproduce": [
+        "npm run desk -- prove",
+        "npm run desk -- engines year",
+        "npm run desk -- ask \"What changed before 2026-10-15?\" --sample --ablate world_model"
+      ],
+      "seed": 20261030,
+      "inputs": [
+        {
+          "path": "src/desk/sample/year.ts",
+          "digest": "sha256:1cbf763a70dd3e993a0092b65c9d767c230451417c66f658151f43f07f2384c9"
+        }
+      ],
+      "metrics": [
+        {
+          "id": "engines.world_model.on",
+          "label": "World Model on: status, sentences, and states the planted tool-version change on its day",
+          "value": "answered, 13, yes",
+          "status": "measured"
+        },
+        {
+          "id": "engines.world_model.off",
+          "label": "World Model off: status, sentences, and states the planted change",
+          "value": "unknowable, 0, no",
+          "status": "measured"
+        },
+        {
+          "id": "engines.hmem.on",
+          "label": "H-MEM on: the answer states the owner's definition of landed",
+          "value": "yes",
+          "status": "measured"
+        },
+        {
+          "id": "engines.hmem.off",
+          "label": "H-MEM off: the answer states the owner's definition of landed",
+          "value": "no",
+          "status": "measured"
+        },
+        {
+          "id": "engines.hmem.recall",
+          "label": "H-MEM on and off: the owner's notes returned for \"What did I tell you about landed work?\"",
+          "value": "2, 0",
+          "status": "measured",
+          "note": "with the engine off the Desk says: Owner memory is off, so nothing you told the Desk before can be recalled."
+        },
+        {
+          "id": "engines.hmem.recall-unrelated",
+          "label": "H-MEM on: notes returned for a question no note is about",
+          "value": "0",
+          "status": "measured"
+        },
+        {
+          "id": "engines.markovian.on",
+          "label": "Markovian on: year-long answers matching the rows",
+          "value": "5 of 5",
+          "status": "measured"
+        },
+        {
+          "id": "engines.markovian.off",
+          "label": "Markovian off: year-long answers matching the rows",
+          "value": "2 of 5",
+          "status": "measured"
+        },
+        {
+          "id": "engines.markovian.carry",
+          "label": "Markovian: largest state carried, against its budget (estimated tokens)",
+          "value": "173 of 800",
+          "status": "measured"
+        },
+        {
+          "id": "engines.markovian.saved",
+          "label": "Markovian: tokens saved over carrying the whole history, on this ledger",
+          "value": "0",
+          "status": "measured",
+          "note": "the periods are smaller than the state that carries them, so nothing is saved at this size"
+        },
+        {
+          "id": "engines.scout_intent",
+          "label": "Scout Intent: routing with the engine on and off",
+          "value": "NOT VERIFIED",
+          "status": "not_verified",
+          "note": "not built; DF-119 is open, and no routing effect has been measured"
+        },
+        {
+          "id": "engines.conformance.world_model",
+          "label": "world_model: the vendored engine's own conformance checks passed",
+          "value": "8 of 8",
+          "status": "measured"
+        },
+        {
+          "id": "engines.conformance.markovian",
+          "label": "markovian: the vendored engine's own conformance checks passed",
+          "value": "8 of 8",
+          "status": "measured"
+        },
+        {
+          "id": "engines.conformance.hmem",
+          "label": "hmem: the vendored engine's own conformance checks passed",
+          "value": "13 of 13",
+          "status": "measured"
+        }
+      ],
+      "findings": [
+        "World Model: asked \"What changed before 2026-10-15?\", the answer with the engine has 13 sentences and states the tool version planted on 2026-10-14; without it the question is unknowable.",
+        "H-MEM: with a definition of landed remembered, the answer to \"How much of our spend landed?\" states it with the engine and does not state it without; \"What did I tell you about landed work?\" returns 2 of the owner's notes with the engine and none without, and a question no note is about returns 0.",
+        "Markovian: on a generated twelve-month ledger of 3,744 calls, 5 of 5 year-long answers match the rows with the engine and 2 without it. The carry stays inside its budget and does not grow with the range; at this size it saves no tokens.",
+        "The three vendored engines pass their own conformance runners (world_model 8/8, markovian 8/8, hmem 13/13) against https://github.com/Meterless/Meterless commit 0aa7417."
+      ],
+      "limits": [
+        "The engines are the Meterless reference implementations vendored into this repository, with the Desk's own wrappers. The Markovian chunk generator is code, not a language model.",
+        "Each comparison is a handful of questions on a constructed ledger. They show the engine changes the answer, not how often it would on a real one.",
+        "The twelve-month ledger is generated from a seed; no real user's year has been read."
+      ]
+    },
+    {
+      "id": "zetaris",
+      "title": "What Zetaris changes",
+      "question": "With the organisational silos behind Zetaris and without them, what can the Desk say about the bill?",
+      "reproduce": [
+        "npm run desk -- silos --sample",
+        "npm run desk -- silos --sample --no-zetaris"
+      ],
+      "seed": null,
+      "inputs": [
+        {
+          "path": "data/sample/cassettes/",
+          "digest": "sha256:c09a67d3ed28bedc14b263386dfca38a90cdded92b64133914319197ad520210"
+        }
+      ],
+      "metrics": [
+        {
+          "id": "zetaris.on.served",
+          "label": "Zetaris on: how the four statements were served",
+          "value": "cassette/cassette/cassette/cassette",
+          "status": "measured"
+        },
+        {
+          "id": "zetaris.off.served",
+          "label": "Zetaris off: how the four statements were served",
+          "value": "fallback/fallback/fallback/fallback",
+          "status": "measured"
+        },
+        {
+          "id": "zetaris.on.billed",
+          "label": "Billed share of the ledger's list-price estimate, with Zetaris",
+          "value": "100.0%",
+          "status": "measured",
+          "note": "$6,123.23 of invoice amounts"
+        },
+        {
+          "id": "zetaris.off.billed",
+          "label": "Billed share, without Zetaris",
+          "value": "0.0%",
+          "status": "measured",
+          "note": "every figure is an estimate"
+        },
+        {
+          "id": "zetaris.on.teams",
+          "label": "Teams in the spend-per-landed-pull-request table, with and without Zetaris",
+          "value": "3, 0",
+          "status": "measured"
+        },
+        {
+          "id": "zetaris.on.prs",
+          "label": "Pull requests with known CI facts, with and without Zetaris",
+          "value": "792, 0",
+          "status": "measured"
+        }
+      ],
+      "findings": [
+        "With Zetaris the Desk joins invoices, CI and the team roster: 100.0% of the ledger is covered by invoices, 3 teams have a spend-per-landed-pull-request figure, and 792 pull requests have CI facts. Without it the invoice share is 0.0% and the table is empty."
+      ],
+      "limits": [
+        "The silos are three synthetic sources seeded from the sample ledger. The statements are replayed from recordings made against a local Zetaris instance; this page does not run Zetaris.",
+        "A fallback is labelled and never partial rows: with Zetaris off the Desk says what it could not join."
+      ]
+    },
+    {
+      "id": "faithfulness",
+      "title": "Do the citations hold the answer up",
+      "question": "Does each cited claim matter to its sentence, and do the answer's figures come from the ledger and not from the model?",
+      "reproduce": [
+        "npm run desk -- scorecard",
+        "npm run desk -- ask <question> --sample"
+      ],
+      "seed": 20261028,
+      "inputs": [
+        {
+          "path": "docs/verification/ablation/set-e/questions.json",
+          "digest": "sha256:cbe58fb0dd9c5a2384de342272d51dce453832713a79d2bc7886f12c7ed097a3"
+        },
+        {
+          "path": "data/sample/bench-cassettes-e/",
+          "digest": "sha256:5a45c29422cd7ccd12280633a2bf82cf9024ef313fac8c0a22e998dd5348cddd"
+        }
+      ],
+      "metrics": [
+        {
+          "id": "faithfulness.answers",
+          "label": "Answers written from the recordings (the rest were refused or unknowable)",
+          "value": "50 of 60",
+          "status": "measured"
+        },
+        {
+          "id": "faithfulness.sentences",
+          "label": "Sentences, and citations they carry",
+          "value": "194, 195",
+          "status": "measured"
+        },
+        {
+          "id": "faithfulness.needed",
+          "label": "Citations the sentence needs, and citations that are decoration",
+          "value": "195, 0",
+          "status": "measured"
+        },
+        {
+          "id": "faithfulness.perturbation",
+          "label": "Answers whose figures moved when a known call was added, held when it was added outside their dates, and could not be tested",
+          "value": "50, 0 failed, 0",
+          "status": "measured"
+        }
+      ],
+      "findings": [
+        "Of 195 citations on 194 sentences in 50 answers, 195 were needed by the sentence that made them and 0 were decoration.",
+        "Perturbation: 50 answers read the ledger as it should (moved with a call inside their dates, held with one outside), 0 did not, 0 had nothing to perturb (a recalled note, a refusal)."
+      ],
+      "limits": [
+        "Necessity is read by the code Auditor: it says whether the sentence still passes without a claim, not whether a reader would still believe it.",
+        "The exact movement rule is held for spend steps only; for other steps a figure that moved shows the answer reads the ledger, not that it reads the right rows.",
+        "Steps with no dates are not perturbed."
+      ]
+    },
+    {
+      "id": "attacks",
+      "title": "Do policy attacks survive",
+      "question": "Can an edited policy widen what is allowed without the check noticing, and can a drafted rule be stepped round?",
+      "reproduce": [
+        "npm run desk -- prove",
+        "npm run desk -- propose --sample --no-model"
+      ],
+      "seed": 20261022,
+      "inputs": [
+        {
+          "path": "policies/daily-cap.yaml",
+          "digest": "sha256:e048326d5e993c4f9f7faab41424937d111051c68538f4d5661b3fc418bbf037"
+        },
+        {
+          "path": "src/desk/prove/fuzz.ts",
+          "digest": "sha256:543b6576d11714980a4e8d228017d7710c1757011e26b3e011fbe9d2f2bb79c0"
+        }
+      ],
+      "metrics": [
+        {
+          "id": "attacks.fuzz.pairs",
+          "label": "Policy edit pairs checked against an independent oracle, and pairs that narrow the policy",
+          "value": "3000, 2545",
+          "status": "measured"
+        },
+        {
+          "id": "attacks.fuzz.escapes",
+          "label": "Edits the restrict-only check let through that widen the policy, and edits it wrongly refused",
+          "value": "0, 0",
+          "status": "measured"
+        },
+        {
+          "id": "attacks.fuzz.control",
+          "label": "A checker that always says \"narrows\": pairs on which it is caught",
+          "value": "55 of 400",
+          "status": "measured"
+        },
+        {
+          "id": "attacks.evasions",
+          "label": "Evasions of a drafted policy found by probing, closed, and left standing",
+          "value": "4, 2, 2",
+          "status": "measured"
+        },
+        {
+          "id": "attacks.landed-blocked",
+          "label": "Landed sessions the hardened policy would block in the held-out period",
+          "value": "5 of 492",
+          "status": "measured"
+        }
+      ],
+      "findings": [
+        "The restrict-only check agreed with an independent oracle on 3000 policy edits (2545 narrowing): 0 widening edits got through and 0 narrowing edits were refused. A checker that always says \"narrows\" is caught on 55 of 400 pairs, so the fuzzer can see an escape.",
+        "A drafted policy was probed for ways round it: 2 closed by a rule change that still narrows the policy, 2 left standing and shown on the approval card."
+      ],
+      "limits": [
+        "The fuzzer generates policies from the checker's own grammar; an edit outside that grammar is not tried.",
+        "The probing is code, run with the rule brain. A model attacker reading the same draft was not run for this page."
+      ]
+    },
+    {
+      "id": "calibration",
+      "title": "Does confidence mean what it says",
+      "question": "When the Desk ties a session to a commit and calls the link high, medium or low, how often is it right?",
+      "reproduce": [
+        "npm run desk -- calibrate --sample"
+      ],
+      "seed": null,
+      "inputs": [
+        {
+          "path": "src/desk/calibrate/attribution.ts",
+          "digest": "sha256:eb98b5d479ce07399bbf008e6508290538e609547195f7cf78fd72b150479795"
+        }
+      ],
+      "metrics": [
+        {
+          "id": "calibration.high",
+          "label": "high: links that are right",
+          "value": "518 of 522",
+          "status": "measured",
+          "note": "99.2%, 95% interval 98.0% to 99.7%"
+        },
+        {
+          "id": "calibration.medium",
+          "label": "medium: links that are right",
+          "value": "209 of 212",
+          "status": "measured",
+          "note": "98.6%, 95% interval 95.9% to 99.5%"
+        },
+        {
+          "id": "calibration.low",
+          "label": "low: links that are right",
+          "value": "0 of 0",
+          "status": "measured"
+        },
+        {
+          "id": "calibration.unlinked",
+          "label": "unlinked: links that are right",
+          "value": "237 of 253",
+          "status": "measured",
+          "note": "93.7%, 95% interval 90.0% to 96.1%"
+        },
+        {
+          "id": "calibration.ordered",
+          "label": "High is at least as reliable as medium, and medium as low",
+          "value": "yes",
+          "status": "measured"
+        },
+        {
+          "id": "calibration.state",
+          "label": "Linked sessions whose landing state matches the planted fate",
+          "value": "682 of 734",
+          "status": "measured"
+        },
+        {
+          "id": "calibration.ece",
+          "label": "Expected calibration error",
+          "value": "not applicable",
+          "status": "not_applicable",
+          "note": "the confidence levels are words, not probabilities; a reliability table is reported instead, and no error is computed from them"
+        }
+      ],
+      "findings": [
+        "Linked at each level against the planted truth of the constructed sample: high 518 of 522, medium 209 of 212, unlinked 237 of 253. The levels are ordered as their names promise."
+      ],
+      "limits": [
+        "Planted truth exists only in the constructed sample. On a real ledger the same table needs landing to be known, and on this machine's ledger it is known for a small share of sessions."
+      ]
+    },
+    {
+      "id": "cursor",
+      "title": "Cursor",
+      "question": "Is there a written record of the product being built in Cursor?",
+      "reproduce": [
+        "read docs/sponsors/cursor-usage-log.md"
+      ],
+      "seed": null,
+      "inputs": [
+        {
+          "path": "docs/sponsors/cursor-usage-log.md",
+          "digest": "sha256:73da795a6506f37135ddc0142cdb81145f61c0d7a74c590be186e5d5963fb368"
+        }
+      ],
+      "metrics": [
+        {
+          "id": "cursor.sessions",
+          "label": "Cursor sessions written down in the usage log",
+          "value": "NOT VERIFIED",
+          "status": "not_verified",
+          "note": "the log holds no session; nothing here claims Cursor was used"
+        }
+      ],
+      "findings": [
+        "The usage log is empty. No claim about Cursor is made on this page."
+      ],
+      "limits": [
+        "Counts the sessions in the file. It does not show what was done in them."
+      ]
+    }
+  ]
+}

@@ -2,6 +2,7 @@ import { Budget, BudgetError, type BudgetLimits } from "../agents/budget.ts";
 import { callModel, ModelError, type ChatMessage, type ModelPort, type ModelResponse, type ToolSpec } from "../agents/model.ts";
 import { MemoryTrace, NULL_TRACE } from "../agents/trace.ts";
 import { ask, type Precedent, type RoleSwitches } from "../ask/ask.ts";
+import type { Faithfulness } from "../ask/faithfulness.ts";
 import { parseProgram, type AnswerProgram } from "../ask/program.ts";
 import { DEFAULT_CLAIM_TOKENS, ledgerCoverage, runStep, type Engines, type StepResult } from "../ask/specialists.ts";
 import { buildWorldModel } from "../engines/world.ts";
@@ -91,6 +92,8 @@ export interface ArmOutcome {
   detail: string;
   /** The Desk's plan, when the arm is the Desk and it made one. */
   program?: AnswerProgram | null;
+  /** Which cited claims each sentence of the Desk's answer needed, when the arm is the Desk and it wrote sentences. */
+  faithfulness?: Faithfulness;
 }
 
 const SYSTEM = `You answer questions about an agent-spend ledger. Dollar amounts are estimates at list price, not invoices.
@@ -221,7 +224,7 @@ export async function runA2(o: { db: Ledger; port: ModelPort; question: string; 
     if (outage) return { answer: "", modelCalls: counting.totals.calls, tokensIn: counting.totals.inTok, tokensOut: counting.totals.outTok, servedModel: r.servedModel, ms: Date.now() - started, error: `model unavailable: ${String((outage.detail as { reason?: unknown }).reason).slice(0, 120)}`, detail: `${r.status}; the Desk fell back to rules` };
     const body = r.sentences.map((s) => s.text).join(" ");
     const answer = r.status === "answered" ? [body, r.note ?? ""].join(" ").trim() : `${r.status === "refused" ? "Not answered." : "Unknowable."} ${r.note ?? ""}`.trim();
-    return { answer, modelCalls: counting.totals.calls, tokensIn: counting.totals.inTok, tokensOut: counting.totals.outTok, servedModel: r.servedModel, ms: Date.now() - started, error: null, detail: `${r.status}; planner ${r.planner}; explainer ${r.explainer}; ${r.steps.length} steps; ${auditOf(trace)}`, program: r.program };
+    return { answer, modelCalls: counting.totals.calls, tokensIn: counting.totals.inTok, tokensOut: counting.totals.outTok, servedModel: r.servedModel, ms: Date.now() - started, error: null, detail: `${r.status}; planner ${r.planner}; explainer ${r.explainer}; ${r.steps.length} steps; ${auditOf(trace)}`, program: r.program, ...(r.faithfulness ? { faithfulness: r.faithfulness } : {}) };
   } catch (e) {
     return { answer: "", modelCalls: counting.totals.calls, tokensIn: counting.totals.inTok, tokensOut: counting.totals.outTok, servedModel: counting.totals.served, ms: Date.now() - started, error: fail(e), detail: "" };
   }

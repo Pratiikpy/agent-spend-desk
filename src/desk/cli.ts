@@ -1,4 +1,6 @@
 import { markovianHistory, warmCarry } from "./engines/carry.ts";
+import { replayDecision, recordReplay } from "./replay/decision-replay.ts";
+import { scorecardCommand } from "./scorecard/command.ts";
 import { renderYearCheck, runYearCheck } from "./engines/year-check.ts";
 import { canaryAttribution, changesCommand } from "./changes/command.ts";
 import { readRows as readCanaryRows } from "./canary/store.ts";
@@ -45,6 +47,7 @@ import { parsePolicyYaml } from "./policy/parse.ts";
 import { replaySessionsFromLedger } from "./replay/from-ledger.ts";
 import { replayPolicy } from "./replay/policy-replay.ts";
 import { windTunnel } from "./replay/wind-tunnel.ts";
+import { SAMPLE_NOW_MS } from "./sample/clock.ts";
 import { buildSample, sampleLogsDir, sampleReposDir } from "./sample/gen.ts";
 import { runCard } from "./card/run.ts";
 import { loadDotenv } from "./env.ts";
@@ -93,6 +96,8 @@ import { gatewayCommand } from "./gateway/command.ts";
 import { otelCommand } from "./otel/command.ts";
 import { discoverSources, renderSources } from "./adapters/registry.ts";
 import { plansView, renderPlans } from "./limits/plans.ts";
+import { quotaHistory, quotaNext, quotaRelease, quotaStatus } from "./quota/command.ts";
+import { plansFor } from "./quota/store.ts";
 import { approvalsCommand } from "./approvals/command.ts";
 import { readHabit } from "./ui/queries.ts";
 import { gaugeCachePath, newestMtimeMs, watchLogs, writeGaugeCache } from "./gauge/watch.ts";
@@ -215,6 +220,13 @@ const { values, positionals } = parseOrExit({
     origin: { type: "string" },
     "write-golden": { type: "boolean", default: false },
     model: { type: "boolean", default: false },
+    check: { type: "boolean", default: false },
+    pins: { type: "string" },
+    "plans-file": { type: "string" },
+    "dry-run": { type: "boolean", default: false },
+    "handoff-dir": { type: "string", default: "data/desk/handoffs" },
+    decision: { type: "string" },
+    json: { type: "boolean", default: false },
     "markov-dir": { type: "string", default: "data/desk/markovian" },
     replaces: { type: "string" },
     apply: { type: "boolean", default: false },
@@ -279,7 +291,7 @@ const db = command === "card" || command === "status" || command === "lab" ? ope
 
 // The Desk's own model calls are written to the ledger it keeps, priced like any other call, and held to DESK_OWN_DAILY_CAP_USD when that is set.
 // Prices the owner set for models the vendor list does not cover apply to every command, except where the result must not depend on this machine.
-if (!sampleMode && !["card", "status", "lab", "help", "prove", "demo", "bench"].includes(command)) activateOwnerPrices(process.env["DESK_OWNER_PRICES"] ?? undefined);
+if (!sampleMode && !["card", "status", "lab", "help", "prove", "demo", "bench", "scorecard"].includes(command)) activateOwnerPrices(process.env["DESK_OWNER_PRICES"] ?? undefined);
 
 if (!["card", "status", "lab", "help", "prove", "demo"].includes(command)) {
   let ownPrices = null;
@@ -414,6 +426,25 @@ Answer one with: desk questions answer <id> yes|no. Or go through them: desk que
     });
     await watchLogs({ poll: () => newestMtimeMs(findJsonlLogs(values["claude-dir"])), refresh: draw, sleep: (ms) => new Promise((r) => setTimeout(r, ms)), intervalMs: 3000, shouldStop: () => stop });
   } else await draw();
+} else if (command === "replay-decision") {
+  // Re-execute an approved decision from its signed dossier, offline, and compare every stage with what was attested.
+  const dir = positionals[1];
+  if (!dir) throw new Error("Use: desk replay-decision <dossier folder> [--pins <file>] [--decision <file>]");
+  const v = await replayDecision({ bundleDir: dir, ...(values.pins ? { pinsPath: values.pins } : {}), ...(values.decision ? { decisionPath: values.decision } : {}) });
+  console.log(v.lines.join("\n"));
+  if (existsSync(ledgerPath)) {
+    try {
+      recordReplay(db, v);
+    } catch {
+      /* a ledger from before replays were kept: the result was printed and is not stored */
+    }
+  }
+  if (v.exit !== 0) process.exitCode = v.exit;
+} else if (command === "scorecard") {
+  // The reasoning and sponsor scorecard: every figure recomputed from the repository and from runs of the code, or marked NOT VERIFIED.
+  const r = await scorecardCommand({ write: values.write, check: values.check, sign: values.sign, json: values.json, log: (line) => { if (process.stderr.isTTY) console.error(`scorecard: ${line}`); } });
+  console.log(r.text);
+  if (r.exit !== 0) process.exitCode = r.exit;
 } else if (command === "engines") {
   // The Markovian engine on a long ledger: the year-long questions with it on and off, the carry state kept in the ledger, and the engine's own record of its runs.
   const sub = positionals[1];
@@ -607,6 +638,25 @@ ${sensitivity}`);
   const at = values.at ? new Date(values.at) : new Date();
   if (Number.isNaN(at.getTime())) throw new Error("--at must be a date and time such as 2026-10-24T12:00:00Z");
   console.log(renderPlans(plansView(db, at, values.agent ? { tool: values.agent } : {})));
+} else if (command === "quota") {
+  // The quota-aware plan router: where the next task should go when a plan is close to a limit. It recommends and logs; it never pools accounts of one vendor.
+  const at = values.at ? new Date(values.at) : new Date();
+  if (Number.isNaN(at.getTime())) throw new Error("--at must be a date and time such as 2026-10-24T12:00:00Z");
+  const sub = positionals[1] ?? "status";
+  const base = { db, now: at, plansFile: values["plans-file"] ?? null };
+  if (sub === "status") console.log(quotaStatus(base).text);
+  else if (sub === "plans") console.log(plansFor(db, base.plansFile).map((p) => `${p.id}  ${p.label}  vendor ${p.vendor}, account ${p.account}, ${p.kind === "api_key" ? "paid by the token" : "subscription"}`).join("\n") || "No plans.");
+  else if (sub === "next") {
+    if (!values.from) throw new Error("Use: desk quota next --from <plan id> [--task <type>] [--dry-run]");
+    const r = quotaNext({ ...base, from: values.from, task: values.task ?? null, dryRun: values["dry-run"], handoffDir: values["handoff-dir"] });
+    console.log(r.text);
+    if (r.recommendation.action === "refuse") process.exitCode = 2;
+  } else if (sub === "history") console.log(quotaHistory({ db, days: Number(values.days), now: at }));
+  else if (sub === "release") {
+    const id = Number(positionals[2]);
+    if (!Number.isInteger(id)) throw new Error("Use: desk quota release <dispatch id>");
+    console.log(quotaRelease({ db, id, now: at }));
+  } else throw new Error("Use: desk quota status | plans | next --from <plan> | history | release <id>");
 } else if (command === "runway") {
   const at = values.at ? new Date(values.at) : new Date();
   if (Number.isNaN(at.getTime())) throw new Error("--at must be a date and time such as 2026-10-24T12:00:00Z");
@@ -911,7 +961,7 @@ ${t.pass} PASS, ${t.fail} FAIL, ${t.notRun} NOT RUN. NOT RUN is not a pass: it n
       authorRules = null;
     }
   }
-  const report = linkOutcomes(db, repos, Date.now(), authorRules === null ? {} : { authorRules: authorRules.byPseudonym });
+  const report = linkOutcomes(db, repos, sampleMode ? SAMPLE_NOW_MS : Date.now(), authorRules === null ? {} : { authorRules: authorRules.byPseudonym });
   console.log(`read ${report.repos} repositories, ${report.commits} commits; ${report.sessions} sessions, ${report.links} links`);
   if (report.overridden > 0) console.log(`${report.overridden} commit${report.overridden === 1 ? "" : "s"} read as ${report.overridden === 1 ? "the" : "your"} memory says about their author, not as the trailer says.`);
   if (authorRules !== null && authorRules.conflicts.length > 0) console.log(`Two notes disagree about ${authorRules.conflicts.join(", ")}; neither is applied. Replace one: desk remember "..." --replaces <memory id> (desk memory list shows the ids).`);

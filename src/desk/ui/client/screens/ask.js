@@ -85,6 +85,14 @@ export async function render(ctx) {
               ),
             )
           : null,
+        a.yourWords && a.yourWords.length > 0
+          ? h(
+              "div",
+              { class: "your-words", "data-your-words": "true" },
+              h("p", { class: "note" }, "Your words, quoted. These are not claims of the Desk."),
+              h("ul", { class: "list" }, ...a.yourWords.map((w) => h("li", null, h("span", { class: "sub" }, `${w.id}, recorded on ${w.recordedOn}: `), h("q", null, w.text)))),
+            )
+          : null,
         a.note ? h("p", { class: "note" }, a.status === "answered" ? `Note: ${a.note}` : a.note) : null,
       ),
       section(

@@ -92,6 +92,36 @@ export interface AskResult {
   note: string | null;
   /** Which of the claims the sentences cite each sentence needs (DF-108). Absent when no sentence was written. */
   faithfulness?: Faithfulness;
+  /** The owner's own words that the answer rests on, shown as quotations beside the checked sentences and not as claims of the Desk. Absent when none were used. */
+  yourWords?: YourWord[];
+}
+
+export interface YourWord {
+  id: string;
+  recordedOn: string;
+  text: string;
+}
+
+/** A note as it is shown back: control and direction characters removed, whitespace collapsed, and no more than 300 characters. */
+export function quoteNote(text: string): string {
+  const clean = text
+    .replace(/[\u0000-\u001f\u007f-\u009f​-‏‪-‮⁦-⁩﻿]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return clean.length <= 300 ? clean : `${clean.slice(0, 299).trimEnd()}…`;
+}
+
+function yourWordsOf(steps: readonly StepResult[]): YourWord[] {
+  const seen = new Set<string>();
+  const out: YourWord[] = [];
+  for (const s of steps) {
+    for (const e of s.evidence) {
+      if (seen.has(e.id)) continue;
+      seen.add(e.id);
+      out.push({ id: e.id, recordedOn: e.learnedAt, text: quoteNote(e.content) });
+    }
+  }
+  return out;
 }
 
 const PLAN_SYSTEM = `You plan how to answer a question about an agent-spend ledger. You do not answer it.
@@ -207,7 +237,8 @@ export async function ask(o: AskOptions): Promise<AskResult> {
   const answerId = `ans-${randomUUID().slice(0, 12)}`;
   const base = { answerId, question: o.question, ablated: [...ablate].sort() as EngineName[] };
   const finish = (r: Omit<AskResult, "answerId" | "question" | "ablated">): AskResult => {
-    const result = { ...base, ...r };
+    const words = r.status === "answered" ? yourWordsOf(r.steps) : [];
+    const result = { ...base, ...r, ...(words.length > 0 ? { yourWords: words } : {}) };
     if (o.record !== false) record(o.db, result, o.now?.() ?? new Date().toISOString());
     return result;
   };

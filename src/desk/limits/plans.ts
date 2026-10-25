@@ -19,11 +19,13 @@ export interface PlanWindow {
   source: "official" | "none";
   official: { usedPct: number; resetsAt: string; minutesToReset: number; ageMinutes: number; state: Runway["state"]; head: string } | null;
   /** What the Desk's own count of tokens says about this window, beside the official figure. */
-  local: { tokensSoFar: number; impliedPct: number | null; lowPct: number | null; highPct: number | null; agrees: boolean | null; note: string } | null;
+  local: { tokensSoFar: number; impliedPct: number | null; lowPct: number | null; highPct: number | null; agrees: boolean | null; note: string; tokensPerPercent?: number | null } | null;
   /** The outlook from past windows, or why there is none. */
   outlook: string;
   /** With too few past windows for an outlook: the pace of the last hour carried forward in a straight line, said to be exactly that. */
   linear: { minutesToFull: number; beforeReset: boolean; note: string } | null;
+  /** The numbers behind the sentences above, for a caller that decides on them (the plan router): the history's verdict, and the minutes to full at the pace of the last hour. */
+  numbers: { verdict: Runway["verdict"]; minutesToFull: number | null; tokensPerPercent: number | null } | null;
 }
 
 export interface PlanEvent {
@@ -81,6 +83,7 @@ function localFor(db: Ledger, tool: string, planType: string | null, windowMinut
     lowPct: Math.min(100, lowPct),
     highPct: Math.min(100, highPct),
     agrees,
+    tokensPerPercent: fit.tokensPerPercent,
     note: agrees
       ? `${k(tokensSoFar)} tokens counted in this window would be about ${Math.round(Math.min(100, implied))}% on this plan's own history (${Math.round(Math.min(100, lowPct))}% to ${Math.round(Math.min(100, highPct))}%): consistent with the tool's figure.`
       : `${k(tokensSoFar)} tokens counted here would be about ${Math.round(Math.min(100, implied))}% (${Math.round(Math.min(100, lowPct))}% to ${Math.round(Math.min(100, highPct))}%) against the tool's ${Math.round(official.usedPct)}%. The tool's figure includes other devices and other uses of the plan that leave no trace in these logs; neither is changed to fit the other.`,
@@ -107,7 +110,7 @@ export function plansView(db: Ledger, now: Date, opts: { tool?: string; days?: n
     const current = groups[0];
     if (!current) {
       const day = tokensIn(db, tool, now.getTime() - 5 * 60 * MINUTE, now.getTime());
-      windows.push({ tool, toolLabel: toolLabel(tool), planType: null, windowMinutes: 300, label: "five-hour window (a local count)", source: "none", official: null, local: { tokensSoFar: day, impliedPct: null, lowPct: null, highPct: null, agrees: null, note: `${k(day)} tokens counted in the last five hours. There is no reading of ${toolLabel(tool)}'s own plan windows, so there is no percent and no outlook.` }, outlook: "No official reading, so no outlook.", linear: null });
+      windows.push({ tool, toolLabel: toolLabel(tool), planType: null, windowMinutes: 300, label: "five-hour window (a local count)", source: "none", official: null, local: { tokensSoFar: day, impliedPct: null, lowPct: null, highPct: null, agrees: null, note: `${k(day)} tokens counted in the last five hours. There is no reading of ${toolLabel(tool)}'s own plan windows, so there is no percent and no outlook.` }, outlook: "No official reading, so no outlook.", linear: null, numbers: null });
       notes.push(tool === "claude_code" ? "Claude Code reports its plan windows only through its status line: `desk statusline install` turns that on. Until it does, Claude Code windows are a local count with no percent." : `${toolLabel(tool)} has no plan reading in this ledger.`);
       continue;
     }
@@ -125,7 +128,10 @@ export function plansView(db: Ledger, now: Date, opts: { tool?: string; days?: n
         local: official && r.state !== "window_over" ? localFor(db, tool, g.planType, g.windowMinutes, official, now) : null,
         outlook: runwayDetail(r),
         linear: r.outlook === null ? linearFor(r) : null,
+        numbers: { verdict: r.verdict, minutesToFull: linearFor(r)?.minutesToFull ?? null, tokensPerPercent: null },
       });
+      const added = windows[windows.length - 1] as PlanWindow;
+      if (added.numbers && added.local) added.numbers.tokensPerPercent = added.local.tokensPerPercent ?? null;
     }
   }
 

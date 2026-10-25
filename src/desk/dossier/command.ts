@@ -7,6 +7,8 @@ import { buildDossier } from "./build.ts";
 import { writeBundleDir } from "./bundle-io.ts";
 import { loadOrCreateSigner, pinsFor, type Signer } from "./keys.ts";
 import type { PolicyChangePack } from "./policy-change.ts";
+import { decisionPathFor, signDecision } from "../replay/decision-replay.ts";
+import { FILE_MANIFEST } from "../verify/format.ts";
 import { formatReport } from "../verify/report.ts";
 import { verifyBundle } from "../verify/verify.ts";
 
@@ -95,8 +97,10 @@ export function approve(requestId: string, digest: string, paths: DossierPaths, 
     // The pins file sits beside the bundle, never inside it: the verifier refuses a file the manifest does not list.
     const pinsFile = join(paths.outDir, `${requestId.slice(0, 8)}.pins.json`);
     writeFileSync(pinsFile, JSON.stringify(pinsFor(sg), null, 2) + "\n");
+    // The recorded decision is signed beside the dossier and bound to it by the digest of its manifest and the action the approval covers.
+    if (pack.decision) writeFileSync(decisionPathFor(dir), JSON.stringify(signDecision(pack.decision, built.files.get(FILE_MANIFEST) as Uint8Array, digest, sg), null, 2) + "\n");
     const report = verifyBundle(built.files, { pins: pinsFor(sg) });
-    return { ok: report.overall === "PASS", dir, text: `Approved. Dossier written to ${dir}\n\n${formatReport(report, dir)}\n\nCheck it again, offline, with: node src/desk/verify/main.ts ${dir} --pins ${pinsFile}${opened === null ? `\n\nThis was approved without the evidence being opened first; the monthly approval record (desk approvals) counts it. desk approvals show <id> opens the evidence before the next one.` : ""}` };
+    return { ok: report.overall === "PASS", dir, text: `Approved. Dossier written to ${dir}\n\n${formatReport(report, dir)}\n\nCheck it again, offline, with: node src/desk/verify/main.ts ${dir} --pins ${pinsFile}${pack.decision ? `\nReplay the decision itself, offline, with: desk replay-decision ${dir}` : ""}${opened === null ? `\n\nThis was approved without the evidence being opened first; the monthly approval record (desk approvals) counts it. desk approvals show <id> opens the evidence before the next one.` : ""}` };
   } finally {
     db.close();
   }

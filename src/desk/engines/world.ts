@@ -33,7 +33,35 @@ export interface WorldHistory {
 /** How many of the newest sessions are drawn into the graph with their relationships; older ones still count in the model and tool-version histories. */
 export const SESSION_CAP = 5_000;
 
+/** The ledger's own history changes only when its rows do: this connection's writes, another connection's commits, or a new schema. */
+function ledgerStateKey(db: Ledger): string {
+  const one = (sql: string): string => String(Object.values(db.prepare(sql).get() as Record<string, unknown>)[0]);
+  return [one("PRAGMA data_version"), one("SELECT total_changes() AS n"), one("PRAGMA schema_version")].join(":");
+}
+
+// A world built from the ledger alone is read-only once built, and building it dominates a question's time, so the same ledger state reuses it.
+const built = new WeakMap<Ledger, { key: string; world: WorldHistory | null }>();
+
 export async function buildWorldModel(db: Ledger, extra?: ExtraHistory): Promise<WorldHistory | null> {
+  if (extra !== undefined) return buildWorld(db, extra);
+  const key = ledgerStateKey(db);
+  const hit = built.get(db);
+  if (hit && hit.key === key) return hit.world;
+  const world = await buildWorld(db);
+  // Not kept inside a transaction or savepoint (its changes may be rolled back, and a rollback does not move the counters the key is read from), nor when a write landed during the build.
+  if (!db.isTransaction && ledgerStateKey(db) === key) built.set(db, { key, world });
+  return world;
+}
+
+/**
+ * A world built from the ledger as it is now and never kept. For a caller that has changed the ledger and will undo the change: a rollback does not move the counters the key is
+ * read from, so a world built in between must not be reused afterwards.
+ */
+export async function buildWorldModelUncached(db: Ledger): Promise<WorldHistory | null> {
+  return buildWorld(db);
+}
+
+async function buildWorld(db: Ledger, extra?: ExtraHistory): Promise<WorldHistory | null> {
   const base = deriveHistory(db);
   if (!base) return null;
   const history: LedgerHistory = extra === undefined ? base : { ...base, entities: [...base.entities, ...extra.entities], changes: [...base.changes, ...extra.changes].sort((x, y) => x.day.localeCompare(y.day) || x.kind.localeCompare(y.kind) || x.entityKey.localeCompare(y.entityKey)) };

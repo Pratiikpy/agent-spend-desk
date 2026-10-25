@@ -59,7 +59,7 @@ export default {
 5. The output is valid `desk.events/1`.
 6. `detect` says true for the sample and false for an empty file, for a JSON object that is not the tool's, and for a `desk.events/1` file. An adapter that claims files that are not its tool's would capture other tools' files.
 
-`desk adapters test my-tool --write-golden` writes the golden file for a fixture that has none, from the adapter's own output. **Read it against the sample before relying on it**: a golden made by the adapter proves nothing until a person has checked it. It never overwrites one that exists.
+`desk adapters test my-tool --write-golden` writes the golden file for a fixture that has none, from the adapter's own output. **Read it against the sample before relying on it**: a golden made by the adapter shows nothing until a person has checked it. It never overwrites one that exists.
 
 `desk adapters import my-tool file...` runs the adapter over the owner's files, prints the adapter's notes, and imports the events. Ids are filed under the adapter's `id`, so reading the same file again stores nothing twice.
 

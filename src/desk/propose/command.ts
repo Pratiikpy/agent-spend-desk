@@ -14,6 +14,7 @@ import { replaySessionsFromLedger } from "../replay/from-ledger.ts";
 import { describeRecord, proposalDecisionRecord, writeDecisionRecord } from "../decision/from-proposal.ts";
 import { propose, renderProposal, writeProposal } from "./run.ts";
 import { buildPolicyChangePack } from "../dossier/policy-change.ts";
+import { attachDecision, recordingPort } from "../replay/decision.ts";
 import { issueApproval, type DossierPaths } from "../dossier/command.ts";
 import { recordProposal } from "../regret/command.ts";
 
@@ -93,7 +94,10 @@ export async function proposeCommand(o: ProposeCommandOptions): Promise<string> 
     const current = parsePolicyYaml(readFileSync(o.policyPath, "utf8"));
     const { port, label } = choosePort(o);
     const trace = new MemoryTrace();
-    const result = await propose({ current, sessions, splitMs, targetMinMicros: usdToMicros(o.minUsd, "--min-usd"), port, trace, budget: new Budget(DRAFT_LIVE) });
+    const targetMinMicros = usdToMicros(o.minUsd, "--min-usd");
+    // Every reply the model gives is kept, so that the decision can be replayed offline when it is approved.
+    const recorded = port ? recordingPort(port) : null;
+    const result = await propose({ current, sessions, splitMs, targetMinMicros, port: recorded ? recorded.port : null, trace, budget: new Budget(DRAFT_LIVE) });
     const files = writeProposal(result, o.outDir);
     const record = proposalDecisionRecord({ result, sessions, splitMs, now: new Date() });
     const recordLine = describeRecord(record, writeDecisionRecord(record, o.outDir));
@@ -103,7 +107,7 @@ export async function proposeCommand(o: ProposeCommandOptions): Promise<string> 
         tail = "\n" + "\n" + "No approval request was issued: the proposal does not only narrow the current policy.";
       } else {
         const day = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
-        const pack = buildPolicyChangePack({
+        const built = buildPolicyChangePack({
           current,
           proposed: result.final,
           trainingSessions: sessions.filter((s) => s.startMs < splitMs),
@@ -113,9 +117,13 @@ export async function proposeCommand(o: ProposeCommandOptions): Promise<string> 
           createdAt: new Date().toISOString(),
           unresolvedEvasions: result.hardened.unresolved,
         });
+        const pack = await attachDecision(built, { current, splitMs, targetMinMicros, brain: recorded ? "model" : "rules", calls: recorded?.calls ?? [], result });
         const issued = issueApproval(pack, o.dossier);
         if (o.regretPath) recordProposal(o.regretPath, { requestId: issued.requestId, current, result, sessions });
-        tail = "\n" + "\n" + issued.text;
+        const decisionLine = pack.decision
+          ? `The decision is recorded (${pack.decision.stages.length} stages${pack.decision.calls.length > 0 ? `, ${pack.decision.calls.length} model replies` : ""}); once approved it can be replayed offline with: desk replay-decision <dossier folder>`
+          : `The decision is not recorded: ${pack.decisionNote ?? "it was not captured"}.`;
+        tail = "\n" + "\n" + issued.text + "\n" + decisionLine;
       }
     }
     const precedents = await precedentSection(db, current, result.final, o.memoryDir, o.memoryOff);

@@ -672,7 +672,40 @@ CREATE TABLE carry_state (
 );
 `;
 
-const MIGRATIONS: readonly string[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8, SCHEMA_V9, SCHEMA_V10, SCHEMA_V11, SCHEMA_V12, SCHEMA_V13, SCHEMA_V14, SCHEMA_V15, SCHEMA_V16, SCHEMA_V17, SCHEMA_V18, SCHEMA_V19, SCHEMA_V20, SCHEMA_V21, SCHEMA_V22, SCHEMA_V23, SCHEMA_V24, SCHEMA_V25, SCHEMA_V26, SCHEMA_V27];
+// What a replay of a signed dossier's decision found, kept so it can be seen later (DF-110).
+const SCHEMA_V28 = `
+CREATE TABLE dossier_replay (
+  replay_id INTEGER PRIMARY KEY,
+  dossier_digest TEXT NOT NULL,
+  kind TEXT,
+  verdict TEXT NOT NULL CHECK (verdict IN ('identical', 'diverged', 'unverifiable', 'recomputed_only')),
+  diverged_stage TEXT,
+  stages_checked INTEGER NOT NULL CHECK (stages_checked >= 0),
+  replayed_at TEXT NOT NULL
+);
+CREATE INDEX dossier_replay_digest ON dossier_replay (dossier_digest, replayed_at);
+`;
+
+// Where the quota-aware router said the next task should go, and the tokens it held back for a handoff (DF-091).
+const SCHEMA_V29 = `
+CREATE TABLE route_dispatch (
+  dispatch_id INTEGER PRIMARY KEY,
+  decided_at TEXT NOT NULL,
+  from_plan TEXT NOT NULL,
+  to_plan TEXT,
+  action TEXT NOT NULL CHECK (action IN ('stay', 'route', 'wait', 'refuse')),
+  code TEXT,
+  reasons TEXT NOT NULL,
+  reserve_tokens INTEGER NOT NULL CHECK (reserve_tokens >= 0),
+  checkpoint INTEGER NOT NULL CHECK (checkpoint IN (0, 1)),
+  wait_minutes INTEGER,
+  task TEXT,
+  released_at TEXT
+);
+CREATE INDEX route_dispatch_open ON route_dispatch (from_plan) WHERE released_at IS NULL;
+`;
+
+const MIGRATIONS: readonly string[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8, SCHEMA_V9, SCHEMA_V10, SCHEMA_V11, SCHEMA_V12, SCHEMA_V13, SCHEMA_V14, SCHEMA_V15, SCHEMA_V16, SCHEMA_V17, SCHEMA_V18, SCHEMA_V19, SCHEMA_V20, SCHEMA_V21, SCHEMA_V22, SCHEMA_V23, SCHEMA_V24, SCHEMA_V25, SCHEMA_V26, SCHEMA_V27, SCHEMA_V28, SCHEMA_V29];
 
 /** The schema version this build writes: the number of migrations. A reader compares a ledger's `user_version` with it. */
 export const SCHEMA_VERSION = MIGRATIONS.length;

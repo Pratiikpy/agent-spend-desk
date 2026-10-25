@@ -212,9 +212,9 @@ describe("digestRange over the year", () => {
   });
 });
 
-describe("the kept carry state (schema 27)", () => {
+describe("the kept carry state (added in schema 27)", () => {
   it("is in the ledger's schema", () => {
-    expect(SCHEMA_VERSION).toBe(27);
+    expect(SCHEMA_VERSION).toBeGreaterThanOrEqual(27);
     const cols = (db.prepare("PRAGMA table_info(carry_state)").all() as { name: string }[]).map((c) => c.name);
     expect(cols).toEqual(expect.arrayContaining(["range_from", "bucket_kind", "bucket_days", "step", "chain_digest", "state", "tokens"]));
   });

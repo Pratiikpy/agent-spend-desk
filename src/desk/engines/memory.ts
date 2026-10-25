@@ -3,6 +3,7 @@ import { join } from "node:path";
 
 import { loadEngineModule, type HmemLike, type HmemRecord } from "./load.ts";
 import { sanitizeLabel } from "./label.ts";
+import { sharesTopic, topicStems } from "./topic.ts";
 import { authorRulesFrom, type AuthorRules } from "../outcomes/author-rules.ts";
 import type { LandingState } from "../outcomes/attribute.ts";
 
@@ -127,8 +128,11 @@ export class OwnerMemory {
 
   /** Ranked recall by the engine's hybrid score. Superseded notes can come back, marked as such. */
   recall(query: string, topN = 5): Recalled[] {
-    const r = this.hmem.query(query, { topN });
-    return r.memories.map(({ memory, relevance }) => ({
+    // The engine ranks every note (threshold 0); a note is recalled only if it shares a topic word with the question. A question that names no topic ("what did I tell you?") gets the newest notes.
+    const topics = topicStems(query);
+    const r = this.hmem.query(query, { topN: Math.max(topN, 200), threshold: 0 });
+    const kept = topics.size === 0 ? [...r.memories].sort((x, y) => y.memory.timestamp - x.memory.timestamp) : r.memories.filter(({ memory }) => sharesTopic(topics, memory.content));
+    return kept.slice(0, topN).map(({ memory, relevance }) => ({
       id: memory.id,
       learnedAt: new Date(memory.timestamp).toISOString().slice(0, 10),
       kind: memory.tags.includes(OUTCOME_TAG) ? "outcome_definition" : memory.tags.includes(NOTE_TAG) ? "note" : "other",

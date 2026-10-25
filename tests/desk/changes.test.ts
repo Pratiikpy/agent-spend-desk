@@ -11,7 +11,7 @@ import { canaryAttribution, changesCommand, loadChangeHistory } from "../../src/
 import { describeChange } from "../../src/desk/changes/render.ts";
 import { collectExtraHistory } from "../../src/desk/changes/sources.ts";
 import { OwnerMemory } from "../../src/desk/engines/memory.ts";
-import { buildWorldModel, queryChangesBefore } from "../../src/desk/engines/world.ts";
+import { buildWorldModel, buildWorldModelUncached, queryChangesBefore } from "../../src/desk/engines/world.ts";
 import { ensureGateSchema } from "../../src/desk/gate/schema.ts";
 import { openLedger, type Ledger } from "../../src/desk/ledger/db.ts";
 import { ingestClaudeCode } from "../../src/desk/ledger/ingest.ts";
@@ -203,4 +203,35 @@ describe("through the real command line", () => {
     expect(off.stdout.trim()).toBe("unknowable: no entity history is available, so what changed cannot be listed.");
     void OwnerMemory;
   }, 120_000);
+});
+
+describe("the ledger-only world is reused while the ledger is unchanged", () => {
+  const modelNames = (w: Awaited<ReturnType<typeof buildWorldModel>>): string[] => (w ? (w.wm.view("graph") as { query(o: { type?: string }): { name: string }[] }).query({ type: "model" }).map((e) => e.name) : []);
+
+  it("returns the same world twice, and a different one once a row has changed", async () => {
+    const a = await buildWorldModel(db);
+    expect(a).not.toBeNull();
+    expect(await buildWorldModel(db)).toBe(a);
+    db.exec("SAVEPOINT reuse_probe");
+    db.prepare("UPDATE model_call SET model = 'planted-model-id' WHERE call_id = (SELECT call_id FROM model_call ORDER BY ts LIMIT 1)").run();
+    const during = await buildWorldModel(db);
+    db.exec("ROLLBACK TO SAVEPOINT reuse_probe; RELEASE SAVEPOINT reuse_probe");
+    expect(during).not.toBe(a);
+    expect(modelNames(during)).toContain("planted-model-id");
+  });
+
+  it("never keeps a world built inside a change that is rolled back", async () => {
+    db.exec("SAVEPOINT rollback_probe");
+    db.prepare("UPDATE model_call SET model = 'planted-model-id-2' WHERE call_id = (SELECT call_id FROM model_call ORDER BY ts LIMIT 1)").run();
+    await buildWorldModel(db);
+    db.exec("ROLLBACK TO SAVEPOINT rollback_probe; RELEASE SAVEPOINT rollback_probe");
+    expect(modelNames(await buildWorldModel(db))).not.toContain("planted-model-id-2");
+  });
+
+  it("builds from the ledger as it is when asked not to keep the result", async () => {
+    const a = await buildWorldModel(db);
+    const fresh = await buildWorldModelUncached(db);
+    expect(fresh).not.toBe(a);
+    expect(modelNames(fresh)).toEqual(modelNames(a));
+  });
 });

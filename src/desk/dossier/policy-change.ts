@@ -7,6 +7,7 @@ import { evaluate } from "../policy/evaluate.ts";
 import type { Policy } from "../policy/types.ts";
 import { restrictCheck } from "../policy/restrict.ts";
 import { replayPolicy, type ReplaySession } from "../replay/policy-replay.ts";
+import type { DecisionRecord } from "../replay/decision.ts";
 import type { Row } from "../verify/format.ts";
 import { auditedSentences, type ApprovalCard } from "./approval.ts";
 import type { ClaimInput, DossierInput, SentenceInput } from "./build.ts";
@@ -43,6 +44,10 @@ export interface PolicyChangePack {
   proposedId: string;
   meta: Pick<DossierInput, "kind" | "tenant" | "period" | "createdAt" | "audience" | "disclosure">;
   ruleIdsAdded: string[];
+  /** The recorded decision, signed beside the dossier when the change is approved; absent when the decision was not recorded or would not replay. */
+  decision?: DecisionRecord;
+  /** Why there is no decision record, when there is none. */
+  decisionNote?: string;
 }
 
 const hex = (id: string): string => id.slice("sha256:".length);

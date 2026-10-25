@@ -43,6 +43,9 @@ import { reconcile, summariseReconciliation, type ReconcileRow } from "../reconc
 import { groupLabel, limitGroups } from "../limits/fit.ts";
 import { renderRunway, runwayDetail, runwayFromLedger, runwayHead } from "../limits/runway.ts";
 import { plansView } from "../limits/plans.ts";
+import { renderRecommendation } from "../quota/command.ts";
+import { DEFAULT_POLICY, headroomOf, pressed, recommend } from "../quota/router.ts";
+import { plansFor } from "../quota/store.ts";
 import { comparePrices, type ForeignRow } from "../pricing/compare.ts";
 import type { PriceSnapshot } from "../pricing/pricebook.ts";
 import { costBand, priceSensitivity } from "../pricing/sensitivity.ts";
@@ -654,6 +657,7 @@ export function brief(ctx: UiContext, forDay: string | null = null): object {
     landing: { rows: landingRows(landing), totalMicros: landing.totalMicros, linked: hasLinks(ctx.db) },
     causes: causeRows(a).slice(0, 5),
     runway: runwayRows(ctx),
+    quota: quotaRows(ctx),
     gate: night === null ? { state: "not_read", note: "The gate is not running here, so there is nothing to say about pauses or denials. `desk gate serve` starts it." } : { state: "ok", line: nightLine(night), ...night },
     canary,
     sources: sourceFreshness(ctx),
@@ -665,6 +669,22 @@ export function brief(ctx: UiContext, forDay: string | null = null): object {
 
 /** Plan windows that were read within this long are shown on the brief; a tool not used for longer than this is left out of it. */
 const RUNWAY_RECENT_DAYS = 7;
+/** For each plan close to a limit, where the next task should go: the router's answer in words, and what it asks of the person. */
+function quotaRows(ctx: UiContext): object[] {
+  const has = one<{ n: number }>(ctx.db, "SELECT COUNT(*) AS n FROM sqlite_master WHERE type = 'table' AND name = 'limit_sample'");
+  if (!has || has.n === 0) return [];
+  const now = new Date(ctx.nowMs());
+  const plans = plansFor(ctx.db, null);
+  const view = plansView(ctx.db, now);
+  const out: object[] = [];
+  for (const p of plans) {
+    if (!pressed(headroomOf(p, view), DEFAULT_POLICY).yes) continue;
+    const r = recommend({ from: p.id, plans, view });
+    out.push({ from: p.id, fromLabel: p.label, action: r.action, to: r.to, toLabel: plans.find((x) => x.id === r.to)?.label ?? null, code: r.code, text: renderRecommendation(r, plans).split("\n"), checkpoint: r.checkpoint, costsMoney: r.costsMoney, waitMinutes: r.waitMinutes });
+  }
+  return out;
+}
+
 const RUNWAY_TOOLS = [["claude_code", "Claude Code"], ["codex", "Codex"]] as const;
 
 /** For each tool with plan-limit readings, the windows of the plan in use: where each stands, and whether it will last until its reset. */

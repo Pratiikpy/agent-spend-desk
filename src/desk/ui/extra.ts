@@ -74,6 +74,7 @@ export async function askScreen(ctx: UiContext, paths: ExtraPaths, question: str
     sentences: r.sentences.map((s, i) => ({ text: s.text, cites: s.cites, decorative: r.faithfulness?.sentences[i]?.decorative ?? [] })),
     // Which cited claims each sentence needs, tested by taking each away and asking the Auditor again (DF-108).
     citations: r.faithfulness ? describeFaithfulness(r.faithfulness) : null,
+    yourWords: r.yourWords ?? [],
     note: r.note,
     steps: r.steps.map((s) => ({ id: s.id, op: s.op, specialist: s.specialist, engine: s.engine, rows: s.rowCount, queryHash: s.queryHash, resultHash: s.resultHash, unknowable: s.unknowable })),
     events,
