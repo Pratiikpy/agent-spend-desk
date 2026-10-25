@@ -1,3 +1,4 @@
+import { auditCommand } from "./billing/audit-command.ts";
 import { readAttentionLoad } from "./gate/readout.ts";
 import { baselineReproduction, withheldNotice } from "./replay/reproduction.ts";
 import { homedir } from "node:os";
@@ -198,6 +199,8 @@ const { values, positionals } = parseOrExit({
     export: { type: "string" },
     "if-due": { type: "boolean", default: false },
     output: { type: "string" },
+    definition: { type: "string" },
+    pack: { type: "string" },
     sign: { type: "boolean", default: false },
     "ask-approval": { type: "boolean", default: false },
     by: { type: "string" },
@@ -390,6 +393,16 @@ Answer one with: desk questions answer <id> yes|no. Or go through them: desk que
     });
     await watchLogs({ poll: () => newestMtimeMs(findJsonlLogs(values["claude-dir"])), refresh: draw, sleep: (ms) => new Promise((r) => setTimeout(r, ms)), intervalMs: 3000, shouldStop: () => stop });
   } else await draw();
+} else if (command === "invoices" && positionals[1] === "audit") {
+  const audited = auditCommand(db, {
+    snapshot: loadSnapshot(pricesPath),
+    ...(values.vendor ? { vendor: values.vendor } : {}),
+    ...(values.month ? { month: values.month } : {}),
+    ...(values.definition ? { definitionPath: values.definition } : {}),
+    ...(values.pack ? { packDir: values.pack } : {}),
+  });
+  console.log(audited.text);
+  if (!audited.ok) process.exitCode = 1;
 } else if (command === "invoices") {
   console.log(
     invoicesCommand(positionals.slice(1), db, {

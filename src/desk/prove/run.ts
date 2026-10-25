@@ -1,4 +1,5 @@
 import { snapshotsFromDir } from "../close/month-bill.ts";
+import { auditProve } from "./audit-check.ts";
 import { verifyChain, verifyLedger } from "../ledger/chain.ts";
 import { billCommand } from "../bill/command.ts";
 import { helpText } from "../help.ts";
@@ -629,6 +630,15 @@ const CHECKS: Check[] = [
       const afterwards = decideStatus({ billed: 100_000_000, estimated: 101_000_000, tol: 0.02, full: true, covered, unmatchedBilled: 0, unmatchedEstimated: 0, unpriced: 0 }).status;
       if (priced.smallest?.subject !== "claude-opus-5" || priced.smallest.to !== "reconciled" || afterwards !== "reconciled") return fail(`a disputed price that would reconcile the month was not found, and said: ${describeFlip(priced)}`);
       return pass(`the sample's ${sampleCert.verdict} verdict rests on its control arm (${sampleCert.tried} of ${sampleCert.candidates} candidates tried); a one-task change is traced to ${oneCert.smallest.subject} and not called a regression; a search cut short says so; a month 10% off its invoice names the disputed price that would reconcile it`);
+    },
+  },
+  {
+    id: "bill-audit-matches-an-independent-matching-and-the-pack-verifies",
+    command: "charge five days of the sample's outcomes two over what its sessions could back, audit the invoice, compare the backed count with a maximum matching worked out another way, build the dispute pack and verify it offline",
+    seed: SEED,
+    async run(e) {
+      const r = auditProve(e.db, loadSnapshot(PRICES));
+      return r.ok ? pass(r.detail) : fail(r.detail);
     },
   },
   {

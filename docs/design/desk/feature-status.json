@@ -63,7 +63,7 @@
     { "id": "DF-059", "status": "absent", "evidence": [], "missing": "no team mode" },
     { "id": "DF-060", "status": "built", "evidence": ["src/desk/ci/gate.ts", "src/desk/ci/command.ts", "src/desk/ci/simulate.ts", "tests/desk/ci.test.ts", "docs/verification/ci-gate-2026-10-25.md"], "missing": "Not run in a real pipeline with a live model; false-alarm study is on simulated packs" },
     { "id": "DF-061", "status": "built", "evidence": ["src/desk/seats/seats.ts", "src/desk/seats/command.ts", "src/desk/prove/run.ts"], "missing": "the renewal sheet export is not verified" },
-    { "id": "DF-062", "status": "absent", "evidence": [], "missing": "no bill auditor or dispute pack" },
+    { "id": "DF-062", "status": "built", "evidence": ["src/desk/billing/audit.ts", "src/desk/billing/audit-pack.ts", "src/desk/billing/audit-report.ts", "src/desk/billing/audit-command.ts", "src/desk/prove/audit-check.ts", "src/desk/prove/run.ts", "tests/desk/billing-audit.test.ts", "docs/verification/bill-auditor-2026-10-25.md"], "missing": "Judges lines by day against the owner's side of the logs only; no named vendor's per-outcome export was available, only CSV in the generic columns; no join on a vendor id" },
     { "id": "DF-063", "status": "absent", "evidence": [], "missing": "no adapter SDK or published ledger format" },
     { "id": "DF-064", "status": "absent", "evidence": [], "missing": "no public regression index" },
     { "id": "DF-065", "status": "absent", "evidence": [], "missing": "no shareable rule packs or canary templates" },
