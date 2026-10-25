@@ -100,5 +100,7 @@ export function describeManifest(m: { profile: Profile; destinations: readonly D
   for (const d of m.destinations) lines.push(`${d.origin}${d.loopback ? " (this machine)" : ""}: ${d.purpose}. Declared by ${d.declaredBy}.${m.profile === "local" && !d.loopback ? " Refused in the local profile." : ""}`);
   if (m.destinations.length === 0) lines.push("No destination is declared: nothing leaves this machine.");
   lines.push("Any other address is refused before a connection is made.");
+  // `gh` is a program of the owner's, not a connection the Desk makes, so the list above cannot govern it; saying so here keeps the list from reading as the whole of it.
+  lines.push("One thing is not on this list because it is not a connection the Desk makes: `desk landing --prs` runs your own `gh`, which asks api.github.com for the pull requests of repositories you scanned. It runs only when you pass that flag, and it is refused in the local profile.");
   return lines;
 }

@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { ASK_LIVE, Budget, BudgetError } from "../agents/budget.ts";
 import { ClaimLedger, type Claim, type Sentence } from "../agents/claims.ts";
 import { explain, MAX_REFLEXIONS } from "../agents/explain.ts";
+import { citationFaithfulness, type Faithfulness } from "./faithfulness.ts";
 import { callModel, ModelError, type ChatMessage, type ModelPort } from "../agents/model.ts";
 import { NULL_TRACE, type Trace } from "../agents/trace.ts";
 import { engineInfo } from "../engines/registry.ts";
@@ -89,6 +90,8 @@ export interface AskResult {
   sentences: AnswerSentence[];
   /** What the reader must be told: a refusal, an unknowable reason, or the removed statements. */
   note: string | null;
+  /** Which of the claims the sentences cite each sentence needs (DF-108). Absent when no sentence was written. */
+  faithfulness?: Faithfulness;
 }
 
 const PLAN_SYSTEM = `You plan how to answer a question about an agent-spend ledger. You do not answer it.
@@ -347,7 +350,8 @@ export async function ask(o: AskOptions): Promise<AskResult> {
     return { ...s, queryHashes: used.map((u) => u.queryHash), resultHashes: used.map((u) => u.resultHash) };
   });
   const notes = [ex.note, ...steps.filter((s) => s.unknowable).map((s) => s.unknowable)].filter((x): x is string => !!x);
-  return finish({ route: "read", flags: routed.flags, status: sentences.length > 0 ? "answered" : "unknowable", planner, explainer: ex.usedFallback || !o.port || ablate.size > 0 || roles.explainer === "rules" ? "rules" : "model", servedModel, program, steps, sentences, note: notes.length > 0 ? notes.join(" ") : null });
+  const faithfulness = sentences.length > 0 ? citationFaithfulness(sentences, ledger) : undefined;
+  return finish({ route: "read", flags: routed.flags, status: sentences.length > 0 ? "answered" : "unknowable", planner, explainer: ex.usedFallback || !o.port || ablate.size > 0 || roles.explainer === "rules" ? "rules" : "model", servedModel, program, steps, sentences, note: notes.length > 0 ? notes.join(" ") : null, ...(faithfulness ? { faithfulness } : {}) });
 }
 
 function record(db: Ledger, r: AskResult, at: string): void {

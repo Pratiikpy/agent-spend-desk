@@ -16,6 +16,7 @@ import { baseRef, commitsInRange, findRepoRoot } from "./outcomes/git.ts";
 import { answerQuestion, askLoop, openQuestions, renderQuestion } from "./outcomes/questions.ts";
 import { prCost, renderPr } from "./pr/cost.ts";
 import { linkOutcomes } from "./outcomes/link.ts";
+import { realRunners, syncPrs } from "./outcomes/prs.ts";
 import { ingestClaudeCode } from "./ledger/ingest.ts";
 import { formatUsd } from "./money.ts";
 import { comparePrices, parsePortkey, renderComparison } from "./pricing/compare.ts";
@@ -51,6 +52,8 @@ import { benchCommand } from "./bench/command.ts";
 import { seatsCommand } from "./seats/command.ts";
 import { routeCommand } from "./route/command.ts";
 import { calibrateCommand } from "./calibrate/command.ts";
+import { forecastCommand } from "./forecast/command.ts";
+import { ruleCalibrationCommand, ruleCalibrationLine } from "./calibrate/rules-command.ts";
 import { renderFeatureStatus, summariseFeatures, type FeatureRow } from "./status/features.ts";
 import { openCodeAgent } from "./lab/agents.ts";
 import { ingestCodex } from "./ledger/ingest-codex.ts";
@@ -120,6 +123,9 @@ const { values, positionals } = parseOrExit({
     until: { type: "string" },
     hours: { type: "string", default: "5" },
     repo: { type: "string", multiple: true },
+    prs: { type: "boolean" },
+    perturb: { type: "boolean" },
+    propose: { type: "boolean" },
     days: { type: "string", default: "14" },
     policy: { type: "string", multiple: true },
     out: { type: "string", default: "data/desk/sample" },
@@ -304,7 +310,8 @@ if (command === "help") {
     let range = weekRange(values.week, sampleMode ? Date.parse(last) + 7 * 86_400_000 : Date.now());
     if (values.week === undefined && Date.parse(last) < range.startMs) range = weekRange(undefined, Date.parse(last) + 7 * 86_400_000);
     const habit = sampleMode ? null : readHabit(DOSSIER_PATHS.dbPath, range.startMs, range.endMs, Date.now());
-    console.log(renderReview(buildReview({ db, snapshot: loadSnapshot(pricesPath), range, markers: sampleMode ? [] : readMarkers(defaultMarkerPath()), approvals: habit }), values.markdown));
+    const ruleLine = ruleCalibrationLine({ db, snapshot: loadSnapshot(pricesPath), policyPath: values.policy?.[0] ?? "policies/daily-cap.yaml", untilMs: range.endMs });
+    console.log(renderReview(buildReview({ db, snapshot: loadSnapshot(pricesPath), range, markers: sampleMode ? [] : readMarkers(defaultMarkerPath()), approvals: habit, ...(ruleLine ? { calibration: ruleLine } : {}) }), values.markdown));
   }
 } else if (command === "questions") {
   const sub = positionals[1];
@@ -584,7 +591,7 @@ written: ${r.files.join(", ")}`);
 } else if (command === "remember") {
   console.log(await rememberCommand({ memoryDir: values["memory-dir"], text: positionals.slice(1).join(" "), outcome: values.outcome }));
 } else if (command === "verify-answer") {
-  console.log(await verifyAnswerCommand(ledgerPath, positionals[1] ?? "", values["memory-dir"]));
+  console.log(await verifyAnswerCommand(ledgerPath, positionals[1] ?? "", values["memory-dir"], { perturb: values.perturb === true }));
 } else if (command === "sources") {
   console.log(renderSources(discoverSources(process.env)));
   console.log(String.fromCharCode(10) + "To try the Desk on a constructed month instead of your own logs: desk --sample");
@@ -655,8 +662,13 @@ ${t.pass} PASS, ${t.fail} FAIL, ${t.notRun} NOT RUN. NOT RUN is not a pass: it n
   );
 } else if (command === "route") {
   console.log(routeCommand({ runsPath: sampleMode ? SAMPLE_RUNS : OWN_RUNS, tolerance: Number(values.tolerance), ...(values["price-strong"] ? { priceStrong: values["price-strong"] } : {}), ...(values["price-cheap"] ? { priceCheap: values["price-cheap"] } : {}) }));
+} else if (command === "forecast") {
+  console.log(forecastCommand(db));
 } else if (command === "calibrate") {
-  console.log(calibrateCommand({ dbPath: ledgerPath, truthPath: join(values.out, "truth.json") }));
+  if (positionals[1] === "rules") {
+    const r = ruleCalibrationCommand({ db, snapshot: loadSnapshot(pricesPath), policyPath: values.policy?.[0] ?? "policies/daily-cap.yaml", ...(values.since ? { sinceIso: values.since } : {}), ...(values.until ? { untilIso: values.until } : {}), ...(values.propose ? { outDir: "data/desk/proposals" } : {}) });
+    console.log(r.text);
+  } else console.log(calibrateCommand({ dbPath: ledgerPath, truthPath: join(values.out, "truth.json") }));
 } else if (command === "bench") {
   loadDotenv(".env");
   console.log(await benchCommand({ sub: positionals[1] ?? "", dbPath: ledgerPath, sampleMode, record: values.record, arms: values.arm, split: values.split, set: values.set, trials: values.trials, only: values.only, results: values.results, concurrency: values.concurrency, env: process.env, log: (l) => console.error(l) }));
@@ -782,6 +794,14 @@ ${t.pass} PASS, ${t.fail} FAIL, ${t.notRun} NOT RUN. NOT RUN is not a pass: it n
   }
   const report = linkOutcomes(db, repos, Date.now());
   console.log(`read ${report.repos} repositories, ${report.commits} commits; ${report.sessions} sessions, ${report.links} links`);
+  if (values.prs) {
+    if (profileOf(process.env) === "local") console.log("pull requests not asked for: the local profile allows nothing to leave this machine, and `gh` talks to api.github.com.");
+    else {
+      const synced = syncPrs(db, realRunners(), new Date());
+      for (const r of synced.repos) console.log(`pull requests of ${r.slug}: ${r.pullRequests} read, ${r.closedUnmerged} closed without a merge`);
+      for (const s of synced.skipped) console.log(`pull requests of ${s.root}: not read, ${s.reason}`);
+    }
+  }
   const since = values.since ?? "0000-00-00";
   const until = values.until ?? "9999-99-99";
   const b = landingBreakdown(db, since, until);

@@ -2,7 +2,7 @@ import { baselineReproduction, withheldNotice } from "../replay/reproduction.ts"
 import { readFileSync } from "node:fs";
 
 import { Budget, DRAFT_LIVE } from "../agents/budget.ts";
-import { CassettePort, portFromEnv, RecordingPort, type ModelPort } from "../agents/model.ts";
+import { CassettePort, portFromEnv, RecordingPort, ReplayOrRecordPort, type ModelPort } from "../agents/model.ts";
 import { MemoryTrace } from "../agents/trace.ts";
 import { openLedger } from "../ledger/db.ts";
 import { parsePolicyYaml, usdToMicros } from "../policy/parse.ts";
@@ -39,10 +39,12 @@ export interface ProposeCommandOptions {
 }
 
 /** Choose the model route: cassettes in SAMPLE_MODE, the live model otherwise, no model (the rule brain) when none is configured. */
-export function choosePort(o: Pick<ProposeCommandOptions, "sampleMode" | "record" | "cassetteDir" | "env"> & { backoffMs?: readonly number[] }): { port: ModelPort | null; label: string } {
+export function choosePort(o: Pick<ProposeCommandOptions, "sampleMode" | "record" | "cassetteDir" | "env"> & { backoffMs?: readonly number[]; reuse?: boolean }): { port: ModelPort | null; label: string } {
   if (o.sampleMode) return { port: new CassettePort(o.cassetteDir), label: "recorded replies (SAMPLE_MODE)" };
   try {
     const live = portFromEnv({ ...o.env, SAMPLE_MODE: "false" }, o.cassetteDir, o.backoffMs ? { backoffMs: o.backoffMs } : {});
+    // `reuse` answers a request already on file from the file and asks the model only for the rest, which is what lets arms that share a request share its reply.
+    if (o.record && o.reuse) return { port: new ReplayOrRecordPort(live, o.cassetteDir), label: "live model, recording cassettes and reusing a request already recorded" };
     return o.record ? { port: new RecordingPort(live, o.cassetteDir), label: "live model, recording cassettes" } : { port: live, label: "live model" };
   } catch (e) {
     return { port: null, label: `no model (${(e as Error).message.split(":")[0]}): the rule brain drafts` };

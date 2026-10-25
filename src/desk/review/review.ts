@@ -130,6 +130,8 @@ export interface ReviewInputs {
   approvals?: ApprovalHabit | null;
   /** The owner's task labels, so that a labelled stretch of work is one task. */
   markers?: readonly TaskMarker[];
+  /** The one-line reading of how the policy's rules have done on the owner's own history (`ruleCalibrationLine`); without it the review says the rules are not yet checked. */
+  calibration?: string;
 }
 
 export function buildReview(i: ReviewInputs): WeeklyReview {
@@ -235,7 +237,7 @@ export function buildReview(i: ReviewInputs): WeeklyReview {
     workflows,
     trend,
     forecast,
-    calibration: "Rule thresholds are not calibrated on your own history yet (they are the defaults the autopsy ships with); see the threshold check when it exists.",
+    calibration: i.calibration ?? "The policy's rules have not been checked against your own history here: `desk calibrate rules` does that, and says which ones stop work that later landed.",
     questions: { open: qs.length, costliest: qs.slice(0, 3).map((q) => ({ id: q.id, spendMicros: q.spendMicros })) },
     drift,
     approvals: i.approvals ?? null,

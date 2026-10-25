@@ -9,6 +9,27 @@ export const usesRange = true;
 
 const STATUS_PILL = { reconciled: "live", partial: "", unreconciled: "risk" };
 
+// Where the month is likely to end, as a range from the owner's own past forecasts, and how such ranges have done. A straight line says it is one and gives no range.
+function monthEndSection(m, snapshotId) {
+  const range = m.lowMicros !== null && m.highMicros !== null ? `${usd(m.lowMicros)} to ${usd(m.highMicros)} (${Math.round(m.level * 100)}%)` : null;
+  return section(
+    "Where the month ends",
+    "forecast, from your own history",
+    m.daysLeft === 0
+      ? h("p", { "data-month-end": "true" }, `${m.month}: ${usd(m.spentMicros)}, the month is over.`)
+      : h(
+          "div",
+          { "data-month-end": "true" },
+          h("div", { class: "stats" }, stat(`${m.month} so far`, money(m.spentMicros, snapshotId), `through ${m.asOf}, ${int(m.daysLeft)} days to go`), stat("Likely by the end", range ?? usd(m.pointMicros), m.method === "linear" ? "a straight line, no range" : `most likely ${usd(m.pointMicros)}`)),
+          m.note ? h("p", { class: "note" }, m.note) : null,
+        ),
+    m.cohorts.some((c) => c.n > 0)
+      ? h("ul", { class: "list", "data-scorecard": "true" }, ...m.cohorts.map((c) => h("li", null, `${c.label}: ${c.n === 0 ? "none checked yet" : `${int(c.covered)} of ${int(c.n)} held (${Math.round(c.coverage * 100)}%)`}`)))
+      : h("p", { class: "note" }, "No forecast of this kind has been checked yet: it takes about twelve weeks of days before the first one can be."),
+    h("p", { class: "note" }, `Each past day's forecast is made with only what was known then and checked afterwards; a range meant to hold ${Math.round(m.level * 100)}% of the time that held under 70% of the last 20 is widened, and says so. A forecast of list-price estimates, not an invoice and not a limit.`),
+  );
+}
+
 // Billed against estimated against reported, per vendor and month. The status is a comparison with a tolerance, never a claim that either figure is right.
 function reconciliationTable(rows) {
   if (!rows || rows.length === 0) return null;
@@ -128,6 +149,7 @@ export async function render(ctx) {
         : null,
       pricingNote(d.pricing),
     ),
+    d.monthEnd ? monthEndSection(d.monthEnd, d.snapshotId) : null,
     section(
       "Kinds of dollars",
       "billed, reported and estimated: the class of each figure",

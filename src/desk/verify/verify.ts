@@ -1,3 +1,4 @@
+import { citationFaithfulness, describeFaithfulness } from "../ask/faithfulness.ts";
 import { canonicalJson, hashJson, sha256Hex } from "../../runtime/canonical.ts";
 import { ClaimLedger, type Claim, type Sentence } from "../agents/claims.ts";
 import { auditSentences, extractNumbers } from "../agents/audit.ts";
@@ -789,6 +790,8 @@ function claimLedger(p: Parsed, v6ok: ReadonlySet<string>, v8: Level): void {
   for (const rej of auditSentences(p.sentences, ledger).rejected) {
     v8.fail(rej.reason, `"${rej.sentence.text.slice(0, 80)}": ${rej.detail}`);
   }
+  // Which of the cited claims each sentence needs, by taking each away and asking the Auditor again. A reading, not a verdict: a decorative citation does not make a dossier wrong.
+  if (v8.findings.length === 0) v8.note(`citations: ${describeFaithfulness(citationFaithfulness(p.sentences, ledger))}`);
 }
 
 /**

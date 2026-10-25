@@ -549,7 +549,20 @@ CREATE TABLE ledger_event (
 ALTER TABLE ingest_source ADD COLUMN content_digest TEXT;
 `;
 
-const MIGRATIONS: readonly string[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8, SCHEMA_V9, SCHEMA_V10, SCHEMA_V11, SCHEMA_V12, SCHEMA_V13, SCHEMA_V14, SCHEMA_V15, SCHEMA_V16, SCHEMA_V17, SCHEMA_V18, SCHEMA_V19, SCHEMA_V20, SCHEMA_V21];
+const SCHEMA_V22 = `
+CREATE TABLE pr_fact (
+  repo_id INTEGER NOT NULL REFERENCES repo (repo_id),
+  number INTEGER NOT NULL,
+  state TEXT NOT NULL CHECK (state IN ('open', 'merged', 'closed_unmerged', 'superseded')),
+  closed_at TEXT,
+  head_ref TEXT,
+  commit_shas TEXT NOT NULL,
+  fetched_at TEXT NOT NULL,
+  PRIMARY KEY (repo_id, number)
+);
+`;
+
+const MIGRATIONS: readonly string[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8, SCHEMA_V9, SCHEMA_V10, SCHEMA_V11, SCHEMA_V12, SCHEMA_V13, SCHEMA_V14, SCHEMA_V15, SCHEMA_V16, SCHEMA_V17, SCHEMA_V18, SCHEMA_V19, SCHEMA_V20, SCHEMA_V21, SCHEMA_V22];
 
 /** The schema version this build writes: the number of migrations. A reader compares a ledger's `user_version` with it. */
 export const SCHEMA_VERSION = MIGRATIONS.length;

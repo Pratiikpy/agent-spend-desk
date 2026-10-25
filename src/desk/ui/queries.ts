@@ -1,3 +1,7 @@
+import { monthForecast } from "../forecast/command.ts";
+import { FORECAST } from "../forecast/month.ts";
+import { calibrateRules } from "../calibrate/rules.ts";
+import { landingKnown, ruleCalibrationLine } from "../calibrate/rules-command.ts";
 import { reconciliationFlips } from "../billing/flip.ts";
 import { describeFlip } from "../flip.ts";
 import { baselineReproduction, withheldNotice } from "../replay/reproduction.ts";
@@ -334,6 +338,7 @@ export function bill(ctx: UiContext, span: Span): object {
     reconciliation: reconciliationSummary(reported),
     deskOwn: deskOwnBlock(ctx, span),
     priceBand: priceBand(ctx, span, t.estimatedMicros),
+    monthEnd: monthEndBlock(ctx),
     pricing: pricingNotes(ctx, span),
     reconciliations: reconciliationRows(ctx, span),
     landing: { rows: landingRows(landing), totalMicros: landing.totalMicros, lowConfidenceMicros: landing.lowConfidenceMicros, linked: hasLinks(ctx.db) },
@@ -364,6 +369,29 @@ function priceBand(ctx: UiContext, span: Span, estimatedMicros: number): object 
     highMicros: band.highMicros,
     items: items.map((i) => ({ model: i.model, price: PRICE_LABEL[i.field] ?? i.field, longPrompts: i.tier === "long", tokens: i.tokens, deltaMicros: i.deltaMicros })),
     note: "Two sources of list prices disagree on the prices above. Which one is in force is not verified here; an invoice or a usage export for these tokens settles it.",
+  };
+}
+
+/** Where the month the ledger ends in is likely to finish, and how such ranges have done on this ledger's own history (DF-035). Independent of the period chosen: it is as of the newest day. */
+function monthEndBlock(ctx: UiContext): object | null {
+  const m = monthForecast(ctx.db);
+  if (!m) return null;
+  const f = m.forecast;
+  return {
+    method: f.method,
+    month: f.month,
+    asOf: f.asOf,
+    spentMicros: f.spentMicros,
+    daysLeft: f.daysLeft,
+    pointMicros: f.pointMicros,
+    lowMicros: f.lowMicros,
+    highMicros: f.highMicros,
+    level: FORECAST.level,
+    errorsUsed: f.errorsUsed,
+    widenedBy: f.widenedBy,
+    note: f.note,
+    cohorts: m.card.cohorts,
+    recent: m.card.recent,
   };
 }
 
@@ -756,6 +784,9 @@ const KIND_TITLE: Record<BlockKind, string> = {
   churn: "One file edited again and again",
   reflection: "Calls with no tool and no one asking",
   orphan: "A delegated agent after its parent stopped",
+  abandon: "A long session that ended failing, with nothing landed",
+  revert: "Work that was reverted",
+  pr: "Work in a pull request closed without a merge",
 };
 
 const toolList = (raw: string): string[] => {
@@ -1046,7 +1077,9 @@ export function week(ctx: UiContext, label: string | null): object {
   if (!weeks.includes(range.label)) weeks.push(range.label);
   weeks.sort().reverse();
   const habit = readHabit(ctx.dossierDbPath ?? null, range.startMs, range.endMs, ctx.nowMs());
-  const review = buildReview({ db: ctx.db, snapshot: ctx.snapshot, range, markers: ctx.mode === "own_logs" ? readMarkers(defaultMarkerPath()) : [], approvals: habit });
+  const policyFile = policyFiles(ctx.policiesDir).at(-1);
+  const ruleLine = policyFile === undefined ? null : ruleCalibrationLine({ db: ctx.db, snapshot: ctx.snapshot, policyPath: join(ctx.policiesDir, policyFile), untilMs: range.endMs });
+  const review = buildReview({ db: ctx.db, snapshot: ctx.snapshot, range, markers: ctx.mode === "own_logs" ? readMarkers(defaultMarkerPath()) : [], approvals: habit, ...(ruleLine ? { calibration: ruleLine } : {}) });
   return { state: "ok", weeks, review: { ...review, approvalLines: habit === null ? [] : renderHabit(habit, "in the week"), week: { label: review.week.label, start: new Date(review.week.startMs).toISOString().slice(0, 10), end: new Date(review.week.endMs - 1).toISOString().slice(0, 10) } } };
 }
 
@@ -1167,6 +1200,19 @@ export function policy(ctx: UiContext, span: Span, fromName: string | null, toNa
       pausedByDefaultDeny: r.paused.filter((p) => p.verdictReason.includes("default deny")).length,
       landedTotal: r.landedTotal,
       landedBlocked: r.landedBlocked.length,
+      // Which rule stopped what, and how much of it landed afterwards (DF-034); a rule that misfires comes with the higher threshold that would clear it.
+      calibration: calibrateRules(candidate.policy, sessions, landingKnown(ctx.db)).map((c) => ({
+        ruleId: c.ruleId,
+        what: c.what,
+        threshold: c.threshold,
+        flags: c.flags,
+        labelled: c.labelled,
+        landed: c.landed,
+        landedShare: c.landedShare,
+        dollarsMicros: c.dollarsMicros,
+        status: c.status,
+        offer: c.proposal === undefined ? null : "none" in c.proposal ? { none: c.proposal.none } : { threshold: c.proposal.threshold, multiplier: c.proposal.multiplier, flags: c.proposal.flags, landed: c.proposal.landed, labelled: c.proposal.labelled, givenUpMicros: c.proposal.dollarsGivenUpMicros, narrows: c.proposal.restrict.narrows },
+      })),
     };
   }
   const commands: Record<string, string> = {};

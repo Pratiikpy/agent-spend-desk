@@ -76,13 +76,22 @@ export async function render(ctx) {
         "Answer",
         "checked by code",
         h("p", { class: "controls" }, verdict, a.ablated.length ? pill(`off: ${a.ablated.join(", ")}`, "risk") : null),
-        a.sentences.length > 0 ? h("ul", { class: "list" }, ...a.sentences.map((s) => h("li", null, s.text.replaceAll("`", "")))) : null,
+        a.sentences.length > 0
+          ? h(
+              "ul",
+              { class: "list" },
+              ...a.sentences.map((s) =>
+                h("li", null, s.text.replaceAll("`", ""), s.decorative && s.decorative.length > 0 ? h("span", { class: "sub", "data-decorative": "true" }, ` (cites ${s.decorative.join(", ")} without needing it)`) : null),
+              ),
+            )
+          : null,
         a.note ? h("p", { class: "note" }, a.status === "answered" ? `Note: ${a.note}` : a.note) : null,
       ),
       section(
         "How this was checked",
         "the trace",
         h("p", { class: "note" }, `Route ${a.route}. Planner: ${a.planner}. Explainer: ${a.explainer}.${a.servedModel ? ` Model ${a.servedModel}.` : ""} ${a.modelRoute}.`),
+        a.citations ? h("p", { class: "note", "data-citations": "true" }, `Citations: ${a.citations}. Each was tested by taking it away and asking the code Auditor again.`) : null,
         h("ul", { class: "list" }, ...a.events.map((e) => h("li", { class: "traceline" }, eventLine(e)))),
         h("p", { class: "note" }, "Every figure above comes from a typed step run read-only against the ledger. Check an answer again with desk verify-answer."),
       ),

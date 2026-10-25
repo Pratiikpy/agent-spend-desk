@@ -1,3 +1,4 @@
+import { describeFaithfulness } from "../ask/faithfulness.ts";
 import { canaryFlips } from "../canary/flip.ts";
 import { describeFlip } from "../flip.ts";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
@@ -70,7 +71,9 @@ export async function askScreen(ctx: UiContext, paths: ExtraPaths, question: str
     explainer: r.explainer,
     servedModel: r.servedModel,
     modelRoute: model.label,
-    sentences: r.sentences.map((s) => ({ text: s.text, cites: s.cites })),
+    sentences: r.sentences.map((s, i) => ({ text: s.text, cites: s.cites, decorative: r.faithfulness?.sentences[i]?.decorative ?? [] })),
+    // Which cited claims each sentence needs, tested by taking each away and asking the Auditor again (DF-108).
+    citations: r.faithfulness ? describeFaithfulness(r.faithfulness) : null,
     note: r.note,
     steps: r.steps.map((s) => ({ id: s.id, op: s.op, specialist: s.specialist, engine: s.engine, rows: s.rowCount, queryHash: s.queryHash, resultHash: s.resultHash, unknowable: s.unknowable })),
     events,

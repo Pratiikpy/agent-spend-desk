@@ -1,5 +1,7 @@
 import type { AutopsyCall, PerCall } from "../autopsy/engine.ts";
+import type { LandingState } from "../outcomes/attribute.ts";
 import { callCostMicros } from "../replay/from-ledger.ts";
+import type { Landing } from "./bloat.ts";
 
 /**
  * Waste classes beyond the loops and idle time the autopsy finds (DF-033, DF-092, DF-100), each a rule over what the ledger holds, with its
@@ -12,8 +14,13 @@ import { callCostMicros } from "../replay/from-ledger.ts";
  *  C-CHURN    the fourth edit of one file with no call that could run a check between the edits (a heuristic)
  *  C-UNREF    the third call in a row that used no tool, when the first two did not hand control back
  *  C-ORPHAN   a delegated agent still calling the model more than 30 minutes after its parent last did, with no prompt in between
+ *  C-ABANDON  a long session that ended in a run of failing tool results, landed no commit in a repository that had none at all, and was not taken up again
+ *  C-REVERT   a session whose commits were reverted: the work did not land
+ *  C-PR       a session whose every commit is in a pull request that was closed without being merged
+ *
+ * The last two read what the ledger holds about outcomes, so they run only when those are passed in, and say nothing when git was never scanned.
  */
-export type WasteClass = "C-LOOP-2" | "C-TRUNC" | "C-CHURN" | "C-UNREF" | "C-ORPHAN";
+export type WasteClass = "C-LOOP-2" | "C-TRUNC" | "C-CHURN" | "C-UNREF" | "C-ORPHAN" | "C-ABANDON" | "C-REVERT" | "C-PR";
 
 export const WASTE_PARAMS = {
   echoRepeats: 3,
@@ -21,7 +28,36 @@ export const WASTE_PARAMS = {
   churnEdits: 4,
   unrefConsecutive: 3,
   orphanAfterMs: 30 * 60 * 1000,
+  /** More than this many model calls in the session (the specification counts messages; the ledger holds calls). */
+  abandonCalls: 10,
+  /** The session ends in at least this many calls whose tool results all failed. */
+  abandonFailures: 3,
+  /** The session has been quiet this long, no commit landed in its repository and no later session took up its folder in that time. */
+  abandonQuietMs: 24 * 60 * 60 * 1000,
 } as const;
+
+/**
+ * What the ledger knows about outcomes, for the two rules that need it. Every method answers from the ledger or says it does not know: a session whose state is
+ * null was never scanned, and a landing of `unknown` or `possible` stops C-ABANDON, because a session with a commit that cannot be ruled out is never called abandoned.
+ */
+export interface OutcomeFacts {
+  /** The landing state recorded for a session and the confidence of its best link, or null when git was not scanned for it. */
+  state(sessionId: string): { state: LandingState; bestConfidence: "high" | "medium" | "low" | null } | null;
+  /** What git says of the work between two times (see `commitLanding`). */
+  landing(sessionId: string, fromMs: number, toMs: number): Landing;
+  /** How many model calls the session made in all, and when it made its last. */
+  callCount(sessionId: string): number;
+  lastCallMs(sessionId: string): number;
+  /** Whether another session began work in the same folder within `withinMs` after this one's last call. */
+  resumed(sessionId: string, endMs: number, withinMs: number): boolean;
+  /**
+   * The pull requests the session's commits are in when every one of those commits is in a pull request closed without a merge and in no other pull request, and the session
+   * is otherwise `committed`; null when pull requests were not asked for, or the session's work is in any open or merged pull request or in none.
+   */
+  abandonedPrs(sessionId: string): number[] | null;
+  /** The time of the newest call in the ledger: a session is over only if it has been quiet for a day before that. */
+  asOfMs: number;
+}
 
 /** Tools that read, search or edit and so cannot run a check by themselves; every other tool (a shell, a delegated agent, an MCP tool) can. */
 const CANNOT_CHECK = new Set(["Read", "Grep", "Glob", "LS", "NotebookRead", "Edit", "Write", "MultiEdit", "NotebookEdit", "TodoWrite", "ToolSearch"]);
@@ -86,7 +122,7 @@ const threadsOf = (calls: readonly AutopsyCall[]): AutopsyCall[][] => {
  * Every event the rules find, calls claimed once: a call the autopsy already counts as a loop or as idle time is not counted again, and a
  * call flagged by one rule is not flagged by a later one in the list above, so the classes can be added up.
  */
-export function detectWaste(calls: readonly AutopsyCall[], analysis: ReadonlyMap<string, PerCall>, facts: ReadonlyMap<string, CallFacts>): WasteEvent[] {
+export function detectWaste(calls: readonly AutopsyCall[], analysis: ReadonlyMap<string, PerCall>, facts: ReadonlyMap<string, CallFacts>, outcomes?: OutcomeFacts): WasteEvent[] {
   const events: WasteEvent[] = [];
   const claimed = new Set<string>();
   for (const [id, a] of analysis) if (a.wholeCall === "loops" || a.wholeCall === "idle") claimed.add(id);
@@ -199,6 +235,52 @@ export function detectWaste(calls: readonly AutopsyCall[], analysis: ReadonlyMap
       const late = thread.filter((c) => c.tsMs - lastMain > WASTE_PARAMS.orphanAfterMs && !prompts.some((p) => p > lastMain && p <= c.tsMs));
       const own = claim(late);
       if (own.length > 0) events.push(make("C-ORPHAN", own, { minutes_after_parent: Math.round(((own[0] as AutopsyCall).tsMs - lastMain) / 60_000), orphan_after_minutes: WASTE_PARAMS.orphanAfterMs / 60_000 }, "high"));
+    }
+  }
+  if (outcomes) {
+    // C-ABANDON: a long session that ended failing, with nothing landed, that nobody took up again. Dollars from where the final run of failures began.
+    for (const [sessionId, list] of bySession) {
+      const main = list.filter((c) => !c.isSidechain).sort((a, b) => a.tsMs - b.tsMs || a.callId.localeCompare(b.callId));
+      if (main.length === 0) continue;
+      if (outcomes.callCount(sessionId) <= WASTE_PARAMS.abandonCalls) continue;
+      const endMs = outcomes.lastCallMs(sessionId);
+      // The window must hold the session's last call, or the end of the session is not what is being looked at.
+      if (list.reduce((m, c) => Math.max(m, c.tsMs), 0) < endMs) continue;
+      if (outcomes.asOfMs - endMs < WASTE_PARAMS.abandonQuietMs) continue;
+      let start = -1;
+      let failing = 0;
+      for (let i = main.length - 1; i >= 0; i -= 1) {
+        const results = facts.get((main[i] as AutopsyCall).callId)?.results ?? [];
+        if (results.length === 0) continue;
+        if (!results.every((r) => r.isError)) break;
+        failing += 1;
+        start = i;
+      }
+      if (failing < WASTE_PARAMS.abandonFailures) continue;
+      const state = outcomes.state(sessionId);
+      if (state === null || state.state !== "unlinked") continue;
+      const firstMs = (main[0] as AutopsyCall).tsMs;
+      if (outcomes.landing(sessionId, firstMs, endMs + WASTE_PARAMS.abandonQuietMs) !== "none") continue;
+      if (outcomes.resumed(sessionId, endMs, WASTE_PARAMS.abandonQuietMs)) continue;
+      const own = claim(main.slice(start));
+      if (own.length > 0) events.push(make("C-ABANDON", own, { failing_calls_at_the_end: failing, calls_in_session: outcomes.callCount(sessionId), quiet_hours: WASTE_PARAMS.abandonQuietMs / 3_600_000 }, "high"));
+    }
+
+    // C-REVERT: a session whose commits were reverted. Every call of the session in the window is the work that did not land.
+    for (const [sessionId, list] of bySession) {
+      const state = outcomes.state(sessionId);
+      if (state === null || state.state !== "reverted") continue;
+      const own = claim([...list].sort((a, b) => a.tsMs - b.tsMs || a.callId.localeCompare(b.callId)));
+      if (own.length > 0) events.push(make("C-REVERT", own, { link_confidence: state.bestConfidence ?? "unknown", calls: own.length }, state.bestConfidence === "high" ? "high" : "low"));
+    }
+
+    // C-PR: a session whose commits are all in pull requests that were closed unmerged. The work was offered and turned down.
+    for (const [sessionId, list] of bySession) {
+      const prs = outcomes.abandonedPrs(sessionId);
+      if (prs === null || prs.length === 0) continue;
+      const state = outcomes.state(sessionId);
+      const own = claim([...list].sort((a, b) => a.tsMs - b.tsMs || a.callId.localeCompare(b.callId)));
+      if (own.length > 0) events.push(make("C-PR", own, { pull_requests: prs.map((n) => `#${n}`).join(", "), link_confidence: state?.bestConfidence ?? "unknown", calls: own.length }, state?.bestConfidence === "high" ? "high" : "low"));
     }
   }
   return events.sort((a, b) => b.micros - a.micros || (a.calls[0] as AutopsyCall).tsMs - (b.calls[0] as AutopsyCall).tsMs);

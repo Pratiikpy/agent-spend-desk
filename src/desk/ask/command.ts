@@ -5,6 +5,8 @@ import { OwnerMemory } from "../engines/memory.ts";
 import { openLedger } from "../ledger/db.ts";
 import { choosePort } from "../propose/command.ts";
 import { ask, verifyAnswer, type AskResult } from "./ask.ts";
+import { describeFaithfulness } from "./faithfulness.ts";
+import { perturbAnswer } from "./perturb.ts";
 
 export interface AskCommandOptions {
   dbPath: string;
@@ -37,6 +39,7 @@ export function renderAnswer(r: AskResult, trace: MemoryTrace): string {
     if (r.note) out.push("", `Note: ${r.note}`);
   }
   out.push("", "how this answer was checked");
+  if (r.faithfulness) out.push(`  citations: ${describeFaithfulness(r.faithfulness)}`);
   out.push(`  route ${r.route}${r.flags.length > 0 ? ` (flags: ${r.flags.join(", ")})` : ""}; planner ${r.planner}; explainer ${r.explainer}${r.servedModel ? `; model ${r.servedModel}` : ""}`);
   for (const e of trace.events) {
     if (e.event === "desk.engine") {
@@ -86,13 +89,21 @@ export async function rememberCommand(o: { memoryDir: string; text: string; outc
   }
 }
 
-export async function verifyAnswerCommand(dbPath: string, answerId: string, memoryDir: string): Promise<string> {
+export async function verifyAnswerCommand(dbPath: string, answerId: string, memoryDir: string, o: { perturb?: boolean } = {}): Promise<string> {
   const db = openLedger(dbPath);
   try {
     const memory = await OwnerMemory.open({ persistDir: memoryDir });
     const r = await verifyAnswer(db, answerId, { memory });
     if (!r.found) return r.note;
-    return `${r.note}\nsteps unchanged: ${r.same.join(", ") || "none"}; changed: ${r.changed.join(", ") || "none"}; sentences still holding: ${r.sentencesHolding} of ${r.sentencesTotal}`;
+    const lines = [`${r.note}\nsteps unchanged: ${r.same.join(", ") || "none"}; changed: ${r.changed.join(", ") || "none"}; sentences still holding: ${r.sentencesHolding} of ${r.sentencesTotal}`];
+    if (o.perturb) {
+      // The ledger is changed by one known row and the answer's steps are run again; the row is rolled back and nothing is kept.
+      const p = await perturbAnswer(db, answerId);
+      lines.push(`perturbation: ${p.verdict}. ${p.note}`);
+      if (p.inside) lines.push(`  inside (${p.inside.day}, ${p.inside.model}): moved ${p.inside.moved.join(", ") || "none"}; held ${p.inside.held.join(", ") || "none"}`);
+      if (p.outside) lines.push(`  outside (${p.outside.day}): moved ${p.outside.moved.join(", ") || "none"}; held ${p.outside.held.join(", ") || "none"}`);
+    }
+    return lines.join("\n");
   } finally {
     db.close();
   }

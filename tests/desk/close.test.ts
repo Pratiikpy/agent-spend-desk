@@ -169,6 +169,13 @@ describe("the month bill dossier", () => {
     expect(byId["V8-D"]).toBe("PASS");
   });
 
+  it("reads, beside the pass, how many of the citations in its sentences the sentences need, and does not fail a dossier for a decorative one", () => {
+    const v8 = verifyBundle(built.files, { pins }).levels.find((l) => l.id === "V8-D")!;
+    const note = v8.notes.find((n) => n.startsWith("citations: "));
+    expect(note).toMatch(/^citations: \d+ of \d+ citations are needed by the sentence that makes them/);
+    expect(v8.status).toBe("PASS");
+  });
+
   it("states the figures the summary holds", () => {
     const claims = new Map<string, { value?: number; class?: string }>();
     for (const l of new TextDecoder().decode(built.files.get("claims.jsonl")).split("\n").filter(Boolean)) {

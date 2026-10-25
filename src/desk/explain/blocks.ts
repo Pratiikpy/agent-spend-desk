@@ -1,3 +1,4 @@
+import { WASTE_PARAMS } from "../waste/detect.ts";
 import { CONFIG, type AutopsyCall, type MissEvent, type PerCall } from "../autopsy/engine.ts";
 import { callCostMicros, WASTE_RULE } from "../replay/from-ledger.ts";
 import type { WasteClass, WasteEvent } from "../waste/detect.ts";
@@ -8,7 +9,7 @@ import type { WasteClass, WasteEvent } from "../waste/detect.ts";
  * call that rewrote a context the cache had held (cache miss). Everything here is computed from the calls and the rule's own
  * parameters; nothing is guessed, and what the logs cannot show is marked, not filled in.
  */
-export type BlockKind = "loops" | "idle" | "subagents" | "cache_miss" | "echo" | "truncation" | "churn" | "reflection" | "orphan";
+export type BlockKind = "loops" | "idle" | "subagents" | "cache_miss" | "echo" | "truncation" | "churn" | "reflection" | "orphan" | "abandon" | "revert" | "pr";
 
 export const BLOCK_RULE: Record<BlockKind, string> = {
   loops: WASTE_RULE.loops ?? "C-LOOP-1",
@@ -20,9 +21,12 @@ export const BLOCK_RULE: Record<BlockKind, string> = {
   churn: "C-CHURN",
   reflection: "C-UNREF",
   orphan: "C-ORPHAN",
+  abandon: "C-ABANDON",
+  revert: "C-REVERT",
+  pr: "C-PR",
 };
 
-const KIND_OF_RULE: Record<WasteClass, BlockKind> = { "C-LOOP-2": "echo", "C-TRUNC": "truncation", "C-CHURN": "churn", "C-UNREF": "reflection", "C-ORPHAN": "orphan" };
+const KIND_OF_RULE: Record<WasteClass, BlockKind> = { "C-LOOP-2": "echo", "C-TRUNC": "truncation", "C-CHURN": "churn", "C-UNREF": "reflection", "C-ORPHAN": "orphan", "C-ABANDON": "abandon", "C-REVERT": "revert", "C-PR": "pr" };
 
 /** What the ledger knows about the tool uses of one call that the autopsy call does not carry. */
 export interface ToolUseFacts {
@@ -254,6 +258,24 @@ export function explainBlock(block: Block, thread: readonly AutopsyCall[], missB
     rule = { id: block.rule, params: { orphan_after_minutes: Number(o["orphan_after_minutes"] ?? 10) }, observed: { minutes_after_parent: Number(o["minutes_after_parent"] ?? 0), calls: n } };
     why = `a delegated agent's call ${Number(o["minutes_after_parent"] ?? 0)} minutes after the agent that started it made its last (the rule acts after ${Number(o["orphan_after_minutes"] ?? 30)})`;
     sentences.push({ text: `A delegated agent went on calling the model for ${n} call${n === 1 ? "" : "s"}, starting ${Number(o["minutes_after_parent"] ?? 0)} minutes after the agent that started it had stopped.`, basis: "model_call timestamps of the session's main thread and the delegated thread" });
+  } else if (block.kind === "abandon") {
+    const o = block.observed ?? {};
+    cascade = { firstBreak: { callId: first.callId, atMs: first.tsMs, tool: first.tools[0]?.name ?? "a tool", callsBeforeStop: 0 }, steps: block.calls.map((c) => ({ callId: c.callId, atMs: c.tsMs, tools: c.tools.map((t) => t.name), repeatsFirstBreak: false, failed: true, opaque: false, opaqueWhy: null })), confidence: "high", why: "The session ended in a run of calls whose tool results all failed; nothing landed in a repository that had no commit at all, and nobody came back to it." };
+    rule = { id: block.rule, params: { failing_calls: WASTE_PARAMS.abandonFailures, quiet_hours: Number(o["quiet_hours"] ?? 24), calls_in_session_over: WASTE_PARAMS.abandonCalls }, observed: { failing_calls_at_the_end: Number(o["failing_calls_at_the_end"] ?? n), calls_in_session: Number(o["calls_in_session"] ?? n) } };
+    why = `the first of the last ${Number(o["failing_calls_at_the_end"] ?? n)} calls of a ${Number(o["calls_in_session"] ?? n)}-call session whose tool results all failed, with no commit in its repository in the day after and no later session in the same folder`;
+    sentences.push({ text: `The session ended with ${Number(o["failing_calls_at_the_end"] ?? n)} calls whose tools all failed, ${n} call${n === 1 ? "" : "s"} of spend from there. No commit landed in its repository in the day after it, and no later session took the folder up.`, basis: "tool_result errors of this session, the repository's commits, and the sessions in the same folder" });
+  } else if (block.kind === "revert") {
+    const o = block.observed ?? {};
+    cascade = { firstBreak: null, steps: [], confidence: String(o["link_confidence"]) === "high" ? "high" : "low", why: "This session's commits were reverted afterwards, so the work it paid for did not stay." };
+    rule = { id: block.rule, params: { link_confidence_at_least: "medium" }, observed: { calls: n, link_confidence: String(o["link_confidence"] ?? "unknown") } };
+    why = "a session whose commit was reverted (undone work did not land)";
+    sentences.push({ text: `This session's commits were reverted, so the ${n} call${n === 1 ? "" : "s"} of spend in this period went to work that did not stay. That is known after the fact and cannot be recovered.`, basis: "session_outcome and git_commit rows (a revert commit that names the original)" });
+  } else if (block.kind === "pr") {
+    const o = block.observed ?? {};
+    cascade = { firstBreak: null, steps: [], confidence: String(o["link_confidence"]) === "high" ? "high" : "low", why: "Every commit of this session is in a pull request that was closed without being merged." };
+    rule = { id: block.rule, params: { pull_request_state: "closed_unmerged" }, observed: { pull_requests: String(o["pull_requests"] ?? ""), calls: n } };
+    why = `a session whose commits are all in pull request${String(o["pull_requests"] ?? "").includes(",") ? "s" : ""} ${String(o["pull_requests"] ?? "")}, closed without a merge`;
+    sentences.push({ text: `The work of this session was offered as ${String(o["pull_requests"] ?? "a pull request")} and the pull request was closed without being merged, so the ${n} call${n === 1 ? "" : "s"} of spend in this period went to work that was turned down.`, basis: "pr_fact rows fetched by desk landing --prs, and the session's links to commits" });
   } else {
     const m = missByCall.get(first.callId);
     const idx = thread.findIndex((c) => c.callId === first.callId);

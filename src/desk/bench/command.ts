@@ -3,7 +3,7 @@ import { existsSync } from "node:fs";
 import { openLedger } from "../ledger/db.ts";
 import { choosePort } from "../propose/command.ts";
 import { BENCH_SEED, BENCH_SEED_B, BENCH_SEED_C, BENCH_SEED_D, BENCH_SEED_E, buildQuestions, questionSetHash, type QuestionSet } from "./questions.ts";
-import { ALL_ARMS, ARMS, CATEGORIES, formatReport, readResults, runBench, writeQuestionSet, type BenchRow } from "./run.ts";
+import { ABLATION_ARMS, ALL_ARMS, ARMS, CATEGORIES, formatReport, readResults, runBench, writeQuestionSet, type BenchRow } from "./run.ts";
 import type { ArmId } from "./arms.ts";
 
 /** Where the recorded run lives: committed, so a reader can see every answer and score. */
@@ -97,7 +97,8 @@ export async function benchCommand(o: BenchCommandOptions): Promise<string> {
       const split = (o.split ?? "all") as "dev" | "held_out" | "all";
       if (!["dev", "held_out", "all"].includes(split)) return `--split is dev, held_out or all, not ${split}.`;
       // A rate-limited reply is retried for minutes, so a busy endpoint costs time and never a wrong or missing answer.
-      const { port, label } = choosePort({ sampleMode: o.sampleMode, record: o.record, cassetteDir: files.cassettes, env: o.env, backoffMs: [4_000, 8_000, 15_000, 30_000, 60_000, 60_000, 60_000] });
+      // Arms that take one role out ask the same questions of the same model as the full Desk until the point they differ, so they share the recorded replies.
+      const { port, label } = choosePort({ sampleMode: o.sampleMode, record: o.record, cassetteDir: files.cassettes, env: o.env, backoffMs: [4_000, 8_000, 15_000, 30_000, 60_000, 60_000, 60_000], reuse: arms.some((a) => ABLATION_ARMS.includes(a)) });
       if (!port) return `No model to run the arms on: ${label}. Set the model settings in .env, or run with --sample to replay the recorded replies.`;
       const only = o.only ? o.only.split(",").map((s) => s.trim()) : undefined;
       const trials = (o.trials ?? "0").split(",").map((t) => Number(t.trim()));

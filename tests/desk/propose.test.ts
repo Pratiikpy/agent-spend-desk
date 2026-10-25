@@ -192,5 +192,14 @@ describe("the command", () => {
     expect(none.label).toMatch(/no model/);
     const live = choosePort({ sampleMode: false, record: true, cassetteDir: dir, env: { MODEL_BASE_URL: "http://127.0.0.1:1/v1", MODEL_API_KEY: "k", NEMOTRON_MODEL: "m" } });
     expect(live.label).toMatch(/recording/);
+    expect(live.label).not.toMatch(/reusing/);
+  });
+
+  it("reuses a request already on file when asked to, and not otherwise", async () => {
+    const env = { MODEL_BASE_URL: "http://127.0.0.1:1/v1", MODEL_API_KEY: "k", NEMOTRON_MODEL: "m" };
+    expect(choosePort({ sampleMode: false, record: true, reuse: true, cassetteDir: dir, env }).label).toMatch(/reusing a request already recorded/);
+    // Nothing is reused when nothing is being recorded: a plain live run, and a replay, are what they were.
+    expect(choosePort({ sampleMode: false, record: false, reuse: true, cassetteDir: dir, env }).label).toBe("live model");
+    expect(choosePort({ sampleMode: true, record: true, reuse: true, cassetteDir: dir, env }).label).toMatch(/SAMPLE_MODE/);
   });
 });

@@ -1,0 +1,37 @@
+# Waste that depends on what landed (2026-10-25)
+
+Feature DF-033, the part that needs outcomes. Three classes and two measures were added to `desk waste`: **C-ABANDON** (a long session that ended failing, with nothing landed), **C-REVERT** (work that was reverted), **C-PR** (work in a pull request closed without a merge), and two measures of context bloat that are listed and not billed. C-LANG (the language surcharge) is not built; see the end.
+
+## What each rule says, and what it will not say
+
+- **C-REVERT.** Every call, in the period, of a session whose trusted commits were reverted. `high` when the link between session and commit is high confidence, `low` when it is medium. The dollars are known after the fact and cannot be recovered; the text says so.
+- **C-ABANDON.** A session of more than ten model calls (the specification counts messages, and the ledger holds calls) that ended in at least three calls whose tool results all failed, with no commit tied to it, in a repository the ledger scanned after the session ended that had **no commit at all** between the session's start and a day after its end, and with no later session in the same folder in that day, in a ledger whose newest call is at least a day after the session's last. Dollars are from the first call of the final run of failures. A session whose commit cannot be ruled out is never called abandoned: a landing of `possible` or `unknown` stops the rule. The specification's "ends on the user" is not readable from a ledger that holds model calls and not messages, so the rule reads the end of the session as the end of its calls.
+- **C-PR.** Every call of a session whose trusted commits are all in pull requests closed without a merge and in no open or merged one. A closed pull request whose branch a later open or merged pull request took up is `superseded` and does not count. It needs `desk landing --prs`, which is off unless passed.
+- **Context carried for a short prompt** (measure): a call right after a prompt of yours that carried at least 10,000 tokens and added under 2% of that new. Listed with its cache reads, never billed: "yes" and "go on" need the context they follow.
+- **Calls near the window** (measure): at least 85% of a model's context window, for the models whose window the owner has said in `data/desk/model-windows.json` or `DESK_MODEL_WINDOWS`. The price list does not carry windows and the Desk does not guess them; without the file the line says it was not evaluated, and why.
+
+When the ledger has no landing states at all, C-ABANDON and C-REVERT say `not evaluated` and name the command that would change it, and C-PR says the same for pull requests. They do not print "none" for a question that was never asked.
+
+## What ran
+
+- `tests/desk/waste.test.ts` (34): C-ABANDON positive, and each of its conditions taken away one at a time (ten calls or fewer, two failures at the end, a success at the end, a session not yet quiet for a day, each landing that is not `none`, each state that is not `unlinked`, a later session in the folder, a window that does not hold the end, a success inside the run); C-REVERT for each state, for medium and high links and for unpriced calls; C-PR with and without pull requests; and that no call is billed by two rules.
+- `tests/desk/waste-outcomes-ledger.test.ts` (6): the same rules through a real ledger (logs ingested, a repository and landing states written as `desk landing` writes them). The positive case was written first and failed twice, for the right reasons: the newest call in the ledger was the session's own end, so no session could be a day old; and the failures I wrote folded to one error, so the same-error rule claimed them. The negatives change one condition each.
+- `tests/desk/context.test.ts` (9): both measures, the exact boundaries (ten thousand tokens, two percent, eighty-five percent), the window file, and the command's lines.
+- `tests/desk/prs.test.ts` (18): address forms and look-alike hosts, the real response shape, supersession, the commit limit, failure in the middle of a repository, a relative root, and the loader against a ledger with pull requests in each state.
+- On the sample ledger: C-REVERT finds 35 runs in 35 sessions, 1,924 calls, $165.72 (44 sessions are reverted; the rest are outside the period or already claimed). C-ABANDON and C-PR find none there.
+- On this machine's own ledger (242,335 calls since 3 July): C-ABANDON, C-REVERT and C-PR find none. Only three repositories have been scanned (85 commits), 421 of 424 sessions are `unlinked`, and none is reverted, so the rules have almost nothing to read. That is a finding about the ledger and not evidence that the rules work.
+- A real `gh`, through `desk landing --prs` on a copy of this machine's ledger: two repositories read, 15 pull requests, none closed without a merge. And through `syncPrs` against the public `cli/cli`: 500 pull requests, 146 closed without a merge, 11 superseded, 32 open, with 350 and 164 commit shas read for the unmerged and open ones in 179 calls.
+
+## Defects found on the way
+
+- **GitHub refused the first real request.** Asking `gh pr list` for the commits of 300 pull requests exceeds GitHub's limit of 500,000 nodes. The list is now asked for without commits and the commits are read one pull request at a time, only for the open and unmerged ones, newest first, up to 200 a repository; a repository with more says how many it left.
+- The failure text of the first version was the command line, because Node builds its message from it. The reason `gh` gave is now the first line of its own error stream.
+- The same repository appeared twice, once by a relative root (`.`, from a scan made inside it) and once by its full path. A relative root is skipped, with the reason.
+
+## Not covered
+
+- **C-ABANDON and C-PR have never fired on real data.** They have been shown to fire and to hold back in tests, through a real ledger, and C-PR's `gh` calls have run against a real repository; no real session of this machine's is abandoned or in an unmerged pull request, as far as its scanned repositories can say.
+- **Abandoned is inferred.** Three failing calls at the end, nothing landed in a quiet repository and nobody back in the folder is evidence of a session that was given up, not proof. The dollars are an upper bound like every other class, and the rule is `high` confidence only in the sense that every condition is read directly from the ledger.
+- Pull requests of a repository whose `origin` is not on github.com, of GitHub Enterprise, and of a repository scanned only by a relative root are not read. Squash-merged pull requests are told apart from unmerged ones by their state in GitHub, not by matching diffs; a pull request opened again under a new branch name after being closed is not recognised as the same work.
+- `desk landing --prs` is a call by the owner's own `gh`, not a connection the Desk makes, so the egress list cannot govern it; the list says so, and the local profile refuses it.
+- **C-LANG is not built.** The language surcharge needs the language and length of each prompt, and the ledger keeps neither (it never keeps a prompt). Recording a script class and a character count at ingest, backfilling old logs, and comparing tokens per character against the owner's English baseline with at least 20 tasks per cell is the whole of DF-043; it is a feature of its own and is not started here.

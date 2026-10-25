@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import { analyseCalls, type AutopsyCall, type AutopsyToolUse } from "../../src/desk/autopsy/engine.ts";
-import { detectWaste, potentialTruncations, WASTE_PARAMS, type CallFacts } from "../../src/desk/waste/detect.ts";
+import type { LandingState } from "../../src/desk/outcomes/attribute.ts";
+import type { Landing } from "../../src/desk/waste/bloat.ts";
+import { detectWaste, potentialTruncations, WASTE_PARAMS, type CallFacts, type OutcomeFacts } from "../../src/desk/waste/detect.ts";
 
 const MIN = 60_000;
 const T0 = Date.parse("2026-10-20T09:00:00.000Z");
@@ -222,5 +224,126 @@ describe("the classes can be added up", () => {
     calls[3] = { ...(calls[3] as AutopsyCall), micros: null };
     const e = run(calls, factsOf(Object.fromEntries(calls.map((c, i) => [c.callId, { results: [fail(`in${i}`, "H")] }]))));
     expect(e[0]).toMatchObject({ micros: 1_000_000, unpricedCalls: 1 });
+  });
+});
+
+/** What the ledger says about outcomes, as the two outcome rules read it; every answer can be changed to take one condition away. */
+function outcomes(over: Partial<{ state: LandingState | null; confidence: "high" | "medium" | "low" | null; landing: Landing; resumed: boolean; calls: number; last: number; asOf: number; prs: number[] | null }> = {}): OutcomeFacts {
+  const o = { state: "unlinked" as LandingState | null, confidence: null as "high" | "medium" | "low" | null, landing: "none" as Landing, resumed: false, prs: null as number[] | null, calls: 12, last: T0 + 11 * MIN, asOf: T0 + 11 * MIN + 3 * 24 * 60 * MIN, ...over };
+  return {
+    asOfMs: o.asOf,
+    state: () => (o.state === null ? null : { state: o.state, bestConfidence: o.confidence }),
+    landing: () => o.landing,
+    callCount: () => o.calls,
+    lastCallMs: () => o.last,
+    resumed: () => o.resumed,
+    abandonedPrs: () => o.prs,
+  };
+}
+const runWith = (calls: AutopsyCall[], f: Map<string, CallFacts>, o: OutcomeFacts | undefined) => detectWaste(calls, analyseCalls(calls), f, o);
+
+describe("C-ABANDON: a long session that ended failing, with nothing landed", () => {
+  // Twelve calls; from the ninth on every tool result failed (a different failure each time, so it is not the same-error rule).
+  const calls = Array.from({ length: 12 }, (_, i) => call({ id: `a${i}`, minute: i, prompt: i === 0, tools: [bash(`in${i}`)] }));
+  const facts = (failFrom = 8, upTo = 12) => factsOf(Object.fromEntries(calls.map((c, i) => [c.callId, { results: [i >= failFrom && i < upTo ? fail(`in${i}`, `E${i}`) : ok(`in${i}`)] }])));
+
+  it("bills the calls from where the final run of failures began, and says what it saw", () => {
+    const events = runWith(calls, facts(), outcomes());
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({ rule: "C-ABANDON", micros: 4_000_000, confidence: "high", unpricedCalls: 0 });
+    expect(events[0]!.calls.map((c) => c.callId)).toEqual(["a8", "a9", "a10", "a11"]);
+    expect(events[0]!.observed).toEqual({ failing_calls_at_the_end: 4, calls_in_session: 12, quiet_hours: 24 });
+  });
+
+  it("does nothing when git was never scanned, so it cannot say what landed", () => {
+    expect(runWith(calls, facts(), undefined)).toEqual([]);
+    expect(runWith(calls, facts(), outcomes({ state: null }))).toEqual([]);
+  });
+
+  it("needs more than ten calls, and a run of at least three failures that ends the session", () => {
+    expect(runWith(calls, facts(), outcomes({ calls: WASTE_PARAMS.abandonCalls }))).toEqual([]);
+    expect(runWith(calls, facts(), outcomes({ calls: WASTE_PARAMS.abandonCalls + 1 }))).toHaveLength(1);
+    expect(runWith(calls, facts(10), outcomes())).toEqual([]); // two failures at the end
+    expect(runWith(calls, facts(8, 11), outcomes())).toEqual([]); // the last call succeeded: it did not end failing
+  });
+
+  it("is not abandoned if the session is not yet over, a commit landed or cannot be ruled out, or someone took the folder up again", () => {
+    expect(runWith(calls, facts(), outcomes({ asOf: T0 + 11 * MIN + 23 * 60 * MIN }))).toEqual([]);
+    for (const landing of ["landed", "possible", "unknown"] as Landing[]) expect(runWith(calls, facts(), outcomes({ landing })), landing).toEqual([]);
+    // Reverted work is not abandoned work: it was committed. C-REVERT takes it, and C-ABANDON does not.
+    for (const state of ["committed", "merged", "kept", "reverted"] as LandingState[]) expect(runWith(calls, facts(), outcomes({ state })).filter((e) => e.rule === "C-ABANDON"), state).toEqual([]);
+    expect(runWith(calls, facts(), outcomes({ resumed: true }))).toEqual([]);
+  });
+
+  it("does not look at a session whose last call is outside the window it was given", () => {
+    expect(runWith(calls.slice(0, 11), facts(), outcomes({ last: T0 + 11 * MIN }))).toEqual([]);
+  });
+
+  it("lets calls with no tool result sit inside the run, and a success inside it end the run", () => {
+    const bare = [...calls.slice(0, 9), call({ id: "bare", minute: 9, tools: [] }), ...calls.slice(10)];
+    const f = factsOf(Object.fromEntries(bare.map((c, i) => [c.callId, { results: c.callId === "bare" ? [] : [i >= 8 ? fail(`in${i}`, `E${i}`) : ok(`in${i}`)] }])));
+    expect(runWith(bare, f, outcomes())[0]!.calls.map((c) => c.callId)).toEqual(["a8", "bare", "a10", "a11"]);
+    const f2 = factsOf(Object.fromEntries(calls.map((c, i) => [c.callId, { results: [i === 10 ? ok("in10") : i >= 8 ? fail(`in${i}`, `E${i}`) : ok(`in${i}`)] }])));
+    expect(runWith(calls, f2, outcomes())).toEqual([]); // a success two calls from the end: only one failure ends the session
+  });
+
+  it("never bills a call another rule already claimed", () => {
+    const same = factsOf(Object.fromEntries(calls.map((c, i) => [c.callId, { results: [i >= 8 ? fail(`in${i}`, "SAME") : ok(`in${i}`)] }])));
+    const events = runWith(calls, same, outcomes());
+    expect(events.map((e) => e.rule).sort()).toEqual(["C-ABANDON", "C-LOOP-2"]);
+    const ids = events.flatMap((e) => e.calls.map((c) => c.callId));
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+});
+
+describe("C-REVERT: work that was reverted", () => {
+  const calls = Array.from({ length: 5 }, (_, i) => call({ id: `r${i}`, minute: i, prompt: i === 0, tools: [bash(`in${i}`)] }));
+  const nothing = factsOf({});
+
+  it("bills every call of a session whose commits were reverted, high only when the link is", () => {
+    const high = runWith(calls, nothing, outcomes({ state: "reverted", confidence: "high" }));
+    expect(high).toHaveLength(1);
+    expect(high[0]).toMatchObject({ rule: "C-REVERT", micros: 5_000_000, confidence: "high" });
+    expect(high[0]!.observed).toEqual({ link_confidence: "high", calls: 5 });
+    expect(runWith(calls, nothing, outcomes({ state: "reverted", confidence: "medium" }))[0]!.confidence).toBe("low");
+  });
+
+  it("is silent for work that landed, was never linked, or has no recorded state, and when git was not scanned", () => {
+    for (const state of ["committed", "merged", "kept", "unlinked"] as LandingState[]) expect(runWith(calls, nothing, outcomes({ state, calls: 5, last: T0 + 4 * MIN })), state).toEqual([]);
+    expect(runWith(calls, nothing, outcomes({ state: null }))).toEqual([]);
+    expect(runWith(calls, nothing, undefined)).toEqual([]);
+  });
+
+  it("counts a call on a model with no price as no dollars, and says so", () => {
+    const unpriced = calls.map((c, i) => (i === 2 ? { ...c, micros: null } : c));
+    const e = runWith(unpriced, nothing, outcomes({ state: "reverted", confidence: "high" }))[0]!;
+    expect(e).toMatchObject({ micros: 4_000_000, unpricedCalls: 1 });
+  });
+});
+
+describe("C-PR: work in a pull request closed without a merge", () => {
+  const calls = Array.from({ length: 4 }, (_, i) => call({ id: `p${i}`, minute: i, prompt: i === 0, tools: [bash(`in${i}`)] }));
+  const nothing = factsOf({});
+
+  it("bills every call of the session and names the pull requests, high only when the link to the commit is", () => {
+    const high = runWith(calls, nothing, outcomes({ state: "committed", confidence: "high", prs: [10, 12], calls: 4, last: T0 + 3 * MIN }));
+    expect(high).toHaveLength(1);
+    expect(high[0]).toMatchObject({ rule: "C-PR", micros: 4_000_000, confidence: "high" });
+    expect(high[0]!.observed).toEqual({ pull_requests: "#10, #12", link_confidence: "high", calls: 4 });
+    expect(runWith(calls, nothing, outcomes({ state: "committed", confidence: "medium", prs: [10] }))[0]!.confidence).toBe("low");
+  });
+
+  it("is silent when pull requests were not asked for, or none of the session's work was turned down", () => {
+    expect(runWith(calls, nothing, outcomes({ state: "committed", confidence: "high", prs: null }))).toEqual([]);
+    expect(runWith(calls, nothing, outcomes({ state: "committed", confidence: "high", prs: [] }))).toEqual([]);
+    expect(runWith(calls, nothing, undefined)).toEqual([]);
+  });
+
+  it("never bills a call another rule already claimed", () => {
+    const echo = factsOf(Object.fromEntries(calls.map((c, i) => [c.callId, { results: [fail(`in${i}`, "SAME")] }])));
+    const events = runWith(calls, echo, outcomes({ state: "committed", confidence: "high", prs: [10], calls: 4, last: T0 + 3 * MIN }));
+    const ids = events.flatMap((e) => e.calls.map((c) => c.callId));
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(events.map((e) => e.rule).sort()).toEqual(["C-LOOP-2", "C-PR"]);
   });
 });

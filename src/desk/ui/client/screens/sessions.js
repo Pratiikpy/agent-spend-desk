@@ -86,6 +86,9 @@ const KIND_LABEL = {
   churn: "One file edited again and again",
   reflection: "The model carrying on alone",
   orphan: "A delegated agent after its parent stopped",
+  abandon: "A long session that ended failing",
+  revert: "Work that was reverted",
+  pr: "A pull request closed without a merge",
 };
 const ROLE_LABEL = { assistant_text: "said", tool_use: "called", tool_result: "got back" };
 

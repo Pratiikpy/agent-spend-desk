@@ -117,6 +117,47 @@ export async function render(ctx) {
         : h("p", { class: "note" }, "Nothing to replay."),
       h("p", { class: "note" }, "A replay re-runs recorded sessions through the policy. It cannot say a paused task would have finished, or that the owner would have approved an ask."),
     ),
+    rp && !rp.withheld && rp.calibration && rp.calibration.some((c) => c.status !== "never_fired")
+      ? section(
+          "Rule calibration",
+          "estimated, recorded sessions: did what a rule stopped later land",
+          table(
+            "Each rule's stops and asks",
+            [
+              { label: "Rule", render: (c) => `${c.ruleId}${c.threshold ? ` (${c.what} ${c.threshold})` : ""}` },
+              { label: "Sessions flagged", num: true, render: (c) => int(c.flags) },
+              { label: "Known landing", num: true, render: (c) => int(c.labelled) },
+              { label: "Landed after", num: true, render: (c) => (c.landedShare === null ? "n/a" : `${int(c.landed)} (${pct(c.landedShare)})`) },
+              { label: "After the stop points", num: true, render: (c) => usd(c.dollarsMicros) },
+              {
+                label: "Reading",
+                render: (c) =>
+                  c.status === "misfires"
+                    ? pill("misfires on your data", "risk")
+                    : c.status === "ok"
+                      ? pill("holds up", "live")
+                      : c.status === "not_enough_data"
+                        ? pill("not enough data", "ink")
+                        : "never fired",
+              },
+            ],
+            rp.calibration.filter((c) => c.status !== "never_fired"),
+            { maxh: true },
+          ),
+          ...rp.calibration
+            .filter((c) => c.offer)
+            .map((c) =>
+              h(
+                "p",
+                { class: "note", "data-offer": c.ruleId },
+                c.offer.none
+                  ? `${c.ruleId}: no higher threshold offered: ${c.offer.none}.`
+                  : `${c.ruleId}: raise it to ${c.offer.threshold} (${c.offer.multiplier} times) and, replayed on the same sessions, it flags ${int(c.offer.flags)} and ${int(c.offer.landed)} of ${int(c.offer.labelled)} labelled landed, and stops ${usd(c.offer.givenUpMicros)} less. A loosening is your own edit to the file, not an approval; \`desk calibrate rules --propose\` writes it.`,
+              ),
+            ),
+          h("p", { class: "note" }, "A flag is a session the rule stopped or asked about. A session whose landing is not known is left out of the share: unknown is not the same as not landed. Nothing on this page changes the policy."),
+        )
+      : null,
     section("Wind tunnel", "how a month could go", h("div", { class: "controls" }, runTunnel), tunnelBox),
     footnote("The interpreter that decides here is the one the gate uses.", "Nothing on this page changes a policy.", "Savings and spend are list-price estimates on recorded sessions, not an invoice."),
   );

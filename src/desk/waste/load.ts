@@ -1,7 +1,8 @@
 import type { AutopsyCall, PerCall } from "../autopsy/engine.ts";
 import type { Ledger } from "../ledger/db.ts";
 import type { CompactionRecord, Landing } from "./bloat.ts";
-import { detectWaste, type CallFacts, type WasteEvent } from "./detect.ts";
+import type { LandingState } from "../outcomes/attribute.ts";
+import { detectWaste, type CallFacts, type OutcomeFacts, type WasteEvent } from "./detect.ts";
 
 /**
  * What the waste rules need about each call beyond the autopsy's record: what each tool use returned (a folded hash, whether the tool said it
@@ -35,9 +36,77 @@ export function loadCallFacts(db: Ledger, calls: readonly AutopsyCall[]): Map<st
   return out;
 }
 
-/** The waste events of these calls: the facts read from the ledger, then the rules. */
-export function wasteEventsOf(db: Ledger, calls: readonly AutopsyCall[], analysis: ReadonlyMap<string, PerCall>, facts: ReadonlyMap<string, CallFacts> = loadCallFacts(db, calls)): WasteEvent[] {
-  return detectWaste(calls, analysis, facts);
+/** The waste events of these calls: the facts read from the ledger, then the rules. The two rules that need outcomes run when git was scanned and are silent when it was not. */
+export function wasteEventsOf(db: Ledger, calls: readonly AutopsyCall[], analysis: ReadonlyMap<string, PerCall>, facts: ReadonlyMap<string, CallFacts> = loadCallFacts(db, calls), outcomes: OutcomeFacts | null = loadOutcomeFacts(db)): WasteEvent[] {
+  return detectWaste(calls, analysis, facts, outcomes ?? undefined);
+}
+
+/**
+ * What the ledger holds about outcomes, for C-ABANDON and C-REVERT, or null when it holds none: no session has a landing state, or the ledger is older than the table.
+ * A ledger where `desk landing` never ran says nothing about whether work landed, so these rules do not guess.
+ */
+export function loadOutcomeFacts(db: Ledger): OutcomeFacts | null {
+  const has = (name: string): boolean => ((db.prepare("SELECT COUNT(*) AS n FROM sqlite_master WHERE type = 'table' AND name = ?").get(name) as { n: number }).n ?? 0) > 0;
+  if (!has("session_outcome") || !has("git_commit")) return null;
+  if (((db.prepare("SELECT COUNT(*) AS n FROM session_outcome").get() as { n: number }).n ?? 0) === 0) return null;
+  const asOf = (db.prepare("SELECT MAX(ts) AS t FROM model_call").get() as { t: string | null }).t;
+  if (asOf === null) return null;
+  const stateOf = db.prepare("SELECT state, best_confidence FROM session_outcome WHERE session_id = ?");
+  const countOf = db.prepare("SELECT COUNT(*) AS n, MAX(ts) AS last FROM model_call WHERE session_id = ?");
+  const folderOf = db.prepare("SELECT project_path FROM session WHERE session_id = ?");
+  // Other sessions in a folder, with the time of their first call; read once per folder, because a folder can hold hundreds of sessions.
+  const startsIn = db.prepare("SELECT s.session_id AS id, MIN(m.ts) AS first FROM session s JOIN model_call m ON m.session_id = s.session_id WHERE s.project_path = ? GROUP BY s.session_id");
+  const folderStarts = new Map<string, { id: string; ms: number }[]>();
+  const landing = commitLanding(db);
+  // Pull request facts, when `desk landing --prs` was run: which pull requests (by state) each commit is in. Read once, because there are few.
+  const prsOf = new Map<string, { number: number; state: string }[]>();
+  if (has("pr_fact")) {
+    const rows = db.prepare("SELECT repo_id, number, state, commit_shas FROM pr_fact").all() as unknown as { repo_id: number; number: number; state: string; commit_shas: string }[];
+    for (const r of rows) {
+      for (const sha of JSON.parse(r.commit_shas) as string[]) {
+        const key = `${r.repo_id}:${sha}`;
+        const list = prsOf.get(key) ?? [];
+        list.push({ number: r.number, state: r.state });
+        prsOf.set(key, list);
+      }
+    }
+  }
+  const trustedLinks = db.prepare("SELECT repo_id, sha FROM session_commit WHERE session_id = ? AND confidence IN ('high', 'medium')");
+  return {
+    asOfMs: Date.parse(asOf),
+    abandonedPrs(sessionId) {
+      if (prsOf.size === 0) return null;
+      if ((stateOf.get(sessionId) as { state: string } | undefined)?.state !== "committed") return null;
+      const links = trustedLinks.all(sessionId) as unknown as { repo_id: number; sha: string }[];
+      if (links.length === 0) return null;
+      const numbers = new Set<number>();
+      for (const l of links) {
+        const prs = prsOf.get(`${l.repo_id}:${l.sha}`) ?? [];
+        // A commit in no pull request, or in one that is open or merged, means the work was not turned down.
+        if (prs.length === 0 || prs.some((p) => p.state !== "closed_unmerged")) return null;
+        for (const p of prs) numbers.add(p.number);
+      }
+      return [...numbers].sort((a, b) => a - b);
+    },
+    state(sessionId) {
+      const r = stateOf.get(sessionId) as { state: LandingState; best_confidence: "high" | "medium" | "low" | null } | undefined;
+      return r ? { state: r.state, bestConfidence: r.best_confidence } : null;
+    },
+    landing,
+    callCount: (sessionId) => (countOf.get(sessionId) as { n: number }).n,
+    lastCallMs: (sessionId) => Date.parse((countOf.get(sessionId) as { last: string | null }).last ?? "") || 0,
+    resumed(sessionId, endMs, withinMs) {
+      const folder = (folderOf.get(sessionId) as { project_path: string | null } | undefined)?.project_path;
+      // A session with no folder cannot be matched to a later one, so it is not taken for resumed; the landing check has already said "unknown" for it.
+      if (!folder) return false;
+      let list = folderStarts.get(folder);
+      if (!list) {
+        list = (startsIn.all(folder) as unknown as { id: string; first: string }[]).map((r) => ({ id: r.id, ms: Date.parse(r.first) }));
+        folderStarts.set(folder, list);
+      }
+      return list.some((x) => x.id !== sessionId && x.ms > endMs && x.ms <= endMs + withinMs);
+    },
+  };
 }
 
 /** The compactions the logs record in a period, keyed by the log file they were read from, like the calls of that thread. */
