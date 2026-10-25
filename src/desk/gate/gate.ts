@@ -61,6 +61,10 @@ export interface GateConfig {
   /** A new policy runs in shadow mode for this long after the gate first sees it (spec 10.5: 7 days by default in the CLI). Ignored when `mode` is given. */
   shadowMs?: number;
   projectOf?: (cwd: string | null) => string;
+  /** The kind of work a request in this folder is (the branch prefix: feat, fix, ...), for rules on `task_type` and for earned autonomy. Without it a hook request is `code`. */
+  taskTypeOf?: (cwd: string | null) => string;
+  /** What each kind of work has earned (DF-093): a tier by task type. Read at every decision, so a demotion takes effect on the next call. */
+  autonomy?: () => ReadonlyMap<string, string>;
   busyTimeoutMs?: number;
   /**
    * Where the handoff of a paused session is written. With it, a loop stop or a cap on a long window opens a checkpoint: the agent is told to write its handoff
@@ -651,6 +655,14 @@ export class Gate {
 
     const digest = hashJson({ s: g.session_id, p: g.person, pr: g.project, a: g.agent, m: g.model, t: g.task_type, w: g.waste_rule, x: g.action, tool: g.tool, r: reserve, pv: view.version });
 
+    // Earned autonomy: a kind of work the owner blocked is refused; one that has earned it is not asked about a soft limit. Neither touches a hard denial.
+    const earned = this.earnedAutonomy(g, finalVerdict);
+    if (earned !== null) {
+      finalVerdict = earned.verdict;
+      reasonCode = earned.reasonCode;
+      reasons.push(earned.note);
+    }
+
     // An owner approval, echoed back with its id, turns one `ask` into an allow. It never overrides a deny.
     if (finalVerdict === "ask" && g.approval_id !== null) {
       const ok = this.approvalValid(g.approval_id, digest);
@@ -1069,6 +1081,7 @@ export class Gate {
       const cwd = typeof input["cwd"] === "string" ? (input["cwd"] as string) : null;
       const project = this.cfg.projectOf !== undefined ? this.cfg.projectOf(cwd) : cwd === null ? "unknown" : basename(cwd);
       const person = this.person;
+      const taskType = this.cfg.taskTypeOf !== undefined ? this.cfg.taskTypeOf(cwd) : "code";
       let lastModel: string | null = null;
       const tp = input["transcript_path"];
       if (typeof tp === "string" && tp.length > 0) {
@@ -1084,7 +1097,7 @@ export class Gate {
       }
       const model = lastModel ?? (this.cfg.db.prepare("SELECT last_model FROM gate_transcript WHERE session_id = ?").get(sessionId) as { last_model?: string | null } | undefined)?.last_model ?? "claude-unknown";
       const d = this.checkOnly(
-        { session_id: sessionId, person, project, agent: "agent:main", model, task_type: "code", waste_rule: "none", action: "tool_call", tool: toolName, recoverable_micros: 0, idempotency_key: null, estimate_micros: this.cfg.hookProbeMicros ?? 1, input_tokens: null, max_tokens: null, n: 1, ttl_ms: null, call_ref: null, approval_id: null },
+        { session_id: sessionId, person, project, agent: "agent:main", model, task_type: taskType, waste_rule: "none", action: "tool_call", tool: toolName, recoverable_micros: 0, idempotency_key: null, estimate_micros: this.cfg.hookProbeMicros ?? 1, input_tokens: null, max_tokens: null, n: 1, ttl_ms: null, call_ref: null, approval_id: null },
       );
       if (d.verdict === "allow") return { decision: "allow", reason: d.reasons.join("; ") || "allowed", failedClosed: false };
       const stop = d.action === "pause_with_checkpoint" && !d.reasons.some((r) => r.includes("handoff")) ? " Finish the current step, write a short handoff (what is done, what is open, the branch) and stop." : "";
@@ -1093,6 +1106,35 @@ export class Gate {
       const message = error instanceof Error ? error.message : String(error);
       return { decision: "deny", reason: `Desk gate could not decide and is blocking as a precaution: ${message}`, failedClosed: true };
     }
+  }
+
+  /** What the owner's route has set for each kind of work. A kind with no row is supervised. */
+  autonomyTiers(): ReadonlyMap<string, string> {
+    const rows = this.cfg.db.prepare("SELECT workflow, tier FROM gate_autonomy").all() as unknown as { workflow: string; tier: string }[];
+    return new Map(rows.map((r) => [r.workflow, r.tier]));
+  }
+
+  /** Set what a kind of work has earned. Called only from the owner's route, so only with the owner's token. */
+  setAutonomy(workflow: string, tier: string, reason: string): void {
+    if (!/^[a-z0-9][a-z0-9_-]{0,39}$/.test(workflow)) throw new GateError("E_INVALID", `a kind of work is 1 to 40 lowercase letters, digits, hyphens and underscores, not ${JSON.stringify(workflow).slice(0, 60)}`);
+    if (!["blocked", "supervised", "guarded_auto", "unassisted_auto"].includes(tier)) throw new GateError("E_INVALID", `tier must be blocked, supervised, guarded_auto or unassisted_auto, not ${JSON.stringify(tier).slice(0, 40)}`);
+    this.cfg.db.prepare("INSERT INTO gate_autonomy (workflow, tier, set_at, reason) VALUES (?, ?, ?, ?) ON CONFLICT (workflow) DO UPDATE SET tier = excluded.tier, set_at = excluded.set_at, reason = excluded.reason").run(workflow, tier, this.ledger.nowIso(), maskSecrets(reason).text.slice(0, 400));
+  }
+
+  /**
+   * What a kind of work has earned (DF-093), applied to a verdict the policy gave. A blocked kind is denied whatever the policy said short of a bypass; a promoted kind is let
+   * through where the policy only asked (a soft limit), for a spend action. It never turns a denial into anything, so a cap that has been reached, a forbidden action and a
+   * paused person stay as they were.
+   */
+  private earnedAutonomy(g: GateRequest, verdict: Verdict): { verdict: Verdict; reasonCode: string; note: string } | null {
+    const tiers = this.cfg.autonomy !== undefined ? this.cfg.autonomy() : this.autonomyTiers();
+    const tier = tiers.get(g.task_type);
+    if (tier === undefined) return null;
+    if (tier === "blocked" && verdict !== "deny") return { verdict: "deny", reasonCode: "workflow_blocked", note: `the owner blocked work of kind "${g.task_type}"` };
+    if ((tier === "guarded_auto" || tier === "unassisted_auto") && verdict === "ask" && (g.action === "call" || g.action === "tool_call")) {
+      return { verdict: "allow", reasonCode: "earned_autonomy", note: `earned autonomy: work of kind "${g.task_type}" has landed and stayed (${tier}), so the soft limit did not ask` };
+    }
+    return null;
   }
 
   /** Evaluate a request without reserving anything. Denials and asks are recorded; an allow writes nothing. */
@@ -1122,12 +1164,14 @@ export class Gate {
       const probe = g.estimate_micros ?? 1;
       const head = this.headroom(g.person, nowIso);
       const preq = this.withHeadroom(this.requestFor(g, dayT.spent + dayT.reserved + probe, monthT.spent + monthT.reserved + probe, this.scopedDims(view.policy, g, nowIso, probe)), head);
-      const verdict = evaluate(view.policy, preq);
+      const evaluated = evaluate(view.policy, preq);
+      const earned = this.earnedAutonomy(g, evaluated.verdict);
+      const verdict = earned === null ? evaluated : { ...evaluated, verdict: earned.verdict, reasons: [...evaluated.reasons, earned.note] };
       const limits = this.limitsFor(view.policy, preq, head);
       const scopedNow = this.scopedStanding(view.policy, preq);
       const refs = this.budgetsFor(g.person, nowIso, limits, true);
       const standing = refs.map((b) => standingOf(b, (b.window === "day" ? dayT : monthT).spent, (b.window === "day" ? dayT : monthT).reserved));
-      const reasonCode = verdict.verdict === "allow" ? "allowed" : verdict.verdict === "ask" ? "ask_required" : verdict.action ? "forbidden" : verdict.reasons.some((r) => r.startsWith("cap ")) ? "cap_exceeded" : "no_permit";
+      const reasonCode = earned !== null ? earned.reasonCode : verdict.verdict === "allow" ? "allowed" : verdict.verdict === "ask" ? "ask_required" : verdict.action ? "forbidden" : verdict.reasons.some((r) => r.startsWith("cap ")) ? "cap_exceeded" : "no_permit";
       const base: GateDecision = {
         verdict: verdict.verdict, failed: false, shadow: false, reasonCode, reasons: verdict.reasons, matched: verdict.matched, action: verdict.action ?? null, reservationId: null,
         idempotencyKey: key, idempotent: false, reservedMicros: 0, expiresAt: null, routedModel: routeOf(view.policy, preq), standing, ...(scopedNow.length > 0 ? { scoped: scopedNow } : {}), policyVersion: view.version, approvalRequest: null, basis: {},

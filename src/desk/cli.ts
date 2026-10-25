@@ -1,3 +1,4 @@
+import { autonomyCommand, gatePush } from "./autonomy/command.ts";
 import { adaptersCommand, eventsCommand } from "./open/command.ts";
 import { auditCommand } from "./billing/audit-command.ts";
 import { readAttentionLoad } from "./gate/readout.ts";
@@ -206,6 +207,7 @@ const { values, positionals } = parseOrExit({
     kind: { type: "string" },
     origin: { type: "string" },
     "write-golden": { type: "boolean", default: false },
+    apply: { type: "boolean", default: false },
     "with-paths": { type: "boolean", default: false },
     "adapters-dir": { type: "string" },
     definition: { type: "string" },
@@ -402,6 +404,10 @@ Answer one with: desk questions answer <id> yes|no. Or go through them: desk que
     });
     await watchLogs({ poll: () => newestMtimeMs(findJsonlLogs(values["claude-dir"])), refresh: draw, sleep: (ms) => new Promise((r) => setTimeout(r, ms)), intervalMs: 3000, shouldStop: () => stop });
   } else await draw();
+} else if (command === "autonomy") {
+  const done = await autonomyCommand(positionals.slice(1), db, { push: gatePush(process.env), ...(values.apply ? { apply: true } : {}), ...(values.reason ? { reason: values.reason } : {}) });
+  console.log(done.text);
+  if (!done.ok) process.exitCode = 1;
 } else if (command === "events" || command === "adapters") {
   const opts = {
     snapshot: loadSnapshot(pricesPath),

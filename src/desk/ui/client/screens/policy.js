@@ -158,6 +158,28 @@ export async function render(ctx) {
           h("p", { class: "note" }, "A flag is a session the rule stopped or asked about. A session whose landing is not known is left out of the share: unknown is not the same as not landed. Nothing on this page changes the policy."),
         )
       : null,
+    d.autonomy && d.autonomy.length > 0
+      ? section(
+          "Earned autonomy",
+          "counts of finished runs, by kind of work",
+          table(
+            "What each kind of work has earned",
+            [
+              { label: "Kind of work", render: (a) => a.workflow },
+              { label: "Tier", render: (a) => (a.tier === "guarded_auto" || a.tier === "unassisted_auto" ? pill(a.tier.replace("_", " "), "live") : a.tier === "blocked" ? pill("blocked", "risk") : pill("supervised", "ink")) },
+              { label: "Finished runs", num: true, render: (a) => int(a.finished) },
+              { label: "Landed and stayed", num: true, render: (a) => (a.finished === 0 ? "none" : `${int(a.landed)} (${pct(a.rate)})`) },
+              { label: "Lower bound", num: true, render: (a) => (a.lower === null ? "none" : pct(a.lower)) },
+              { label: "Not settled", num: true, render: (a) => int(a.pending) },
+              { label: "Not tied to a commit", num: true, render: (a) => int(a.unlinked) },
+              { label: "Now", render: (a) => (a.action === "demote" ? `demote: ${a.reason}` : a.action === "propose_promotion" ? `proposed for guarded auto: desk autonomy approve ${a.workflow} ${a.code}` : a.reason) },
+            ],
+            d.autonomy,
+            { maxh: true },
+          ),
+          h("p", { class: "note" }, "A run is judged once its work is 14 days old: it landed and stayed, or it was reverted or never merged. Every kind starts supervised, so the gate asks you at a soft limit. 30 finished runs and a lower bound of 90% earn guarded auto, which you approve; a revert within 7 days takes it back at once. A hard cap and a forbidden action stop a promoted kind as they stop any other."),
+        )
+      : null,
     section("Wind tunnel", "how a month could go", h("div", { class: "controls" }, runTunnel), tunnelBox),
     footnote("The interpreter that decides here is the one the gate uses.", "Nothing on this page changes a policy.", "Savings and spend are list-price estimates on recorded sessions, not an invoice."),
   );

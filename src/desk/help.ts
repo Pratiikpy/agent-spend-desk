@@ -49,6 +49,7 @@ export const COMMANDS: readonly CommandHelp[] = [
   { name: "approve", group: "Decide and enforce", summary: "Approve a pending policy change; the approval is signed into the dossier." },
   { name: "sources", group: "Read more sources", summary: "Which agent tools the Desk finds on this machine, where it looked, and what each source can and cannot tell it." },
   { name: "otel", group: "Read more sources", summary: "Read OpenTelemetry GenAI spans (OTLP/JSON) as calls, or write the Desk's own record as spans with the desk.* attributes." },
+  { name: "autonomy", group: "Decide and enforce", summary: "What each kind of work has earned: promoted after 30 finished tasks on a 90% lower bound, and demoted at once by a revert within 7 days." },
   { name: "events", group: "Read more sources", summary: "The open ledger format (desk.events/1): validate, import and export the Desk's record as JSON Lines that other tools can read and write." },
   { name: "adapters", group: "Read more sources", summary: "Read another tool's files through an adapter that must reproduce its golden output from a real sample first; adapters run in a sandbox." },
   { name: "gateway", group: "Read more sources", summary: "Import a LiteLLM spend log (JSON, JSON Lines or CSV): tokens priced at list price, the gateway's own cost kept beside it." },

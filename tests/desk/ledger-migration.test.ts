@@ -13,11 +13,11 @@ beforeEach(() => {
 afterEach(() => dir.dispose());
 
 // The tables a later version added, dropped when a test puts a ledger back at an older version. Each new migration adds its tables here.
-const DROP_AFTER_V6 = "DROP TABLE IF EXISTS question_decision; DROP TABLE IF EXISTS pr_fact; DROP TABLE IF EXISTS ledger_event; ALTER TABLE ingest_source DROP COLUMN content_digest; ALTER TABLE ingest_run DROP COLUMN future_lines; ALTER TABLE ingest_run DROP COLUMN skewed_lines; ALTER TABLE ingest_source DROP COLUMN future_lines; ALTER TABLE ingest_source DROP COLUMN skewed_lines; DROP TABLE IF EXISTS desk_call; DROP TABLE IF EXISTS untrusted_flag; DROP TABLE IF EXISTS workflow_run; ALTER TABLE ingest_source DROP COLUMN workflow_run; DROP TABLE IF EXISTS delegation_edge; ALTER TABLE ingest_source DROP COLUMN agent_id; DROP TABLE IF EXISTS session_compaction; ALTER TABLE model_call DROP COLUMN tool_version; ALTER TABLE tool_result DROP COLUMN result_hash; ALTER TABLE tool_result DROP COLUMN truncated; DROP TABLE IF EXISTS call_reported_cost; DROP TABLE IF EXISTS owner_answer; DROP TABLE IF EXISTS alert_event; DROP TABLE IF EXISTS alert_state; DROP INDEX IF EXISTS model_call_source_ts; DROP TABLE IF EXISTS reconciliation; DROP TABLE IF EXISTS billed_line; DROP TABLE IF EXISTS invoice; DROP TABLE IF EXISTS cost_event_history; DROP TABLE IF EXISTS repricing; ALTER TABLE model_call DROP COLUMN inference_geo; ALTER TABLE cost_event DROP COLUMN rule_ids; DROP TABLE IF EXISTS task_session; DROP TABLE IF EXISTS task;";
+const DROP_AFTER_V6 = "DROP TABLE IF EXISTS autonomy_event; DROP TABLE IF EXISTS workflow_autonomy; ALTER TABLE git_commit DROP COLUMN reverted_at; DROP TABLE IF EXISTS question_decision; DROP TABLE IF EXISTS pr_fact; DROP TABLE IF EXISTS ledger_event; ALTER TABLE ingest_source DROP COLUMN content_digest; ALTER TABLE ingest_run DROP COLUMN future_lines; ALTER TABLE ingest_run DROP COLUMN skewed_lines; ALTER TABLE ingest_source DROP COLUMN future_lines; ALTER TABLE ingest_source DROP COLUMN skewed_lines; DROP TABLE IF EXISTS desk_call; DROP TABLE IF EXISTS untrusted_flag; DROP TABLE IF EXISTS workflow_run; ALTER TABLE ingest_source DROP COLUMN workflow_run; DROP TABLE IF EXISTS delegation_edge; ALTER TABLE ingest_source DROP COLUMN agent_id; DROP TABLE IF EXISTS session_compaction; ALTER TABLE model_call DROP COLUMN tool_version; ALTER TABLE tool_result DROP COLUMN result_hash; ALTER TABLE tool_result DROP COLUMN truncated; DROP TABLE IF EXISTS call_reported_cost; DROP TABLE IF EXISTS owner_answer; DROP TABLE IF EXISTS alert_event; DROP TABLE IF EXISTS alert_state; DROP INDEX IF EXISTS model_call_source_ts; DROP TABLE IF EXISTS reconciliation; DROP TABLE IF EXISTS billed_line; DROP TABLE IF EXISTS invoice; DROP TABLE IF EXISTS cost_event_history; DROP TABLE IF EXISTS repricing; ALTER TABLE model_call DROP COLUMN inference_geo; ALTER TABLE cost_event DROP COLUMN rule_ids; DROP TABLE IF EXISTS task_session; DROP TABLE IF EXISTS task;";
 
 describe("the ledger schema", () => {
-  it("is at version 24 and a reader can use version 3 and later", () => {
-    expect(SCHEMA_VERSION).toBe(24);
+  it("is at version 25 and a reader can use version 3 and later", () => {
+    expect(SCHEMA_VERSION).toBe(25);
     expect(OLDEST_READABLE_VERSION).toBe(3);
   });
 
@@ -39,7 +39,7 @@ describe("the ledger schema", () => {
 
     const upgraded = openLedger(path);
     try {
-      expect((upgraded.prepare("PRAGMA user_version").get() as { user_version: number }).user_version).toBe(24);
+      expect((upgraded.prepare("PRAGMA user_version").get() as { user_version: number }).user_version).toBe(25);
       expect(upgraded.prepare("SELECT id, kind, path, size_bytes, offset_bytes, last_ingested_at FROM ingest_source").all()).toEqual(before.sources);
       expect(upgraded.prepare("SELECT call_id, source_id, output_tokens FROM model_call ORDER BY call_id").all()).toEqual(before.calls);
       expect(upgraded.prepare("PRAGMA foreign_key_check").all()).toEqual([]);
@@ -85,7 +85,7 @@ describe("the ledger schema", () => {
 
   it("opens a fresh ledger at the newest version and refuses one from a newer build", () => {
     const fresh = openLedger(":memory:");
-    expect((fresh.prepare("PRAGMA user_version").get() as { user_version: number }).user_version).toBe(24);
+    expect((fresh.prepare("PRAGMA user_version").get() as { user_version: number }).user_version).toBe(25);
     fresh.close();
     const path = join(dir.path, "future.db");
     const f = new DatabaseSync(path);

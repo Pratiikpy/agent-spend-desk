@@ -97,6 +97,14 @@ CREATE TABLE IF NOT EXISTS gate_policy_seen (
   first_seen TEXT NOT NULL
 );
 
+-- What each kind of work has earned (DF-093). Written only through the owner's route; read at every decision.
+CREATE TABLE IF NOT EXISTS gate_autonomy (
+  workflow TEXT PRIMARY KEY,
+  tier TEXT NOT NULL CHECK (tier IN ('blocked', 'supervised', 'guarded_auto', 'unassisted_auto')),
+  set_at TEXT NOT NULL,
+  reason TEXT NOT NULL
+);
+
 -- How far the gate has read each session transcript, so that spend is counted once.
 CREATE TABLE IF NOT EXISTS gate_transcript (
   session_id TEXT PRIMARY KEY,

@@ -599,7 +599,34 @@ DROP TABLE ingest_source;
 ALTER TABLE ingest_source_v24 RENAME TO ingest_source;
 `;
 
-const MIGRATIONS: readonly string[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8, SCHEMA_V9, SCHEMA_V10, SCHEMA_V11, SCHEMA_V12, SCHEMA_V13, SCHEMA_V14, SCHEMA_V15, SCHEMA_V16, SCHEMA_V17, SCHEMA_V18, SCHEMA_V19, SCHEMA_V20, SCHEMA_V21, SCHEMA_V22, SCHEMA_V23, SCHEMA_V24];
+// When a commit was reverted (the revert commit's own time), and what the Desk has decided about how much autonomy each kind of work has earned (DF-093).
+const SCHEMA_V25 = `
+ALTER TABLE git_commit ADD COLUMN reverted_at TEXT;
+
+CREATE TABLE workflow_autonomy (
+  workflow TEXT PRIMARY KEY,
+  tier TEXT NOT NULL CHECK (tier IN ('blocked', 'supervised', 'guarded_auto', 'unassisted_auto')),
+  since TEXT NOT NULL,
+  reason TEXT NOT NULL,
+  evidence TEXT NOT NULL,
+  evidence_digest TEXT NOT NULL
+);
+
+CREATE TABLE autonomy_event (
+  event_id INTEGER PRIMARY KEY,
+  workflow TEXT NOT NULL,
+  at TEXT NOT NULL,
+  kind TEXT NOT NULL CHECK (kind IN ('proposed', 'promoted', 'demoted', 'blocked', 'unblocked', 'held')),
+  from_tier TEXT,
+  to_tier TEXT,
+  reason TEXT NOT NULL,
+  evidence TEXT NOT NULL,
+  evidence_digest TEXT NOT NULL
+);
+CREATE INDEX autonomy_event_workflow ON autonomy_event (workflow, event_id);
+`;
+
+const MIGRATIONS: readonly string[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8, SCHEMA_V9, SCHEMA_V10, SCHEMA_V11, SCHEMA_V12, SCHEMA_V13, SCHEMA_V14, SCHEMA_V15, SCHEMA_V16, SCHEMA_V17, SCHEMA_V18, SCHEMA_V19, SCHEMA_V20, SCHEMA_V21, SCHEMA_V22, SCHEMA_V23, SCHEMA_V24, SCHEMA_V25];
 
 /** The schema version this build writes: the number of migrations. A reader compares a ledger's `user_version` with it. */
 export const SCHEMA_VERSION = MIGRATIONS.length;

@@ -151,6 +151,21 @@ export async function startGateServer(opts: GateServerOptions): Promise<RunningG
           else gate.resume(o["person"], "owner");
           return send(res, 200, { ok: true });
         }
+        case "/v1/admin/autonomy": {
+          if (!isOwner) return fail(res, 403, "E_OWNER_ONLY", "setting what a kind of work has earned needs the owner token");
+          const o = (body ?? {}) as Record<string, unknown>;
+          const list = Array.isArray(o["set"]) ? (o["set"] as unknown[]) : [o];
+          if (list.length === 0 || list.length > 200) return fail(res, 400, "E_INVALID", "give one kind of work, or a list of 1 to 200");
+          for (const item of list) {
+            const x = (item ?? {}) as Record<string, unknown>;
+            if (typeof x["workflow"] !== "string" || typeof x["tier"] !== "string") return fail(res, 400, "E_INVALID", "each entry needs a workflow and a tier");
+          }
+          for (const item of list) {
+            const x = item as { workflow: string; tier: string; reason?: unknown };
+            gate.setAutonomy(x.workflow, x.tier, typeof x.reason === "string" ? x.reason : "set by the owner");
+          }
+          return send(res, 200, { ok: true, set: list.length });
+        }
         default:
           return fail(res, 404, "E_NOT_FOUND", `no route ${path}`);
       }

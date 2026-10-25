@@ -13,6 +13,8 @@ export interface GitCommit {
   merged: boolean;
   /** Named by a later "This reverts commit <sha>" message. */
   reverted: boolean;
+  /** When the earliest such revert commit was made, ISO; null when the commit was not reverted. */
+  revertedAt?: string | null;
 }
 
 export interface RepoScan {
@@ -67,10 +69,18 @@ export function scanRepo(root: string, sinceIso?: string): RepoScan {
   } catch {
     /* no default branch yet */
   }
-  const revertedSet = new Set<string>();
+  const revertedAt = new Map<string, string>();
   try {
-    const messages = git(root, ["log", "--all", "--grep=This reverts commit", "--format=%B%x1e"]);
-    for (const m of messages.matchAll(/This reverts commit ([0-9a-f]{40})/g)) revertedSet.add(m[1] as string);
+    const messages = git(root, ["log", "--all", "--grep=This reverts commit", "--format=%aI%x1f%B%x1e"]);
+    for (const block of messages.split("")) {
+      const [when = "", ...body] = block.replace(/^\s+/, "").split("");
+      for (const m of body.join("").matchAll(/This reverts commit ([0-9a-f]{40})/g)) {
+        const sha = m[1] as string;
+        const earlier = revertedAt.get(sha);
+        if (when !== "" && (earlier === undefined || when < earlier)) revertedAt.set(sha, when);
+        else if (when === "" && earlier === undefined) revertedAt.set(sha, "");
+      }
+    }
   } catch {
     /* none */
   }
@@ -87,7 +97,8 @@ export function scanRepo(root: string, sinceIso?: string): RepoScan {
       agentTrailer: trailers.split("\u001d").some((t) => AGENT_TRAILER.test(t)),
       files: rest.map((l) => l.trim()).filter(Boolean),
       merged: mergedSet.has(sha),
-      reverted: revertedSet.has(sha),
+      reverted: revertedAt.has(sha),
+      revertedAt: revertedAt.get(sha) || null,
     });
   }
   return { root, defaultRef: ref, commits };

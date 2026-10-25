@@ -61,7 +61,7 @@ export function linkOutcomes(db: Ledger, repoRoots: readonly string[], nowMs: nu
        ON CONFLICT (root) DO UPDATE SET default_ref = excluded.default_ref, scanned_at = excluded.scanned_at RETURNING repo_id`,
     );
     const insertCommit = db.prepare(
-      `INSERT OR REPLACE INTO git_commit (repo_id, sha, authored_at, author_email, agent_trailer, files, merged, reverted) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT OR REPLACE INTO git_commit (repo_id, sha, authored_at, author_email, agent_trailer, files, merged, reverted, reverted_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     );
     const insertLink = db.prepare("INSERT OR REPLACE INTO session_commit (session_id, repo_id, sha, method, confidence) VALUES (?, ?, ?, ?, ?)");
 
@@ -70,7 +70,7 @@ export function linkOutcomes(db: Ledger, repoRoots: readonly string[], nowMs: nu
       const repoId = (insertRepo.get(root, scan.defaultRef, new Date(nowMs).toISOString()) as { repo_id: number }).repo_id;
       report.repos += 1;
       for (const c of scan.commits) {
-        insertCommit.run(repoId, c.sha, c.authoredAt, pseudonym(c.authorEmail), c.agentTrailer ? 1 : 0, JSON.stringify(c.files), c.merged ? 1 : 0, c.reverted ? 1 : 0);
+        insertCommit.run(repoId, c.sha, c.authoredAt, pseudonym(c.authorEmail), c.agentTrailer ? 1 : 0, JSON.stringify(c.files), c.merged ? 1 : 0, c.reverted ? 1 : 0, c.revertedAt ?? null);
         report.commits += 1;
       }
       const commitMap = new Map(scan.commits.map((c) => [c.sha, c]));

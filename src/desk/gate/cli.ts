@@ -1,3 +1,4 @@
+import { branchTaskType } from "../autonomy/branch.ts";
 import { DEFAULT_ATTENTION } from "./attention.ts";
 import { DatabaseSync } from "node:sqlite";
 import { existsSync, mkdirSync } from "node:fs";
@@ -131,6 +132,7 @@ export async function runGateCli(argv: readonly string[], env: Record<string, st
       shadowMs: parseDuration(values["shadow-for"] ?? DEFAULT_SHADOW),
       ...(values["no-attention"] ? {} : { attention: { maxConcurrent: wholeAtLeast1(values["max-agents"], "--max-agents"), maxInterruptionsPerHour: wholeAtLeast1(values["max-questions"], "--max-questions") } }),
       handoffDir: values["handoff-dir"] ?? DEFAULT_HANDOFF_DIR,
+      taskTypeOf: branchTaskType,
       ...(env["DESK_GATE_OWNER_TOKEN"] !== undefined ? { ownerKey: env["DESK_GATE_OWNER_TOKEN"] } : {}),
       ...(values.person !== undefined ? { person: values.person } : {}),
       ...(values["transcript-root"] !== undefined ? { transcriptRoots: values["transcript-root"] } : {}),

@@ -1,3 +1,4 @@
+import { echoOf, evaluateAll } from "../autonomy/store.ts";
 import { monthForecast } from "../forecast/command.ts";
 import { FORECAST } from "../forecast/month.ts";
 import { calibrateRules } from "../calibrate/rules.ts";
@@ -1226,7 +1227,13 @@ export function policy(ctx: UiContext, span: Span, fromName: string | null, toNa
   const commands: Record<string, string> = {};
   for (const t of TOOLS) if (t.versionCommand) commands[t.tool] = t.versionCommand;
   const enforcement = ladder(readResults(ctx.enforcementPath ?? "data/desk/enforcement.json").results, installedVersions(commands, ctx.nowMs()));
-  return { state: "ok", files: list, selected: { from, to }, enforcement, valid: "policy" in candidate, error: "error" in candidate ? candidate.error : null, restrict, replay, span: { since: span.sinceIso, until: span.untilIso, days: span.days } };
+  const autonomy = ledgerIsEmpty(ctx)
+    ? []
+    : evaluateAll(ctx.db, ctx.nowMs()).map((d) => ({
+        workflow: d.workflow, tier: d.tier, next: d.next, action: d.action, reason: d.reason, finished: d.evidence.n, landed: d.evidence.success, failed: d.evidence.failure, pending: d.evidence.pending,
+        unlinked: d.evidence.unlinked, rate: d.evidence.rate, lower: d.evidence.lower, code: d.action === "propose_promotion" ? echoOf(d.digest) : null,
+      }));
+  return { state: "ok", files: list, selected: { from, to }, enforcement, autonomy, valid: "policy" in candidate, error: "error" in candidate ? candidate.error : null, restrict, replay, span: { since: span.sinceIso, until: span.untilIso, days: span.days } };
 }
 
 function ledgerIsEmpty(ctx: UiContext): boolean {
