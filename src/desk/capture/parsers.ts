@@ -42,7 +42,7 @@ export function relativePath(path: string, root: string): string {
 }
 
 /** JUnit XML, as written by node's test runner (`--test-reporter=junit`), pytest (`--junitxml`) and most others. Groups are nested `testsuite` elements. */
-export function parseJunit(xml: string, root: string, o: { nodeQuotes?: boolean } = {}): TestResult[] {
+export function parseJunit(xml: string, root: string, o: { nodeQuotes?: boolean; defaultFile?: string } = {}): TestResult[] {
   const out: TestResult[] = [];
   const stack: string[] = [];
   type Open = { name: string; file: string; status: TestStatus; suites: string[]; detail?: string };
@@ -71,7 +71,8 @@ export function parseJunit(xml: string, root: string, o: { nodeQuotes?: boolean 
         if (current) push(current);
         current = null;
       } else {
-        const file = a["file"] ?? "";
+        // Node 22's reporter does not name the file of a test; a run made of one file knows it, and says so here.
+        const file = a["file"] ?? o.defaultFile ?? "";
         const isFileSuite = (n: string): boolean => /[\\/]/.test(n) || /\.(test|spec)\.[a-z]+$/i.test(n);
         const suites = stack.filter((s) => s !== "" && !isFileSuite(s) && s !== "pytest");
         const c: Open = { name: a["name"] ?? "", file, status: "pass", suites };
@@ -168,8 +169,8 @@ export function parseExit(code: number | null): TestResult[] {
   return [{ id: "(the test command)", status: code === 0 ? "pass" : "fail" }];
 }
 
-export function parseResults(format: ResultFormat, o: { text: string; root: string; exitCode: number | null; nodeQuotes?: boolean }): TestResult[] {
-  if (format === "junit") return parseJunit(o.text, o.root, o.nodeQuotes ? { nodeQuotes: true } : {});
+export function parseResults(format: ResultFormat, o: { text: string; root: string; exitCode: number | null; nodeQuotes?: boolean; defaultFile?: string }): TestResult[] {
+  if (format === "junit") return parseJunit(o.text, o.root, { ...(o.nodeQuotes ? { nodeQuotes: true } : {}), ...(o.defaultFile ? { defaultFile: o.defaultFile } : {}) });
   if (format === "tap") return parseTap(o.text);
   if (format === "json") return parseJsonReport(o.text, o.root);
   return parseExit(o.exitCode);

@@ -84,6 +84,20 @@ export function linkDeps(dir: string, from: string | undefined): string | null {
 }
 
 export function runTests(o: { dir: string; scratch: string; files: readonly string[]; plan: TestPlan; label: string }): RunOutcome {
+  // Node 22's reporter does not name the file a test is in, so a run of Node's own test runner is made one file at a time, and each result is the file's.
+  if (o.plan.preset === "node" && o.files.length > 1) {
+    const parts = o.files.map((f, i) => runTests({ ...o, files: [f], label: `${o.label}-${i}` }));
+    const bad = parts.find((p) => p.exitCode !== 0 && p.exitCode !== null);
+    return {
+      results: parts.flatMap((p) => p.results),
+      exitCode: parts.some((p) => p.exitCode === null) ? null : (bad?.exitCode ?? 0),
+      timedOut: parts.some((p) => p.timedOut),
+      resultsMissing: parts.some((p) => p.resultsMissing),
+      note: parts.map((p) => p.note).find((n) => n !== null) ?? null,
+      ms: parts.reduce((a, p) => a + p.ms, 0),
+      log: parts.map((p) => p.log).join("\n").slice(-20_000),
+    };
+  }
   for (const f of o.files) if (!SAFE_FILE.test(f)) throw new RunnerError(`${JSON.stringify(f)} has characters the Desk will not pass to a test command; rename it or capture another task`);
   mkdirSync(o.scratch, { recursive: true });
   const out = join(o.scratch, `${o.label}.results`);
@@ -110,7 +124,7 @@ export function runTests(o: { dir: string; scratch: string; files: readonly stri
     text = readFileSync(out, "utf8");
   } else if (format === "tap") text = r.stdout ?? "";
   try {
-    const results = parseResults(format, { text, root: o.dir, exitCode: r.status, ...(o.plan.preset === "node" ? { nodeQuotes: true } : {}) });
+    const results = parseResults(format, { text, root: o.dir, exitCode: r.status, ...(o.plan.preset === "node" ? { nodeQuotes: true } : {}), ...(o.plan.preset === "node" && o.files.length === 1 ? { defaultFile: join(o.dir, o.files[0] as string) } : {}) });
     return { results, exitCode: r.status, timedOut: false, resultsMissing: format !== "exit" && results.length === 0, note: results.length === 0 && format !== "exit" ? "the results file held no tests" : null, ms, log };
   } catch (e) {
     return { results: [], exitCode: r.status, timedOut: false, resultsMissing: true, note: `the results could not be read: ${(e as Error).message}`, ms, log };
