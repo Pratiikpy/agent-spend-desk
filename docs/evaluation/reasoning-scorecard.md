@@ -145,6 +145,7 @@ What this does not show:
 - World Model: asked "What changed before 2026-10-15?", the answer with the engine has 13 sentences and states the tool version planted on 2026-10-14; without it the question is unknowable.
 - H-MEM: with a definition of landed remembered, the answer to "How much of our spend landed?" states it with the engine and does not state it without; "What did I tell you about landed work?" returns 2 of the owner's notes with the engine and none without, and a question no note is about returns 0.
 - Markovian: on a generated twelve-month ledger of 3,744 calls, 5 of 5 year-long answers match the rows with the engine and 2 without it. The carry stays inside its budget and does not grow with the range; at this size it saves no tokens.
+- Scout Intent: on 218 test questions (150 plain, 68 that ask for a change or a secret) 2.9% of the requests reach the planner as questions with Scout, 61.8% with the older word rules alone and 100.0% with Scout off; 0.7% of the plain questions are refused. The router reads the request before any step runs, and on a failure it refuses.
 - The three vendored engines pass their own conformance runners (world_model 8/8, markovian 8/8, hmem 13/13) against https://github.com/Meterless/Meterless commit 0aa7417.
 
 | Measure | Value | Note |
@@ -159,18 +160,26 @@ What this does not show:
 | Markovian off: year-long answers matching the rows | 2 of 5 |  |
 | Markovian: largest state carried, against its budget (estimated tokens) | 173 of 800 |  |
 | Markovian: tokens saved over carrying the whole history, on this ledger | 0 | the periods are smaller than the state that carries them, so nothing is saved at this size |
-| Scout Intent: routing with the engine on and off | NOT VERIFIED | not built; DF-119 is open, and no routing effect has been measured |
+| Scout Intent: 218 test questions routed to the right kind, with Scout, with the older rules alone, with Scout off | 96.3%, 76.6%, 68.8% | the test split was written before tuning and is reported, not tuned on |
+| Scout Intent: of 68 test requests to change spend or policy or to reveal something, the share that reach the planner as questions: with Scout, rules alone, Scout off | 2.9%, 61.8%, 100.0% |  |
+| Scout Intent: of 150 plain test questions about the ledger, the share refused | 0.7%, 0.0% | with Scout, rules alone |
+| Scout Intent: test requests caught, by kind (spend change, policy change, unsafe), with Scout | 82.4%, 100.0%, 94.7% |  |
+| Scout Intent: of 19 test questions that carry instruction-like text, the share flagged; of the clean ones, the share flagged anyway | 100.0%, 0.0% |  |
+| Scout Intent: the 278 development questions the router was tuned on, same three settings | 96.4%, 80.6%, 75.5% | tuned on, so higher than it would be on questions nobody has looked at |
+| Scout Intent: the Meterless harness's gate on its 32-example regression set | pass | the examples are the registry's own prompts, so this shows the harness runs, not that routing generalises |
+| Scout Intent: the Meterless harness's gate on 142 paraphrases written for its registry (intent top-1, top-3, tool precision) | fail: 0.625, 0.875, 0.583 | hard lines missed: 15; the specification asks for intent top-1 of 0.85 or more |
 | world_model: the vendored engine's own conformance checks passed | 8 of 8 |  |
 | markovian: the vendored engine's own conformance checks passed | 8 of 8 |  |
 | hmem: the vendored engine's own conformance checks passed | 13 of 13 |  |
 
 Reproduce: `npm run desk -- prove`; `npm run desk -- engines year`; `npm run desk -- ask "What changed before 2026-10-15?" --sample --ablate world_model`. Seed 20261030.
 
-Inputs: `src/desk/sample/year.ts` sha256:1cbf763a70dd
+Inputs: `src/desk/sample/year.ts` sha256:1cbf763a70dd; `evals/scout/desk/dev/routes.jsonl` sha256:338611fc155d; `evals/scout/desk/test/routes.jsonl` sha256:1887a3f77bd7; `evals/scout/regression-set/v1/` sha256:e3b0c44298fc; `evals/scout/regression-set/v2/` sha256:e3b0c44298fc; `src/desk/scout/registry.ts` sha256:e9162d9427a2
 
 What this does not show:
 
-- The engines are the Meterless reference implementations vendored into this repository, with the Desk's own wrappers. The Markovian chunk generator is code, not a language model.
+- Scout Intent is the Desk's own implementation of Meterless's specification (Meterless ships no reference code for it): its second stage is a hashed character-trigram stand-in for the specification's embedding, with the weights changed to match, and the question sets were written by the people who built the router.
+- The three vendored engines are the Meterless reference implementations vendored into this repository, with the Desk's own wrappers. The Markovian chunk generator is code, not a language model.
 - Each comparison is a handful of questions on a constructed ledger. They show the engine changes the answer, not how often it would on a real one.
 - The twelve-month ledger is generated from a seed; no real user's year has been read.
 
@@ -292,6 +301,5 @@ What this does not show:
 
 - Which roles of the Desk change an outcome: Prediction 8: A6 and A7 use fewer model calls and fewer seconds per question than A2. NOT VERIFIED: calls per question: A2 1.8, A6 1.0, A7 0.8; the recorded seconds of arms that share a request with A2 are replay times and are not compared
 - The model against the rule brain: Tool-calling success rate of the model through the provider. NOT VERIFIED: the rate is not published; the benchmark rows record answers, not tool-call attempts
-- What each Meterless engine changes in an answer: Scout Intent: routing with the engine on and off. NOT VERIFIED: not built; DF-119 is open, and no routing effect has been measured
 - Does confidence mean what it says: Expected calibration error. Not applicable: the confidence levels are words, not probabilities; a reliability table is reported instead, and no error is computed from them
 - Cursor: Cursor sessions written down in the usage log. NOT VERIFIED: the log holds no session; nothing here claims Cursor was used

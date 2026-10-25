@@ -22,6 +22,29 @@ CREATE TABLE IF NOT EXISTS ask_answer (
   note TEXT
 );
 
+-- How each question was routed before anything ran: what Scout Intent decided, what the older rules decided, which of them the route came from. No question text is kept here;
+-- the answer row holds it, and this holds a hash so that a route can be tied to its question without copying it.
+CREATE TABLE IF NOT EXISTS route_decision (
+  route_decision_id INTEGER PRIMARY KEY,
+  answer_id TEXT NOT NULL REFERENCES ask_answer (answer_id) ON DELETE CASCADE,
+  decided_at TEXT NOT NULL,
+  question_hash TEXT NOT NULL,
+  route TEXT NOT NULL CHECK (route IN ('read', 'spend_action', 'policy_change', 'unsafe')),
+  source TEXT NOT NULL CHECK (source IN ('scout', 'rules', 'both', 'off', 'failed')),
+  scout_route TEXT,
+  rules_route TEXT NOT NULL,
+  intent TEXT,
+  band TEXT,
+  score REAL,
+  clarification TEXT,
+  flags TEXT NOT NULL,
+  trace_id TEXT,
+  contract_id TEXT,
+  registry_version INTEGER,
+  policy_pack TEXT,
+  latency_ms REAL
+);
+
 CREATE TABLE IF NOT EXISTS ask_step (
   answer_id TEXT NOT NULL REFERENCES ask_answer (answer_id) ON DELETE CASCADE,
   step_id TEXT NOT NULL,

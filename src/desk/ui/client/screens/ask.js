@@ -9,6 +9,7 @@ const ENGINE_NOTE = {
   world_model: "History: what changed, and when",
   markovian: "Long ranges read in bounded chunks",
   hmem: "Your own definitions and corrections",
+  scout_intent: "Reads the request first: a question, or a change to spend or policy",
 };
 
 function eventLine(e) {
@@ -24,7 +25,10 @@ function eventLine(e) {
     if (/^(transient|aborted)/.test(why)) return `the model did not answer in time, so rules were used instead`;
     return `${who} fell back to rules: ${why.slice(0, 120)}`;
   }
-  if (e.event === "desk.route") return `route ${d.route}${d.flags && d.flags.length ? `, flags ${d.flags.join(", ")}` : ""}`;
+  if (e.event === "desk.route") {
+    const by = d.source === "off" ? "Scout Intent is off, so every question is read as a question" : d.intent ? `Scout read it as ${d.intent} (${d.band}, ${Number(d.score).toFixed(2)}), the older rules as ${d.rules_route}; ${d.source === "both" ? "they agree" : `${d.source} decided`}` : d.source === "failed" ? "the router failed, so nothing ran" : "";
+    return `route ${d.route}${by ? `: ${by}` : ""}${d.flags && d.flags.length ? `, flags ${d.flags.join(", ")}` : ""}`;
+  }
   if (e.event === "desk.plan") return `plan: ${d.intent ? `rules (${d.intent})` : "from the model"}, ops ${(d.ops || []).join(", ")}`;
   return e.event;
 }

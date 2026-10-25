@@ -7,6 +7,10 @@
 export type EngineName = "world_model" | "markovian" | "hmem";
 export const ENGINE_NAMES: readonly EngineName[] = ["world_model", "markovian", "hmem"];
 
+/** What a run may switch off: the three vendored engines, and Scout Intent, which the Desk implements itself from Meterless's specification. */
+export type AblateName = EngineName | "scout_intent";
+export const ABLATE_NAMES: readonly AblateName[] = [...ENGINE_NAMES, "scout_intent"];
+
 const FOLDER: Record<EngineName, string> = { world_model: "world-model", markovian: "markovian", hmem: "hmem" };
 
 const cache = new Map<EngineName, Record<string, unknown>>();

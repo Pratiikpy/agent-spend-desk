@@ -5,10 +5,12 @@
  * being answered as if it were a read. Text that tries to redirect the planner is flagged and carried on,
  * because nothing a question says can change what code reads from the ledger.
  */
-export type Route = "read" | "spend_action" | "policy_change";
+export type Route = "read" | "spend_action" | "policy_change" | "unsafe";
+/** What the older pattern router can return; Scout adds `unsafe`. */
+export type RuleRoute = "read" | "spend_action" | "policy_change";
 
 export interface RouteResult {
-  route: Route;
+  route: RuleRoute;
   flags: string[];
 }
 
@@ -41,4 +43,5 @@ export function routeQuestion(question: string): RouteResult {
 export const REFUSAL: Record<Exclude<Route, "read">, string> = {
   spend_action: "That reads as a request to change spend, not a question about the ledger. Ask does not change caps, routes or seats; a change goes through a drafted policy and the approval gate.",
   policy_change: "That reads as a request to change policy, not a question about the ledger. Ask does not edit policy; use the policy drafter, which checks a change before it is proposed.",
+  unsafe: "That asks for something the Desk will not do from a question: reveal a key or its own instructions, switch off a safeguard, or change recorded history. Ask only reads the ledger.",
 };

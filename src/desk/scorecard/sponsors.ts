@@ -6,6 +6,7 @@ import { RESULTS_FILE_D, RESULTS_FILE_E } from "../bench/command.ts";
 import { readResults } from "../bench/run.ts";
 import { OwnerMemory } from "../engines/memory.ts";
 import { runYearCheck } from "../engines/year-check.ts";
+import { scoutEvaluation } from "../scout/command.ts";
 import type { EngineName } from "../engines/load.ts";
 import { MemoryTrace } from "../agents/trace.ts";
 import { configFromEnv } from "../../sponsors/zetaris/silo-port.ts";
@@ -77,8 +78,25 @@ export async function enginesSection(db: Ledger, truth: Truth): Promise<Section>
   if (on > off) findings.push(`Markovian: on a generated twelve-month ledger of ${year.calls.toLocaleString("en-US")} calls, ${on} of ${year.rows.length} year-long answers match the rows with the engine and ${off} without it. The carry stays inside its budget and does not grow with the range; at this size it saves no tokens.`);
   else dropped.push("Markovian");
 
-  // Scout Intent is not built; the page says what is missing.
-  metrics.push(notVerified("engines.scout_intent", "Scout Intent: routing with the engine on and off", "not built; DF-119 is open, and no routing effect has been measured"));
+  // Scout Intent: the router that reads a request before Ask plans anything. Measured on the questions written for the Desk, with the engine on, the older rules alone, and the engine off.
+  const scout = await scoutEvaluation();
+  const sc = (split: "dev" | "test") => scout.routes[split].scores;
+  const ts = sc("test");
+  const d = sc("dev");
+  const share = (x: number): string => pct(Math.round(x * 1000), 1000);
+  metrics.push(measured("engines.scout_intent.test.accuracy", `Scout Intent: ${ts.default.counts.total} test questions routed to the right kind, with Scout, with the older rules alone, with Scout off`, `${share(ts.default.accuracy)}, ${share(ts.rules.accuracy)}, ${share(ts.off.accuracy)}`, "the test split was written before tuning and is reported, not tuned on"));
+  metrics.push(measured("engines.scout_intent.test.action_as_read", `Scout Intent: of ${ts.default.counts.nonRead} test requests to change spend or policy or to reveal something, the share that reach the planner as questions: with Scout, rules alone, Scout off`, `${share(ts.default.action_as_read)}, ${share(ts.rules.action_as_read)}, ${share(ts.off.action_as_read)}`));
+  metrics.push(measured("engines.scout_intent.test.false_refusal", `Scout Intent: of ${ts.default.counts.read} plain test questions about the ledger, the share refused`, `${share(ts.default.false_refusal)}, ${share(ts.rules.false_refusal)}`, "with Scout, rules alone"));
+  metrics.push(measured("engines.scout_intent.test.recall", "Scout Intent: test requests caught, by kind (spend change, policy change, unsafe), with Scout", `${share(ts.default.recall.spend_action)}, ${share(ts.default.recall.policy_change)}, ${share(ts.default.recall.unsafe)}`));
+  metrics.push(measured("engines.scout_intent.test.flags", `Scout Intent: of ${ts.default.counts.flagged} test questions that carry instruction-like text, the share flagged; of the clean ones, the share flagged anyway`, `${share(ts.default.flag_recall)}, ${share(ts.default.flag_false_positive)}`));
+  metrics.push(measured("engines.scout_intent.dev.accuracy", `Scout Intent: the ${d.default.counts.total} development questions the router was tuned on, same three settings`, `${share(d.default.accuracy)}, ${share(d.rules.accuracy)}, ${share(d.off.accuracy)}`, "tuned on, so higher than it would be on questions nobody has looked at"));
+  const v1 = scout.evaluations.v1;
+  const v2 = scout.evaluations.test;
+  metrics.push(measured("engines.scout_intent.harness.v1", `Scout Intent: the Meterless harness's gate on its ${v1.examples}-example regression set`, v1.gate.pass ? "pass" : "fail", "the examples are the registry's own prompts, so this shows the harness runs, not that routing generalises"));
+  metrics.push(measured("engines.scout_intent.harness.v2", `Scout Intent: the Meterless harness's gate on ${v2.examples} paraphrases written for its registry (intent top-1, top-3, tool precision)`, `${v2.gate.pass ? "pass" : "fail"}: ${v2.metrics["intent_top1"]?.toFixed(3)}, ${v2.metrics["intent_top3_recall"]?.toFixed(3)}, ${v2.metrics["tool_precision"]?.toFixed(3)}`, `hard lines missed: ${v2.gate.failures.length}; the specification asks for intent top-1 of 0.85 or more`));
+  if (ts.default.action_as_read < ts.rules.action_as_read) {
+    findings.push(`Scout Intent: on ${ts.default.counts.total} test questions (${ts.default.counts.read} plain, ${ts.default.counts.nonRead} that ask for a change or a secret) ${share(ts.default.action_as_read)} of the requests reach the planner as questions with Scout, ${share(ts.rules.action_as_read)} with the older word rules alone and ${share(ts.off.action_as_read)} with Scout off; ${share(ts.default.false_refusal)} of the plain questions are refused. The router reads the request before any step runs, and on a failure it refuses.`);
+  } else dropped.push("Scout Intent");
 
   // Conformance of the three vendored engines, recorded by `desk prove`.
   if (existsSync(CONFORMANCE)) {
@@ -93,11 +111,12 @@ export async function enginesSection(db: Ledger, truth: Truth): Promise<Section>
     question: "Asked the same question with the engine on and off, does the answer change, and is the changed answer the right one?",
     reproduce: ["npm run desk -- prove", "npm run desk -- engines year", "npm run desk -- ask \"What changed before 2026-10-15?\" --sample --ablate world_model"],
     seed: 20261030,
-    inputs: [input("src/desk/sample/year.ts")],
+    inputs: [input("src/desk/sample/year.ts"), input("evals/scout/desk/dev/routes.jsonl"), input("evals/scout/desk/test/routes.jsonl"), input("evals/scout/regression-set/v1/"), input("evals/scout/regression-set/v2/"), input("src/desk/scout/registry.ts")],
     metrics,
     findings,
     limits: [
-      "The engines are the Meterless reference implementations vendored into this repository, with the Desk's own wrappers. The Markovian chunk generator is code, not a language model.",
+      "Scout Intent is the Desk's own implementation of Meterless's specification (Meterless ships no reference code for it): its second stage is a hashed character-trigram stand-in for the specification's embedding, with the weights changed to match, and the question sets were written by the people who built the router.",
+      "The three vendored engines are the Meterless reference implementations vendored into this repository, with the Desk's own wrappers. The Markovian chunk generator is code, not a language model.",
       "Each comparison is a handful of questions on a constructed ledger. They show the engine changes the answer, not how often it would on a real one.",
       "The twelve-month ledger is generated from a seed; no real user's year has been read.",
     ],

@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -242,5 +242,19 @@ describe("checking the page against the committed files", () => {
     // Signed but the pins are gone.
     rmSync(p.pins);
     expect(checkScorecard(card(), p).problems.join(" ")).toContain("pins");
+  });
+});
+
+describe("the Scout Intent rows of the committed scorecard", () => {
+  it("are measured, not left as NOT VERIFIED, and say how the router was tuned and who wrote the questions", () => {
+    const card = JSON.parse(readFileSync("docs/evaluation/reasoning-scorecard.json", "utf8")) as Scorecard;
+    const engines = card.sections.find((s) => s.id === "engines")!;
+    const rows = engines.metrics.filter((m) => m.id.startsWith("engines.scout_intent"));
+    expect(rows.length).toBeGreaterThanOrEqual(7);
+    expect(rows.every((m) => m.status === "measured")).toBe(true);
+    expect(rows.find((m) => m.id === "engines.scout_intent.test.accuracy")?.note).toMatch(/not tuned on/);
+    expect(rows.find((m) => m.id === "engines.scout_intent.harness.v2")?.value).toMatch(/^fail: /);
+    expect(engines.limits.join(" ")).toMatch(/written by the people who built the router/);
+    expect(engines.inputs.map((i) => i.path)).toContain("evals/scout/desk/test/routes.jsonl");
   });
 });

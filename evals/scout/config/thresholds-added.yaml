@@ -1,0 +1,8 @@
+# Gates for the five measures this repository adds to the Meterless harness (see src/scout-intent/eval.ts). The original thresholds.yaml is unchanged.
+# Access rules are deterministic, so they have no tolerance: a role or surface rule either holds or it does not.
+metrics:
+  clarification_recall:      { target: 0.85, hard_floor: 0.70 }
+  clarification_specificity: { target: 0.90, hard_floor: 0.80 }
+  multi_intent_f1:           { target: 0.85, hard_floor: 0.70 }
+  multi_intent_exact:        { target: 0.75, hard_floor: 0.60 }
+  policy_accuracy:           { target: 1.00, hard_floor: 1.00 }

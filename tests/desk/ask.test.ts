@@ -432,8 +432,9 @@ describe("the Meterless engines change the answer", () => {
     const trace = new MemoryTrace();
     await run("How much did we spend?", { trace, ablate: new Set(["markovian"]) });
     const lines = trace.events.filter((e) => e.event === "desk.engine").map((e) => e.detail as { engine: string; ablated: boolean; conformance: string });
-    expect(lines.map((l) => l.engine).sort()).toEqual(["hmem", "markovian", "world_model"]);
+    expect(lines.map((l) => l.engine).sort()).toEqual(["hmem", "markovian", "scout_intent", "world_model"]);
     expect(lines.find((l) => l.engine === "markovian")?.ablated).toBe(true);
+    expect(lines.find((l) => l.engine === "scout_intent")?.ablated).toBe(false);
     expect(lines.find((l) => l.engine === "world_model")?.ablated).toBe(false);
   });
 });

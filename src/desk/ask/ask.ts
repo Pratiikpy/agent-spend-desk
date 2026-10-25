@@ -8,14 +8,17 @@ import { citationFaithfulness, type Faithfulness } from "./faithfulness.ts";
 import { callModel, ModelError, type ChatMessage, type ModelPort } from "../agents/model.ts";
 import { NULL_TRACE, type Trace } from "../agents/trace.ts";
 import { engineInfo } from "../engines/registry.ts";
-import type { EngineName } from "../engines/load.ts";
+import type { AblateName } from "../engines/load.ts";
+import { questionHash, routeDeskQuestion, type DeskRouteResult } from "../scout/router.ts";
+import { scoutInfo } from "../scout/info.ts";
+import type { Scout } from "../../scout-intent/scout.ts";
 import type { OwnerMemory } from "../engines/memory.ts";
 import { buildWorldModel } from "../engines/world.ts";
 import type { Ledger } from "../ledger/db.ts";
 import { critiquePlan } from "./plan-critic.ts";
 import { rulePlan } from "./plan-rules.ts";
 import { parseProgram, programHash, programJsonSchema, type AnswerProgram, type StepOp } from "./program.ts";
-import { REFUSAL, routeQuestion, type Route } from "./risk.ts";
+import { REFUSAL, type Route } from "./risk.ts";
 import { ensureAskSchema } from "./schema.ts";
 import { DEFAULT_CLAIM_TOKENS, ledgerCoverage, runStep, type Coverage, type Engines, type StepResult } from "./specialists.ts";
 
@@ -46,10 +49,12 @@ export interface AskOptions {
   /** Roles to switch off for this run (ablation only). Omit for the product. */
   roles?: Partial<RoleSwitches>;
   /** Engines to switch off for this run. An ablated run uses the rule planner so the same program runs with and without an engine. */
-  ablate?: ReadonlySet<EngineName>;
+  ablate?: ReadonlySet<AblateName>;
   port: ModelPort | null;
   budget?: Budget;
   trace?: Trace;
+  /** The Scout that routes the question; omit for the Desk's own. A test passes one that fails to show the router fails closed. */
+  router?: Scout;
   /** The owner's memory (H-MEM). Omit to run without one. */
   memory?: OwnerMemory | null;
   conformanceFile?: string;
@@ -84,7 +89,7 @@ export interface AskResult {
   planner: "model" | "rules" | "none";
   explainer: "model" | "rules" | "none";
   servedModel: string | null;
-  ablated: EngineName[];
+  ablated: AblateName[];
   program: AnswerProgram | null;
   steps: StepResult[];
   sentences: AnswerSentence[];
@@ -94,6 +99,8 @@ export interface AskResult {
   faithfulness?: Faithfulness;
   /** The owner's own words that the answer rests on, shown as quotations beside the checked sentences and not as claims of the Desk. Absent when none were used. */
   yourWords?: YourWord[];
+  /** How the question was routed: what Scout decided, what the older rules decided, and which of them the route came from. */
+  routing?: DeskRouteResult;
 }
 
 export interface YourWord {
@@ -221,32 +228,36 @@ export function topicOf(program: AnswerProgram): string {
   return parts.join("; ");
 }
 
-function engineLines(trace: Trace, ablated: ReadonlySet<EngineName>, file: string | undefined): void {
+function engineLines(trace: Trace, ablated: ReadonlySet<AblateName>, file: string | undefined): void {
   for (const engine of ["world_model", "markovian", "hmem"] as const) {
     const info = engineInfo(engine, file);
     trace.emit({ event: "desk.engine", why: "computed", detail: { engine, impl: info.impl, conformance: info.conformance, ablated: ablated.has(engine) } });
   }
+  const scout = scoutInfo();
+  trace.emit({ event: "desk.engine", why: "computed", detail: { engine: "scout_intent", impl: scout.impl, conformance: scout.conformance, ablated: ablated.has("scout_intent") } });
 }
 
 /** Ask the Desk a question. Never throws for a bad question: it returns a refusal or an "unknowable" with the reason. */
 export async function ask(o: AskOptions): Promise<AskResult> {
   const trace = o.trace ?? NULL_TRACE;
-  const ablate = o.ablate ?? new Set<EngineName>();
+  const ablate = o.ablate ?? new Set<AblateName>();
   const roles: RoleSwitches = { ...ALL_ROLES, ...o.roles };
   const budget = o.budget ?? new Budget(ASK_LIVE);
   const answerId = `ans-${randomUUID().slice(0, 12)}`;
-  const base = { answerId, question: o.question, ablated: [...ablate].sort() as EngineName[] };
+  const base = { answerId, question: o.question, ablated: [...ablate].sort() as AblateName[] };
+  let routing: DeskRouteResult | undefined;
   const finish = (r: Omit<AskResult, "answerId" | "question" | "ablated">): AskResult => {
     const words = r.status === "answered" ? yourWordsOf(r.steps) : [];
-    const result = { ...base, ...r, ...(words.length > 0 ? { yourWords: words } : {}) };
+    const result = { ...base, ...r, ...(words.length > 0 ? { yourWords: words } : {}), ...(routing ? { routing } : {}) };
     if (o.record !== false) record(o.db, result, o.now?.() ?? new Date().toISOString());
     return result;
   };
 
-  const routed = routeQuestion(o.question);
-  trace.emit({ event: "desk.route", why: "rule", role: "risk_router", detail: { route: routed.route, flags: routed.flags } });
+  const routed: DeskRouteResult = await routeDeskQuestion(o.question, { off: ablate.has("scout_intent"), ...(o.router ? { scout: o.router } : {}) });
+  trace.emit({ event: "desk.route", why: routed.source === "off" ? "rule" : "computed", role: "risk_router", detail: { route: routed.route, flags: routed.flags, source: routed.source, scout_route: routed.scoutRoute, rules_route: routed.rulesRoute, ...(routed.scout ? { intent: routed.scout.intent, band: routed.scout.band, score: routed.scout.score, trace_id: routed.scout.traceId, clarification: routed.scout.clarification, latency_ms: routed.scout.latencyMs } : {}) } });
+  routing = routed;
   if (routed.route !== "read") {
-    return finish({ route: routed.route, flags: routed.flags, status: "refused", planner: "none", explainer: "none", servedModel: null, program: null, steps: [], sentences: [], note: REFUSAL[routed.route] });
+    return finish({ route: routed.route, flags: routed.flags, status: "refused", planner: "none", explainer: "none", servedModel: null, program: null, steps: [], sentences: [], note: routed.reason ?? REFUSAL[routed.route] });
   }
 
   const cov = ledgerCoverage(o.db);
@@ -392,6 +403,12 @@ function record(db: Ledger, r: AskResult, at: string): void {
     db.prepare("INSERT INTO ask_answer (answer_id, asked_at, question, route, status, planner, explainer, served_model, ablated, program_json, program_hash, note) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").run(
       r.answerId, at, r.question.slice(0, 2000), r.route, r.status, r.planner, r.explainer, r.servedModel, JSON.stringify(r.ablated), r.program ? JSON.stringify(r.program) : null, r.program ? programHash(r.program) : null, r.note,
     );
+    if (r.routing) {
+      const g = r.routing;
+      db.prepare("INSERT INTO route_decision (answer_id, decided_at, question_hash, route, source, scout_route, rules_route, intent, band, score, clarification, flags, trace_id, contract_id, registry_version, policy_pack, latency_ms) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").run(
+        r.answerId, at, questionHash(r.question), g.route, g.source, g.scoutRoute, g.rulesRoute, g.scout?.intent ?? null, g.scout?.band ?? null, g.scout?.score ?? null, g.scout?.clarification ?? null, JSON.stringify(g.flags), g.scout?.traceId ?? null, g.scout?.contractId ?? null, g.scout?.registryVersion ?? null, g.scout?.policyPack ?? null, g.scout?.latencyMs ?? null,
+      );
+    }
     for (const s of r.steps) {
       db.prepare("INSERT INTO ask_step (answer_id, step_id, op, specialist, query_hash, result_hash, row_count, result_json, unknowable, error) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").run(r.answerId, s.id, s.op, s.specialist, s.queryHash, s.resultHash, s.rowCount, JSON.stringify(s.data), s.unknowable, s.error);
     }
@@ -426,7 +443,7 @@ export async function verifyAnswer(db: Ledger, answerId: string, opts: { memory?
   if (!row.program_json) return { answerId, found: true, same: [], changed: [], sentencesHolding: 0, sentencesTotal: 0, note: "This answer ran no steps, so there is nothing to check." };
   const parsed = parseProgram(JSON.parse(row.program_json));
   if (!parsed.ok) return { answerId, found: true, same: [], changed: [], sentencesHolding: 0, sentencesTotal: 0, note: "The recorded program no longer passes its schema." };
-  const ablate = new Set(JSON.parse(row.ablated) as EngineName[]);
+  const ablate = new Set(JSON.parse(row.ablated) as AblateName[]);
   const cov = ledgerCoverage(db);
   const engines: Engines = { world: ablate.has("world_model") ? null : await buildWorldModel(db), memory: ablate.has("hmem") ? null : (opts.memory ?? null), markovian: !ablate.has("markovian") };
   const ctx = { db, engines, coverage: cov, claimTokenBudget: DEFAULT_CLAIM_TOKENS, results: new Map<string, StepResult>(), trace: NULL_TRACE };

@@ -1,6 +1,7 @@
 import { markovianHistory, warmCarry } from "./engines/carry.ts";
 import { replayDecision, recordReplay } from "./replay/decision-replay.ts";
 import { scorecardCommand } from "./scorecard/command.ts";
+import { scoutEvalCommand, scoutQuestion } from "./scout/command.ts";
 import { renderYearCheck, runYearCheck } from "./engines/year-check.ts";
 import { canaryAttribution, changesCommand } from "./changes/command.ts";
 import { readRows as readCanaryRows } from "./canary/store.ts";
@@ -291,7 +292,7 @@ const db = command === "card" || command === "status" || command === "lab" ? ope
 
 // The Desk's own model calls are written to the ledger it keeps, priced like any other call, and held to DESK_OWN_DAILY_CAP_USD when that is set.
 // Prices the owner set for models the vendor list does not cover apply to every command, except where the result must not depend on this machine.
-if (!sampleMode && !["card", "status", "lab", "help", "prove", "demo", "bench", "scorecard"].includes(command)) activateOwnerPrices(process.env["DESK_OWNER_PRICES"] ?? undefined);
+if (!sampleMode && !["card", "status", "lab", "help", "prove", "demo", "bench", "scorecard", "scout"].includes(command)) activateOwnerPrices(process.env["DESK_OWNER_PRICES"] ?? undefined);
 
 if (!["card", "status", "lab", "help", "prove", "demo"].includes(command)) {
   let ownPrices = null;
@@ -426,6 +427,10 @@ Answer one with: desk questions answer <id> yes|no. Or go through them: desk que
     });
     await watchLogs({ poll: () => newestMtimeMs(findJsonlLogs(values["claude-dir"])), refresh: draw, sleep: (ms) => new Promise((r) => setTimeout(r, ms)), intervalMs: 3000, shouldStop: () => stop });
   } else await draw();
+} else if (command === "scout") {
+  // Scout Intent, the router that runs before Ask plans anything: how a question would be routed, or the evaluation of the router on its corpora.
+  if (positionals[1] === "eval") console.log(await scoutEvalCommand({ write: values.write }));
+  else console.log(await scoutQuestion(positionals.slice(1).join(" ")));
 } else if (command === "replay-decision") {
   // Re-execute an approved decision from its signed dossier, offline, and compare every stage with what was attested.
   const dir = positionals[1];

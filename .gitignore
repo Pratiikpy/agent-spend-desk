@@ -68,3 +68,6 @@ docs/plan/external-blueprint-*.md
 
 # Crash dumps from the shell
 *.stackdump
+
+# The vendored Scout runner writes its report here on every run
+evals/scout/reports/

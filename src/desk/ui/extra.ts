@@ -9,7 +9,7 @@ import { ask } from "../ask/ask.ts";
 import { CassettePort, portFromEnv, type ModelPort } from "../agents/model.ts";
 import { Budget, ASK_LIVE, ASK_SAMPLE } from "../agents/budget.ts";
 import { MemoryTrace } from "../agents/trace.ts";
-import { ENGINE_NAMES, type EngineName } from "../engines/load.ts";
+import { ABLATE_NAMES, type AblateName } from "../engines/load.ts";
 import { OwnerMemory } from "../engines/memory.ts";
 import { SUPPORTED_QUESTIONS } from "../ask/plan-rules.ts";
 import { ciSummary, fetchSiloFacts, reconcile } from "../silo/facts.ts";
@@ -45,13 +45,13 @@ function modelFor(ctx: UiContext, paths: ExtraPaths): { port: ModelPort | null; 
 export async function askScreen(ctx: UiContext, paths: ExtraPaths, question: string, ablateRaw: string): Promise<object> {
   const q = question.trim();
   if (q.length > 500) throw new BadParam("the question is longer than 500 characters");
-  const ablate = new Set<EngineName>();
+  const ablate = new Set<AblateName>();
   for (const name of ablateRaw.split(",").map((x) => x.trim()).filter(Boolean)) {
-    if (!(ENGINE_NAMES as readonly string[]).includes(name)) throw new BadParam(`unknown engine ${name.slice(0, 30)}`);
-    ablate.add(name as EngineName);
+    if (!(ABLATE_NAMES as readonly string[]).includes(name)) throw new BadParam(`unknown engine ${name.slice(0, 30)}`);
+    ablate.add(name as AblateName);
   }
   const suggestions = SUPPORTED_QUESTIONS;
-  if (q === "") return { state: "ok", question: "", suggestions, engines: [...ENGINE_NAMES] };
+  if (q === "") return { state: "ok", question: "", suggestions, engines: [...ABLATE_NAMES] };
   const model = modelFor(ctx, paths);
   const trace = new MemoryTrace();
   const memory = await OwnerMemory.open({ persistDir: paths.memoryDir });
@@ -63,7 +63,7 @@ export async function askScreen(ctx: UiContext, paths: ExtraPaths, question: str
     state: "ok",
     question: q,
     suggestions,
-    engines: [...ENGINE_NAMES],
+    engines: [...ABLATE_NAMES],
     ablated: r.ablated,
     status: r.status,
     route: r.route,

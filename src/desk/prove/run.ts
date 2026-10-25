@@ -1,6 +1,7 @@
 import { snapshotsFromDir } from "../close/month-bill.ts";
 import { adapterProve } from "./adapter-check.ts";
 import { decisionProve } from "./decision-check.ts";
+import { scoutProve } from "./scout-check.ts";
 import { sampleEnv, type Env } from "./env.ts";
 import { auditProve } from "./audit-check.ts";
 import { yearProve } from "../engines/year-check.ts";
@@ -634,6 +635,15 @@ const CHECKS: Check[] = [
     seed: SEED,
     async run(e) {
       const r = await decisionProve(e.db, PRICES, "policies/daily-cap.yaml");
+      return r.ok ? pass(r.detail) : fail(r.detail);
+    },
+  },
+  {
+    id: "scout-intent-routes-before-ask-plans-and-fails-closed",
+    command: "recompute the Scout Intent evaluation (the Meterless harness gate and the Desk route corpus), compare it with the recorded file, then break the router and switch it off",
+    seed: SEED,
+    async run() {
+      const r = await scoutProve();
       return r.ok ? pass(r.detail) : fail(r.detail);
     },
   },

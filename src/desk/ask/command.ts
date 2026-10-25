@@ -1,6 +1,6 @@
 import { Budget, ASK_LIVE, ASK_SAMPLE } from "../agents/budget.ts";
 import { MemoryTrace } from "../agents/trace.ts";
-import { ENGINE_NAMES, type EngineName } from "../engines/load.ts";
+import { ABLATE_NAMES, type AblateName } from "../engines/load.ts";
 import { OwnerMemory } from "../engines/memory.ts";
 import { openLedger } from "../ledger/db.ts";
 import { choosePort } from "../propose/command.ts";
@@ -20,11 +20,11 @@ export interface AskCommandOptions {
   env: Record<string, string | undefined>;
 }
 
-export function parseAblate(text: string | undefined): { names: Set<EngineName>; bad: string[] } {
-  const names = new Set<EngineName>();
+export function parseAblate(text: string | undefined): { names: Set<AblateName>; bad: string[] } {
+  const names = new Set<AblateName>();
   const bad: string[] = [];
   for (const raw of (text ?? "").split(",").map((s) => s.trim()).filter(Boolean)) {
-    if ((ENGINE_NAMES as readonly string[]).includes(raw)) names.add(raw as EngineName);
+    if ((ABLATE_NAMES as readonly string[]).includes(raw)) names.add(raw as AblateName);
     else bad.push(raw);
   }
   return { names, bad };
@@ -69,7 +69,7 @@ export function renderAnswer(r: AskResult, trace: MemoryTrace): string {
 
 export async function askCommand(o: AskCommandOptions): Promise<string> {
   const { names, bad } = parseAblate(o.ablate);
-  if (bad.length > 0) return `Unknown engine to ablate: ${bad.join(", ")}. The engines are ${ENGINE_NAMES.join(", ")}.`;
+  if (bad.length > 0) return `Unknown engine to ablate: ${bad.join(", ")}. The engines are ${ABLATE_NAMES.join(", ")}.`;
   if (o.question.trim() === "") return "Ask a question, for example: desk ask \"How much did we spend in September?\"";
   const db = openLedger(o.dbPath);
   try {
