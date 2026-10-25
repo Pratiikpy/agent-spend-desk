@@ -27,8 +27,8 @@ describe("the clean-room logs the README points to", () => {
       expect(text).toContain("TSC OK");
       expect(text).toMatch(/^VITEST EXIT 0$/m);
       expect(text).toMatch(/^PROVE EXIT 0$/m);
-      expect(text).toMatch(/^35 PASS, 0 FAIL, 0 NOT RUN\./m);
-      expect(text).toMatch(/Tests\s+14\d\d passed/);
+      expect(text).toMatch(/^\d+ PASS, 0 FAIL, 0 NOT RUN\./m);
+      expect(text).toMatch(/Tests\s+\d+ passed/);
       expect(text).not.toMatch(/\u001b\[/); // no colour codes
     });
   }

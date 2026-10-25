@@ -73,3 +73,4 @@ docs/plan/external-blueprint-*.md
 evals/scout/reports/
 !adapters/**/*.jsonl
 !evals/**/*.jsonl
+!docs/verification/clean-room/*.log
