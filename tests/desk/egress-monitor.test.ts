@@ -97,8 +97,9 @@ describe("what the product opens, offline, on the sample", () => {
 
   it("the card, the demonstration and an Ask open no connection to another machine", async () => {
     const cli = resolve("src/desk/cli.ts");
-    const [card, demo, askRun] = await Promise.all([
-      run("card", [cli, "card", "--sample"]),
+    // The card builds the sample if it is not there yet. It goes first and alone: two commands that each build the same folder at once remove each other's files.
+    const card = await run("card", [cli, "card", "--sample"]);
+    const [demo, askRun] = await Promise.all([
       run("demo", [cli, "demo"]),
       run("ask", [cli, "ask", "What was the most expensive day?", "--sample"]),
     ]);

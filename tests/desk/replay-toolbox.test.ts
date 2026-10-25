@@ -133,10 +133,16 @@ describe("nothing reaches outside the sandbox", () => {
   it("refuses a path that leaves the folder by .., by an absolute path or by a link, for reading and for writing", () => {
     const { dir, outside, t } = world();
     const secret = join(outside, "secret.txt");
-    for (const p of ["../outside/secret.txt", secret, "src/../../outside/secret.txt", "src\\..\\..\\outside\\secret.txt"]) {
+    // A backslash is a separator only on Windows; elsewhere it is part of a file's name, so that path names a file inside the folder and leaves nothing outside it.
+    const backslashed = "src\\..\\..\\outside\\secret.txt";
+    for (const p of ["../outside/secret.txt", secret, "src/../../outside/secret.txt", ...(process.platform === "win32" ? [backslashed] : [])]) {
       expect(t.call("Read", { file_path: p }), p).toMatchObject({ how: "refused" });
       expect(t.call("Write", { file_path: p, content: "x" }), p).toMatchObject({ how: "refused" });
       expect(t.call("Edit", { file_path: p, old_string: "do", new_string: "x" }), p).toMatchObject({ how: "refused" });
+    }
+    if (process.platform !== "win32") {
+      t.call("Write", { file_path: backslashed, content: "x" });
+      expect(readFileSync(secret, "utf8")).toBe("do not read me\n");
     }
     for (const where of [dir.replace(/[^/\\]+$/, "outside"), "..", "../..", outside]) {
       expect(t.call("LS", { path: where }), where).toMatchObject({ how: "refused" });

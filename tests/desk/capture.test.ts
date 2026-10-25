@@ -62,7 +62,7 @@ describe("reading what a test run said", () => {
   it("reads node's JUnit output: a pass, a failure, a skip and a test inside a group, each with its file", () => {
     const out = join(dir, "out.xml");
     spawnSync(process.execPath, ["--test", "--test-reporter=junit", `--test-reporter-destination=${out}`, "a.test.js"], { cwd: dir, windowsHide: true });
-    const r = Object.fromEntries(parseJunit(readFileSync(out, "utf8"), dir).map((x) => [x.id, x.status]));
+    const r = Object.fromEntries(parseJunit(readFileSync(out, "utf8"), dir, { defaultFile: join(dir, "a.test.js") }).map((x) => [x.id, x.status]));
     expect(r).toEqual({ "a.test.js::adds": "pass", "a.test.js::fails": "fail", "a.test.js::skipped one": "skip", "a.test.js::group > inner passes": "pass", "a.test.js::group > inner fails": "fail" });
   });
 
