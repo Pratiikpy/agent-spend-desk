@@ -34,6 +34,8 @@ export const COMMANDS: readonly CommandHelp[] = [
   { name: "enforcement", group: "Decide and enforce", summary: "What the Desk can actually stop, tool by tool: enforced, advisory or notify only. `enforcement test [--live]` records the evidence." },
   { name: "overhead", group: "Costs and limits", summary: "Share the idle and unowned spend of a period among the projects that landed work, to the micro-dollar." },
   { name: "delegation", group: "Costs and limits", summary: "Which agents started which: each delegated agent alone and with the agents it started, and the sessions that went too deep." },
+  { name: "team", group: "Costs and limits", summary: "A team's spend across people and machines: signed reports, roles, aggregate views by default, and a log of who looked." },
+  { name: "language", group: "Costs and limits", summary: "How many more tokens a prompt in another script costs than the same length of English, on the same model, with an enough-data rule." },
   { name: "waste", group: "Costs and limits", summary: "Waste the extra rules find: the same error from new inputs, cut-short results repeated, file churn, bare calls, orphaned agents." },
   { name: "autopsy", group: "Costs and limits", summary: "Split a window of spend into causes: idle, loops, cache misses, and work that was needed." },
   { name: "limits", group: "Costs and limits", summary: "What a percent of your plan limit costs in tokens, per plan and window, with an interval, or why there is no estimate." },

@@ -1,0 +1,16 @@
+{
+  "key": "b8a34318e5625b948c9d4be6ad3c792e",
+  "recordedAt": "2026-10-25T09:19:23.676Z",
+  "role": "locale_translate_in",
+  "response": {
+    "content": "What is the next number in the sequence: 3, 8, 15, 24, 35, ? No explanation is needed. Reply with only the final answer.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 330,
+      "outputTokens": 41,
+      "reasoningTokens": 0
+    }
+  }
+}

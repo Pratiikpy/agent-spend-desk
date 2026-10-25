@@ -1,0 +1,16 @@
+{
+  "key": "95917486b2ffa0895b717335cc8f11a3",
+  "recordedAt": "2026-10-25T09:15:39.615Z",
+  "role": "locale_translate_in",
+  "response": {
+    "content": "Pens are sold at 1.35 dollars each at a store. Maria buys 17 pens and pays with a 50 dollar bill. How many dollars of change does she receive? No explanation needed. Reply with only the final answer.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 344,
+      "outputTokens": 54,
+      "reasoningTokens": 0
+    }
+  }
+}

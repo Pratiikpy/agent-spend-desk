@@ -1,6 +1,11 @@
 import { markovianHistory, warmCarry } from "./engines/carry.ts";
 import { replayDecision, recordReplay } from "./replay/decision-replay.ts";
 import { scorecardCommand } from "./scorecard/command.ts";
+import { runLanguageCheck, renderLanguageCheck } from "./lang/check.ts";
+import { DEFAULT_TEAM_DB, teamCommand } from "./team/command.ts";
+import { openTeam } from "./team/store.ts";
+import { localeExperimentCommand } from "./lang/locale-command.ts";
+import { languageSurcharge, renderLanguage } from "./lang/surcharge.ts";
 import { embedCommand } from "./embed/command.ts";
 import { embedderFromEnv } from "./embed/env.ts";
 import { recordEmbeddings, scoutEvalCommand, scoutQuestion } from "./scout/command.ts";
@@ -187,6 +192,16 @@ const { values, positionals } = parseOrExit({
     task: { type: "string" },
     write: { type: "boolean", default: false },
     repeats: { type: "string" },
+    lang: { type: "string" },
+    "team-db": { type: "string" },
+    display: { type: "string" },
+    key: { type: "string" },
+    role: { type: "string" },
+    "per-person": { type: "string" },
+    "min-group": { type: "string" },
+    sort: { type: "string" },
+    anonymise: { type: "boolean", default: false },
+    file: { type: "string" },
     agent: { type: "string" },
     "lab-out": { type: "string", default: "data/lab" },
     name: { type: "string" },
@@ -927,6 +942,37 @@ ${t.pass} PASS, ${t.fail} FAIL, ${t.notRun} NOT RUN. NOT RUN is not a pass: it n
   const result = delegationCommand(db, { sinceIso: since, untilIso: until, ...(values.session ? { session: values.session } : {}) });
   console.log(result.text);
   if (!result.ok) process.exitCode = 1;
+} else if (command === "team") {
+  // A team's spend across people and machines, each person seeing what their role allows (DF-059).
+  const teamPath = values["team-db"] ?? DEFAULT_TEAM_DB;
+  console.log(
+    await teamCommand({
+      sub: positionals[1],
+      args: positionals.slice(2),
+      teamDb: null,
+      openTeamDb: () => openTeam(teamPath),
+      ledger: () => db,
+      env: process.env,
+      flags: {
+        ...(values.since ? { from: values.since } : {}), ...(values.until ? { to: values.until } : {}), ...(values.person ? { person: values.person } : {}), ...(values.display ? { display: values.display } : {}),
+        ...(values.key ? { key: values.key } : {}), ...(values.role ? { role: values.role } : {}), ...(values.file ? { out: values.file } : {}), ...(values["per-person"] ? { perPerson: values["per-person"] } : {}),
+        ...(values["min-group"] ? { minGroup: values["min-group"] } : {}), ...(values.limit ? { limit: values.limit } : {}), ...(values.sort ? { sort: values.sort } : {}), anonymise: values.anonymise === true, ...(values.name ? { name: values.name } : {}),
+      },
+    }),
+  );
+} else if (command === "language") {
+  // The language surcharge: how many more tokens a prompt in another script costs than the same length of English, on the same model.
+  if (positionals[1] === "check") {
+    const check = await runLanguageCheck();
+    console.log(renderLanguageCheck(check));
+    if (!check.ok) process.exitCode = 1;
+  } else if (positionals[1] === "experiment") {
+    console.log(await localeExperimentCommand({ sampleMode, record: values.record, cassetteDir: values.cassettes, env: process.env, lang: values.lang, repeats: values.repeats === undefined ? undefined : Number(values.repeats), write: values.write }));
+  } else {
+    const until = values.until ?? new Date().toISOString();
+    const since = values.since ?? new Date(Date.parse(until) - Number(values.days) * 86_400_000).toISOString();
+    console.log(renderLanguage(languageSurcharge(db, since, until)));
+  }
 } else if (command === "waste") {
   const until = values.until ?? new Date().toISOString();
   const since = values.since ?? new Date(Date.parse(until) - Number(values.days) * 86_400_000).toISOString();

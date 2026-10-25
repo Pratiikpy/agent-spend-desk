@@ -131,8 +131,8 @@ export function toolResultLine(o: { toolUseId: string; session?: string; ts?: st
   });
 }
 
-export function humanPromptLine(o: { uuid: string; session?: string; ts?: string; sidechain?: boolean; meta?: boolean; blocks?: boolean; empty?: boolean }): string {
-  const t = o.empty ? "   " : "please do the thing";
+export function humanPromptLine(o: { uuid: string; session?: string; ts?: string; sidechain?: boolean; meta?: boolean; blocks?: boolean; empty?: boolean; text?: string }): string {
+  const t = o.empty ? "   " : o.text ?? "please do the thing";
   return JSON.stringify({
     type: "user",
     isSidechain: o.sidechain ?? false,

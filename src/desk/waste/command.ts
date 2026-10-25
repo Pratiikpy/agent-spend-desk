@@ -16,6 +16,7 @@ const NAME: Record<WasteClass, string> = {
   "C-ABANDON": "a long session that ended failing, with nothing landed",
   "C-REVERT": "work that was reverted",
   "C-PR": "work in a pull request closed without a merge",
+  "C-LANG": "tokens above English for a prompt in another script",
 };
 
 const RULE_TEXT: Record<WasteClass, string> = {
@@ -27,6 +28,7 @@ const RULE_TEXT: Record<WasteClass, string> = {
   "C-ABANDON": `the calls from where the last ${WASTE_PARAMS.abandonFailures} or more calls whose tool results all failed began, in a session of more than ${WASTE_PARAMS.abandonCalls} calls that landed no commit, in a repository the ledger scanned that had none at all in the day after, with no later session in the same folder in that day (a session with a commit that cannot be ruled out is never called abandoned)`,
   "C-REVERT": "every call of a session whose commits were reverted (undone work did not land); known after the fact, so it cannot be recovered",
   "C-PR": "every call of a session whose commits are all in pull requests that were closed without a merge, and in no other; needs `desk landing --prs`, which asks GitHub through your own `gh`",
+  "C-LANG": "the tokens above English that a prompt in another script cost, in a language and on a model with at least 20 tasks to compare with, when it costs 1.15 times English or more (`desk language`); the dollars are the extra tokens' share of what the call paid for the tokens it newly read, an estimate, and the language may be the one the work needs",
 };
 
 const usd = (micros: number): string => `$${(micros / 1_000_000).toFixed(2)}`;

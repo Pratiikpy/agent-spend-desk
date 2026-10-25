@@ -1,0 +1,16 @@
+{
+  "key": "aa8558156cecbe84f28059cc716960b9",
+  "recordedAt": "2026-10-25T09:25:49.745Z",
+  "role": "locale_translate_in",
+  "response": {
+    "content": "Two fair six-sided dice are rolled. What is the probability of getting a sum of 9 in percent, up to one decimal place? No explanation is needed. Reply with only the final answer.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 341,
+      "outputTokens": 41,
+      "reasoningTokens": 0
+    }
+  }
+}

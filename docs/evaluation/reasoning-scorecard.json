@@ -516,7 +516,7 @@
         },
         {
           "path": "data/sample/cassettes/",
-          "digest": "sha256:8eecacdc120ecf26248ed3a839334d9705cd3b6906a3f180628ea5e6da158a37"
+          "digest": "sha256:7abba6b08d250790eb7e628819c81973dc7125f73ec297fefe3cafc7333432b1"
         }
       ],
       "metrics": [
@@ -711,7 +711,7 @@
       "inputs": [
         {
           "path": "data/sample/cassettes/",
-          "digest": "sha256:8eecacdc120ecf26248ed3a839334d9705cd3b6906a3f180628ea5e6da158a37"
+          "digest": "sha256:7abba6b08d250790eb7e628819c81973dc7125f73ec297fefe3cafc7333432b1"
         }
       ],
       "metrics": [

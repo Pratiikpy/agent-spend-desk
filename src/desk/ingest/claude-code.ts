@@ -9,6 +9,7 @@
 import { createHash } from "node:crypto";
 
 import { canonicalJson } from "../../runtime/canonical.ts";
+import { classify, type Label } from "../lang/script.ts";
 import type { Json } from "../../runtime/json.ts";
 
 export interface ParsedToolUse {
@@ -80,6 +81,10 @@ export interface ParsedHumanPrompt {
   promptId: string;
   sessionId: string;
   ts: string;
+  /** What the text is, never the text itself: code points, letters, and the script it is written in (DF-043). */
+  chars: number;
+  letters: number;
+  script: Label;
 }
 
 /**
@@ -429,7 +434,10 @@ function parseUserLine(d: Record<string, unknown>): LineOutcome {
   const hasText = typeof content === "string" ? content.trim().length > 0 : Array.isArray(content) && content.some((b) => isObject(b) && b["type"] === "text");
   const promptId = text(d["uuid"]);
   if (!hasText || !promptId) return { kind: "ignored" };
-  return { kind: "human_prompt", prompt: { promptId, sessionId, ts } };
+  // The text is read to count it and to name its script, and is not kept.
+  const written = typeof content === "string" ? content : (content as unknown[]).flatMap((b) => (isObject(b) && b["type"] === "text" && typeof b["text"] === "string" ? [b["text"] as string] : [])).join("\n");
+  const facts = classify(written);
+  return { kind: "human_prompt", prompt: { promptId, sessionId, ts, chars: facts.chars, letters: facts.letters, script: facts.label } };
 }
 
 const EDIT_TOOLS = new Set(["Edit", "Write", "MultiEdit", "NotebookEdit"]);

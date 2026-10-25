@@ -1,0 +1,16 @@
+{
+  "key": "012da062b25ca10519e35b45248e9119",
+  "recordedAt": "2026-10-25T09:18:50.421Z",
+  "role": "locale_translate_in",
+  "response": {
+    "content": "A farmer has 17 sheep. All except 9 run away. How many sheep does the farmer have left? No explanation, reply with only the final answer.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 334,
+      "outputTokens": 35,
+      "reasoningTokens": 0
+    }
+  }
+}

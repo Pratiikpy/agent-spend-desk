@@ -1,0 +1,16 @@
+{
+  "key": "a68d6fa62b948f2e17df515997f0d299",
+  "recordedAt": "2026-10-25T09:15:58.877Z",
+  "role": "locale_translate_in",
+  "response": {
+    "content": "Invest 2,000 dollars at an annual interest rate of 5 percent with annual compounding for 3 years. What is the balance in dollars? Round to the nearest cent. No explanation is needed. Reply with only the final answer.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 345,
+      "outputTokens": 52,
+      "reasoningTokens": 0
+    }
+  }
+}

@@ -15,6 +15,7 @@ import { loadSnapshot } from "../pricing/pricebook.ts";
 import * as q from "./queries.ts";
 import { systemTimeZone } from "./localday.ts";
 import { askScreen, canaryScreen, dossiersScreen, silosScreen, type ExtraPaths } from "./extra.ts";
+import { teamScreen } from "./team.ts";
 import { evidenceScreen } from "./evidence.ts";
 
 const HERE = fileURLToPath(new URL(".", import.meta.url));
@@ -179,7 +180,7 @@ export async function startUiServer(opts: UiOptions): Promise<UiServer> {
 
   const allowedHosts = (): Set<string> => new Set([`127.0.0.1:${port}`, `localhost:${port}`]);
 
-  const extra: ExtraPaths = { cassetteDir: "data/sample/cassettes", memoryDir: "data/desk/memory", dossiersDir: "data/desk/dossiers", pendingDir: "data/desk/pending", sampleDir: "data/desk/sample", regretPath: opts.mode === "sample" ? "data/desk/sample/regret.db" : "data/desk/regret.db", ...opts.extra };
+  const extra: ExtraPaths = { cassetteDir: "data/sample/cassettes", memoryDir: "data/desk/memory", dossiersDir: "data/desk/dossiers", teamDbPath: "data/desk/team.db", pendingDir: "data/desk/pending", sampleDir: "data/desk/sample", regretPath: opts.mode === "sample" ? "data/desk/sample/regret.db" : "data/desk/regret.db", ...opts.extra };
 
   const route = async (path: string, p: URLSearchParams): Promise<unknown> => {
     switch (path) {
@@ -219,6 +220,8 @@ export async function startUiServer(opts: UiOptions): Promise<UiServer> {
         return canaryScreen(ctx);
       case "/api/silos":
         return silosScreen(ctx, extra);
+      case "/api/team":
+        return teamScreen(ctx, extra, p);
       case "/api/dossiers":
         return dossiersScreen(extra);
       case "/api/evidence":

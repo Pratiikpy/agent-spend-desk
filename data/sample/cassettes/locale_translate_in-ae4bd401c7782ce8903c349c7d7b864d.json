@@ -1,0 +1,16 @@
+{
+  "key": "ae4bd401c7782ce8903c349c7d7b864d",
+  "recordedAt": "2026-10-25T09:30:18.642Z",
+  "role": "locale_translate_in",
+  "response": {
+    "content": "In how many ways can a 3-person committee be chosen from 8 people? No explanation is needed. Reply with only the final answer.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 319,
+      "outputTokens": 30,
+      "reasoningTokens": 0
+    }
+  }
+}

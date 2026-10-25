@@ -1,0 +1,16 @@
+{
+  "key": "aeb0f003d5765049f354a94a2a11bd71",
+  "recordedAt": "2026-10-25T09:20:15.661Z",
+  "role": "locale_translate_in",
+  "response": {
+    "content": "The train travels 150 kilometers in 1 hour and 40 minutes. What is the average speed in kilometers per hour? No explanation needed. Return only the final answer.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 328,
+      "outputTokens": 39,
+      "reasoningTokens": 0
+    }
+  }
+}

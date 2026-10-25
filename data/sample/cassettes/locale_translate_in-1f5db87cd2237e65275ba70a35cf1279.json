@@ -1,0 +1,16 @@
+{
+  "key": "1f5db87cd2237e65275ba70a35cf1279",
+  "recordedAt": "2026-10-25T09:16:57.616Z",
+  "role": "locale_translate_in",
+  "response": {
+    "content": "A jacket costs 80 dollars. It has a 25% discount, and then a 10% tax is added to the price after the discount. What is the final price in dollars? No explanation, only give the final answer.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 358,
+      "outputTokens": 52,
+      "reasoningTokens": 0
+    }
+  }
+}

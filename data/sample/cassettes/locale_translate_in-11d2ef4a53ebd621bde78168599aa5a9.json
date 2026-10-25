@@ -1,0 +1,16 @@
+{
+  "key": "11d2ef4a53ebd621bde78168599aa5a9",
+  "recordedAt": "2026-10-25T09:17:25.160Z",
+  "role": "locale_translate_in",
+  "response": {
+    "content": "An $80 jacket is discounted by 25 percent, and then a 10 percent tax is added to the discounted price. What is the final price in dollars? No explanation is needed. Reply with only the final answer.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 350,
+      "outputTokens": 49,
+      "reasoningTokens": 0
+    }
+  }
+}

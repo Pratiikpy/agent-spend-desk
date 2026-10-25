@@ -19,6 +19,8 @@ export interface BackfillReport {
   /** Workflow runs and the logs placed in one (schema version 17). */
   workflowsFilled: number;
   logsPlaced: number;
+  /** Prompts that now carry their length and script (schema version 30). */
+  promptsFilled: number;
 }
 
 /**
@@ -34,7 +36,8 @@ export async function backfillClaudeCodeFields(db: Ledger, files: readonly strin
   const fillVersion = db.prepare("UPDATE model_call SET tool_version = ? WHERE call_id = ? AND tool_version IS NULL");
   const fillCompaction = db.prepare("INSERT OR IGNORE INTO session_compaction (session_id, ts, trigger, pre_tokens, post_tokens, duration_ms, source_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
   const sourceOf = db.prepare("SELECT id FROM ingest_source WHERE path = ?");
-  const report: BackfillReport = { files: 0, callsSeen: 0, inferenceGeoFilled: 0, resultFactsFilled: 0, toolVersionFilled: 0, compactionsFilled: 0, delegationsFilled: 0, agentsNamed: 0, workflowsFilled: 0, logsPlaced: 0 };
+  const report: BackfillReport = { files: 0, callsSeen: 0, inferenceGeoFilled: 0, resultFactsFilled: 0, toolVersionFilled: 0, compactionsFilled: 0, delegationsFilled: 0, agentsNamed: 0, workflowsFilled: 0, logsPlaced: 0, promptsFilled: 0 };
+  const fillPrompt = db.prepare("UPDATE human_prompt SET chars = ?, letters = ?, script = ? WHERE prompt_id = ? AND script IS NULL");
   const fillRun = db.prepare("INSERT OR IGNORE INTO workflow_run (session_id, run_id, parent_source_id, name, ts) VALUES (?, ?, ?, ?, ?)");
   const placeSource = db.prepare("UPDATE ingest_source SET workflow_run = ? WHERE id = ? AND workflow_run IS NULL");
   const fillEdge = db.prepare("INSERT OR IGNORE INTO delegation_edge (session_id, child_agent_id, parent_source_id, ts) VALUES (?, ?, ?, ?)");
@@ -61,6 +64,11 @@ export async function backfillClaudeCodeFields(db: Ledger, files: readonly strin
         }
         if (outcome.kind === "delegation_notice") {
           if (sourceId !== null) for (const dl of outcome.delegations) report.delegationsFilled += Number(fillEdge.run(dl.sessionId, dl.childAgentId, sourceId, dl.ts).changes);
+          continue;
+        }
+        if (outcome.kind === "human_prompt") {
+          const p = outcome.prompt;
+          report.promptsFilled += Number(fillPrompt.run(p.chars, p.letters, p.script, p.promptId).changes);
           continue;
         }
         if (outcome.kind === "compaction") {

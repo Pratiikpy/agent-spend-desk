@@ -1,3 +1,4 @@
+import { LANG_PARAMS } from "../lang/surcharge.ts";
 import { WASTE_PARAMS } from "../waste/detect.ts";
 import { CONFIG, type AutopsyCall, type MissEvent, type PerCall } from "../autopsy/engine.ts";
 import { callCostMicros, WASTE_RULE } from "../replay/from-ledger.ts";
@@ -9,7 +10,7 @@ import type { WasteClass, WasteEvent } from "../waste/detect.ts";
  * call that rewrote a context the cache had held (cache miss). Everything here is computed from the calls and the rule's own
  * parameters; nothing is guessed, and what the logs cannot show is marked, not filled in.
  */
-export type BlockKind = "loops" | "idle" | "subagents" | "cache_miss" | "echo" | "truncation" | "churn" | "reflection" | "orphan" | "abandon" | "revert" | "pr";
+export type BlockKind = "loops" | "idle" | "subagents" | "cache_miss" | "echo" | "truncation" | "churn" | "reflection" | "orphan" | "abandon" | "revert" | "pr" | "lang";
 
 export const BLOCK_RULE: Record<BlockKind, string> = {
   loops: WASTE_RULE.loops ?? "C-LOOP-1",
@@ -24,9 +25,10 @@ export const BLOCK_RULE: Record<BlockKind, string> = {
   abandon: "C-ABANDON",
   revert: "C-REVERT",
   pr: "C-PR",
+  lang: "C-LANG",
 };
 
-const KIND_OF_RULE: Record<WasteClass, BlockKind> = { "C-LOOP-2": "echo", "C-TRUNC": "truncation", "C-CHURN": "churn", "C-UNREF": "reflection", "C-ORPHAN": "orphan", "C-ABANDON": "abandon", "C-REVERT": "revert", "C-PR": "pr" };
+const KIND_OF_RULE: Record<WasteClass, BlockKind> = { "C-LOOP-2": "echo", "C-TRUNC": "truncation", "C-CHURN": "churn", "C-UNREF": "reflection", "C-ORPHAN": "orphan", "C-ABANDON": "abandon", "C-REVERT": "revert", "C-PR": "pr", "C-LANG": "lang" };
 
 /** What the ledger knows about the tool uses of one call that the autopsy call does not carry. */
 export interface ToolUseFacts {
@@ -276,6 +278,13 @@ export function explainBlock(block: Block, thread: readonly AutopsyCall[], missB
     rule = { id: block.rule, params: { pull_request_state: "closed_unmerged" }, observed: { pull_requests: String(o["pull_requests"] ?? ""), calls: n } };
     why = `a session whose commits are all in pull request${String(o["pull_requests"] ?? "").includes(",") ? "s" : ""} ${String(o["pull_requests"] ?? "")}, closed without a merge`;
     sentences.push({ text: `The work of this session was offered as ${String(o["pull_requests"] ?? "a pull request")} and the pull request was closed without being merged, so the ${n} call${n === 1 ? "" : "s"} of spend in this period went to work that was turned down.`, basis: "pr_fact rows fetched by desk landing --prs, and the session's links to commits" });
+  } else if (block.kind === "lang") {
+    const o = block.observed ?? {};
+    const times = Number(o["times_english"] ?? 0);
+    cascade = { firstBreak: null, steps: [], confidence: "low", why: "The prompts were in another script, which the model's tokenizer splits into more tokens than the same length of English. That may be the language the work needs, so this is a cost to know about, not a mistake." };
+    rule = { id: block.rule, params: { at_least_times_english: LANG_PARAMS.wasteRatio, tasks_to_compare: LANG_PARAMS.minTasks }, observed: { times_english: times, extra_tokens: Number(o["extra_tokens"] ?? 0), prompts: Number(o["prompts"] ?? n) } };
+    why = `a prompt in ${String(o["language"] ?? "another script")} on ${String(o["model"] ?? "this model")}, a language that costs ${times.toFixed(2)} times English on that model`;
+    sentences.push({ text: `${Number(o["prompts"] ?? n)} prompt${Number(o["prompts"] ?? n) === 1 ? " was" : "s were"} written in ${String(o["language"] ?? "another script")}, which costs about ${times.toFixed(2)} times what the same length of English costs on ${String(o["model"] ?? "this model")}; the extra, about ${Number(o["extra_tokens"] ?? 0).toLocaleString("en-US")} tokens, is what is counted here.`, basis: "the script and length recorded for each prompt, and the tokens of the first call after it, against the English fit on the same model (an estimate)" });
   } else {
     const m = missByCall.get(first.callId);
     const idx = thread.findIndex((c) => c.callId === first.callId);

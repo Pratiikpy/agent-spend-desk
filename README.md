@@ -53,7 +53,7 @@ git clone https://github.com/Pratiikpy/agent-spend-desk.git && cd agent-spend-de
 npm install
 npm run desk -- --sample      # the limit autopsy card, on a constructed sample, offline (about 20 seconds)
 npm run desk -- demo          # the whole demo in eight beats, offline (under a minute)
-npm run desk -- ui --sample   # thirteen screens on a local, read-only server
+npm run desk -- ui --sample   # fourteen screens on a local, read-only server
 npm run desk -- prove         # every check, each PASS, FAIL or NOT RUN
 npm run desk -- help          # every command, grouped by what you are trying to do
 npm test                      # the unit and integration tests

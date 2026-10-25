@@ -1,0 +1,16 @@
+{
+  "key": "208cfdb9718985d18caa299e102e8b35",
+  "recordedAt": "2026-10-25T09:24:47.875Z",
+  "role": "locale_translate_in",
+  "response": {
+    "content": "Two fair six-sided dice are thrown. What is the probability that the sum is 9, expressed as a percentage rounded to one decimal place? No explanation needed, reply with only the final answer.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 341,
+      "outputTokens": 41,
+      "reasoningTokens": 0
+    }
+  }
+}

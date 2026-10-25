@@ -138,7 +138,7 @@ export async function ingestClaudeCode(
   const nameSource = db.prepare("UPDATE ingest_source SET agent_id = ? WHERE id = ? AND agent_id IS NULL");
   const insertRun = db.prepare("INSERT OR IGNORE INTO workflow_run (session_id, run_id, parent_source_id, name, ts) VALUES (?, ?, ?, ?, ?)");
   const placeSource = db.prepare("UPDATE ingest_source SET workflow_run = ? WHERE id = ? AND workflow_run IS NULL");
-  const insertPrompt = db.prepare("INSERT OR IGNORE INTO human_prompt (prompt_id, session_id, ts) VALUES (?, ?, ?)");
+  const insertPrompt = db.prepare("INSERT INTO human_prompt (prompt_id, session_id, ts, chars, letters, script) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT (prompt_id) DO UPDATE SET chars = COALESCE(human_prompt.chars, excluded.chars), letters = COALESCE(human_prompt.letters, excluded.letters), script = COALESCE(human_prompt.script, excluded.script)");
   const getReported = db.prepare("SELECT total_micros FROM reported_cost WHERE session_id = ? AND process_start_ms = ?");
   const putReported = db.prepare(
     `INSERT OR REPLACE INTO reported_cost (session_id, process_start_ms, total_micros, api_duration_ms, lines_added, lines_removed, unknown_model_cost, observed_ts) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -231,7 +231,7 @@ export async function ingestClaudeCode(
           report.compactions += Number(insertCompaction.run(c.sessionId, c.ts, c.trigger, c.preTokens, c.postTokens, c.durationMs, sourceId).changes);
           seenAt(c.ts);
         } else if (outcome.kind === "human_prompt") {
-          insertPrompt.run(outcome.prompt.promptId, outcome.prompt.sessionId, outcome.prompt.ts);
+          insertPrompt.run(outcome.prompt.promptId, outcome.prompt.sessionId, outcome.prompt.ts, outcome.prompt.chars, outcome.prompt.letters, outcome.prompt.script);
           seenAt(outcome.prompt.ts);
           report.humanPrompts += 1;
         }

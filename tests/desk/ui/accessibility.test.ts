@@ -237,10 +237,10 @@ describe("the shell", () => {
     expect(audit(shell, "shell")).toEqual([]);
   });
 
-  it("lists thirteen screens in one navigation, each a link", () => {
+  it("lists fourteen screens in one navigation, each a link", () => {
     const nav = elements(shell).map((x) => x.el).find((e) => e.tag === "nav")!;
     const links = elements(nav).filter(({ el }) => el.tag === "a");
-    expect(links).toHaveLength(13);
+    expect(links).toHaveLength(14);
   });
 });
 

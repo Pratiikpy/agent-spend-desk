@@ -11,6 +11,7 @@ import { ingestClaudeCode } from "../../../../src/desk/ledger/ingest.ts";
 import { linkOutcomes } from "../../../../src/desk/outcomes/link.ts";
 import { loadSnapshot } from "../../../../src/desk/pricing/pricebook.ts";
 import { buildSample, sampleLogsDir, sampleReposDir } from "../../../../src/desk/sample/gen.ts";
+import { writeLanguageLogs } from "../../../../src/desk/sample/language.ts";
 import { TEAM_OF_REPO } from "../../../../src/desk/silo/seed.ts";
 import { assignTasks } from "../../../../src/desk/tasks/assign.ts";
 import { startUiServer, type UiServer } from "../../../../src/desk/ui/server.ts";
@@ -31,7 +32,7 @@ export interface RichUi {
  * The sample ledger with everything the screens can show: landing outcomes, tasks, an invoice for the busiest month, the Desk's own calls, and one session whose
  * folder carries instruction-like text. The server runs in sample mode, as `desk ui --sample` does.
  */
-export async function startRichUi(opts: { nowMs?: () => number } = {}): Promise<RichUi> {
+export async function startRichUi(opts: { nowMs?: () => number; withLanguage?: boolean } = {}): Promise<RichUi> {
   const dir = mkdtempSync(join(tmpdir(), "desk-rich-ui-"));
   const out = join(dir, "sample");
   buildSample({ outDir: out, seed: 3, months: 0.4, engineers: 6 });
@@ -43,6 +44,8 @@ export async function startRichUi(opts: { nowMs?: () => number } = {}): Promise<
   const dbPath = join(dir, "ledger.db");
   const db = openLedger(dbPath);
   await ingestClaudeCode(db, findJsonlLogs(sampleLogsDir(out)), loadSnapshot(PRICES));
+  // Prompts in several scripts with the surcharge planted, for the Language section of the Bill screen.
+  if (opts.withLanguage) await ingestClaudeCode(db, writeLanguageLogs(join(dir, "language-logs")), loadSnapshot(PRICES));
   linkOutcomes(db, Object.keys(TEAM_OF_REPO).map((n) => join(sampleReposDir(out), n)), Date.parse("2026-12-01T00:00:00Z"));
   assignTasks(db, []);
   const month = (db.prepare("SELECT substr(ts, 1, 7) m FROM model_call GROUP BY m ORDER BY COUNT(*) DESC LIMIT 1").get() as { m: string }).m;

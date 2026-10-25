@@ -43,7 +43,7 @@ describe("backfilling a field into calls read before the field existed", () => {
     const before = db.prepare("SELECT call_id, input_tokens, output_tokens, block_lines, usage_conflicts FROM model_call").all();
     const cost = db.prepare("SELECT total_micros t FROM cost_event").get();
     const r = await backfillClaudeCodeFields(db, [dir.file("b.jsonl", [withGeo(first(), "us")])]);
-    expect(r).toEqual({ files: 1, callsSeen: 1, inferenceGeoFilled: 1, resultFactsFilled: 0, toolVersionFilled: 0, compactionsFilled: 0, delegationsFilled: 0, agentsNamed: 0, workflowsFilled: 0, logsPlaced: 0 });
+    expect(r).toEqual({ files: 1, callsSeen: 1, inferenceGeoFilled: 1, resultFactsFilled: 0, toolVersionFilled: 0, compactionsFilled: 0, delegationsFilled: 0, agentsNamed: 0, workflowsFilled: 0, promptsFilled: 0, logsPlaced: 0 });
     expect(db.prepare("SELECT call_id, input_tokens, output_tokens, block_lines, usage_conflicts FROM model_call").all()).toEqual(before);
     expect(db.prepare("SELECT total_micros t FROM cost_event").get()).toEqual(cost);
     expect((db.prepare("SELECT inference_geo g FROM model_call").get() as { g: string }).g).toBe("us");

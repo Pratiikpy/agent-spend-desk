@@ -1,0 +1,16 @@
+{
+  "key": "d538ef96088127507dde9dbfe2a06866",
+  "recordedAt": "2026-10-25T09:22:18.431Z",
+  "role": "locale_translate_in",
+  "response": {
+    "content": "For a recipe serving 6 people, 450 grams of flour are used. How many grams of flour are needed to make 14 servings at the same ratio? No explanation needed. Reply with only the final answer.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 344,
+      "outputTokens": 49,
+      "reasoningTokens": 0
+    }
+  }
+}

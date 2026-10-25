@@ -1,0 +1,16 @@
+{
+  "key": "44183a6e61889e6a7a853f50c2fd1ced",
+  "recordedAt": "2026-10-25T09:16:14.329Z",
+  "role": "locale_translate_out",
+  "response": {
+    "content": "2315.25",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 164,
+      "outputTokens": 8,
+      "reasoningTokens": 0
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "key": "aa4a2f91e226768a33255568f1518bcc",
+  "recordedAt": "2026-10-25T09:25:48.237Z",
+  "role": "locale_translate_in",
+  "response": {
+    "content": "Two fair six-sided dice are rolled. What is the probability that the sum of the faces is 9? Round to one decimal place. No explanation needed. Reply with only the final answer.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 340,
+      "outputTokens": 40,
+      "reasoningTokens": 0
+    }
+  }
+}

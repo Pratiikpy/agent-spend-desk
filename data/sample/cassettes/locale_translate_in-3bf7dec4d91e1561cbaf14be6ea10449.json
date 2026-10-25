@@ -1,0 +1,16 @@
+{
+  "key": "3bf7dec4d91e1561cbaf14be6ea10449",
+  "recordedAt": "2026-10-25T09:16:29.047Z",
+  "role": "locale_translate_in",
+  "response": {
+    "content": "What is 15 percent of 640? No explanation needed. Reply with only the final answer.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 310,
+      "outputTokens": 24,
+      "reasoningTokens": 0
+    }
+  }
+}

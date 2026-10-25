@@ -1,0 +1,16 @@
+{
+  "key": "7fcb00425705a7257110476024d056d4",
+  "recordedAt": "2026-10-25T09:16:22.527Z",
+  "role": "locale_translate_in",
+  "response": {
+    "content": "$2,000 is invested at 5 percent annual interest, compounded once per year, for 3 years. What is the balance in dollars, rounded to the nearest cent? No explanation, reply with only the final answer.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 361,
+      "outputTokens": 50,
+      "reasoningTokens": 0
+    }
+  }
+}

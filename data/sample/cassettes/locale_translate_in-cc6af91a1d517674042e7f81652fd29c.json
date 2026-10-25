@@ -1,0 +1,16 @@
+{
+  "key": "cc6af91a1d517674042e7f81652fd29c",
+  "recordedAt": "2026-10-25T09:24:00.181Z",
+  "role": "locale_translate_in",
+  "response": {
+    "content": "A recipe for 6 people requires 450 grams of flour. Keeping the same proportion, how many grams of flour are needed for 14 people? No explanation is required. Reply with only the final answer.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 341,
+      "outputTokens": 46,
+      "reasoningTokens": 0
+    }
+  }
+}

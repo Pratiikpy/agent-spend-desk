@@ -1,0 +1,16 @@
+{
+  "key": "12e9038286d1a80f991d9847b69e85a6",
+  "recordedAt": "2026-10-25T09:24:32.736Z",
+  "role": "locale_translate_in",
+  "response": {
+    "content": "A flight departs at 22:45 and arrives at 06:10 the next day, both in the same time zone. How many minutes long is the flight? No explanation needed. Reply with only the final answer.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 348,
+      "outputTokens": 51,
+      "reasoningTokens": 0
+    }
+  }
+}

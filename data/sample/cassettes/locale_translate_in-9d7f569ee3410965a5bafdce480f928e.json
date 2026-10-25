@@ -1,0 +1,16 @@
+{
+  "key": "9d7f569ee3410965a5bafdce480f928e",
+  "recordedAt": "2026-10-25T09:23:11.663Z",
+  "role": "locale_translate_in",
+  "response": {
+    "content": "A car consumes 7.5 liters of fuel per 100 kilometers. Fuel costs 1.80 dollars per liter. How much does a 340 kilometer trip cost in dollars? No explanation needed. Reply with only the final answer.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 359,
+      "outputTokens": 55,
+      "reasoningTokens": 0
+    }
+  }
+}

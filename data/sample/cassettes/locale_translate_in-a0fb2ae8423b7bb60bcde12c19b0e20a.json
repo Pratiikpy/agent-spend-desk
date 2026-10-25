@@ -1,0 +1,16 @@
+{
+  "key": "a0fb2ae8423b7bb60bcde12c19b0e20a",
+  "recordedAt": "2026-10-25T09:30:51.741Z",
+  "role": "locale_translate_in",
+  "response": {
+    "content": "What is the greatest common divisor of 168 and 252? No explanation is needed. Reply with only the final answer.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 317,
+      "outputTokens": 30,
+      "reasoningTokens": 0
+    }
+  }
+}

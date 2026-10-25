@@ -1,0 +1,16 @@
+{
+  "key": "87d62663779882a11f421f43392a27ce",
+  "recordedAt": "2026-10-25T09:15:41.948Z",
+  "role": "locale_translate_in",
+  "response": {
+    "content": "A shop sells pens at 1.35 dollars per pen. Maria buys 17 pens and gives a 50-dollar note. How many dollars will she get back? No explanation is needed. Reply with only the final answer.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 357,
+      "outputTokens": 52,
+      "reasoningTokens": 0
+    }
+  }
+}

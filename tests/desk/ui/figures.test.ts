@@ -43,7 +43,7 @@ function labelOf(ancestors: ShimElement[]): string {
 
 describe("every dollar figure names its class", () => {
   it("renders every screen the server lists, and finds figures on most of them", () => {
-    expect(screens.map((s) => s.id)).toEqual(["brief", "week", "bill", "autopsy", "sessions", "outcomes", "policy", "canary", "ask", "organisation", "dossiers", "evidence", "sources"]);
+    expect(screens.map((s) => s.id)).toEqual(["brief", "week", "bill", "autopsy", "sessions", "outcomes", "policy", "canary", "ask", "organisation", "team", "dossiers", "evidence", "sources"]);
     const withMoney = screens.filter((s) => figures(s.root).length > 0).map((s) => s.id);
     for (const id of ["brief", "week", "bill", "autopsy", "sessions", "outcomes", "policy", "organisation", "evidence"]) expect(withMoney, id).toContain(id);
   });

@@ -31,6 +31,8 @@ export interface ExtraPaths {
   sampleDir: string;
   /** The decision regret ledger. */
   regretPath: string;
+  /** The team's database, read by the Team screen as the holder of this machine's signing key. */
+  teamDbPath: string;
 }
 
 function modelFor(ctx: UiContext, paths: ExtraPaths): { port: ModelPort | null; label: string } {

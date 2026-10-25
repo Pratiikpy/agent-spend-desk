@@ -1,0 +1,16 @@
+{
+  "key": "435b38b512b5eb992585c5daf20fd6d7",
+  "recordedAt": "2026-10-25T09:33:20.018Z",
+  "role": "locale_translate_in",
+  "response": {
+    "content": "What is the sum of the digits of 98765? No explanation is needed. Reply with only the final answer.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 311,
+      "outputTokens": 28,
+      "reasoningTokens": 0
+    }
+  }
+}

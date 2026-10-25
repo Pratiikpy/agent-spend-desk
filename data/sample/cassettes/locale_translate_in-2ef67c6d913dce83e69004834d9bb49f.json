@@ -1,0 +1,16 @@
+{
+  "key": "2ef67c6d913dce83e69004834d9bb49f",
+  "recordedAt": "2026-10-25T09:20:26.191Z",
+  "role": "locale_translate_in",
+  "response": {
+    "content": "A train covers 150 km in 1 hour 40 minutes. What is its average speed in km per hour? No explanation, reply with only the final answer.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 338,
+      "outputTokens": 38,
+      "reasoningTokens": 0
+    }
+  }
+}

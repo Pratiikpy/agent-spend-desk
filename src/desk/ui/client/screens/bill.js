@@ -24,6 +24,32 @@ function reviewSection(r) {
   );
 }
 
+// What a prompt in another script costs over the same length of English on the same model. A cell with too few tasks is said to have too few, with its counts, and has no figure.
+function languageSection(l) {
+  return section(
+    "Language",
+    "estimated, from logged tokens",
+    h("p", { "data-language": "true" }, `Prompts in another script cost more tokens than the same length of English, on the same model. A language is compared only where it has at least ${int(l.minTasks)} prompts on a model and English has at least ${int(l.minTasks)} on the same one.`),
+    table(
+      "Tokens per character, against English on the same model",
+      [
+        { label: "Language", render: (r) => r.language },
+        { label: "Model", id: true, render: (r) => r.model },
+        { label: "Prompts", num: true, render: (r) => int(r.tasks) },
+        { label: "Tokens / char", num: true, render: (r) => (r.status === "shown" ? r.tokensPerChar.toFixed(3) : "") },
+        { label: "x English", num: true, render: (r) => (r.status === "shown" ? `${r.ratio.toFixed(2)}x` : "") },
+        { label: "Extra tokens", num: true, render: (r) => (r.status === "shown" ? int(r.extraTokens) : "") },
+        { label: "List price", num: true, render: (r) => (r.status === "shown" ? usd(r.extraMicros) : "") },
+        { label: "", render: (r) => (r.status === "shown" ? (r.ratio >= l.wasteRatio ? pill("C-LANG", "risk") : "") : pill("too few", "")) },
+      ],
+      l.cells,
+      { maxh: true },
+    ),
+    l.cells.some((c) => c.status !== "shown") ? h("p", { class: "note" }, l.cells.filter((c) => c.status !== "shown").map((c) => `${c.language} on ${c.model}: ${c.why}.`).join(" ")) : null,
+    h("p", { class: "note" }, `Total above the English rate: ${usd(l.totalExtraMicros)} at list price. A rate is the median tokens newly read by the first call after a prompt, less the harness text that every English prompt carries, per character; the same harness text is assumed for every language. The language may be the one the work needs: this is a cost to know about, and from ${l.wasteRatio} times English it is listed by desk waste as C-LANG.`),
+  );
+}
+
 // Where the month is likely to end, as a range from the owner's own past forecasts, and how such ranges have done. A straight line says it is one and gives no range.
 function monthEndSection(m, snapshotId) {
   const range = m.lowMicros !== null && m.highMicros !== null ? `${usd(m.lowMicros)} to ${usd(m.highMicros)} (${Math.round(m.level * 100)}%)` : null;
@@ -166,6 +192,7 @@ export async function render(ctx) {
     ),
     d.monthEnd ? monthEndSection(d.monthEnd, d.snapshotId) : null,
     d.reviewTime && (d.reviewTime.approvals > 0 || d.reviewTime.unanswered > 0) ? reviewSection(d.reviewTime) : null,
+    d.language ? languageSection(d.language) : null,
     section(
       "Kinds of dollars",
       "billed, reported and estimated: the class of each figure",

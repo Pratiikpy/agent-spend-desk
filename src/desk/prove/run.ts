@@ -2,6 +2,9 @@ import { snapshotsFromDir } from "../close/month-bill.ts";
 import { adapterProve } from "./adapter-check.ts";
 import { decisionProve } from "./decision-check.ts";
 import { embedProve } from "./embed-check.ts";
+import { languageProve } from "./language-check.ts";
+import { localeProve } from "./locale-check.ts";
+import { teamProve } from "./team-check.ts";
 import { scoutProve } from "./scout-check.ts";
 import { sampleEnv, type Env } from "./env.ts";
 import { auditProve } from "./audit-check.ts";
@@ -654,6 +657,33 @@ const CHECKS: Check[] = [
     seed: SEED,
     async run() {
       const r = await embedProve();
+      return r.ok ? pass(r.detail) : fail(r.detail);
+    },
+  },
+  {
+    id: "language-surcharge-recovers-the-planted-cells-and-withholds-the-thin-ones",
+    command: "ingest prompts in five scripts with a surcharge planted on two models, measure it, and compare each cell with what was planted",
+    seed: SEED,
+    async run() {
+      const r = await languageProve();
+      return r.ok ? pass(r.detail) : fail(r.detail);
+    },
+  },
+  {
+    id: "locale-route-replays-from-the-recording-and-is-judged-by-its-interval",
+    command: "replay the recorded translate-work-translate-back run through the same code, compare it with the committed record, then make the route wrong, make it identical, and make English fail",
+    seed: SEED,
+    async run() {
+      const r = await localeProve();
+      return r.ok ? pass(r.detail) : fail(r.detail);
+    },
+  },
+  {
+    id: "team-reports-add-up-and-roles-refuse-what-they-do-not-hold",
+    command: "build a team of six from signed reports, add them up, fold what too few people stand behind, ask for every view as every role, offer it altered, forged, unsigned and text-bearing reports, and change a line of the access log",
+    seed: SEED,
+    async run() {
+      const r = teamProve();
       return r.ok ? pass(r.detail) : fail(r.detail);
     },
   },

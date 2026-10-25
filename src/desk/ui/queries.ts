@@ -23,6 +23,8 @@ import { nightLine, readGateNight, readReviewOverhead } from "../gate/readout.ts
 import { addDays, isDate, localDate, localDayRange } from "./localday.ts";
 import { ADAPTERS, CAPABILITY_KEYS, CAPABILITY_TITLE, NO_ADAPTER } from "../adapters/registry.ts";
 import { explainBlock, findBlocks, type BlockKind } from "../explain/blocks.ts";
+import { LABEL_NAME } from "../lang/script.ts";
+import { languageSurcharge, LANG_PARAMS } from "../lang/surcharge.ts";
 import { readExcerpts } from "../explain/lines.ts";
 import { classCoverage, coverageLine } from "../bill/coverage.ts";
 import { formatUsd } from "../money.ts";
@@ -226,9 +228,10 @@ export const SCREENS = [
   { id: "canary", title: "Canary", number: "08" },
   { id: "ask", title: "Ask", number: "09" },
   { id: "organisation", title: "Org data", number: "10" },
-  { id: "dossiers", title: "Dossiers", number: "11" },
-  { id: "evidence", title: "Evidence", number: "12" },
-  { id: "sources", title: "Doctor", number: "13" },
+  { id: "team", title: "Team", number: "11" },
+  { id: "dossiers", title: "Dossiers", number: "12" },
+  { id: "evidence", title: "Evidence", number: "13" },
+  { id: "sources", title: "Doctor", number: "14" },
 ] as const;
 
 // ---------------------------------------------------------------------------------------------- bill
@@ -346,6 +349,7 @@ export function bill(ctx: UiContext, span: Span): object {
     // What the owner's time on the gate's questions was worth in this period, at their own rate: reported by the gate, never part of model spend.
     reviewTime: readReviewOverhead(ctx.gateDbPath ?? null, span.sinceIso, span.untilIso, reviewRate(ctx.env["DESK_REVIEW_USD_PER_HOUR"])),
     pricing: pricingNotes(ctx, span),
+    language: languageBlock(ctx, span),
     reconciliations: reconciliationRows(ctx, span),
     landing: { rows: landingRows(landing), totalMicros: landing.totalMicros, lowConfidenceMicros: landing.lowConfidenceMicros, linked: hasLinks(ctx.db) },
     costPerLandedSession: landed === 0 ? null : Math.round(landedMicros / landed),
@@ -803,6 +807,23 @@ export function sessions(ctx: UiContext, span: Span, sort: string, limit: number
   };
 }
 
+/**
+ * What a prompt in another script costs over the same length of English, on the same model, when the period holds any (DF-043). Null when it holds none, so that the screen
+ * says nothing about a language question nobody has; a cell with too few tasks is shown as that, with its counts, not as a figure.
+ */
+function languageBlock(ctx: UiContext, span: { sinceIso: string; untilIso: string }): object | null {
+  const r = languageSurcharge(ctx.db, span.sinceIso, span.untilIso);
+  if (r.cells.length === 0) return null;
+  return {
+    minTasks: r.minTasks,
+    wasteRatio: LANG_PARAMS.wasteRatio,
+    baselines: r.baselines.map((b) => ({ model: b.model, tasks: b.tasks, tokensPerChar: b.tokensPerChar, overheadTokens: b.overheadTokens, fitted: b.fitted })),
+    cells: r.cells.map((c) => ({ language: LABEL_NAME[c.script], model: c.model, tasks: c.tasks, tokensPerChar: c.tokensPerChar, ratio: c.ratio, extraTokens: c.extraTokens, extraMicros: c.extraMicros, status: c.status, why: c.why ?? null })),
+    totalExtraMicros: r.totalExtraMicros,
+    unread: r.unread,
+  };
+}
+
 const KIND_TITLE: Record<BlockKind, string> = {
   loops: "A failing command repeated",
   idle: "The agent working on its own",
@@ -816,6 +837,7 @@ const KIND_TITLE: Record<BlockKind, string> = {
   abandon: "A long session that ended failing, with nothing landed",
   revert: "Work that was reverted",
   pr: "Work in a pull request closed without a merge",
+  lang: "Prompts in a script that costs more tokens than English",
 };
 
 const toolList = (raw: string): string[] => {

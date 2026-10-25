@@ -2,6 +2,7 @@ import type { AutopsyCall, PerCall } from "../autopsy/engine.ts";
 import type { Ledger } from "../ledger/db.ts";
 import type { CompactionRecord, Landing } from "./bloat.ts";
 import type { LandingState } from "../outcomes/attribute.ts";
+import { languageSurcharge, type LangCall } from "../lang/surcharge.ts";
 import { detectWaste, type CallFacts, type OutcomeFacts, type WasteEvent } from "./detect.ts";
 
 /**
@@ -38,7 +39,19 @@ export function loadCallFacts(db: Ledger, calls: readonly AutopsyCall[]): Map<st
 
 /** The waste events of these calls: the facts read from the ledger, then the rules. The two rules that need outcomes run when git was scanned and are silent when it was not. */
 export function wasteEventsOf(db: Ledger, calls: readonly AutopsyCall[], analysis: ReadonlyMap<string, PerCall>, facts: ReadonlyMap<string, CallFacts> = loadCallFacts(db, calls), outcomes: OutcomeFacts | null = loadOutcomeFacts(db)): WasteEvent[] {
-  return detectWaste(calls, analysis, facts, outcomes ?? undefined);
+  return detectWaste(calls, analysis, facts, outcomes ?? undefined, languageCalls(db, calls));
+}
+
+/** The calls in a period that a prompt in another script made dearer, by call, for C-LANG. Read over the whole span of the calls, because the English a language is compared with lies anywhere in it. */
+export function languageCalls(db: Ledger, calls: readonly AutopsyCall[]): Map<string, LangCall> {
+  const out = new Map<string, LangCall>();
+  if (calls.length === 0) return out;
+  const first = calls.reduce((m, c) => Math.min(m, c.tsMs), Number.POSITIVE_INFINITY);
+  const last = calls.reduce((m, c) => Math.max(m, c.tsMs), 0);
+  const report = languageSurcharge(db, new Date(first).toISOString(), new Date(last + 1).toISOString());
+  const wanted = new Set(calls.map((c) => c.callId));
+  for (const l of report.calls) if (wanted.has(l.callId)) out.set(l.callId, l);
+  return out;
 }
 
 /**

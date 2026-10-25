@@ -1,0 +1,16 @@
+{
+  "key": "58569d90ae191dd5e732357669d46c87",
+  "recordedAt": "2026-10-25T09:26:05.426Z",
+  "role": "locale_translate_in",
+  "response": {
+    "content": "A fair coin is tossed 3 times. What is the probability of getting heads exactly 2 times in percentage? No explanation is needed. Reply with only the final answer.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 334,
+      "outputTokens": 36,
+      "reasoningTokens": 0
+    }
+  }
+}

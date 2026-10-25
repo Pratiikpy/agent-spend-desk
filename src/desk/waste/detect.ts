@@ -1,6 +1,8 @@
 import type { AutopsyCall, PerCall } from "../autopsy/engine.ts";
 import type { LandingState } from "../outcomes/attribute.ts";
 import { callCostMicros } from "../replay/from-ledger.ts";
+import { LABEL_NAME } from "../lang/script.ts";
+import type { LangCall } from "../lang/surcharge.ts";
 import type { Landing } from "./bloat.ts";
 
 /**
@@ -17,10 +19,11 @@ import type { Landing } from "./bloat.ts";
  *  C-ABANDON  a long session that ended in a run of failing tool results, landed no commit in a repository that had none at all, and was not taken up again
  *  C-REVERT   a session whose commits were reverted: the work did not land
  *  C-PR       a session whose every commit is in a pull request that was closed without being merged
+ *  C-LANG     the tokens above English that a prompt in another script cost, in a language and on a model with enough tasks to compare (a heuristic: the language may be the one the work needs)
  *
  * The last two read what the ledger holds about outcomes, so they run only when those are passed in, and say nothing when git was never scanned.
  */
-export type WasteClass = "C-LOOP-2" | "C-TRUNC" | "C-CHURN" | "C-UNREF" | "C-ORPHAN" | "C-ABANDON" | "C-REVERT" | "C-PR";
+export type WasteClass = "C-LOOP-2" | "C-TRUNC" | "C-CHURN" | "C-UNREF" | "C-ORPHAN" | "C-ABANDON" | "C-REVERT" | "C-PR" | "C-LANG";
 
 export const WASTE_PARAMS = {
   echoRepeats: 3,
@@ -122,7 +125,7 @@ const threadsOf = (calls: readonly AutopsyCall[]): AutopsyCall[][] => {
  * Every event the rules find, calls claimed once: a call the autopsy already counts as a loop or as idle time is not counted again, and a
  * call flagged by one rule is not flagged by a later one in the list above, so the classes can be added up.
  */
-export function detectWaste(calls: readonly AutopsyCall[], analysis: ReadonlyMap<string, PerCall>, facts: ReadonlyMap<string, CallFacts>, outcomes?: OutcomeFacts): WasteEvent[] {
+export function detectWaste(calls: readonly AutopsyCall[], analysis: ReadonlyMap<string, PerCall>, facts: ReadonlyMap<string, CallFacts>, outcomes?: OutcomeFacts, language?: ReadonlyMap<string, LangCall>): WasteEvent[] {
   const events: WasteEvent[] = [];
   const claimed = new Set<string>();
   for (const [id, a] of analysis) if (a.wholeCall === "loops" || a.wholeCall === "idle") claimed.add(id);
@@ -281,6 +284,27 @@ export function detectWaste(calls: readonly AutopsyCall[], analysis: ReadonlyMap
       const state = outcomes.state(sessionId);
       const own = claim([...list].sort((a, b) => a.tsMs - b.tsMs || a.callId.localeCompare(b.callId)));
       if (own.length > 0) events.push(make("C-PR", own, { pull_requests: prs.map((n) => `#${n}`).join(", "), link_confidence: state?.bestConfidence ?? "unknown", calls: own.length }, state?.bestConfidence === "high" ? "high" : "low"));
+    }
+  }
+  // C-LANG: the tokens above English that a prompt in another script cost, for a language and a model with enough tasks to compare (spec 6.4). The dollars are the extra tokens' share
+  // of what the call paid for the tokens it newly read, not the whole call. It is read last, so that a call another rule already counts is not counted twice, and it is a heuristic:
+  // the language may be the one the work needs.
+  if (language) {
+    const by = new Map<string, { own: AutopsyCall[]; micros: number; extra: number; l: LangCall }>();
+    for (const c of calls) {
+      const l = language.get(c.callId);
+      if (!l || claimed.has(c.callId)) continue;
+      claimed.add(c.callId);
+      const key = `${c.sessionId}\u0000${l.script}\u0000${l.model}`;
+      const cur = by.get(key) ?? { own: [], micros: 0, extra: 0, l };
+      cur.own.push(c);
+      cur.micros += l.micros;
+      cur.extra += Math.max(0, l.tokens - l.expectedTokens);
+      by.set(key, cur);
+    }
+    for (const { own, micros, extra, l } of by.values()) {
+      const first = own[0] as AutopsyCall;
+      events.push({ rule: "C-LANG", sessionId: first.sessionId, threadKey: first.threadKey, calls: own, micros, unpricedCalls: 0, observed: { language: LABEL_NAME[l.script], model: l.model, times_english: Number(l.ratio.toFixed(2)), extra_tokens: extra, prompts: own.length }, confidence: "low" });
     }
   }
   return events.sort((a, b) => b.micros - a.micros || (a.calls[0] as AutopsyCall).tsMs - (b.calls[0] as AutopsyCall).tsMs);

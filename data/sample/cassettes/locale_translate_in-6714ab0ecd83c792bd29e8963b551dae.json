@@ -1,0 +1,16 @@
+{
+  "key": "6714ab0ecd83c792bd29e8963b551dae",
+  "recordedAt": "2026-10-25T09:30:41.136Z",
+  "role": "locale_translate_in",
+  "response": {
+    "content": "What is the highest common factor of 168 and 252? No explanation is needed. Reply with only the final answer.",
+    "toolCalls": [],
+    "servedBy": "nvidia",
+    "servedModel": "private/nvidia/nemotron-3.5-super-120b-a12b",
+    "usage": {
+      "inputTokens": 317,
+      "outputTokens": 30,
+      "reasoningTokens": 0
+    }
+  }
+}
