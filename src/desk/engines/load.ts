@@ -51,6 +51,8 @@ export interface WmEvent {
 }
 
 export interface WorldModelLike {
+  relate(input: { from: string; type: string; to: string; context?: string; attrs?: Record<string, unknown>; validFrom?: string; validTo?: string; source: WmProvenance }): Promise<{ id: string; from: string; type: string; to: string }>;
+  audit(): readonly { seq: number; at: string; kind: string; actor: string; summary: string; eventId?: string }[];
   upsertEntity(input: { type: string; name?: string; externalKey?: { system: string; id: string }; attrs?: Record<string, unknown>; source: WmProvenance }): Promise<WmEntity>;
   assertFact(input: { about: string; predicate: string; value: unknown; confidence?: number; source: WmProvenance }): Promise<WmFact>;
   events(): readonly WmEvent[];
@@ -63,6 +65,8 @@ export interface WmFactsView {
 export interface WmGraphView {
   entity(id: string): WmEntity | undefined;
   query(opts: { type?: string }): WmEntity[];
+  /** The entities with a relationship of this type pointing at the one given. */
+  incoming(id: string, opts?: { via?: string }): WmEntity[];
 }
 export interface WmSnapshotView {
   entityAt(id: string, at: string): WmEntity | undefined;
@@ -117,7 +121,21 @@ export interface MarkovianRunLike {
   error?: string;
 }
 
+export interface MarkovianHistoryStats {
+  totalRuns: number;
+  completedRuns: number;
+  totalTokensUsed: number;
+  totalTokensSaved: number;
+  averageEfficiency: number;
+  totalChunksProcessed: number;
+  lastRunTimestamp: number;
+}
+
 export interface MarkovianLike {
   config: { chunkSize: number; maxChunks: number; carryoverTokens: number; overlapTokens: number };
+  /** The engine's own record of past runs, kept in a folder when one is given. */
+  history: { list(): readonly { id: string; timestamp: number; prompt: string; status: string; chunks: { id: number; tokens: number }[]; totalTokensUsed: number; totalTokensSaved: number; efficiencyPercent: number }[]; cumulativeStats(): MarkovianHistoryStats };
+  /** Progress of a run in flight: the phase, the chunk it is on, and a short log. */
+  onProgress(fn: (s: { phase: string; currentChunk: number; maxChunks: number; tokensUsed: number; tokensSaved: number; carryoverSize: number }) => void): () => void;
   run(options: { goal: string; mode?: string; reflect?: boolean; stepFn: (args: { goal: string; carryover: string; step: number; prompt: string }) => Promise<{ content: string }> | { content: string } }): Promise<MarkovianRunLike>;
 }

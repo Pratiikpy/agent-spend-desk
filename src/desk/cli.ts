@@ -1,3 +1,7 @@
+import { markovianHistory, warmCarry } from "./engines/carry.ts";
+import { renderYearCheck, runYearCheck } from "./engines/year-check.ts";
+import { canaryAttribution, changesCommand } from "./changes/command.ts";
+import { readRows as readCanaryRows } from "./canary/store.ts";
 import { OwnerMemory } from "./engines/memory.ts";
 import type { AuthorRules } from "./outcomes/author-rules.ts";
 import { memoryCommand, precedentsCommand } from "./precedent/command.ts";
@@ -211,6 +215,7 @@ const { values, positionals } = parseOrExit({
     origin: { type: "string" },
     "write-golden": { type: "boolean", default: false },
     model: { type: "boolean", default: false },
+    "markov-dir": { type: "string", default: "data/desk/markovian" },
     replaces: { type: "string" },
     apply: { type: "boolean", default: false },
     "with-paths": { type: "boolean", default: false },
@@ -409,6 +414,30 @@ Answer one with: desk questions answer <id> yes|no. Or go through them: desk que
     });
     await watchLogs({ poll: () => newestMtimeMs(findJsonlLogs(values["claude-dir"])), refresh: draw, sleep: (ms) => new Promise((r) => setTimeout(r, ms)), intervalMs: 3000, shouldStop: () => stop });
   } else await draw();
+} else if (command === "engines") {
+  // The Markovian engine on a long ledger: the year-long questions with it on and off, the carry state kept in the ledger, and the engine's own record of its runs.
+  const sub = positionals[1];
+  if (sub === "year") {
+    console.log(renderYearCheck(await runYearCheck()));
+  } else if (sub === "warm") {
+    const w = await warmCarry(db, { historyDir: values["markov-dir"], onProgress: (p) => { if (process.stderr.isTTY) console.error(`reading month ${Math.min(p.chunk + 1, p.of)} of ${p.of}`); } });
+    console.log(w === null ? "The ledger does not hold three whole calendar months, so there is no year-long state to keep." : `Kept the carry state of ${w.periods} months (${w.from} to ${w.to}); ${w.reused} were kept already.`);
+  } else if (sub === "history") {
+    const h = await markovianHistory(values["markov-dir"]);
+    console.log(h.runs.length === 0 ? `The engine has no recorded run in ${values["markov-dir"]}.` : [`${h.stats.totalRuns} run${h.stats.totalRuns === 1 ? "" : "s"}; ${h.stats.totalTokensUsed.toLocaleString("en-US")} tokens read, ${h.stats.totalTokensSaved.toLocaleString("en-US")} saved over carrying the history whole (average ${h.stats.averageEfficiency}%). The last ten:`, ...h.runs.slice(-10).map((r) => `  ${r.at.slice(0, 16).replace("T", " ")}  ${r.chunks} chunks  ${r.tokensUsed.toLocaleString("en-US")} tokens  saved ${r.tokensSaved.toLocaleString("en-US")}  ${r.prompt.slice(0, 60)}`)].join("\n"));
+  } else throw new Error("Use: desk engines year | warm | history");
+} else if (command === "changes") {
+  const done = await changesCommand(positionals.slice(1), {
+    db,
+    canaryRunsPath: sampleMode ? SAMPLE_RUNS : OWN_RUNS,
+    gateDbPath: values["gate-db"] ?? "data/desk/gate.db",
+    memoryDir: values["memory-dir"],
+    worldOff: values.ablate?.split(",").map((x) => x.trim()).includes("world_model") === true,
+    ...(values.before ? { before: values.before } : {}),
+    ...(values.days ? { days: Number(values.days) } : {}),
+  });
+  console.log(done.text);
+  if (!done.ok) process.exitCode = 1;
 } else if (command === "precedents") {
   const done = await precedentsCommand(positionals.slice(1), { db, snapshot: loadSnapshot(pricesPath), memoryDir: values["memory-dir"], regretPath: regretPath() });
   console.log(done.text);
@@ -706,7 +735,13 @@ Ctrl+C stops it.`);
     const ran = await canaryRunCommand({ runsPath: values.runs ?? OWN_RUNS, env: process.env, today: new Date().toISOString().slice(0, 10), db, snapshot: loadSnapshot(pricesPath), ifDue: values["if-due"], preview: values.preview });
     console.log(ran.text);
   } else {
-    console.log(canaryCommand({ runsPath: sampleMode ? SAMPLE_RUNS : OWN_RUNS, sample: sampleMode }).text);
+    // The verdict's day is the last run's date; what changed before it comes from the change history, which `--ablate world_model` leaves out.
+    const runsPath = sampleMode ? SAMPLE_RUNS : OWN_RUNS;
+    const rows = existsSync(runsPath) ? readCanaryRows(runsPath).rows : [];
+    const lastDate = rows.length > 0 ? rows.reduce((m, r) => (r.date > m ? r.date : m), "") : null;
+    const baselineEnd = rows.find((r) => r.day === 14)?.date ?? rows.reduce((m, r) => (r.date < m ? r.date : m), lastDate ?? "");
+    const attribution = lastDate === null ? undefined : await canaryAttribution({ db, canaryRunsPath: runsPath, gateDbPath: values["gate-db"] ?? "data/desk/gate.db", memoryDir: values["memory-dir"], worldOff: values.ablate?.split(",").map((x) => x.trim()).includes("world_model") === true, verdictDate: lastDate, since: baselineEnd });
+    console.log(canaryCommand({ runsPath, sample: sampleMode, ...(attribution ? { attribution } : {}) }).text);
   }
 } else if (command === "prove") {
   const lines = await prove({ dir: "data/desk/prove", ...(positionals[1] ? { only: positionals[1] } : {}), log: (l) => console.log(formatLine(l)) });

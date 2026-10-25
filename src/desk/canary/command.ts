@@ -51,7 +51,7 @@ export interface CanaryReport {
 }
 
 /** Read stored runs and say what the statistic says, with what it cannot say. */
-export function canaryCommand(o: { runsPath: string; sample: boolean; day?: number }): CanaryReport {
+export function canaryCommand(o: { runsPath: string; sample: boolean; day?: number; attribution?: { lines: string[] } }): CanaryReport {
   if (!existsSync(o.runsPath)) {
     return { verdict: null, text: `No canary runs yet at ${o.runsPath}.\nA canary needs ${DEFAULT_CONFIG.baselineDays} baseline days and two ${DEFAULT_CONFIG.windowDays}-day windows before it can call anything: day ${earliestCallDay()} at the earliest, then it speaks. Run \`desk canary run\` daily, or SAMPLE_MODE=true to read the recorded scenario.` };
   }
@@ -81,7 +81,10 @@ export function canaryCommand(o: { runsPath: string; sample: boolean; day?: numb
   // The smallest single change to the data that would turn this verdict into another, or that none was found among the changes tried.
   if (v.verdict !== "inconclusive" || v.reason !== "too_early") lines.push(`  what would flip it: ${describeFlip(canaryFlips(ctx, day))}`);
   const changes = servedChanges(rows, "primary");
-  if (changes.length > 0) {
+  if (o.attribution !== undefined) {
+    // What changed before the verdict, from the World Model's history, replaces the single served-model line: it names the served model, the tool version, the policy, the price list and the owner's edits, and what did not change.
+    lines.push(...o.attribution.lines);
+  } else if (changes.length > 0) {
     const c = changes[0]!;
     lines.push(`  consistent with, not caused by: the served model id reported by the endpoint changed on day ${c.day}${c.date ? ` (${c.date})` : ""} from ${c.from} to ${c.to}`);
   }

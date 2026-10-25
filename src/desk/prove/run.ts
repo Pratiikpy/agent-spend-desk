@@ -1,6 +1,7 @@
 import { snapshotsFromDir } from "../close/month-bill.ts";
 import { adapterProve } from "./adapter-check.ts";
 import { auditProve } from "./audit-check.ts";
+import { yearProve } from "../engines/year-check.ts";
 import { verifyChain, verifyLedger } from "../ledger/chain.ts";
 import { billCommand } from "../bill/command.ts";
 import { helpText } from "../help.ts";
@@ -648,6 +649,15 @@ const CHECKS: Check[] = [
     seed: SEED,
     async run(e) {
       const r = adapterProve(e.db, "adapters/example-usage-jsonl");
+      return r.ok ? pass(r.detail) : fail(r.detail);
+    },
+  },
+  {
+    id: "markovian-year-long-questions-match-the-rows-and-kept-state-is-checked",
+    command: "generate the seeded twelve-month ledger, ask five year-long questions with the Markovian engine on and off against the truth worked out from the rows, then edit a kept carry state and mark a wrong truth",
+    seed: SEED,
+    async run() {
+      const r = await yearProve();
       return r.ok ? pass(r.detail) : fail(r.detail);
     },
   },

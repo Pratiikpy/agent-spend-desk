@@ -7,8 +7,10 @@ import { sanitizeLabel } from "./label.ts";
  * model ids, tool versions and plan tiers the owner's agents used, when each first and last appeared, and
  * when a model's share of calls moved. A thing present on the first day of the ledger did not "change".
  */
-export type EntityKind = "model" | "tool_version" | "plan";
-export type ChangeKind = "model_first_seen" | "model_last_seen" | "model_share_shift" | "tool_version_first_seen" | "plan_first_seen" | "plan_last_seen";
+export type EntityKind = "model" | "tool_version" | "plan" | "served_model" | "policy" | "price_list" | "owner_edit";
+export type ChangeKind =
+  | "model_first_seen" | "model_last_seen" | "model_share_shift" | "tool_version_first_seen" | "plan_first_seen" | "plan_last_seen"
+  | "served_model_changed" | "policy_changed" | "price_list_changed" | "owner_edit" | "autonomy_changed" | "precedent_adopted";
 
 export interface HistoryEntity {
   kind: EntityKind;

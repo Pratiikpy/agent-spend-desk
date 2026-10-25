@@ -489,7 +489,7 @@ function countSessions(step: Extract<Step, { op: "count_sessions" }>, ctx: RunCo
 
 /* ------------------------------------------------------------------ historian (World Model) */
 
-const KIND_NOUN = { model: "Model", tool_version: "Tool version", plan: "Plan setting" } as const;
+const KIND_NOUN = { model: "Model", tool_version: "Tool version", plan: "Plan setting", served_model: "Served model", policy: "Policy", price_list: "Price list", owner_edit: "Owner edit" } as const;
 
 function changesBefore(step: Extract<Step, { op: "changes_before" }>, ctx: RunContext): Outcome {
   const w = ctx.engines.world;
@@ -564,9 +564,16 @@ async function digestWithEngine(step: Extract<Step, { op: "range_digest" }>, ctx
   };
   add(say`Estimated list-price spend between ${date(step.from)} and ${date(step.to)} was ${usd(d.totalMicros)}, an estimate from logged tokens and not a bill.`, num(usd(d.totalMicros), "estimated"));
   add(say`The whole range was read in ${count(d.periods)} periods.`, num(count(d.periods), "computed"));
-  add(say`Each period covered ${count(d.bucketDays)} days.`, num(count(d.bucketDays), "computed"));
+  const monthly = d.bucketKind === "month";
+  if (monthly) add(say`Each period was one calendar month.`, fact);
+  else add(say`Each period covered ${count(d.bucketDays)} days.`, num(count(d.bucketDays), "computed"));
   if (d.peak) add(say`The costliest period started on ${date(d.peak.label)} and cost ${usd(d.peak.micros)}.`, num(usd(d.peak.micros), "estimated"));
   for (const m of d.topModels) add(say`Model ${entity(m.model)} cost ${usd(m.micros)} in the range.`, num(usd(m.micros), "estimated"));
+  // Read a month at a time, the carry also holds each leading model's cost month by month, so growth in every month can be stated.
+  if (monthly && d.periods >= 3) {
+    if (d.growers.length === 0) add(say`No leading model cost more in every month than in the month before.`, fact);
+    for (const g of d.growers) add(say`Model ${entity(g)} cost more in every month than in the month before.`, fact);
+  }
   const third = Math.floor(d.series.length / 3);
   if (third >= 1) {
     const first = d.series.slice(0, third).reduce((a, b) => a + b, 0);

@@ -27,6 +27,11 @@ export const SUPPORTED_QUESTIONS = [
   "What did I tell you about landed work?",
 ];
 
+/** Questions about a long range that are read in periods: growth in every month, the dearest month, the first against the last part. */
+const GROWTH_EVERY = /\b(?:grew|grow|grown|rose|risen|increased?|climbed?|went up)\b[^?]*\b(?:every|each)\s+(?:month|week|period)\b/;
+const DEAREST_PERIOD = /\b(?:which|what)\s+(?:month|week|period)\b[^?]*\b(?:highest|most|costliest|biggest|peak|largest|dearest)\b/;
+const FIRST_LAST = /\b(?:first|last)\s+(?:third|quarter|half)\b/;
+
 export function rulePlan(question: string, cov: Coverage, knownModels: readonly string[] = []): RulePlan {
   const q = question.toLowerCase();
   const period = resolvePeriod(question, cov);
@@ -76,6 +81,12 @@ export function rulePlan(question: string, cov: Coverage, knownModels: readonly 
     const limit = Math.min(10, Math.max(1, n ? Number(n[1]) : w ? (words[w[1] as string] as number) : 5));
     steps.push({ id: "s1", op: "top_sessions", from: period.from, to: period.to, limit });
     return { program: { steps }, intent: "top_sessions" };
+  }
+
+  // A question about growth month by month, the dearest month, or the first against the last third of a long range is read in periods.
+  if (span > 62 && (GROWTH_EVERY.test(q) || DEAREST_PERIOD.test(q) || FIRST_LAST.test(q))) {
+    steps.push({ id: "s1", op: "range_digest", from: period.from, to: period.to });
+    return { program: { steps }, intent: "range_digest" };
   }
 
   const named = MODEL_TOKEN.exec(question)?.[0];

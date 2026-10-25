@@ -64,6 +64,8 @@ export const COMMANDS: readonly CommandHelp[] = [
   { name: "lessons", group: "Ask and remember", summary: "Learn rules from past mistakes, and show whether they would have helped on held-out questions." },
   { name: "precedents", group: "Ask and remember", summary: "Policy changes you approved and what they did afterwards, shown to the next proposal that touches the same rules." },
   { name: "memory", group: "Ask and remember", summary: "What the Desk remembers: mine statements from what you say, mark a memory helpful or wrong, and run the sleep cycle with a backup." },
+  { name: "engines", group: "Ask and remember", summary: "The engines on a long ledger: year-long questions with Markovian on and off, the kept carry state, and the engine's own run record." },
+  { name: "changes", group: "Ask and remember", summary: "What changed before a date, from the ledger and from the policy, price, model and memory records beside it, with the sessions each change touched." },
   { name: "regret", group: "Ask and remember", summary: "Score earlier proposals against what happened afterwards." },
   { name: "calibrate", group: "Ask and remember", summary: "How well the confidence of a session-to-commit link and the simulator match answers we know." },
 

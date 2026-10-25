@@ -2,7 +2,7 @@
 
 Generated from `feature-status.json` by `npm run desk -- status` and checked by `tests/desk/feature-status.test.ts`. The specification is `02-feature-list.md`, which was written as design; this page says how much of it exists.
 
-**95 built, 21 partial, 13 absent** of 129.
+**97 built, 19 partial, 13 absent** of 129.
 
 How to read a status. *Built*: the core of the feature as specified exists and a test, a `desk prove` check or a verification record exercises it. *Partial*: a real part exists and the missing part is named. *Absent*: no code was found. A status is a judgement made by reading and searching, which is why every row cites the files it rests on. A built feature can still be shallow; the "missing" column says so where known.
 
@@ -124,8 +124,8 @@ How to read a status. *Built*: the core of the feature as specified exists and a
 | DF-114 Opening and closing scenes | partial | `src/desk/demo.ts` | opening and closing scenes as specified |
 | DF-115 Zetaris three-silo federated query, with the on/off diff | built | `src/sponsors/zetaris/silo-port.ts`, `src/desk/prove/run.ts`, `tests/desk/silo.test.ts` | - |
 | DF-116 Meterless H-MEM as the owner's memory | partial | `src/desk/engines/memory.ts`, `src/desk/engines/load.ts`, `src/desk/precedent/command.ts`, `src/desk/outcomes/author-rules.ts`, `src/desk/outcomes/link.ts`, `tests/desk/precedent.test.ts`, `tests/desk/author-rules.test.ts`, `docs/verification/precedent-memory-2026-10-25.md` | The engine's embedder is its deterministic hash embedder (a real one means changing the vendored engine); the conflict resolution of two author statements is by refusing both, not by the engine's confidence gate |
-| DF-117 Meterless World Model as the change history | partial | `src/desk/engines/world.ts` | upsert, assert, views and as-of queries; no ingest pipeline, merge queue or audit |
-| DF-118 Meterless Markovian on a long ledger | partial | `src/desk/engines/carry.ts` | the engine's run only; no progress, history or projection |
+| DF-117 Meterless World Model as the change history | built | `src/desk/changes/sources.ts`, `src/desk/changes/render.ts`, `src/desk/changes/command.ts`, `src/desk/engines/world.ts`, `src/desk/engines/ledger-history.ts`, `src/desk/canary/command.ts`, `tests/desk/changes.test.ts`, `docs/verification/change-history-2026-10-25.md` | The engine's name-matching merge queue is not used (edit distance would merge claude-opus-4 and claude-opus-5); people are not drawn; Ask keeps the ledger-only history so answers can be re-checked; sources are read on request, not recorded as they change |
+| DF-118 Meterless Markovian on a long ledger | built | `src/desk/engines/carry.ts`, `src/desk/engines/year-check.ts`, `src/desk/sample/year.ts`, `tests/desk/year-engine.test.ts`, `src/desk/prove/run.ts`, `docs/verification/markovian-year-2026-10-25.md` | - |
 | DF-119 Meterless Scout Intent as the router and guard | absent | none | Scout Intent is not vendored; the Risk Router is our own code |
 | DF-120 Nemotron tool-calling Planner and Drafter | built | `src/desk/agents/model.ts`, `src/desk/agents/drafter.ts`, `src/desk/ask/ask.ts`, `tests/desk/agents.test.ts`, `tests/desk/drafter.test.ts`, `tests/desk/ask.test.ts` | - |
 | DF-121 Cursor build log and evidence | absent | `docs/sponsors/cursor-usage-log.md` | the log is empty; no Cursor session is recorded |
