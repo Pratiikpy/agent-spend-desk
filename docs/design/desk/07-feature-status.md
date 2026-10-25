@@ -2,7 +2,7 @@
 
 Generated from `feature-status.json` by `npm run desk -- status` and checked by `tests/desk/feature-status.test.ts`. The specification is `02-feature-list.md`, which was written as design; this page says how much of it exists.
 
-**84 built, 24 partial, 21 absent** of 129.
+**85 built, 24 partial, 20 absent** of 129.
 
 How to read a status. *Built*: the core of the feature as specified exists and a test, a `desk prove` check or a verification record exercises it. *Partial*: a real part exists and the missing part is named. *Absent*: no code was found. A status is a judgement made by reading and searching, which is why every row cites the files it rests on. A built feature can still be shallow; the "missing" column says so where known.
 
@@ -75,7 +75,7 @@ How to read a status. *Built*: the core of the feature as specified exists and a
 | DF-065 Shareable rule packs and canary templates | absent | none | no shareable rule packs or canary templates |
 | DF-066 Claim ledger with exact quote, number and comparative checks | built | `src/desk/agents/claims.ts`, `src/desk/agents/audit.ts`, `tests/desk/agents.test.ts` | - |
 | DF-067 Auditor critic loop | built | `src/desk/agents/explain.ts`, `tests/desk/agents.test.ts` | - |
-| DF-068 The one fact that would flip each verdict | absent | none | the one fact that would flip each verdict is not computed |
+| DF-068 The one fact that would flip each verdict | built | `src/desk/flip.ts`, `src/desk/canary/flip.ts`, `src/desk/billing/flip.ts`, `src/desk/propose/flip.ts`, `tests/desk/flip.test.ts`, `tests/desk/propose-flip.test.ts`, `tests/desk/ui/flip-ui.test.ts`, `docs/verification/flip-certificates-2026-10-25.md` | No flip on the signed dossiers; landing is a two-state step; the candidates are a fixed list, not every possible change |
 | DF-069 Signed dossiers | built | `src/desk/dossier/sign.ts`, `src/desk/dossier/build.ts`, `tests/desk/dossier/happy.test.ts` | - |
 | DF-070 Offline verifier | built | `src/desk/verify/verify.ts`, `tests/desk/dossier/happy.test.ts` | - |
 | DF-071 Hash-chained append-only ledger | built | `src/desk/ledger/chain.ts`, `src/desk/ledger/ingest.ts`, `src/desk/security/forget.ts`, `src/desk/ui/server.ts`, `src/desk/prove/run.ts`, `tests/desk/ledger-chain.test.ts`, `docs/verification/ledger-chain-2026-10-25.md` | A forgery that rewrites the head file too is not seen; only usage facts and costs are covered |

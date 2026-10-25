@@ -1,6 +1,8 @@
 import { existsSync } from "node:fs";
 
+import { describeFlip } from "../flip.ts";
 import { REASONS, WORDS } from "./command.ts";
+import { canaryFlips } from "./flip.ts";
 import { readSkips, skipsPathFor } from "./schedule.ts";
 import { readRows, buildSeries } from "./store.ts";
 import { DEFAULT_CONFIG, earliestCallDay, evaluateAt, makeContext, type Verdict } from "./verdict.ts";
@@ -16,6 +18,8 @@ export interface CanaryCard {
   verdict?: Verdict["verdict"];
   words?: string;
   because?: string;
+  /** The smallest single change to the data that would turn this verdict into another, or that none was found. Null while the canary is too young to call. */
+  flip?: string | null;
   /** The day number (1 is the first run after the baseline was pinned) and its calendar date. */
   day?: number;
   date?: string;
@@ -73,6 +77,7 @@ export function canaryCard(runsPath: string, asOfMs: number, sample: boolean, up
     verdict: v.verdict,
     words: WORDS[v.verdict],
     because: REASONS[v.reason] ?? v.reason,
+    flip: tooEarly ? null : describeFlip(canaryFlips(ctx, day)),
     day,
     ...(date ? { date } : {}),
     previous: before === null ? null : { verdict: before.verdict, words: WORDS[before.verdict] },

@@ -21,6 +21,8 @@ function reconciliationTable(rows) {
       { label: "Reported", num: true, render: (r) => (r.reportedMicros === null ? "n/a" : usd(r.reportedMicros)) },
       { label: "Status", render: (r) => pill(r.status, STATUS_PILL[r.status]) },
       { label: "Why", render: (r) => r.reason },
+      // Only when a second price source was read: without one there is no change to test, and an empty column would only be noise.
+      ...(rows.some((r) => r.flip) ? [{ label: "What would flip it", render: (r) => r.flip || "" }] : []),
     ],
     rows,
     { maxh: true },

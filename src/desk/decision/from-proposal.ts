@@ -1,17 +1,16 @@
+import { adoptionFailures, MIN_HELD_OUT_PAUSES } from "./adoption.ts";
+import { describeFlip } from "../flip.ts";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { formatUsd } from "../money.ts";
+import { proposalFlips } from "../propose/flip.ts";
 import type { ProposeResult } from "../propose/run.ts";
 import type { ReplaySession } from "../replay/policy-replay.ts";
 import { wilson } from "../stats/intervals.ts";
 import { mustParseDecisionRecord, type DecisionRecord } from "./record.ts";
 
-/**
- * The smallest number of held-out sessions the proposed policy must have paused before the record recommends adopting
- * it. Fewer than this and the held-out period cannot tell the policy from chance, so the established policy stays.
- */
-export const MIN_HELD_OUT_PAUSES = 3;
+export { adoptionFailures, MIN_HELD_OUT_PAUSES };
 
 export interface ProposalRecordInput {
   result: ProposeResult;
@@ -39,10 +38,7 @@ export function proposalDecisionRecord(input: ProposalRecordInput): DecisionReco
   const hash12 = r.policyHash.replace("sha256:", "").slice(0, 12);
   const added = r.activity.map((a) => a.id);
 
-  const failures: string[] = [];
-  if (!r.restrict.narrows) failures.push("the proposal widens the policy in force");
-  if (h.landedBlocked.length > 0) failures.push(`it would have paused ${h.landedBlocked.length} of ${h.landedTotal} sessions whose work landed in the held-out period`);
-  if (h.paused.length < MIN_HELD_OUT_PAUSES) failures.push(`it paused only ${h.paused.length} held-out session(s), fewer than the ${MIN_HELD_OUT_PAUSES} needed to tell it from chance`);
+  const failures = adoptionFailures({ narrows: r.restrict.narrows, landedBlocked: h.landedBlocked.length, landedTotal: h.landedTotal, paused: h.paused.length });
   const adopt = failures.length === 0;
   const hasRules = added.length > 0;
 
@@ -90,6 +86,7 @@ export function proposalDecisionRecord(input: ProposalRecordInput): DecisionReco
       "A replay on recorded sessions is a counterfactual without randomised assignment: what a paused session would have done is not observed.",
       `Drafted from ${r.trainingSessions} sessions and checked on ${r.heldOutSessions} later ones from one ledger; a different period or team can behave differently.`,
       ...(r.hardened.unresolved.length > 0 ? [`The attacker left ${r.hardened.unresolved.length} evasion(s) unresolved; they are shown on the approval card.`] : []),
+      `What would flip this recommendation: ${describeFlip(proposalFlips(h, r.restrict.narrows))}`,
     ].map((s) => clip(s)),
   };
 

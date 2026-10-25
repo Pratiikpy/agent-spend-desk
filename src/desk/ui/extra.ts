@@ -1,3 +1,5 @@
+import { canaryFlips } from "../canary/flip.ts";
+import { describeFlip } from "../flip.ts";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
@@ -205,6 +207,7 @@ export function canaryScreen(ctx: UiContext): object {
     control: last ? { moved: last.moved, delta: last.delta, low: last.low, high: last.high, tasks: last.tasks } : null,
     controlRan: series.control !== null,
     notes: v.notes,
+    flip: v.reason === "too_early" ? null : describeFlip(canaryFlips(makeContext(series), days)),
     primary: line("primary"),
     controlArm: series.control ? line("control") : null,
     baselineMean: { primary: meanOf("primary", 1, b), control: meanOf("control", 1, b) },

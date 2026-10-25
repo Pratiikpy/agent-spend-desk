@@ -113,6 +113,7 @@ export function compareWindow(prefix: Prefix, arm: ArmSeries, from: number, to: 
   let errW = 0;
   let totW = 0;
   let varSum = 0;
+  let floorSum = 0;
   let baseSum = 0;
   for (let i = 0; i < prefix.tasks; i += 1) {
     if (subset && !subset.has(i)) continue;
@@ -128,6 +129,9 @@ export function compareWindow(prefix: Prefix, arm: ArmSeries, from: number, to: 
     d.push({ task: i, id: arm.taskIds[i] as string, cluster: arm.cluster[i] as string, value: mw - mb });
     const p = Math.min(1, Math.max(0, mb));
     varSum += p * (1 - p) * (1 / w.n + 1 / b.n);
+    // The same, from the baseline rate with one pass and one failure added: a task that passed every baseline day has not been shown to pass for ever.
+    const smoothed = (b.sum + 1) / (b.n + 2);
+    floorSum += smoothed * (1 - smoothed) * (1 / w.n + 1 / b.n);
     baseSum += mb;
   }
   if (d.length < 2) return null;
@@ -138,6 +142,9 @@ export function compareWindow(prefix: Prefix, arm: ArmSeries, from: number, to: 
   if (!ci) return null;
   const est = clusterMean(g);
   const tcrit = tQuantile(1 - (1 - cfg.level) / 2, Math.max(1, est.g - 1));
+  // The observed spread of the tasks' changes is the standard error, unless it is smaller than the noise a pass/fail score cannot be without. A window in which every
+  // score was a pass has no observed spread at all, and would claim to detect a change of nothing; the floor says what such a window could not have seen.
+  const se = Math.max(est.se, Math.sqrt(floorSum) / d.length);
   return {
     from,
     to,
@@ -146,8 +153,8 @@ export function compareWindow(prefix: Prefix, arm: ArmSeries, from: number, to: 
     delta: est.mean,
     ci,
     errorRate: totW === 0 ? 0 : errW / totW,
-    mde: mdeFromSe(est.se, est.g, cfg.level, Z_POWER_80),
-    mdeVerdict: mdeFromSe(est.se, est.g, cfg.level, cfg.zPowerVerdict),
+    mde: mdeFromSe(se, est.g, cfg.level, Z_POWER_80),
+    mdeVerdict: mdeFromSe(se, est.g, cfg.level, cfg.zPowerVerdict),
     mdeFormula: (tcrit + Z_POWER_80) * Math.sqrt(varSum) / d.length,
     baselineMean: baseSum / d.length,
   };
@@ -233,7 +240,7 @@ export function earliestCallDay(cfg: VerdictConfig = DEFAULT_CONFIG): number {
 }
 
 /** The verdict as of day `t` (1-based), from the window ending at t and the window before it. */
-export function evaluateAt(ctx: Context, t: number, cfg: VerdictConfig = DEFAULT_CONFIG): Verdict {
+export function evaluateAt(ctx: Context, t: number, cfg: VerdictConfig = DEFAULT_CONFIG, opts: { dropTask?: number } = {}): Verdict {
   const earliest = earliestCallDay(cfg);
   const base: Verdict = {
     verdict: "inconclusive",
@@ -264,8 +271,8 @@ export function evaluateAt(ctx: Context, t: number, cfg: VerdictConfig = DEFAULT
     return base;
   }
   const arm = ctx.series.primary;
-  const w1 = compareWindow(ctx.primary, arm, t - cfg.windowDays + 1, t, cfg);
-  const w0 = compareWindow(ctx.primary, arm, t - 2 * cfg.windowDays + 1, t - cfg.windowDays, cfg);
+  const w1 = compareWindow(ctx.primary, arm, t - cfg.windowDays + 1, t, cfg, undefined, opts.dropTask);
+  const w0 = compareWindow(ctx.primary, arm, t - 2 * cfg.windowDays + 1, t - cfg.windowDays, cfg, undefined, opts.dropTask);
   if (!w1 || !w0) {
     base.reason = "no_comparison";
     base.notes.push("Fewer than two tasks have scored samples in both a window and the baseline.");
@@ -306,8 +313,8 @@ export function evaluateAt(ctx: Context, t: number, cfg: VerdictConfig = DEFAULT
   arm.held.forEach((h, i) => {
     if (h) held.add(i);
   });
-  const h1 = compareWindow(ctx.primary, arm, w1.from, w1.to, cfg, held);
-  const h0 = compareWindow(ctx.primary, arm, w0.from, w0.to, cfg, held);
+  const h1 = compareWindow(ctx.primary, arm, w1.from, w1.to, cfg, held, opts.dropTask);
+  const h0 = compareWindow(ctx.primary, arm, w0.from, w0.to, cfg, held, opts.dropTask);
   base.heldOutSigns = [h0 ? signOf(h0.delta) : null, h1 ? signOf(h1.delta) : null];
   const heldHolds = !!h1 && !!h0 && signOf(h1.delta) === dir && signOf(h0.delta) === dir;
 

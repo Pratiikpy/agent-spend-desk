@@ -79,6 +79,7 @@ export async function render(ctx) {
             h("h3", null, d.canary.words),
             h("p", null, `${d.canary.because.charAt(0).toUpperCase()}${d.canary.because.slice(1)}.`),
             d.canary.changed ? h("p", null, pill("changed", "risk"), ` It was "${d.canary.previous.words}" the run before.`) : d.canary.previous ? h("p", { class: "note" }, `Same as the run before (${d.canary.previous.words}).`) : null,
+            d.canary.flip ? h("p", { class: "note", "data-flip": "true" }, `What would flip it: ${d.canary.flip}`) : null,
             d.canary.eligibleFrom ? h("p", { class: "note" }, `A call becomes possible from ${d.canary.eligibleFrom}.`) : null,
             d.canary.notRunning ? h("p", null, pill("not running", "risk"), ` The last run was ${d.canary.lastRun}, ${d.canary.daysSinceRun} days ago.`) : d.canary.lastRun ? h("p", { class: "note" }, `Last run ${d.canary.lastRun}.`) : null,
             d.canary.skipped ? h("p", { class: "note", "data-canary-skipped": "true" }, `Skipped on ${d.canary.skipped.date}: ${d.canary.skipped.reason}`) : null,

@@ -29,7 +29,14 @@ import { CONTROL_FILE, COVERAGE_FILE } from "../calibrate/command.ts";
 import { attributionReliability } from "../calibrate/attribution.ts";
 import { calibrationOf, summarise as summariseTunnel, type TunnelCoverage } from "../calibrate/windtunnel.ts";
 import { canaryCommand, SAMPLE_RUNS } from "../canary/command.ts";
-import { readRows } from "../canary/store.ts";
+import { reconciliationFlips } from "../billing/flip.ts";
+import { decideStatus } from "../billing/reconcile.ts";
+import { canaryFlips } from "../canary/flip.ts";
+import type { RunRow } from "../canary/runner.ts";
+import { buildSeries, readRows } from "../canary/store.ts";
+import { harnessHash, TASKS as CANARY_TASKS } from "../canary/tasks.ts";
+import { evaluateAt, makeContext } from "../canary/verdict.ts";
+import { describeFlip } from "../flip.ts";
 import { renderRoute, routeReplay } from "../route/replay.ts";
 import { seatReturn } from "../seats/seats.ts";
 import { optionsOf } from "../regret/command.ts";
@@ -585,6 +592,42 @@ const CHECKS: Check[] = [
       } finally {
         rmSync(dir, { recursive: true, force: true });
       }
+    },
+  },
+  {
+    id: "flip-certificates-name-the-fact-a-verdict-rests-on",
+    command: "the smallest single change that turns each verdict into another, on the constructed canary scenario, on a regression that rests on one task, and on a month that does not reconcile",
+    seed: SEED,
+    async run() {
+      // 1. The constructed scenario: a clear regression with a flat control arm rests on the control arm and on no single task.
+      const sample = buildSeries(readRows(SAMPLE_RUNS).rows);
+      if (!sample) return fail("the constructed canary scenario has no usable runs");
+      const sampleCert = canaryFlips(makeContext(sample), sample.days);
+      if (sampleCert.verdict !== "regressed" || sampleCert.smallest?.kind !== "remove_control_arm" || sampleCert.completeness !== "complete") return fail(`the sample's verdict ${sampleCert.verdict} should rest on the control arm and finish, and said: ${describeFlip(sampleCert)}`);
+      if (sampleCert.flips.some((f) => f.kind === "remove_task")) return fail("a regression across every task should not flip by leaving one task out");
+      // 2. A regression that is one task: the call is already withheld, and the certificate names that task and what the verdict becomes without it.
+      const rows: RunRow[] = [];
+      for (let day = 1; day <= 30; day += 1) {
+        for (const arm of ["primary", "control"] as const) {
+          CANARY_TASKS.forEach((t, i) => rows.push({ day, date: `2026-10-${String(day).padStart(2, "0")}`, arm, taskId: t.id, servedModel: "model-a", score: arm === "primary" && day >= 15 && i === 0 ? 0 : 1, error: null, latencyMs: 1, tokensIn: 1, tokensOut: 1, replySha: "x", harness: harnessHash(), cacheBypass: true }));
+        }
+      }
+      const one = buildSeries(rows)!;
+      const oneVerdict = evaluateAt(makeContext(one), 30);
+      const oneCert = canaryFlips(makeContext(one), 30);
+      if (oneVerdict.verdict === "regressed") return fail("a change in one task of the pack was called a regression");
+      if (oneCert.smallest?.kind !== "remove_task" || oneCert.smallest.subject !== CANARY_TASKS[0]!.id) return fail(`a change in one task should be traced to it, and said: ${describeFlip(oneCert)}`);
+      // 3. A budget that runs out is said to have run out, not read as "no flip exists".
+      let t = 0;
+      const partial = canaryFlips(makeContext(one), 30, undefined, { budgetMs: 250, nowMs: () => (t += 100) });
+      if (partial.completeness !== "partial" || !/may exist that was not found/.test(describeFlip(partial))) return fail("a search cut short did not say it was cut short");
+      // 4. A month 10% off its invoice does not reconcile; a price the second source disputes, worth 9% of it, would. The certificate names the model and the arithmetic agrees.
+      const covered = [{ start: "2026-10-01", end: "2026-10-31" }];
+      const month = { vendor: "anthropic", period: "2026-10", currency: "USD", billedMicros: 100_000_000, estimatedMicros: 110_000_000, reportedMicros: null, gapMicros: -10_000_000, status: "unreconciled" as const, reason: "", unmatchedBilledMicros: 0, unmatchedEstimatedMicros: 0, invoices: ["INV-1"], basis: { tol: 0.02, full: true, covered, unpriced: 0 } };
+      const priced = reconciliationFlips(month, [{ model: "claude-opus-5", field: "outputPerMTokMicros", tier: "base", tokens: 1_000_000, gapPerMTokMicros: -9_000_000, deltaMicros: -9_000_000 }], "the second source");
+      const afterwards = decideStatus({ billed: 100_000_000, estimated: 101_000_000, tol: 0.02, full: true, covered, unmatchedBilled: 0, unmatchedEstimated: 0, unpriced: 0 }).status;
+      if (priced.smallest?.subject !== "claude-opus-5" || priced.smallest.to !== "reconciled" || afterwards !== "reconciled") return fail(`a disputed price that would reconcile the month was not found, and said: ${describeFlip(priced)}`);
+      return pass(`the sample's ${sampleCert.verdict} verdict rests on its control arm (${sampleCert.tried} of ${sampleCert.candidates} candidates tried); a one-task change is traced to ${oneCert.smallest.subject} and not called a regression; a search cut short says so; a month 10% off its invoice names the disputed price that would reconcile it`);
     },
   },
   {

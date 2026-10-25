@@ -197,6 +197,39 @@ export function falseAlarmStudy(opts: { histories: number; seed: number; cfg?: P
   return { histories: opts.histories, days: params.days, regressed: reg, improved: imp, harnessOrPlatform: hp, regressedUpper95: clopperPearson(reg, opts.histories).high, oneTask: one, steadyShare: steady / evals };
 }
 
+export interface SteadyRow {
+  size: number;
+  fraction: number;
+  evaluations: number;
+  steady: number;
+  inconclusive: number;
+  regressed: number;
+  harnessOrPlatform: number;
+}
+
+/**
+ * What the verdict says on each day from day 28 when a change of a known size is, or is not, real. `steady` is a claim that no change at least as large as the
+ * detectable change is compatible with the data; counting how often it is said while a change is real shows what that claim costs.
+ */
+export function steadyStudy(opts: { cases: readonly { size: number; fraction: number }[]; histories: number; seed: number; cfg?: Partial<VerdictConfig>; params?: Partial<SimParams> }): SteadyRow[] {
+  const cfg: VerdictConfig = { ...DEFAULT_CONFIG, ...opts.cfg };
+  return opts.cases.map(({ size, fraction }) => {
+    const params: SimParams = { ...DEFAULT_SIM, ...opts.params, drop: size === 0 ? null : { start: 15, size, fraction, controlSize: 0, oneTask: false } };
+    const count = { steady: 0, inconclusive: 0, regressed: 0, harness_or_platform: 0, improved: 0 };
+    let evaluations = 0;
+    for (let h = 0; h < opts.histories; h += 1) {
+      const s = simulateHistory(params, historyRng(opts.seed, h));
+      const ctx = makeContext(s);
+      for (let t = 28; t <= s.days; t += 1) {
+        count[evaluateAt(ctx, t, cfg).verdict] += 1;
+        evaluations += 1;
+      }
+    }
+    const share = (n: number): number => n / evaluations;
+    return { size, fraction, evaluations, steady: share(count.steady), inconclusive: share(count.inconclusive), regressed: share(count.regressed), harnessOrPlatform: share(count.harness_or_platform) };
+  });
+}
+
 export interface PowerRow {
   size: number;
   fraction: number;

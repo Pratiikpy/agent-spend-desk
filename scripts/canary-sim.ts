@@ -5,7 +5,7 @@ import { writeFileSync } from "node:fs";
 import { parseArgs } from "node:util";
 
 import { DEFAULT_CONFIG, earliestCallDay } from "../src/desk/canary/verdict.ts";
-import { DEFAULT_SIM, coverageStudy, eProcessEstimatedBaselineNull, eProcessKnownBaselineNull, eProcessPower, falseAlarmStudy, oneTaskStudy, platformStudy, powerStudy, singleWindowStudy } from "../src/desk/canary/simulate.ts";
+import { DEFAULT_SIM, coverageStudy, eProcessEstimatedBaselineNull, eProcessKnownBaselineNull, eProcessPower, falseAlarmStudy, oneTaskStudy, platformStudy, powerStudy, singleWindowStudy, steadyStudy } from "../src/desk/canary/simulate.ts";
 
 const { values } = parseArgs({ options: { seed: { type: "string", default: "20261022" }, histories: { type: "string", default: "300" }, out: { type: "string" } } });
 const seed = Number(values.seed);
@@ -116,6 +116,19 @@ say();
 say("| Injected drop (all tasks) | Histories | Flagged | Median day flagged |");
 say("|---|---|---|---|");
 for (const row of eProcessPower({ sizes: [0.05, 0.1, 0.15], histories: N, seed })) say(`| ${pts(row.size)} | ${row.histories} | ${row.flagged} | ${row.medianDay ?? "never"} |`);
+say();
+
+say("## 8. What does `steady` cost?");
+say();
+say("`steady` is said when the interval lies inside the detectable change, that is, when no change at least that large is compatible with the data. It is not a claim that nothing changed. Every daily verdict from day 28 to day 90 is counted, with no change and with a real one, so the share of days that say `steady` while a change is real can be read off.");
+say();
+say("| Share of tasks hit | Drop on those tasks | Steady | Inconclusive | Called regressed | Harness or platform |");
+say("|---|---|---|---|---|---|");
+for (const r of steadyStudy({ cases: [{ size: 0, fraction: 1 }, { size: 0.05, fraction: 1 }, { size: 0.08, fraction: 1 }, { size: 0.11, fraction: 1 }, { size: 0.15, fraction: 1 }, { size: 0.11, fraction: 0.5 }], histories: N, seed })) {
+  say(`| ${r.size === 0 ? "none" : pct(r.fraction)} | ${r.size === 0 ? "none" : pts(r.size)} | ${pct(r.steady)} | ${pct(r.inconclusive)} | ${pct(r.regressed)} | ${pct(r.harnessOrPlatform)} |`);
+}
+say();
+say("The detectable change has a floor: the noise a pass-or-fail score cannot be without, computed from each task's baseline rate with one pass and one failure added. A window in which every score was a pass has no observed spread, and without the floor it would claim to detect a change of nothing and could never be called `steady`; with it, such a window is `steady` with a detectable change of a few points, which the card states.");
 say();
 
 say("## What this does not show");

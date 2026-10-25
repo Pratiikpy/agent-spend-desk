@@ -71,6 +71,7 @@ export function renderBill(b: Row, span: Span): string {
     for (const r of b["reconciliations"] as Row[]) {
       const billed = r["billedMicros"] === null ? "none" : r["currency"] === "USD" ? usd(r["billedMicros"]) : `${r["currency"]} ${(r["billedMicros"] / 1e6).toFixed(2)}`;
       out.push(`  ${r["vendor"]} ${r["period"]}: billed ${billed}, estimated ${usd(r["estimatedMicros"])}, ${r["status"]}: ${r["reason"]}`);
+      if (r["flip"]) out.push(`    what would flip it: ${r["flip"]}`);
     }
   }
   const landing = b["landing"] as Row;

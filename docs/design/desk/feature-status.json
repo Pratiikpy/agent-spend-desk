@@ -69,7 +69,7 @@
     { "id": "DF-065", "status": "absent", "evidence": [], "missing": "no shareable rule packs or canary templates" },
     { "id": "DF-066", "status": "built", "evidence": ["src/desk/agents/claims.ts", "src/desk/agents/audit.ts", "tests/desk/agents.test.ts"], "missing": "" },
     { "id": "DF-067", "status": "built", "evidence": ["src/desk/agents/explain.ts", "tests/desk/agents.test.ts"], "missing": "" },
-    { "id": "DF-068", "status": "absent", "evidence": [], "missing": "the one fact that would flip each verdict is not computed" },
+    { "id": "DF-068", "status": "built", "evidence": ["src/desk/flip.ts", "src/desk/canary/flip.ts", "src/desk/billing/flip.ts", "src/desk/propose/flip.ts", "tests/desk/flip.test.ts", "tests/desk/propose-flip.test.ts", "tests/desk/ui/flip-ui.test.ts", "docs/verification/flip-certificates-2026-10-25.md"], "missing": "No flip on the signed dossiers; landing is a two-state step; the candidates are a fixed list, not every possible change" },
     { "id": "DF-069", "status": "built", "evidence": ["src/desk/dossier/sign.ts", "src/desk/dossier/build.ts", "tests/desk/dossier/happy.test.ts"], "missing": "" },
     { "id": "DF-070", "status": "built", "evidence": ["src/desk/verify/verify.ts", "tests/desk/dossier/happy.test.ts"], "missing": "" },
     { "id": "DF-071", "status": "built", "evidence": ["src/desk/ledger/chain.ts", "src/desk/ledger/ingest.ts", "src/desk/security/forget.ts", "src/desk/ui/server.ts", "src/desk/prove/run.ts", "tests/desk/ledger-chain.test.ts", "docs/verification/ledger-chain-2026-10-25.md"], "missing": "A forgery that rewrites the head file too is not seen; only usage facts and costs are covered" },

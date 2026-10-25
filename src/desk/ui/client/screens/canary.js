@@ -90,6 +90,7 @@ export async function render(ctx) {
         "ul",
         { class: "list" },
         h("li", null, `A new regression cannot be called before day ${d.earliestCallDay} after the baseline is pinned.`),
+        d.flip ? h("li", { "data-flip": "true" }, `What would flip this verdict: ${d.flip}`) : null,
         h("li", null, `Harness ${d.harnessUnchanged ? "unchanged" : "CHANGED"}; ${d.errorRate === null ? "" : `${pct(d.errorRate)} of attempts produced no score.`}`),
         h("li", null, "The statistic's false-alarm rate and power are measured on simulated data (docs/verification/canary-simulation.md). Real tasks that are noisier widen the interval."),
         h("li", null, "A switch of served model is a possible cause, never a proven one."),

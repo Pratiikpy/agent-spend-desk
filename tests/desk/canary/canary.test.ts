@@ -219,6 +219,28 @@ describe("the canary's call", () => {
     expect(calls).not.toContain("regressed");
   });
 
+  it("can call a model that passes every task every day steady, and says how small a change it could not have seen", () => {
+    // Every score a pass gives no observed variation, so an interval built from the observed spread has no width and an observed-spread detectable change of zero.
+    // A model that is simply good must not be stuck at "inconclusive: interval too wide" for ever, so the detectable change has a floor from the binomial.
+    const ctx = makeContext(buildSeries(history(30, () => 1))!);
+    const v = evaluateAt(ctx, 30);
+    expect(v.verdict).toBe("steady");
+    expect(v.reason).toBe("within_detectable_range");
+    expect(v.mde).toBeGreaterThan(0.02);
+    expect(v.mde).toBeLessThan(0.1);
+    expect(v.ci).toEqual({ low: 0, high: 0 });
+    // The same for a model that fails everything the same way every day: nothing changed.
+    expect(evaluateAt(makeContext(buildSeries(history(30, () => 0))!), 30).verdict).toBe("steady");
+  });
+
+  it("still calls a regression from a perfect baseline, and still withholds a change smaller than the floor", () => {
+    const drop = (to: number) => evaluateAt(makeContext(buildSeries(history(30, (arm, day) => (arm === "primary" && day >= 15 ? to : 1)))!), 30);
+    expect(drop(0.6).verdict).toBe("regressed");
+    // Three points on every task is under what a perfect baseline of 14 days can show: no call, and not "steady" either.
+    expect(["steady", "inconclusive"]).toContain(drop(0.99).verdict);
+    expect(drop(0.99).verdict).not.toBe("regressed");
+  });
+
   it("calls a regression that is large, in every task, in two windows, with the control flat", () => {
     const rows = history(30, (arm, day) => (arm === "primary" && day >= 15 ? 0.3 : 0.9), (arm, day) => (arm === "primary" && day >= 15 ? "model-b" : "model-a"));
     const path = join(temp(), "runs.jsonl");

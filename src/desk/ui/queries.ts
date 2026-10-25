@@ -1,3 +1,5 @@
+import { reconciliationFlips } from "../billing/flip.ts";
+import { describeFlip } from "../flip.ts";
 import { baselineReproduction, withheldNotice } from "../replay/reproduction.ts";
 import type { GateHealth } from "../gate/health.ts";
 import { flagsFor, flagTotals } from "../security/flag.ts";
@@ -377,7 +379,12 @@ function billedClass(ctx: UiContext, span: Span): object {
     span.sinceIso.slice(0, 10),
     span.untilIso.slice(0, 10),
   );
-  if (!r || r.micros === null) return none;
+  if (!r || r.micros === null) {
+    // An invoice can be imported and still have no line dated inside this period; saying "no invoice is imported" then contradicts the reconciliation table below.
+    const held = one<{ n: number }>(ctx.db, "SELECT COUNT(*) AS n FROM invoice WHERE status = 'imported' AND currency = 'USD'")?.n ?? 0;
+    if (held === 0) return none;
+    return { ...none, note: `${held} invoice${held === 1 ? " is" : "s are"} imported, but none has a line dated inside this period, so nothing here is billed. The table of billed against estimated, further down, compares whole months.` };
+  }
   return { cls: "billed", calls: r.lines, invoices: r.invoices, micros: r.micros, note: `What ${r.invoices} imported invoice${r.invoices === 1 ? "" : "s"} charged for this period (USD, lines dated inside it). The invoice is the authority; the estimate below is a check on it.` };
 }
 
@@ -387,10 +394,18 @@ function reconciliationRows(ctx: UiContext, span: Span): object[] {
   if (!has || has.n === 0 || (one<{ n: number }>(ctx.db, "SELECT COUNT(*) AS n FROM invoice")?.n ?? 0) === 0) return [];
   const from = span.sinceIso.slice(0, 7);
   const to = span.untilIso.slice(0, 7);
+  const comparison = ctx.otherPrices ? comparePrices(ctx.snapshot, ctx.otherPrices.models) : null;
   return computeReconciliations(ctx.db)
     .filter((r) => r.period >= from && r.period <= to)
     .slice(-6)
-    .map((r) => ({ vendor: r.vendor, period: r.period, currency: r.currency, billedMicros: r.billedMicros, estimatedMicros: r.estimatedMicros, reportedMicros: r.reportedMicros, gapMicros: r.gapMicros, status: r.status, reason: r.reason }));
+    .map((r) => {
+      // The one change that would turn this month's status into another, from the second price source when there is one.
+      const flip =
+        comparison !== null && ctx.otherPrices && r.billedMicros !== null
+          ? describeFlip(reconciliationFlips(r, priceSensitivity(ctx.db, comparison, { since: `${r.period}-01T00:00:00.000Z`, until: `${r.period}-31T23:59:59.999Z` }), ctx.otherPrices.label))
+          : null;
+      return { vendor: r.vendor, period: r.period, currency: r.currency, billedMicros: r.billedMicros, estimatedMicros: r.estimatedMicros, reportedMicros: r.reportedMicros, gapMicros: r.gapMicros, status: r.status, reason: r.reason, flip };
+    });
 }
 
 const RULE_LABEL: Record<string, string> = {

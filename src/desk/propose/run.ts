@@ -1,3 +1,5 @@
+import { describeFlip } from "../flip.ts";
+import { proposalFlips } from "./flip.ts";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { stringify } from "yaml";
@@ -139,6 +141,7 @@ export function renderProposal(r: ProposeResult, input: Pick<ProposeInput, "sess
   out.push(`HELD OUT ${range(held)}: ${h.paused.length} sessions paused, ${formatUsd(h.savedMicros)} not spent (upper bound), ${h.landedBlocked.length} of ${h.landedTotal} landed sessions blocked`);
   const i = r.inSample;
   out.push(`in-sample ${range(training)} (the period it was drafted from): ${i.paused.length} paused, ${formatUsd(i.savedMicros)} not spent, ${i.landedBlocked.length} of ${i.landedTotal} landed blocked`);
+  out.push(`what would flip the recommendation: ${describeFlip(proposalFlips(h, r.restrict.narrows))}`);
   out.push("The saving assumes a paused session does nothing more, including useful work. The replay is a counterfactual on recorded sessions.");
   out.push(`policy hash ${r.policyHash.slice(0, 19)}`);
   return out.join("\n");

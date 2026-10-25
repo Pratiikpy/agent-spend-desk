@@ -25,6 +25,8 @@ export interface PeriodReconciliation {
   unmatchedBilledMicros: number;
   unmatchedEstimatedMicros: number;
   invoices: string[];
+  /** What the status was decided from, so that a flip check can ask what a different estimate would have decided. Not stored. */
+  basis?: { tol: number; full: boolean; covered: { start: string; end: string }[]; unpriced: number };
 }
 
 export interface ReconcileOptions {
@@ -164,24 +166,9 @@ export function computeReconciliations(db: Ledger, opts: ReconcileOptions = {}):
       for (const [m, v] of estByModel) if (v > 0 && !b.byModel.has(m)) unmatchedEstimated += v;
     }
     const gap = b.micros - estimated;
-    const ratio = b.micros === 0 ? (estimated === 0 ? 0 : 1) : Math.abs(gap) / Math.abs(b.micros);
     const unp = unpriced.get(key) ?? 0;
-    let status: ReconStatus;
-    let reason: string;
-    if (ratio > tol) {
-      status = "unreconciled";
-      reason = `the estimate differs from the invoice by ${(ratio * 100).toFixed(1)}%, more than the ${(tol * 100).toFixed(0)}% tolerance${unp > 0 ? `; ${unp} call${unp === 1 ? "" : "s"} in the month have no price and are not in the estimate` : ""}`;
-    } else if (!full) {
-      status = "partial";
-      reason = `the totals agree within ${(tol * 100).toFixed(0)}%, but the invoice covers ${b.covered.map((c) => `${c.start} to ${c.end}`).join(" and ")}, not the whole month`;
-    } else if (unmatchedBilled !== 0 || unmatchedEstimated !== 0) {
-      status = "partial";
-      reason = `the totals agree within ${(tol * 100).toFixed(0)}%, but the models on the invoice and in the ledger do not match line for line`;
-    } else {
-      status = "reconciled";
-      reason = `within ${(tol * 100).toFixed(0)}% of the invoice, the whole month covered`;
-    }
-    out.push({ ...base, currency: "USD", billedMicros: b.micros, gapMicros: gap, status, reason, unmatchedBilledMicros: unmatchedBilled, unmatchedEstimatedMicros: unmatchedEstimated, invoices: [...b.invoices] });
+    const { status, reason } = decideStatus({ billed: b.micros, estimated, tol, full, covered: b.covered, unmatchedBilled, unmatchedEstimated, unpriced: unp });
+    out.push({ ...base, currency: "USD", billedMicros: b.micros, gapMicros: gap, status, reason, unmatchedBilledMicros: unmatchedBilled, unmatchedEstimatedMicros: unmatchedEstimated, invoices: [...b.invoices], basis: { tol, full, covered: b.covered.map((c) => ({ start: c.start, end: c.end })), unpriced: unp } });
   }
 
   return out;
@@ -227,4 +214,24 @@ export function allocateBilled(db: Ledger, vendor: string, period: string, by: A
   // A credit (negative total) is split on its magnitude and given back its sign.
   const parts = splitProportional(Math.abs(totalMicros), weights).map((p) => (totalMicros < 0 ? -p : p));
   return { billedMicros: totalMicros, parts: keys.map((key, i) => ({ key, estimatedMicros: weights[i]!, billedMicros: parts[i]! })).sort((a, b) => b.billedMicros - a.billedMicros) };
+}
+
+/**
+ * The status of one month against one invoice, from its figures. It is a function of those figures alone, so a flip check can ask what status a different estimate
+ * would have had. A month is reconciled only when the two totals are within the tolerance, an invoice covers the whole month, and the models match line for line.
+ */
+export function decideStatus(i: { billed: number; estimated: number; tol: number; full: boolean; covered: readonly { start: string; end: string }[]; unmatchedBilled: number; unmatchedEstimated: number; unpriced: number }): { status: ReconStatus; reason: string; ratio: number } {
+  const gap = i.billed - i.estimated;
+  const ratio = i.billed === 0 ? (i.estimated === 0 ? 0 : 1) : Math.abs(gap) / Math.abs(i.billed);
+  const pctTol = (i.tol * 100).toFixed(0);
+  if (ratio > i.tol) {
+    return {
+      status: "unreconciled",
+      ratio,
+      reason: `the estimate differs from the invoice by ${(ratio * 100).toFixed(1)}%, more than the ${pctTol}% tolerance${i.unpriced > 0 ? `; ${i.unpriced} call${i.unpriced === 1 ? "" : "s"} in the month have no price and are not in the estimate` : ""}`,
+    };
+  }
+  if (!i.full) return { status: "partial", ratio, reason: `the totals agree within ${pctTol}%, but the invoice covers ${i.covered.map((c) => `${c.start} to ${c.end}`).join(" and ")}, not the whole month` };
+  if (i.unmatchedBilled !== 0 || i.unmatchedEstimated !== 0) return { status: "partial", ratio, reason: `the totals agree within ${pctTol}%, but the models on the invoice and in the ledger do not match line for line` };
+  return { status: "reconciled", ratio, reason: `within ${pctTol}% of the invoice, the whole month covered` };
 }

@@ -31,7 +31,7 @@ One 7-day window against the baseline, true change known, 1,000 replications per
 
 | Histories ever called regressed | Upper 95% bound | Ever called improved | Ever downgraded to harness or platform | Share of daily evaluations steady |
 |---|---|---|---|---|
-| 2 of 300 | 2.4% | 0 | 1 | 36.2% |
+| 2 of 300 | 2.4% | 0 | 1 | 42.7% |
 
 ## 3. How big a change can it call, and how soon?
 
@@ -39,16 +39,16 @@ Regression injected from day 15, 300 histories per row. "Called" means the first
 
 | Share of tasks hit | Drop on those tasks | Mean change over all tasks | Called on day 28 | Called by day 42 | Called by day 90 | Median days after onset | Mean one-window MDE | Mean two-window MDE |
 |---|---|---|---|---|---|---|---|---|
-| 50.0% | 5.0 points | -2.5 points | 0.3% | 1.0% | 2.0% | 57 | 14.5 points | 16.0 points |
-| 50.0% | 8.0 points | -4.0 points | 0.3% | 2.3% | 5.7% | 33 | 14.7 points | 16.3 points |
-| 50.0% | 11.0 points | -5.5 points | 0.7% | 5.7% | 13.7% | 33 | 15.3 points | 16.9 points |
-| 50.0% | 15.0 points | -7.5 points | 3.3% | 11.0% | 31.3% | 35 | 16.1 points | 17.8 points |
+| 50.0% | 5.0 points | -2.5 points | 0.3% | 1.0% | 2.0% | 57 | 14.7 points | 16.2 points |
+| 50.0% | 8.0 points | -4.0 points | 0.3% | 2.3% | 5.7% | 33 | 15.0 points | 16.5 points |
+| 50.0% | 11.0 points | -5.5 points | 0.7% | 5.7% | 13.7% | 33 | 15.5 points | 17.1 points |
+| 50.0% | 15.0 points | -7.5 points | 3.3% | 11.0% | 31.3% | 35 | 16.2 points | 17.9 points |
 | 50.0% | 20.0 points | -10.0 points | 7.7% | 27.7% | 52.3% | 27 | 17.4 points | 19.2 points |
-| 100.0% | 5.0 points | -5.0 points | 1.0% | 7.3% | 17.0% | 31 | 14.2 points | 15.7 points |
-| 100.0% | 8.0 points | -8.0 points | 7.7% | 29.0% | 58.7% | 29 | 14.2 points | 15.7 points |
-| 100.0% | 11.0 points | -11.0 points | 30.3% | 65.3% | 89.7% | 17 | 14.2 points | 15.7 points |
-| 100.0% | 15.0 points | -15.0 points | 62.0% | 95.3% | 99.7% | 14 | 14.2 points | 15.7 points |
-| 100.0% | 20.0 points | -20.0 points | 89.3% | 99.7% | 100.0% | 14 | 14.0 points | 15.4 points |
+| 100.0% | 5.0 points | -5.0 points | 1.0% | 7.3% | 17.0% | 31 | 14.4 points | 16.0 points |
+| 100.0% | 8.0 points | -8.0 points | 7.7% | 29.0% | 58.7% | 29 | 14.5 points | 16.0 points |
+| 100.0% | 11.0 points | -11.0 points | 30.3% | 65.3% | 89.7% | 17 | 14.6 points | 16.1 points |
+| 100.0% | 15.0 points | -15.0 points | 62.0% | 95.3% | 99.7% | 14 | 14.5 points | 16.0 points |
+| 100.0% | 20.0 points | -20.0 points | 89.3% | 99.7% | 100.0% | 14 | 14.3 points | 15.8 points |
 
 The one-window MDE is the change a single window could detect with 80% power from the standard error actually observed; the two-window figure is the change that makes a call on two consecutive windows 80% likely.
 
@@ -58,11 +58,11 @@ Power of one window alone at several true sizes; at the stated MDE the interval 
 
 | True change | Windows whose interval excludes zero | Mean MDE (observed standard error) | Mean MDE (pre-registered formula) |
 |---|---|---|---|
-| 4.0 points | 4.7% | 14.3 points | 11.3 points |
-| 6.0 points | 13.3% | 14.2 points | 11.3 points |
-| 8.0 points | 25.0% | 14.2 points | 11.3 points |
-| 10.0 points | 40.0% | 14.3 points | 11.3 points |
-| 12.0 points | 57.3% | 14.3 points | 11.3 points |
+| 4.0 points | 4.7% | 14.5 points | 11.3 points |
+| 6.0 points | 13.3% | 14.5 points | 11.3 points |
+| 8.0 points | 25.0% | 14.5 points | 11.3 points |
+| 10.0 points | 40.0% | 14.5 points | 11.3 points |
+| 12.0 points | 57.3% | 14.5 points | 11.3 points |
 
 ## 5. A platform event that hits the control arm too
 
@@ -95,8 +95,23 @@ One task is driven to near zero from day 15 and nothing else changes (300 histor
 | 10.0 points | 300 | 224 | 61 |
 | 15.0 points | 300 | 299 | 44 |
 
+## 8. What does `steady` cost?
+
+`steady` is said when the interval lies inside the detectable change, that is, when no change at least that large is compatible with the data. It is not a claim that nothing changed. Every daily verdict from day 28 to day 90 is counted, with no change and with a real one, so the share of days that say `steady` while a change is real can be read off.
+
+| Share of tasks hit | Drop on those tasks | Steady | Inconclusive | Called regressed | Harness or platform |
+|---|---|---|---|---|---|
+| none | none | 42.7% | 57.2% | 0.0% | 0.0% |
+| 100.0% | 5.0 points | 14.6% | 84.0% | 1.3% | 0.1% |
+| 100.0% | 8.0 points | 2.8% | 88.4% | 8.2% | 0.5% |
+| 100.0% | 11.0 points | 0.2% | 68.5% | 29.6% | 1.7% |
+| 100.0% | 15.0 points | 0.0% | 27.1% | 69.1% | 3.8% |
+| 50.0% | 11.0 points | 12.0% | 86.8% | 1.1% | 0.1% |
+
+The detectable change has a floor: the noise a pass-or-fail score cannot be without, computed from each task's baseline rate with one pass and one failure added. A window in which every score was a pass has no observed spread, and without the floor it would claim to detect a change of nothing and could never be called `steady`; with it, such a window is `steady` with a detectable change of a few points, which the card states.
+
 ## What this does not show
 
 The generator is a model of canary data, not canary data. Its noise, its cluster shocks and its error rate are assumptions chosen to be realistic and stated above; if a team's real tasks are noisier, intervals widen and the MDE grows, and the statistic reports the observed figure, not these. Coverage near the nominal level here is evidence the interval is built correctly on data of this shape, not a guarantee on any other shape. A new regression cannot be called before the earliest call day.
 
-Computed in 49 seconds.
+Computed in 81 seconds.

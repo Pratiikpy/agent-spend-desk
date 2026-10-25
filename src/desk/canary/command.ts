@@ -5,6 +5,8 @@ import type { ModelPort } from "../agents/model.ts";
 import type { Ledger } from "../ledger/db.ts";
 import type { PriceSnapshot } from "../pricing/pricebook.ts";
 import { buildSeries, readRows, servedChanges } from "./store.ts";
+import { describeFlip } from "../flip.ts";
+import { canaryFlips } from "./flip.ts";
 import { DEFAULT_CONFIG, earliestCallDay, evaluateAt, makeContext, type Verdict } from "./verdict.ts";
 import { appendSkip, archiveBaseline, decide, DEFAULT_DAILY_BUDGET_USD, DEFAULT_REPEATS, estimateRunCost, MIN_SCORED_SHARE, planReadings, skipsPathFor, type SkipKind } from "./schedule.ts";
 import { controlTasks, harnessHash, TASKS, type CanaryTask } from "./tasks.ts";
@@ -76,6 +78,8 @@ export function canaryCommand(o: { runsPath: string; sample: boolean; day?: numb
   const signs = v.heldOutSigns.filter((s): s is number => s !== null).map((s) => (s < 0 ? "down" : s > 0 ? "up" : "flat"));
   if (signs.length > 0) lines.push(`  held-out half of the tasks: ${signs.join(", ")}`);
   if (v.flip.checked) lines.push(`  one-task check: ${v.flip.holdsWithout ? "the call holds without the most influential task" : `the call rests on ${v.flip.task}`}`);
+  // The smallest single change to the data that would turn this verdict into another, or that none was found among the changes tried.
+  if (v.verdict !== "inconclusive" || v.reason !== "too_early") lines.push(`  what would flip it: ${describeFlip(canaryFlips(ctx, day))}`);
   const changes = servedChanges(rows, "primary");
   if (changes.length > 0) {
     const c = changes[0]!;
