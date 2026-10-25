@@ -4,6 +4,10 @@ No time limit applies to us. Submission is through HackOS and happens only when 
 
 Creating the first submission **locks the team**. Do not create it until the team is final.
 
+## Status on 2026-10-26
+
+Code, tests and checks: every numbered feature but DF-121 is built (128 of 129); `desk prove` is 60 PASS, 0 FAIL, 0 NOT RUN and the suite is 2,655 tests, both from fresh clones on Windows 11 (Node 24.20) and Ubuntu 22.04 (Node 22.23) at `4485f52`, logs in `docs/verification/clean-room/`. The deck PDF was rendered again on 2026-10-26 from `deck.html` (25 slides). The video script, README and product description match the build. What follows is the 2026-10-23 status, still true where it names things only Prateek can do: the video upload, the HackOS submission and team, the Cursor log (DF-121), and the two links checked logged out.
+
 ## Status on 2026-10-23 (what exists, what is not done, what only Prateek can do)
 
 Done and checked: slide deck (`docs/submission/deck/deck.html` and `desk-deck.pdf`, 25 slides with the architecture diagram, the stack, both sponsors' use, product screens, the head-to-head and canary evidence, what is not proven); sponsor technology explanation; README run from a fresh clone (verified on Windows 11 and Ubuntu 22.04, Node 22 and 24); sample inputs and a cleaned trace under `input_examples/` and `output_examples/`; `desk prove` with the checks listed in the README; secret scan on the tree and on history; size check.
