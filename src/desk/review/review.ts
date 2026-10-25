@@ -1,3 +1,4 @@
+import { governQuestions, heldBack } from "../questions/governor.ts";
 import { analyseCalls, buildAutopsy } from "../autopsy/engine.ts";
 import { loadAutopsyCalls } from "../autopsy/load.ts";
 import { buildCard } from "../card/build.ts";
@@ -105,7 +106,8 @@ export interface WeeklyReview {
   trend: TrendPoint[];
   forecast: Scorecard | null;
   calibration: string;
-  questions: { open: number; costliest: { id: string; spendMicros: number }[] };
+  /** The open questions, how many a yes would move a headline figure for (landed or reverted dollars), the most any one is worth, and what each of the costliest is worth. */
+  questions: { open: number; costliest: { id: string; spendMicros: number; evoiMicros: number }[]; moving: number; topEvoiMicros: number; /** Questions the governor held back from interrupting the owner in this week and that are still open (DF-107). */ held: number };
   drift: DriftEvent[];
   approvals: ApprovalHabit | null;
   suggestions: Suggestion[];
@@ -210,6 +212,9 @@ export function buildReview(i: ReviewInputs): WeeklyReview {
   const forecast = tasks.length > MIN_TASKS ? scorecardOf(tasks, range.endMs) : null;
 
   const qs = openQuestions(db, 100_000);
+  // What each answer is worth if it is yes: the dollars it would move in a headline figure, times the chance (DF-107). The review is where the questions that did not interrupt wait.
+  const governed = governQuestions(db, qs.slice(0, 500), 0, range.endMs);
+  const worth = new Map([...governed.ask, ...governed.queued].map((g) => [g.question.id, g.decision.evoiMicros ?? 0] as const));
   const drift = driftEvents(db, snapshot, range);
 
   // Suggestions: only where a rule shows its saving in this week's own calls.
@@ -238,7 +243,7 @@ export function buildReview(i: ReviewInputs): WeeklyReview {
     trend,
     forecast,
     calibration: i.calibration ?? "The policy's rules have not been checked against your own history here: `desk calibrate rules` does that, and says which ones stop work that later landed.",
-    questions: { open: qs.length, costliest: qs.slice(0, 3).map((q) => ({ id: q.id, spendMicros: q.spendMicros })) },
+    questions: { open: qs.length, costliest: qs.slice(0, 3).map((q) => ({ id: q.id, spendMicros: q.spendMicros, evoiMicros: worth.get(q.id) ?? 0 })), moving: [...worth.values()].filter((v) => v > 0).length, topEvoiMicros: Math.max(0, ...worth.values()), held: heldBack(db, new Date(range.startMs).toISOString(), new Date(range.endMs).toISOString()).questions },
     drift,
     approvals: i.approvals ?? null,
     suggestions,
@@ -308,6 +313,8 @@ export function renderReview(r: WeeklyReview, markdown = false): string {
 
   out.push(h("In doubt"));
   out.push(r.questions.open === 0 ? "  No open question." : `  ${r.questions.open} open question${r.questions.open === 1 ? "" : "s"} about which session a commit came from (desk questions); the costliest session is ${usd(r.questions.costliest[0]!.spendMicros)}.`);
+  if (r.questions.open > 0) out.push(r.questions.moving === 0 ? "  None would move a headline figure if answered yes: each is about a commit that is only committed, so they wait here." : `  ${r.questions.moving} of them would move a headline figure if answered yes, the most worth ${usd(r.questions.topEvoiMicros)} (the dollars it would move times the chance it is yes); the rest wait here.`);
+  if (r.questions.held > 0) out.push(`  ${r.questions.held} of them ${r.questions.held === 1 ? "was" : "were"} held back from interrupting you this week because the answer was worth less than the interruption.`);
 
   out.push(h("What changed"));
   if (r.drift.length === 0) out.push("  Nothing moved against the week before.");

@@ -1,3 +1,4 @@
+import { ATTENTION_REASON, attentionOf, DEFAULT_ATTENTION, isLaunch, launchDenial, type Attention, type AttentionLimits } from "./attention.ts";
 import { maskSecrets } from "../security/secrets.ts";
 import { homedir, userInfo } from "node:os";
 import { basename, join } from "node:path";
@@ -37,6 +38,8 @@ export const READ_ONLY_TOOLS: ReadonlySet<string> = new Set(["Read", "Glob", "Gr
 export type GateMode = "enforce" | "shadow";
 
 export interface GateConfig {
+  /** Refuse a new agent when its person is already supervising too much (DF-088). Off unless given; the daemon turns it on with the specification's limits. */
+  attention?: Partial<AttentionLimits>;
   /** Tools beyond the built-in list that change nothing and may pass the exactly-once guard. */
   readOnlyTools?: readonly string[];
   db: DatabaseSync;
@@ -486,6 +489,12 @@ export class Gate {
    * for a request it cannot approve: the answer is a deny with a reason. It throws GateError only for a request
    * that is malformed, and for a ledger that cannot be written (the caller then fails closed).
    */
+  /** How much one person is supervising now, by the limits this gate was given; null when the governor is off. */
+  supervisionLoad(person: string): Attention | null {
+    if (this.cfg.attention === undefined) return null;
+    return attentionOf(this.cfg.db, person, this.ledger.now(), null, { ...DEFAULT_ATTENTION, ...this.cfg.attention });
+  }
+
   authorize(raw: unknown): GateDecision {
     const g = parseGateRequest(raw);
     return this.authorizeParsed(g);
@@ -576,6 +585,17 @@ export class Gate {
 
     if (enforced && this.isPaused(g.person)) {
       return this.denyEarly(g, "paused", `${g.person} is paused after a budget overshoot; the owner must resume them`, false, view.version, key);
+    }
+    if (enforced && this.cfg.attention !== undefined) {
+      const limits: AttentionLimits = { ...DEFAULT_ATTENTION, ...this.cfg.attention };
+      const nowMs = this.ledger.now();
+      // Only a new agent is refused: one already working is never cut off by how many others have started since.
+      if (isLaunch(this.cfg.db, g.session_id, nowMs, limits)) {
+        const a = attentionOf(this.cfg.db, g.person, nowMs, g.session_id, limits);
+        const why = launchDenial(a);
+        if (why !== null) return this.denyEarly(g, ATTENTION_REASON, why, false, view.version, key);
+        if (a.level === "warn") this.trace.emit({ event: "desk.attention", why: "computed", detail: { person: g.person, active: a.activeSessions.length, interruptions: a.interruptions, load: Math.round(a.load * 100) / 100 } });
+      }
     }
     const stopped = enforced ? this.checkpoints?.open(g.session_id) : undefined;
     if (stopped !== undefined) return this.denyEarly(g, "checkpoint", `session ${g.session_id} is paused for checkpoint ${stopped.id} (${stopped.reason}). ${checkpointInstruction(stopped)}`, false, view.version, key);

@@ -18,7 +18,7 @@ export const COMMANDS: readonly CommandHelp[] = [
   { name: "statusline", group: "Read more sources", summary: "The Claude Code status line that records your plan limits (`statusline install` prints the setting to add)." },
   { name: "task", group: "Read more sources", summary: "Label the work you start (`task <label>`, `task end`) so sessions group into tasks; `task list` shows how each task was identified." },
   { name: "invoices", group: "Read more sources", summary: "Import an invoice or usage export (CSV, or PDF read twice) and reconcile billed against estimated against reported, month by month." },
-  { name: "questions", group: "Read more sources", summary: "Where the Desk is unsure which session a commit came from, it asks; your yes or no is applied the next time landing is computed." },
+  { name: "questions", group: "Read more sources", summary: "Where the Desk is unsure which session a commit came from, it asks only if the answer is worth the interruption; the rest wait for the weekly review." },
   { name: "forecast", group: "Costs and limits", summary: "Where the month is likely to end, with a range, and how such ranges have done on your own history." },
   { name: "landing", group: "Read more sources", summary: "Tie sessions to the commits they produced and show what the spend bought; --prs also reads pull requests through your own gh." },
   { name: "reconcile", group: "Read more sources", summary: "Compare the cost Claude Code recorded for itself with our estimate, process by process." },

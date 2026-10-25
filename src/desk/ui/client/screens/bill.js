@@ -9,6 +9,21 @@ export const usesRange = true;
 
 const STATUS_PILL = { reconciled: "live", partial: "", unreconciled: "risk" };
 
+// The owner's time on the questions the gate asked, from the gate's own record and at the owner's own rate. It is not model spend and is never added to it.
+function reviewSection(r) {
+  const minutes = r.seconds / 60;
+  return section(
+    "Your review time",
+    "reported by the gate, at your rate",
+    h(
+      "p",
+      { "data-review-time": "true" },
+      `${int(r.approvals)} question${r.approvals === 1 ? "" : "s"} the gate asked ${r.approvals === 1 ? "was" : "were"} answered, after ${minutes < 1 ? `${Math.round(r.seconds)} seconds` : `${minutes.toFixed(1)} minutes`} of waiting in all: ${usd(r.micros)} of your time at $${r.usdPerHour} an hour.${r.unanswered > 0 ? ` ${int(r.unanswered)} more ${r.unanswered === 1 ? "has" : "have"} no answer yet and cost${r.unanswered === 1 ? "s" : ""} nothing until ${r.unanswered === 1 ? "it is" : "they are"} answered.` : ""}`,
+    ),
+    h("p", { class: "note" }, "The wait from a request to its approval, not the time spent reading it: a request left unread for an hour counts as an hour. It is a reading of your attention, not part of what the models cost."),
+  );
+}
+
 // Where the month is likely to end, as a range from the owner's own past forecasts, and how such ranges have done. A straight line says it is one and gives no range.
 function monthEndSection(m, snapshotId) {
   const range = m.lowMicros !== null && m.highMicros !== null ? `${usd(m.lowMicros)} to ${usd(m.highMicros)} (${Math.round(m.level * 100)}%)` : null;
@@ -150,6 +165,7 @@ export async function render(ctx) {
       pricingNote(d.pricing),
     ),
     d.monthEnd ? monthEndSection(d.monthEnd, d.snapshotId) : null,
+    d.reviewTime && (d.reviewTime.approvals > 0 || d.reviewTime.unanswered > 0) ? reviewSection(d.reviewTime) : null,
     section(
       "Kinds of dollars",
       "billed, reported and estimated: the class of each figure",

@@ -18,7 +18,7 @@ import { openQuestions } from "../outcomes/questions.ts";
 import { approvalHabit, renderHabit, type ApprovalHabit } from "../approvals/habit.ts";
 import { canaryCard, type CanaryCard } from "../canary/card.ts";
 import { OWN_RUNS, SAMPLE_RUNS } from "../canary/command.ts";
-import { nightLine, readGateNight } from "../gate/readout.ts";
+import { nightLine, readGateNight, readReviewOverhead } from "../gate/readout.ts";
 import { addDays, isDate, localDate, localDayRange } from "./localday.ts";
 import { ADAPTERS, CAPABILITY_KEYS, CAPABILITY_TITLE, NO_ADAPTER } from "../adapters/registry.ts";
 import { explainBlock, findBlocks, type BlockKind } from "../explain/blocks.ts";
@@ -339,6 +339,8 @@ export function bill(ctx: UiContext, span: Span): object {
     deskOwn: deskOwnBlock(ctx, span),
     priceBand: priceBand(ctx, span, t.estimatedMicros),
     monthEnd: monthEndBlock(ctx),
+    // What the owner's time on the gate's questions was worth in this period, at their own rate: reported by the gate, never part of model spend.
+    reviewTime: readReviewOverhead(ctx.gateDbPath ?? null, span.sinceIso, span.untilIso, reviewRate(ctx.env["DESK_REVIEW_USD_PER_HOUR"])),
     pricing: pricingNotes(ctx, span),
     reconciliations: reconciliationRows(ctx, span),
     landing: { rows: landingRows(landing), totalMicros: landing.totalMicros, lowConfidenceMicros: landing.lowConfidenceMicros, linked: hasLinks(ctx.db) },
@@ -393,6 +395,12 @@ function monthEndBlock(ctx: UiContext): object | null {
     cohorts: m.card.cohorts,
     recent: m.card.recent,
   };
+}
+
+/** The owner's own hourly rate for review time, from `DESK_REVIEW_USD_PER_HOUR`; $120 when not given or not a positive number. */
+function reviewRate(raw: string | undefined): number {
+  const n = Number(raw);
+  return raw !== undefined && Number.isFinite(n) && n > 0 && n <= 100_000 ? n : 120;
 }
 
 /** The billed class: what imported invoices say for this period. Without one, the note says what importing would change. */

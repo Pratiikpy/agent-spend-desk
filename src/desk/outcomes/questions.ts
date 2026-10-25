@@ -5,6 +5,7 @@ import type { Readable, Writable } from "node:stream";
 import type { Ledger } from "../ledger/db.ts";
 import { formatUsd } from "../money.ts";
 import type { Link } from "./attribute.ts";
+import { governQuestions, recordDecisions } from "../questions/governor.ts";
 
 /**
  * The owner-question queue (DF-006). Where the Desk is not sure which session a commit came from, it asks: "Is commit a1b2c3d
@@ -90,6 +91,14 @@ export function answerQuestion(db: Ledger, id: string, answer: "yes" | "no", now
   return { kind: "recorded", question: q, answer };
 }
 
+/** What waits, and why, in a line: how many, the dollars the most valuable of them could move, and what the cost of interrupting was read from. */
+function queueLine(g: { queued: { decision: { evoiMicros: number | null; costMicros: number | null } }[] }, note: string): string {
+  if (g.queued.length === 0) return "";
+  const top = Math.max(0, ...g.queued.map((q) => q.decision.evoiMicros ?? 0));
+  const cost = g.queued[0]!.decision.costMicros;
+  return `${g.queued.length} wait${g.queued.length === 1 ? "s" : ""} for the weekly review, the most valuable worth ${formatUsd(top)}${cost === null ? "" : ` against ${formatUsd(cost)} to interrupt you`} (${note}). \`desk questions ask --all\` goes through them now.`;
+}
+
 const METHOD_WORDS: Record<string, string> = { time_window: "it was made close to when the session ran, and nothing else matches", file_overlap: "the session wrote files the commit changed, but too few of them or at the wrong time", trailer_window: "the commit carries an agent trailer", explicit: "you said so" };
 const short = (iso: string): string => iso.slice(0, 16).replace("T", " ");
 
@@ -102,11 +111,16 @@ export function renderQuestion(q: Question, n: number, of: number): string {
 }
 
 /** Ask the open questions one at a time on a terminal: y, n, s to skip (it stays open), q to stop. Returns how many were answered. */
-export async function askLoop(db: Ledger, input: Readable, output: Writable, now: () => Date = () => new Date()): Promise<{ asked: number; answered: number }> {
-  const qs = openQuestions(db, 50);
+export async function askLoop(db: Ledger, input: Readable, output: Writable, now: () => Date = () => new Date(), governed?: { load: number | null; note: string }): Promise<{ asked: number; answered: number; queued: number }> {
+  const all = openQuestions(db, 50);
+  // With the governor, only a question whose answer is worth more than interrupting for is asked now; the rest wait, unlinked, for the weekly review (DF-107).
+  const gov = governed ? governQuestions(db, all, governed.load, now().getTime()) : null;
+  const qs = gov ? gov.ask.map((g) => g.question) : all;
+  const queued = gov ? gov.queued.length : 0;
+  if (gov) recordDecisions(db, gov, now());
   if (qs.length === 0) {
-    output.write("No open question. Nothing the Desk linked is in doubt.\n");
-    return { asked: 0, answered: 0 };
+    output.write(all.length === 0 ? "No open question. Nothing the Desk linked is in doubt.\n" : `${all.length} open question${all.length === 1 ? "" : "s"}, and none is worth interrupting you for: ${queueLine(gov!, governed!.note)}\n`);
+    return { asked: 0, answered: 0, queued };
   }
   const rl = createInterface({ input, crlfDelay: Infinity });
   const lines = rl[Symbol.asyncIterator]();
@@ -125,6 +139,6 @@ export async function askLoop(db: Ledger, input: Readable, output: Writable, now
     } else output.write("  skipped; it stays open.\n");
   }
   rl.close();
-  output.write(`${answered} answered, ${asked - answered} left open. Landing is recomputed the next time it runs (desk landing).\n`);
-  return { asked, answered };
+  output.write(`${answered} answered, ${asked - answered} left open.${gov && queued > 0 ? ` ${queueLine(gov, governed!.note)}` : ""} Landing is recomputed the next time it runs (desk landing).\n`);
+  return { asked, answered, queued };
 }

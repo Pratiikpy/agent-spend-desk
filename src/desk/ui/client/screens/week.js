@@ -78,10 +78,22 @@ export async function render(ctx) {
     ),
     section(
       "In doubt",
-      "owner questions",
+      "owner questions, what an answer is worth is an estimate",
       r.questions.open === 0
         ? h("p", { class: "note" }, "No open question.")
-        : h("p", null, `${int(r.questions.open)} open question${r.questions.open === 1 ? "" : "s"} about which session a commit came from. Answer them with `, h("code", null, "desk questions"), "."),
+        : h(
+            "div",
+            null,
+            h("p", null, `${int(r.questions.open)} open question${r.questions.open === 1 ? "" : "s"} about which session a commit came from. Answer them with `, h("code", null, "desk questions"), "."),
+            h(
+              "p",
+              { class: "note", "data-questions-worth": "true" },
+              r.questions.moving === 0
+                ? "None would move a headline figure if answered yes: each is about a commit that is only committed, so they wait here and the Desk does not interrupt you for them."
+                : `${int(r.questions.moving)} of them would move a headline figure if answered yes, the most worth ${usd(r.questions.topEvoiMicros)} (the dollars it would move times the chance it is yes). The rest wait here; the Desk interrupts you only for a question worth more than the interruption.`,
+            ),
+            r.questions.held > 0 ? h("p", { class: "note", "data-questions-held": "true" }, `${int(r.questions.held)} ${r.questions.held === 1 ? "was" : "were"} held back from interrupting you this week because the answer was worth less than the interruption.`) : null,
+          ),
     ),
     section(
       "What changed",

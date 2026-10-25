@@ -163,7 +163,7 @@ describe("the weekly review", () => {
   it("counts open owner questions and leaves approvals unread unless a gate was named", () => {
     const db = ledger(WEEK);
     const r = buildReview({ db, snapshot: testSnapshot(), range: W43 });
-    expect(r.questions).toEqual({ open: 0, costliest: [] });
+    expect(r.questions).toEqual({ open: 0, costliest: [], moving: 0, topEvoiMicros: 0, held: 0 });
     expect(r.approvals).toBeNull();
     expect(renderReview(r)).toMatch(/Not read: no approval record exists yet/);
     const withApprovals = buildReview({ db, snapshot: testSnapshot(), range: W43, approvals: { decisions: 4, approved: 3, denied: 1, deniedBecause: { denied_by_approver: 1 }, medianSecondsToDecide: 6, quickShare: 0.5, withoutEvidenceShare: 2 / 3, unanswered: 1, waiting: 0, refusedResponses: { digest_mismatch: 2 } } });

@@ -1,3 +1,4 @@
+import { readAttentionLoad } from "./gate/readout.ts";
 import { baselineReproduction, withheldNotice } from "./replay/reproduction.ts";
 import { homedir } from "node:os";
 import { spawnSync } from "node:child_process";
@@ -327,7 +328,9 @@ if (command === "help") {
     const r = answerQuestion(db, id, a);
     console.log(r.kind === "unknown" ? `No single question matches ${id}. desk questions lists them.` : `Recorded: ${a}. ${relink()}`);
   } else if (sub === "ask") {
-    const r = await askLoop(db, process.stdin, process.stdout);
+    // Only a question whose answer is worth more than interrupting for is asked now, unless --all is given (DF-107); the rest wait for the weekly review.
+    const load = values.all ? undefined : readAttentionLoad(process.env["DESK_GATE_DB"] ?? "data/desk/gate.db", Date.now());
+    const r = await askLoop(db, process.stdin, process.stdout, () => new Date(), load);
     if (r.answered > 0) console.log(relink());
   } else {
     const limit = Number(values.limit ?? 10);

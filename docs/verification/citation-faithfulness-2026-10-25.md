@@ -14,7 +14,7 @@ The answer's own steps are run again after the ledger has been changed by one kn
 
 ## What ran
 
-- `tests/desk/ask/faithfulness.test.ts` (7): a claim essential when the sentence stops passing without it and decorative when it does not, a sentence that states two figures needing both, a figure-less sentence with two cites (both decorative), a billed word and a comparison each needing their own claim, a repeated cite counted once, a claim the ledger does not hold.
+- `tests/desk/ask/faithfulness.test.ts` (7): a claim essential when the sentence stops passing without it and decorative when it does not, a sentence that states two figures needing both, a figure-less sentence with two cites (both decorative), a cost-class word and a comparison each needing their own claim, a repeated cite counted once, a claim the ledger does not hold.
 - `tests/desk/ask/perturb.test.ts` (13): the whole-period spend, exact movement by dates and by model, a figure worked out from a spend, rollback even when a step throws, the order statistics (most expensive session, median day, days over a figure, count of sessions, landing), an injected runner that ignores the ledger (fails: moved no step), one that reads everything (fails: moved for a call outside its dates), the exact spend rule both ways, and nothing to perturb when a step has no dates or the ledger has no call in them. The command reports the perturbation beside the check that the recorded steps still give the same results.
 - `tests/desk/ui/ask-citations.test.ts` (2) and the claim ledger check in `tests/desk/close.test.ts`.
 - **On real answers.** The 50 questions of set E that the Desk answered (of 60; the other 10 are the unanswerable and refused), replayed from their recordings: 194 sentences, 195 citations, **195 needed, 0 decorative**, so the Explainer on this model, held to the Auditor, cites what it uses. The perturbation: **50 of 50 pass**, and the ledger was left as it was (no perturbation session remains).
@@ -30,5 +30,5 @@ The first version added a call of one dollar. It passed in every test I had writ
 - The minimal flip, validated by recomputation, is the flip certificate of DF-068 (every candidate is a recomputation with one fact changed), not repeated here.
 - Month-close summaries get the citation reading but not the perturbation: their figures are recomputed from rows by the verifier (V6-D) in a different way.
 - Steps with no dates (a recalled note) are not perturbed; the result says `not_run` and why.
-- The exact rule is held for spend steps only. For the others, a perturbation that moved something proves the answer reads the ledger and not that it reads the right rows.
+- The exact rule is held for spend steps only. For the others, a perturbation that moved something shows the answer reads the ledger, and does not show that it reads the right rows.
 - The perturbation writes to the ledger inside a savepoint and rolls it back. A process killed between the two leaves an uncommitted transaction that SQLite discards on the next open; it was not tested with a kill.

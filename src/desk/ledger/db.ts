@@ -562,7 +562,22 @@ CREATE TABLE pr_fact (
 );
 `;
 
-const MIGRATIONS: readonly string[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8, SCHEMA_V9, SCHEMA_V10, SCHEMA_V11, SCHEMA_V12, SCHEMA_V13, SCHEMA_V14, SCHEMA_V15, SCHEMA_V16, SCHEMA_V17, SCHEMA_V18, SCHEMA_V19, SCHEMA_V20, SCHEMA_V21, SCHEMA_V22];
+// What the question governor decided about each owner question (DF-107): asked now, or held for the weekly review, and the figures it decided on.
+const SCHEMA_V23 = `
+CREATE TABLE question_decision (
+  question_id TEXT NOT NULL,
+  decided_at TEXT NOT NULL,
+  action TEXT NOT NULL CHECK (action IN ('ask_now', 'queue')),
+  evoi_micros INTEGER,
+  cost_micros INTEGER,
+  load REAL,
+  p_yes REAL NOT NULL,
+  reason TEXT NOT NULL,
+  PRIMARY KEY (question_id, decided_at)
+);
+`;
+
+const MIGRATIONS: readonly string[] = [SCHEMA_V1, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4, SCHEMA_V5, SCHEMA_V6, SCHEMA_V7, SCHEMA_V8, SCHEMA_V9, SCHEMA_V10, SCHEMA_V11, SCHEMA_V12, SCHEMA_V13, SCHEMA_V14, SCHEMA_V15, SCHEMA_V16, SCHEMA_V17, SCHEMA_V18, SCHEMA_V19, SCHEMA_V20, SCHEMA_V21, SCHEMA_V22, SCHEMA_V23];
 
 /** The schema version this build writes: the number of migrations. A reader compares a ledger's `user_version` with it. */
 export const SCHEMA_VERSION = MIGRATIONS.length;

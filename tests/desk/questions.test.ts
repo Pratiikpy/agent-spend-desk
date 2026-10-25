@@ -119,7 +119,7 @@ describe("the question queue against a real repository", () => {
     input.write("s\n");
     input.end();
     const r = await done;
-    expect(r).toEqual({ asked: 2, answered: 1 });
+    expect(r).toEqual({ asked: 2, answered: 1, queued: 0 });
     expect(text).toMatch(/1 answered, 1 left open/);
     expect(db.prepare("SELECT session_id, answer FROM owner_answer").all()).toEqual([{ session_id: "big", answer: "yes" }]);
     expect(openQuestions(db).map((q) => q.sessionId)).toEqual(["small"]);
@@ -130,7 +130,7 @@ describe("the question queue against a real repository", () => {
     const out = new PassThrough();
     let text = "";
     out.on("data", (c: Buffer) => (text += c.toString()));
-    expect(await askLoop(empty, new PassThrough(), out)).toEqual({ asked: 0, answered: 0 });
+    expect(await askLoop(empty, new PassThrough(), out)).toEqual({ asked: 0, answered: 0, queued: 0 });
     expect(text).toMatch(/No open question\. Nothing the Desk linked is in doubt\./);
     empty.close();
   });

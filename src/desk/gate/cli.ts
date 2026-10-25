@@ -1,3 +1,4 @@
+import { DEFAULT_ATTENTION } from "./attention.ts";
 import { DatabaseSync } from "node:sqlite";
 import { existsSync, mkdirSync } from "node:fs";
 import { dirname } from "node:path";
@@ -25,7 +26,8 @@ const DEFAULT_SHADOW = "7d";
 const DEFAULT_HANDOFF_DIR = "data/desk/handoffs";
 
 const USAGE = `Use: gate serve|gateway|mcp|open|close|status|integrity|checkpoints|resume [options]
-  serve      --policy FILE [--db FILE] [--prices FILE] [--port N] [--shadow-for 7d|0] [--person NAME] [--transcript-root DIR]...
+  serve      --policy FILE [--db FILE] [--prices FILE] [--port N] [--shadow-for 7d|0] [--person NAME] [--transcript-root DIR]... [--max-agents 4] [--max-questions 10] [--no-attention]
+             a new agent is refused when its person already has --max-agents working or has been asked --max-questions in the last hour (--no-attention turns that off)
              needs DESK_GATE_TOKEN (at least 16 characters); DESK_GATE_OWNER_TOKEN enables approve, switch, pause on the owner routes
   gateway    --upstream URL --policy FILE [--db FILE] [--prices FILE] [--port N] [--shadow-for 7d|0] [--person NAME] [--reserve MODEL=USD]...
              an OpenAI-compatible and Anthropic-compatible door: point an agent's base URL at it; each chat completion or message is reserved before it is sent and settled after.
@@ -40,6 +42,13 @@ const USAGE = `Use: gate serve|gateway|mcp|open|close|status|integrity|checkpoin
   resume     --session ID [--extend-usd N --for 1h --reason "..."] [--no-handoff]
              owner only: resume a stopped session. If its cap still binds, an extension (headroom for a limited time, signed with DESK_GATE_OWNER_TOKEN) is needed.
   Where handoffs go: --handoff-dir DIR (default data/desk/handoffs).`;
+
+/** A whole number of at least one: a limit of nothing would refuse every agent, which is what `--no-attention` is for. */
+function wholeAtLeast1(text: string | undefined, flag: string): number {
+  const n = Number(text);
+  if (!Number.isInteger(n) || n < 1) throw new Error(`${flag} is a whole number of at least 1, not ${JSON.stringify(text)}`);
+  return n;
+}
 
 /** "30m", "2h", "45s", "7d" or a bare number of milliseconds. */
 export function parseDuration(text: string): number {
@@ -86,6 +95,9 @@ const GATE_OPTIONS = {
   reason: { type: "string" },
   "no-handoff": { type: "boolean", default: false },
   "handoff-dir": { type: "string", default: DEFAULT_HANDOFF_DIR },
+  "no-attention": { type: "boolean", default: false },
+  "max-agents": { type: "string", default: String(DEFAULT_ATTENTION.maxConcurrent) },
+  "max-questions": { type: "string", default: String(DEFAULT_ATTENTION.maxInterruptionsPerHour) },
 } as const;
 
 const parseGateArgs = (rest: readonly string[]) => parseOrUsage({ args: [...rest], options: GATE_OPTIONS, allowPositionals: false });
@@ -117,6 +129,7 @@ export async function runGateCli(argv: readonly string[], env: Record<string, st
       prices: priceBook(),
       policy: filePolicy(values.policy ?? "policies/none.yaml"),
       shadowMs: parseDuration(values["shadow-for"] ?? DEFAULT_SHADOW),
+      ...(values["no-attention"] ? {} : { attention: { maxConcurrent: wholeAtLeast1(values["max-agents"], "--max-agents"), maxInterruptionsPerHour: wholeAtLeast1(values["max-questions"], "--max-questions") } }),
       handoffDir: values["handoff-dir"] ?? DEFAULT_HANDOFF_DIR,
       ...(env["DESK_GATE_OWNER_TOKEN"] !== undefined ? { ownerKey: env["DESK_GATE_OWNER_TOKEN"] } : {}),
       ...(values.person !== undefined ? { person: values.person } : {}),
@@ -200,6 +213,10 @@ export async function runGateCli(argv: readonly string[], env: Record<string, st
       console.log(`checkpoints: ${stopped.length === 0 ? "none open" : `${stopped.length} session${stopped.length === 1 ? "" : "s"} stopped, see: desk gate checkpoints`}`);
       const behind = gate.clockBehindMs();
       if (behind > 0) console.log(`clock: ${Math.round(behind / 1000)} s behind the last recorded event, so the gate holds its own time until the clock catches up`);
+      if (values.person !== undefined) {
+        const a = gate.supervisionLoad(values.person);
+        console.log(a === null ? `attention (${values.person}): the governor is off (--no-attention)` : `attention (${values.person}): ${a.activeSessions.length} of ${a.limits.maxConcurrent} agents working, ${a.interruptions} of ${a.limits.maxInterruptionsPerHour} questions in the last hour; a new agent would take the load to ${Math.round(a.load * 100)}% (${a.level})`);
+      }
       console.log(`integrity: ${violations.length === 0 ? "ok" : `${violations.length} violation(s)`}`);
       for (const v of violations.slice(0, 5)) console.log(`  ${v.invariant} event ${String(v.eventId)}: ${v.message}`);
       return violations.length === 0 ? 0 : 1;
