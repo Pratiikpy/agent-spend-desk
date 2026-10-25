@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { BudgetError } from "../agents/budget.ts";
 import { ModelError, type ChatMessage, type ModelPort } from "../agents/model.ts";
 import { completeOwn } from "../agents/own-calls.ts";
-import { Rng } from "../canary/rng.ts";
+import { pairedBootstrap } from "../stats/paired.ts";
 import { numbersIn, TASKS, type CanaryTask } from "../canary/tasks.ts";
 
 /**
@@ -275,20 +275,7 @@ function paired(rows: readonly LocaleRow[], lang: Lang): { cluster: string; a: n
 }
 
 export function bootstrapDelta(pairs: readonly { cluster: string; a: number; b: number }[], resamples = LOCALE_PARAMS.resamples, seed = LOCALE_PARAMS.seed): { points: number; low: number; high: number } | null {
-  if (pairs.length === 0) return null;
-  const clusters = new Map<string, { a: number; b: number }[]>();
-  for (const p of pairs) clusters.set(p.cluster, [...(clusters.get(p.cluster) ?? []), p]);
-  const groups = [...clusters.keys()].sort().map((k) => clusters.get(k) as { a: number; b: number }[]);
-  const diff = (list: readonly { a: number; b: number }[]): number => mean(list.map((p) => p.b - p.a)) * 100;
-  const rng = new Rng(seed);
-  const draws: number[] = [];
-  for (let i = 0; i < resamples; i += 1) {
-    const picked: { a: number; b: number }[] = [];
-    for (let g = 0; g < groups.length; g += 1) picked.push(...(groups[Math.floor(rng.next() * groups.length)] as { a: number; b: number }[]));
-    draws.push(diff(picked));
-  }
-  draws.sort((x, y) => x - y);
-  return { points: diff(pairs), low: draws[Math.floor(0.025 * resamples)] as number, high: draws[Math.min(resamples - 1, Math.floor(0.975 * resamples))] as number };
+  return pairedBootstrap(pairs, resamples, seed);
 }
 
 export function reportLocale(rows: readonly LocaleRow[], o: { langs: readonly Lang[]; repeats: number; margin?: number; gate?: number }): LocaleReport {

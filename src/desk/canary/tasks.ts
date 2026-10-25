@@ -1,5 +1,7 @@
 import { createHash } from "node:crypto";
 
+import { alignJson } from "../align/json.ts";
+
 /**
  * The canary task pack: small tasks with one right answer that code can check (spec 8.5, deterministic checks
  * first). Each is a task a person could set an agent: arithmetic on money, ordering and dates, reading a log or a
@@ -113,6 +115,18 @@ export const numbersTailAre = (want: number[]): Checker =>
     "numbersTailAre",
     1,
     [want],
+  );
+
+/**
+ * The answer is JSON and is scored by what is in it, not by how it is laid out: keys and lists in any order, a value that is nearly right by how nearly (DF-101). It passes
+ * at 0.85 and above. The comparison is `src/desk/align`; a reply that is not JSON is compared by its words and passes only if it is as like the reference as that.
+ */
+export const jsonAlignedIs = (want: unknown, threshold = 0.85): Checker =>
+  tag(
+    (answer) => (alignJson(want, answer, { threshold }).pass ? 1 : 0),
+    "jsonAlignedIs",
+    1,
+    [want, threshold],
   );
 
 const LOG = [

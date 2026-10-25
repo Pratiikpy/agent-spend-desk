@@ -244,11 +244,12 @@ describe("the screens' data", () => {
     const p = await json(full, "/api/policy?range=all");
     const rows = p.enforcement as { tool: string; level: string; reason: string }[];
     expect(rows.map((r) => r.tool)).toContain("claude_code");
-    expect(rows.find((r) => r.tool === "cursor")).toMatchObject({ level: "notify_only" });
-    expect(rows.find((r) => r.tool === "cursor")!.reason).toContain("notify only");
+    expect(rows.find((r) => r.tool === "copilot_cli")).toMatchObject({ level: "notify_only" });
+    expect(rows.find((r) => r.tool === "copilot_cli")!.reason).toContain("notify only");
     // The fixture has no recorded results of its own: the shared results file may or may not exist on the machine running this, so only what cannot depend on it is asserted.
     for (const r of rows) expect(["enforced", "advisory", "notify_only"]).toContain(r.level);
-    expect(rows.find((r) => r.tool === "codex")!.level).not.toBe("enforced");
+    // Cursor and Gemini CLI have not been run live anywhere, so they are never enforced.
+    for (const t of ["cursor", "gemini_cli"]) expect(rows.find((r) => r.tool === t)!.level).not.toBe("enforced");
   });
 
   it("answers a question, refuses an action, and says unknowable for nonsense", async () => {

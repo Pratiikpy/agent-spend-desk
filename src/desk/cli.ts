@@ -2,6 +2,19 @@ import { markovianHistory, warmCarry } from "./engines/carry.ts";
 import { replayDecision, recordReplay } from "./replay/decision-replay.ts";
 import { scorecardCommand } from "./scorecard/command.ts";
 import { runLanguageCheck, renderLanguageCheck } from "./lang/check.ts";
+import { alignCommand } from "./align/command.ts";
+import { captureCommand } from "./capture/command.ts";
+import { swapCommand } from "./replay/command.ts";
+import { judgeCommand } from "./judge/command.ts";
+import { packCommand } from "./pack/command.ts";
+import { HOOK_TOOLS } from "./gate/tools.ts";
+import { surfacesCommand } from "./calibrate/surfaces-command.ts";
+import { attack, ATTACK_USAGE } from "./attack/command.ts";
+import { indexCommand } from "./regindex/command.ts";
+import { bundleCommand } from "./verify/bundle-command.ts";
+import { accountTrajectories, renderAccounting } from "./trajectory/account.ts";
+import { DEFAULT_CAPTURE_DB, openCapture } from "./capture/store.ts";
+import { snapshotCommand } from "./snapshot/command.ts";
 import { DEFAULT_TEAM_DB, teamCommand } from "./team/command.ts";
 import { openTeam } from "./team/store.ts";
 import { localeExperimentCommand } from "./lang/locale-command.ts";
@@ -116,7 +129,7 @@ import { overheadCommand } from "./overhead/command.ts";
 import { ciCommand, ciWorkflowSnippet } from "./ci/command.ts";
 import { ladder, readResults, recordResults, renderLadder, TOOLS } from "./enforce/ladder.ts";
 import { installedVersions } from "./enforce/version.ts";
-import { testGatewayDoor, testHookContract, testHookLive } from "./enforce/selftest.ts";
+import { testGatewayDoor, testHookContract, testHookLive, testHookLiveCodex } from "./enforce/selftest.ts";
 import { costVersions, listRepricings, renderRepricing, repriceLedger } from "./pricing/reprice.ts";
 import { refreshTasks } from "./tasks/assign.ts";
 import { taskCommand } from "./tasks/command.ts";
@@ -154,6 +167,11 @@ const { values, positionals } = parseOrExit({
     policy: { type: "string", multiple: true },
     out: { type: "string", default: "data/desk/sample" },
     seed: { type: "string" },
+    pairs: { type: "string" },
+    mutate: { type: "string" },
+    compare: { type: "boolean", default: false },
+    harm: { type: "string", multiple: true },
+    try: { type: "string" },
     months: { type: "string" },
     sample: { type: "boolean", default: false },
     "card-dir": { type: "string", default: "data/desk/card" },
@@ -194,6 +212,40 @@ const { values, positionals } = parseOrExit({
     repeats: { type: "string" },
     lang: { type: "string" },
     "team-db": { type: "string" },
+    threshold: { type: "string" },
+    into: { type: "string" },
+    version: { type: "string" },
+    description: { type: "string" },
+    author: { type: "string" },
+    "route-model": { type: "string" },
+    tsa: { type: "string" },
+    "tsa-ca": { type: "string" },
+    folder: { type: "string" },
+    judges: { type: "string" },
+    labels: { type: "string" },
+    advisory: { type: "boolean", default: false },
+    suite: { type: "string" },
+    "max-live": { type: "string" },
+    "budget-usd": { type: "string" },
+    "price-baseline": { type: "string" },
+    "price-candidate": { type: "string" },
+    resume: { type: "string" },
+    "max-turns": { type: "string" },
+    keep: { type: "boolean", default: false },
+    preset: { type: "string" },
+    cmd: { type: "string" },
+    tests: { type: "string" },
+    weak: { type: "boolean", default: false },
+    "ack-injection": { type: "boolean", default: false },
+    force: { type: "boolean", default: false },
+    why: { type: "string" },
+    status: { type: "string" },
+    min: { type: "string" },
+    max: { type: "string" },
+    replace: { type: "boolean", default: false },
+    "capture-db": { type: "string" },
+    ordered: { type: "boolean", default: false },
+    coerce: { type: "boolean", default: false },
     display: { type: "string" },
     key: { type: "string" },
     role: { type: "string" },
@@ -305,7 +357,7 @@ const ledgerPath = sampleMode && !process.argv.includes("--db") && command !== "
 if (sampleMode && ["propose", "silos", "ask", "ui", "verify-answer", "bench", "seats", "calibrate", "regret", "lessons", "close"].includes(command) && !existsSync(ledgerPath)) {
   await runCard({ mode: "sample", claudeDir: "", dbPath: "", pricesPath: pricesPath, outDir: values["card-dir"], sampleDir: values.out, days: 14, hours: 5, repos: [], color: false, onProgress: (m) => console.error(m) });
 }
-const db = command === "card" || command === "status" || command === "lab" ? openLedger(":memory:") : openLedger(ledgerPath);
+const db = command === "card" || command === "status" || command === "lab" || command === "snapshot" ? openLedger(":memory:") : openLedger(ledgerPath);
 
 // The Desk's own model calls are written to the ledger it keeps, priced like any other call, and held to DESK_OWN_DAILY_CAP_USD when that is set.
 // Prices the owner set for models the vendor list does not cover apply to every command, except where the result must not depend on this machine.
@@ -829,7 +881,7 @@ Ctrl+C stops it.`);
 ${t.pass} PASS, ${t.fail} FAIL, ${t.notRun} NOT RUN. NOT RUN is not a pass: it names a check the spec asks for that is not built or not recorded.`);
   process.exitCode = t.exit;
 } else if (command === "demo") {
-  await demo({ sampleDir: values.out, prices: pricesPath, cassetteDir: values.cassettes, out: (t) => console.log(t) });
+  await demo({ sampleDir: values.out, prices: pricesPath, cassetteDir: values.cassettes, out: (t) => console.log(t), ...(values.mutate ? { mutate: Number(values.mutate) } : {}), compare: values.compare === true });
 } else if (command === "seats") {
   loadDotenv(".env");
   console.log(await seatsCommand({ dbPath: ledgerPath, pricesPath: pricesPath, cassetteDir: values.cassettes, sampleMode, record: values.record, env: process.env, windowDays: Number(values.window), ...(values["as-of"] ? { asOf: values["as-of"] } : {}) }));
@@ -854,7 +906,14 @@ ${t.pass} PASS, ${t.fail} FAIL, ${t.notRun} NOT RUN. NOT RUN is not a pass: it n
 } else if (command === "forecast") {
   console.log(forecastCommand(db));
 } else if (command === "calibrate") {
-  if (positionals[1] === "rules") {
+  if (positionals[1] === "surfaces") {
+    const cdb = openCapture(values["capture-db"] ?? DEFAULT_CAPTURE_DB);
+    try {
+      console.log(await surfacesCommand({ db, truthPath: join(values.out, "truth.json"), store: cdb }));
+    } finally {
+      cdb.close();
+    }
+  } else if (positionals[1] === "rules") {
     const r = ruleCalibrationCommand({ db, snapshot: loadSnapshot(pricesPath), policyPath: values.policy?.[0] ?? "policies/daily-cap.yaml", ...(values.since ? { sinceIso: values.since } : {}), ...(values.until ? { untilIso: values.until } : {}), ...(values.propose ? { outDir: "data/desk/proposals" } : {}) });
     console.log(r.text);
   } else console.log(calibrateCommand({ dbPath: ledgerPath, truthPath: join(values.out, "truth.json") }));
@@ -915,11 +974,14 @@ ${t.pass} PASS, ${t.fail} FAIL, ${t.notRun} NOT RUN. NOT RUN is not a pass: it n
   const resultsPath = "data/desk/enforcement.json";
   if (positionals[1] === "test") {
     const prices = loadSnapshot(pricesPath);
-    console.log("Running the surface tests: the hook against a real gate, and both gateway doors against a stand-in model endpoint.");
-    const fresh = [await testHookContract(prices), await testGatewayDoor(prices, "openai"), await testGatewayDoor(prices, "anthropic")];
+    console.log("Running the surface tests: each tool's hook against a real gate, and the three gateway doors against a stand-in model endpoint.");
+    const fresh = [];
+    for (const tool of HOOK_TOOLS) fresh.push(await testHookContract(prices, { tool }));
+    fresh.push(await testGatewayDoor(prices, "openai"), await testGatewayDoor(prices, "anthropic"), await testGatewayDoor(prices, "responses"));
     if (values.live) {
-      console.log("Running the real Claude Code three times (a few cents on the cheapest model).");
+      console.log("Running the real Claude Code three times, then the real Codex CLI three times (a few cents each).");
       fresh.push(await testHookLive(prices));
+      fresh.push(await testHookLiveCodex(prices));
     }
     recordResults(resultsPath, fresh);
     for (const r of fresh) {
@@ -942,6 +1004,112 @@ ${t.pass} PASS, ${t.fail} FAIL, ${t.notRun} NOT RUN. NOT RUN is not a pass: it n
   const result = delegationCommand(db, { sinceIso: since, untilIso: until, ...(values.session ? { session: values.session } : {}) });
   console.log(result.text);
   if (!result.ok) process.exitCode = 1;
+} else if (command === "attack") {
+  // Try to step around a policy, and say how hard the restrict check was tried (DF-126).
+  if (!positionals[1]) {
+    console.log(ATTACK_USAGE);
+    process.exitCode = 2;
+  } else {
+    const r = attack({ file: positionals[1], ...(values.harm ? { harm: values.harm } : {}), ...(values.pairs ? { pairs: Number(values.pairs) } : {}), ...(values.seed ? { seed: Number(values.seed) } : {}), ...(values.try ? { attempt: values.try } : {}) });
+    console.log(r.text);
+    if (r.code !== 0) process.exitCode = r.code;
+  }
+} else if (command === "index") {
+  // The opt-in public regression index: off, previewed, accepted by hash, and then only those bytes (DF-064).
+  const cdb = existsSync(values["capture-db"] ?? DEFAULT_CAPTURE_DB) ? openCapture(values["capture-db"] ?? DEFAULT_CAPTURE_DB) : null;
+  try {
+    const r = await indexCommand({ sub: positionals[1], canaryRunsPath: sampleMode ? SAMPLE_RUNS : OWN_RUNS, store: cdb, env: process.env });
+    console.log(r.text);
+    if (r.code !== 0) process.exitCode = r.code;
+  } finally {
+    cdb?.close();
+  }
+} else if (command === "pack") {
+  // Rules and canary templates someone else wrote, taken in the way any edit is: checked, replayed, and started in shadow (DF-065).
+  const r = await packCommand({
+    sub: positionals[1], args: positionals.slice(2), ledger: () => db, env: process.env,
+    flags: { ...(values.kind ? { kind: values.kind } : {}), ...(values.name ? { name: values.name } : {}), ...(values.version ? { version: values.version } : {}), ...(values.from ? { from: values.from } : {}), ...(values.description ? { description: values.description } : {}), ...(values.author ? { author: values.author } : {}), sign: values.sign === true, ...(values.output ? { out: values.output } : {}), ...(values.policy?.[0] ? { policy: values.policy[0] } : {}), ...(values.pins ? { pins: values.pins } : {}), ...(values["route-model"] ? { model: values["route-model"] } : {}), ...(values.repeats ? { repeats: values.repeats } : {}), prices: pricesPath, sample: sampleMode === true },
+  });
+  console.log(r.text);
+  if (r.code !== 0) process.exitCode = r.code;
+} else if (command === "bundle") {
+  // A signed dossier in the shape cosign reads, and a check of it that needs nothing of ours (DF-102).
+  const r = await bundleCommand({ sub: positionals[1], args: positionals.slice(2), flags: { ...(values.tsa ? { tsa: values.tsa } : {}), ...(values["tsa-ca"] ? { tsaCa: values["tsa-ca"] } : {}), ...(values.key ? { key: values.key } : {}), ...(values.pins ? { pins: values.pins } : {}), ...(values.folder ? { dossier: values.folder } : {}), ...(values.output ? { out: values.output } : {}), ...(values.type ? { type: values.type } : {}) } });
+  console.log(r.text);
+  if (r.code !== 0) process.exitCode = r.code;
+} else if (command === "judge") {
+  // A panel of judges for what tests cannot decide, believed only once it agrees with the owner's own labels (DF-038, DF-098).
+  const cdb = openCapture(values["capture-db"] ?? DEFAULT_CAPTURE_DB);
+  try {
+    console.log(await judgeCommand({ sub: positionals[1], args: positionals.slice(2), store: cdb, env: process.env, flags: { ...(values.judges ? { judges: values.judges } : {}), ...(values.labels ? { labels: values.labels } : {}), advisory: values.advisory === true, ...(values.limit ? { limit: values.limit } : {}), sample: values.sample === true } }));
+  } finally {
+    cdb.close();
+  }
+} else if (command === "swap") {
+  // Run two routes on the owner's captured tasks and say whether the cheaper one did the work as well (DF-042).
+  const cdb = openCapture(values["capture-db"] ?? DEFAULT_CAPTURE_DB);
+  try {
+    console.log(
+      await swapCommand({
+        sub: positionals[1],
+        args: positionals.slice(2),
+        store: cdb,
+        env: process.env,
+        out: (l) => console.error(l),
+        flags: {
+          ...(values.baseline ? { baseline: values.baseline } : {}), ...(values.candidate ? { candidate: values.candidate } : {}), ...(values.repeats ? { repeats: values.repeats } : {}), ...(values.suite ? { suite: values.suite } : {}),
+          ...(values["max-live"] ? { maxLive: values["max-live"] } : {}), ...(values["budget-usd"] ? { budgetUsd: values["budget-usd"] } : {}), ...(values["price-baseline"] ? { priceBaseline: values["price-baseline"] } : {}), ...(values["price-candidate"] ? { priceCandidate: values["price-candidate"] } : {}),
+          ...(values.resume ? { resume: values.resume } : {}), ...(values["max-turns"] ? { maxTurns: values["max-turns"] } : {}), ...(values.concurrency ? { concurrency: values.concurrency } : {}), sample: values.sample === true, yes: values.yes === true,
+        },
+      }),
+    );
+  } finally {
+    cdb.close();
+  }
+} else if (command === "trajectories") {
+  // How much of the recent work could be replayed on another route, and why the rest could not (DF-040).
+  const days = values.days === undefined ? 30 : Number(values.days);
+  if (!Number.isFinite(days) || days < 1 || days > 400) throw new Error("--days is a number from 1 to 400");
+  const until = Date.now();
+  const cdb = values.keep ? openCapture(values["capture-db"] ?? DEFAULT_CAPTURE_DB) : null;
+  try {
+    const a = accountTrajectories(db, { sinceIso: new Date(until - days * 86_400_000).toISOString(), untilIso: new Date(until).toISOString(), ...(cdb ? { store: cdb, keep: true } : {}) });
+    console.log(renderAccounting(a, days));
+    if (cdb) console.log(`The redacted calls and results of the ${a.eligible} eligible sessions are kept in ${values["capture-db"] ?? DEFAULT_CAPTURE_DB}.`);
+  } finally {
+    cdb?.close();
+  }
+} else if (command === "capture") {
+  // Turn work the owner merged and kept into tasks a route can be tested on: candidates from the ledger, the tests that decide each, the owner's review, a frozen suite (DF-036).
+  const cdb = openCapture(values["capture-db"] ?? DEFAULT_CAPTURE_DB);
+  try {
+    console.log(
+      captureCommand({
+        sub: positionals[1],
+        args: positionals.slice(2),
+        store: cdb,
+        ledger: () => db,
+        flags: {
+          ...(values.repo && values.repo.length > 0 ? { repos: values.repo } : {}), ...(values.preset ? { preset: values.preset } : {}), ...(values.cmd ? { cmd: values.cmd } : {}), ...(values.format ? { format: values.format } : {}),
+          ...(values.tests ? { tests: values.tests } : {}), ...(values.repeats ? { repeats: values.repeats } : {}), weak: values.weak === true, ackInjection: values["ack-injection"] === true, force: values.force === true,
+          ...(values.why ? { why: values.why } : {}), ...(values.into ? { into: values.into } : {}), ...(values.status ? { status: values.status } : {}), ...(values.min ? { min: values.min } : {}), ...(values.max ? { max: values.max } : {}), all: values.all === true,
+        },
+      }),
+    );
+  } finally {
+    cdb.close();
+  }
+} else if (command === "snapshot") {
+  // Keep the staged, unstaged and untracked state of a workspace in the repository's own object store, and write it out elsewhere (DF-097).
+  const cdb = openCapture(values["capture-db"] ?? DEFAULT_CAPTURE_DB);
+  try {
+    console.log(snapshotCommand({ sub: positionals[1], args: positionals.slice(2), ...(values.repo?.[0] ? { repo: values.repo[0] } : {}), ...(values.into ? { into: values.into } : {}), replace: values.replace === true, ...(values.cap ? { cap: values.cap } : {}), db: cdb }));
+  } finally {
+    cdb.close();
+  }
+} else if (command === "align") {
+  // Score a structured output against a reference by what is in it, not by how it is laid out (DF-101).
+  console.log(alignCommand({ args: positionals.slice(1), ...(values.threshold ? { threshold: values.threshold } : {}), ordered: values.ordered === true, coerce: values.coerce === true }));
 } else if (command === "team") {
   // A team's spend across people and machines, each person seeing what their role allows (DF-059).
   const teamPath = values["team-db"] ?? DEFAULT_TEAM_DB;

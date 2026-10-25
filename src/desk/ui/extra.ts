@@ -18,6 +18,7 @@ import { readBundleDir } from "../verify/read-dir.ts";
 import { verifyBundle } from "../verify/verify.ts";
 import { OWN_RUNS, SAMPLE_RUNS } from "../canary/command.ts";
 import { buildSeries, readRows, servedChanges } from "../canary/store.ts";
+import { tasksPanel } from "./tasks-panel.ts";
 import { TASKS } from "../canary/tasks.ts";
 import { DEFAULT_CONFIG, earliestCallDay, evaluateAt, makeContext } from "../canary/verdict.ts";
 import { BadParam, type UiContext } from "./queries.ts";
@@ -178,8 +179,10 @@ export function canaryScreen(ctx: UiContext): object {
   const path = ctx.mode === "sample" ? SAMPLE_RUNS : OWN_RUNS;
   const { rows } = readRows(path);
   const series = buildSeries(rows);
+  // The owner's own captured tasks sit under the verdict; the constructed sample has none of its own.
+  const yourTasks = ctx.mode === "sample" ? null : tasksPanel(process.env["DESK_CAPTURE_DB"]);
   if (!series) {
-    return { state: "empty", reason: "No canary runs yet.", hint: `A canary needs ${DEFAULT_CONFIG.baselineDays} baseline days and two ${DEFAULT_CONFIG.windowDays}-day windows: nothing can be called before day ${earliestCallDay()}. Run \`desk canary run\` daily.` };
+    return { state: "empty", yourTasks, reason: "No canary runs yet.", hint: `A canary needs ${DEFAULT_CONFIG.baselineDays} baseline days and two ${DEFAULT_CONFIG.windowDays}-day windows: nothing can be called before day ${earliestCallDay()}. Run \`desk canary run\` daily.` };
   }
   const days = series.days;
   const dates = new Map(rows.map((r) => [r.day, r.date]));
@@ -199,6 +202,7 @@ export function canaryScreen(ctx: UiContext): object {
   const last = v.control.length > 0 ? v.control[v.control.length - 1]!.reading : null;
   return {
     state: "ok",
+    yourTasks,
     sample: ctx.mode === "sample",
     days,
     baselineDays: b,

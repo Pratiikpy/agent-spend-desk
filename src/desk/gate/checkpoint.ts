@@ -87,11 +87,21 @@ export function handoffTemplate(c: { id: number; session: string; person: string
 
 /** True when a tool call writes the handoff file and nothing else: the one thing an open checkpoint allows. */
 export function isHandoffWrite(handoffPath: string, toolName: string, toolInput: unknown): boolean {
-  if (toolName !== "Write" && toolName !== "Edit" && toolName !== "MultiEdit") return false;
-  if (typeof toolInput !== "object" || toolInput === null) return false;
-  const p = (toolInput as Record<string, unknown>)["file_path"];
-  if (typeof p !== "string" || p.length === 0) return false;
   const norm = (x: string): string => (process.platform === "win32" ? resolve(x).toLowerCase() : resolve(x));
+  if (typeof toolInput !== "object" || toolInput === null) return false;
+  const input = toolInput as Record<string, unknown>;
+  // Codex edits through apply_patch: the patch is the command, and it may touch the handoff file and nothing else, by adding or updating it.
+  if (toolName === "apply_patch") {
+    const patch = input["command"];
+    if (typeof patch !== "string") return false;
+    const headers = [...patch.matchAll(/^\*\*\* (Add|Update|Delete) File: (.+)$/gm)];
+    if (headers.length === 0 || /^\*\*\* Move to: /m.test(patch)) return false;
+    return headers.every((h) => h[1] !== "Delete" && norm((h[2] as string).trim()) === norm(handoffPath));
+  }
+  // Claude Code and Cursor name their file-writing tools Write, Edit and MultiEdit; Gemini CLI names them write_file and replace.
+  if (!["Write", "Edit", "MultiEdit", "write_file", "replace"].includes(toolName)) return false;
+  const p = input["file_path"];
+  if (typeof p !== "string" || p.length === 0) return false;
   return norm(p) === norm(handoffPath);
 }
 

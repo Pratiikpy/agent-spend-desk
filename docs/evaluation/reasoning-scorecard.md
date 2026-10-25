@@ -180,7 +180,7 @@ What this does not show:
 
 Reproduce: `npm run desk -- prove`; `npm run desk -- engines year`; `npm run desk -- ask "What changed before 2026-10-15?" --sample --ablate world_model`. Seed 20261030.
 
-Inputs: `src/desk/sample/year.ts` sha256:1cbf763a70dd; `evals/scout/desk/dev/routes.jsonl` sha256:338611fc155d; `evals/scout/desk/test/routes.jsonl` sha256:1887a3f77bd7; `evals/scout/regression-set/v1/` sha256:e3b0c44298fc; `evals/scout/regression-set/v2/` sha256:e3b0c44298fc; `src/desk/scout/registry.ts` sha256:e9162d9427a2; `evals/memory/` sha256:e8072c0c4fa5; `docs/verification/embed/recall.json` sha256:0d038f7983c1; `data/sample/cassettes/` sha256:7abba6b08d25
+Inputs: `src/desk/sample/year.ts` sha256:1cbf763a70dd; `evals/scout/desk/dev/routes.jsonl` sha256:338611fc155d; `evals/scout/desk/test/routes.jsonl` sha256:1887a3f77bd7; `evals/scout/regression-set/v1/` sha256:e3b0c44298fc; `evals/scout/regression-set/v2/` sha256:e3b0c44298fc; `src/desk/scout/registry.ts` sha256:e9162d9427a2; `evals/memory/` sha256:e8072c0c4fa5; `docs/verification/embed/recall.json` sha256:0d038f7983c1; `data/sample/cassettes/` sha256:258c17e7f76f
 
 What this does not show:
 
@@ -207,7 +207,7 @@ What this does not show:
 
 Reproduce: `npm run desk -- silos --sample`; `npm run desk -- silos --sample --no-zetaris`.
 
-Inputs: `data/sample/cassettes/` sha256:7abba6b08d25
+Inputs: `data/sample/cassettes/` sha256:258c17e7f76f
 
 What this does not show:
 

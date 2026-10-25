@@ -36,9 +36,67 @@ const REASON = {
 
 const pts = (x) => `${x >= 0 ? "+" : "-"}${Math.abs(x * 100).toFixed(1)} points`;
 
+const ORACLE = { strong: ["strong", "live"], weak: ["weak", "risk"], none: ["none", "fail"] };
+const SWAP = { equivalent: ["as good", "pass"], worse: ["worse", "fail"], inconclusive: ["no call", ""], withheld: ["withheld", ""] };
+
+/**
+ * Your own tasks: the work from your history that the Desk could turn into a fixed set of tasks to measure a model on, how well the tests decide each one, and what was run on
+ * them. This screen only reads. Accepting a task is a command, so that nothing in a browser changes what the Desk will measure.
+ */
+function yourTasks(t) {
+  if (!t) return null;
+  if (t.state !== "ok") return section("Your own tasks", "from your history", h("p", { class: "note" }, t.hint));
+  const count = (k) => t.counts[k] || 0;
+  return section(
+    "Your own tasks",
+    "from your history",
+    h(
+      "div",
+      { class: "stats" },
+      stat("Accepted", String(count("accepted")), `${t.families.length} ${t.families.length === 1 ? "family" : "families"} of work`),
+      stat("Waiting for a look", String(count("computed")), "tests run, not yet accepted or rejected"),
+      stat("Candidates", String(count("candidate")), `${count("ineligible")} set aside, ${count("rejected")} rejected`),
+    ),
+    t.accepted.length > 0
+      ? table(
+          "Accepted tasks",
+          [
+            { label: "Kind", render: (r) => r.kind },
+            { label: "Area", render: (r) => r.area },
+            { label: "Repository", render: (r) => r.repo },
+            { label: "Tests decide it", render: (r) => pill(...(ORACLE[r.oracle] || ["unknown", ""])) },
+            { label: "Change", num: true, render: (r) => `${r.diffLines} lines` },
+            { label: "Held out", render: (r) => (r.heldOut === null ? "" : r.heldOut ? "yes" : "no") },
+          ],
+          t.accepted,
+          { maxh: true },
+        )
+      : h("p", { class: "note" }, "None accepted yet. desk capture show TASK shows one; desk capture accept TASK keeps it. Only a task with a test that failed before the work and passed after it can be accepted without saying why."),
+    t.suites.length > 0
+      ? h("p", { class: "note" }, `Frozen suites: ${t.suites.map((s) => `${s.hash.slice(0, 12)} (${s.tasks} tasks, ${s.heldOut} held out, ${s.families} families, ${s.createdAt.slice(0, 10)})`).join("; ")}. A frozen suite is not edited: its name is a hash of every task in it.`)
+      : null,
+    t.swaps.length > 0
+      ? table(
+          "Models compared on your tasks",
+          [
+            { label: "Run", id: true, render: (r) => r.runId },
+            { label: "Date", render: (r) => r.createdAt.slice(0, 10) },
+            { label: "Baseline", render: (r) => r.baseline },
+            { label: "Candidate", render: (r) => r.candidate },
+            { label: "Call", render: (r) => (r.verdict ? pill(...(SWAP[r.verdict] || [r.verdict, ""])) : pill(r.status)) },
+            { label: "Why", render: (r) => r.why || "" },
+          ],
+          t.swaps,
+          { maxh: true },
+        )
+      : null,
+    h("p", { class: "note" }, "A task is the work as it was asked, with the tests that decide it, copied to a folder and run. Nothing here is sent anywhere; the model that is compared is the one you name."),
+  );
+}
+
 export async function render(ctx) {
   const d = await ctx.api("/api/canary");
-  if (d.state === "empty") return h("div", null, head("Canary", "No runs yet"), emptyState(d));
+  if (d.state === "empty") return h("div", null, head("Canary", "No runs yet"), emptyState(d), yourTasks(d.yourTasks));
   const [word, kind] = VERDICT[d.verdict] || [d.verdict, ""];
   const change = d.served[0];
   return h(
@@ -97,6 +155,7 @@ export async function render(ctx) {
         ...d.notes.map((n) => h("li", null, n)),
       ),
     ),
+    yourTasks(d.yourTasks),
     footnote("The tasks are checked by code that reads text. No model output is executed.", "Each row is one real model call; nothing is simulated in this series."),
   );
 }

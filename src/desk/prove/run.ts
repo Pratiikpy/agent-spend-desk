@@ -5,6 +5,17 @@ import { embedProve } from "./embed-check.ts";
 import { languageProve } from "./language-check.ts";
 import { localeProve } from "./locale-check.ts";
 import { teamProve } from "./team-check.ts";
+import { bundleCommand } from "../verify/bundle-command.ts";
+import { alignProve } from "./align-check.ts";
+import { snapshotProve } from "./snapshot-check.ts";
+import { packIndexProve } from "./pack-index-check.ts";
+import { attackProve } from "./attack-check.ts";
+import { judgeProve } from "./judge-check.ts";
+import { surfaceProve } from "./surface-check.ts";
+import { swapRecordProve } from "./swap-record-check.ts";
+import { captureProve } from "./capture-check.ts";
+import { trajectoryProve } from "./trajectory-check.ts";
+import { safeReplayProve } from "./safe-replay-check.ts";
 import { scoutProve } from "./scout-check.ts";
 import { sampleEnv, type Env } from "./env.ts";
 import { auditProve } from "./audit-check.ts";
@@ -16,6 +27,7 @@ import { helpText } from "../help.ts";
 import { lintWording } from "../lint/wording.ts";
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { createPublicKey, generateKeyPairSync } from "node:crypto";
 import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
@@ -319,6 +331,50 @@ const CHECKS: Check[] = [
     },
   },
   {
+    id: "sigstore-bundle-of-the-month-dossier-verifies-and-fails-closed",
+    command: "close a month on the sample ledger, wrap its signed statement as a Sigstore bundle, check the bundle against the signer's key and the manifest, then change the manifest, the signature and the key",
+    seed: SEED,
+    async run(e) {
+      const dbPath = (e.db.prepare("PRAGMA database_list").all() as unknown as { file: string }[])[0]!.file;
+      const root = mkdtempSync(join(tmpdir(), "desk-prove-bundle-"));
+      try {
+        const r = await closeCommand({
+          dbPath, pricesPath: PRICES, pricesDir: "data/prices", month: "2026-09", now: new Date("2026-10-02T00:00:00Z"), sign: true, askApproval: false,
+          canaryRunsPath: join(root, "no-canary.jsonl"), sample: true, keyPath: join(root, "signer.pem"), dossierDir: join(root, "dossiers"),
+          propose: { minUsd: "2.00", cassetteDir: join(root, "cassettes"), record: false, sampleMode: true, personFromBranch: false, outDir: join(root, "proposals"), env: {} },
+        });
+        const dir = join(root, "dossiers", "month-2026-09");
+        if (!r.ok || !existsSync(dir)) return fail(`the month could not be closed and signed: ${r.text.split("\n").slice(0, 3).join(" ")}`);
+        const pins = JSON.parse(readFileSync(`${dir}.pins.json`, "utf8")) as { keys: { publicKey: string }[] };
+        const keyFile = join(root, "signer.pub");
+        writeFileSync(keyFile, createPublicKey({ key: Buffer.from(pins.keys[0]!.publicKey, "base64"), format: "der", type: "spki" }).export({ type: "spki", format: "pem" }));
+        const made = await bundleCommand({ sub: "make", args: [dir], flags: {} });
+        const file = join(dir, "statement.sigstore.json");
+        if (made.code !== 0 || !existsSync(file)) return fail(`the bundle was not made: ${made.text.slice(0, 120)}`);
+        const good = await bundleCommand({ sub: "verify", args: [file], flags: { key: keyFile, dossier: dir } });
+        const manifest = join(dir, "manifest.json");
+        const original = readFileSync(manifest);
+        writeFileSync(manifest, Buffer.concat([original, Buffer.from(" ")]));
+        const changedManifest = await bundleCommand({ sub: "verify", args: [file], flags: { key: keyFile, dossier: dir } });
+        writeFileSync(manifest, original);
+        const doc = JSON.parse(readFileSync(file, "utf8")) as { dsseEnvelope: { signatures: { sig: string }[] } };
+        const sig = Buffer.from(doc.dsseEnvelope.signatures[0]!.sig, "base64");
+        sig[0] = sig[0]! ^ 1;
+        doc.dsseEnvelope.signatures[0]!.sig = sig.toString("base64");
+        const flipped = join(root, "flipped.sigstore.json");
+        writeFileSync(flipped, JSON.stringify(doc));
+        const changedSignature = await bundleCommand({ sub: "verify", args: [flipped], flags: { key: keyFile, dossier: dir } });
+        const other = join(root, "other.pub");
+        writeFileSync(other, generateKeyPairSync("ed25519").publicKey.export({ type: "spki", format: "pem" }));
+        const wrongKey = await bundleCommand({ sub: "verify", args: [file], flags: { key: other, dossier: dir } });
+        const closed = [changedManifest, changedSignature, wrongKey].every((x) => x.code === 1 && x.text.includes("ATTESTATION_VERIFICATION_FAILED"));
+        return (good.code === 0 && closed ? pass : fail)(`the month dossier's Sigstore bundle: ${good.code === 0 ? "PASS" : "not PASS"} against the signer's key and the manifest; a manifest with a byte added, a signature with a bit flipped and another key each ${closed ? "failed closed with ATTESTATION_VERIFICATION_FAILED, exit 1" : "did not all fail closed"}; the bundle holds no transparency log entry and says so`);
+      } finally {
+        rmSync(root, { recursive: true, force: true });
+      }
+    },
+  },
+  {
     id: "auditor-rejects-and-explainer-revises",
     command: "ask() with a scripted Explainer that first states a figure no claim supports",
     seed: null,
@@ -509,15 +565,16 @@ const CHECKS: Check[] = [
   },
   {
     id: "enforcement-surface-tests-can-fail",
-    command: "the hook and both gateway doors against the Desk's own gate, then the same tests against a gate that permits everything",
+    command: "the hooks of four tools and three gateway doors against the Desk's own gate, then the same tests against a gate that permits everything",
     seed: null,
     async run() {
       const prices = loadSnapshot(PRICES);
       const permitAll = "version: 1\nrules:\n  - id: allow-all\n    kind: permit\n    when: {}\n";
-      const real = [await testHookContract(prices), await testGatewayDoor(prices, "openai"), await testGatewayDoor(prices, "anthropic")];
-      const broken = [await testHookContract(prices, { policyYaml: permitAll }), await testGatewayDoor(prices, "openai", { policyYaml: permitAll }), await testGatewayDoor(prices, "anthropic", { policyYaml: permitAll })];
+      const tools = ["claude-code", "codex", "cursor", "gemini-cli"] as const;
+      const real = [...(await Promise.all(tools.map((tool) => testHookContract(prices, { tool })))), await testGatewayDoor(prices, "openai"), await testGatewayDoor(prices, "anthropic"), await testGatewayDoor(prices, "responses")];
+      const broken = [...(await Promise.all(tools.map((tool) => testHookContract(prices, { tool, policyYaml: permitAll })))), await testGatewayDoor(prices, "openai", { policyYaml: permitAll }), await testGatewayDoor(prices, "anthropic", { policyYaml: permitAll }), await testGatewayDoor(prices, "responses", { policyYaml: permitAll })];
       const ok = real.every((r) => r.passed) && broken.every((r) => !r.passed);
-      return (ok ? pass : fail)(`${real.filter((r) => r.passed).length} of 3 surfaces pass against the real gate (${real.reduce((n, r) => n + r.checks.length, 0)} checks); ${broken.filter((r) => !r.passed).length} of 3 fail against a gate that permits everything, so a pass means the gate stopped something`);
+      return (ok ? pass : fail)(`${real.filter((r) => r.passed).length} of ${real.length} surfaces pass against the real gate (${real.reduce((n, r) => n + r.checks.length, 0)} checks: four tools' hooks and three gateway doors); ${broken.filter((r) => !r.passed).length} of ${broken.length} fail against a gate that permits everything, so a pass means the gate stopped something`);
     },
   },
   {
@@ -675,6 +732,97 @@ const CHECKS: Check[] = [
     seed: SEED,
     async run() {
       const r = await localeProve();
+      return r.ok ? pass(r.detail) : fail(r.detail);
+    },
+  },
+  {
+    id: "tool-output-alignment-is-order-blind-and-continuous",
+    command: "pair 120 seeded matrices and compare each total with every permutation, then score an output with its keys and lists reordered, a near match, a wrong one, one with a field dropped or added, and prose",
+    seed: SEED,
+    async run() {
+      const r = alignProve();
+      return r.ok ? pass(r.detail) : fail(r.detail);
+    },
+  },
+  {
+    id: "confidence-surfaces-are-calibrated-and-the-default-says-it-is-one",
+    command: "calibrate a confidence on pairs with a known answer: honest, overconfident, tuned, untunable and too few",
+    seed: SEED,
+    async run() {
+      const r = surfaceProve();
+      return r.ok ? pass(r.detail) : fail(r.detail);
+    },
+  },
+  {
+    id: "recorded-live-swap-recomputes-and-withholds-what-it-cannot-support",
+    command: "recompute each route's counts and rates, and the withholding rule, from the stored items of the live run of two Nemotron models on ten Lab tasks",
+    seed: null,
+    async run() {
+      const r = swapRecordProve();
+      if (r.skipped) return notRun(r.skipped);
+      return r.ok ? pass(r.detail) : fail(r.detail);
+    },
+  },
+  {
+    id: "judge-panel-is-refused-until-it-agrees-with-the-owner",
+    command: "reproduce Krippendorff's published example; refuse panels that include the model under test, have one family or two judges; admit, exclude and flag by agreement with the owner's labels; check that length alone wins nothing",
+    seed: SEED,
+    async run() {
+      const r = judgeProve();
+      return r.ok ? pass(r.detail) : fail(r.detail);
+    },
+  },
+  {
+    id: "attack-finds-a-planted-loophole-and-the-fuzzer-sees-a-broken-check",
+    command: "run the attacker corpus on a policy whose forbid names one model and on a sound one; run the fuzzer against the real restrict check and against one made to say yes to everything",
+    seed: SEED,
+    async run() {
+      const r = attackProve();
+      return r.ok ? pass(r.detail) : fail(r.detail);
+    },
+  },
+  {
+    id: "packs-cannot-widen-and-the-index-sends-only-what-was-previewed",
+    command: "import a widening pack, a rerouting pack and one with a smuggled field, then a narrowing one; build the index payload and try to send it while off, unaccepted, changed, to a redirect and to a local server",
+    seed: SEED,
+    async run() {
+      const r = await packIndexProve();
+      return r.ok ? pass(r.detail) : fail(r.detail);
+    },
+  },
+  {
+    id: "workspace-snapshot-restores-every-byte-and-touches-nothing",
+    command: "snapshot a repository with a staged edit, an unstaged edit with Windows line endings, a deletion, untracked scratch and a credential file; restore it elsewhere and compare every file",
+    seed: SEED,
+    async run() {
+      const r = snapshotProve();
+      return r.ok ? pass(r.detail) : fail(r.detail);
+    },
+  },
+  {
+    id: "captured-task-oracle-finds-the-deciding-tests-and-agrees-with-the-lab-audit",
+    command: "in a repository with a planted change run the owner's tests before and after to find the tests that decide it, set a flaky one aside, refuse a weak or unmeasured task, and hold the result against the Lab audit's own list for ten tasks",
+    seed: SEED,
+    async run() {
+      const r = captureProve();
+      return r.ok ? pass(r.detail) : fail(r.detail);
+    },
+  },
+  {
+    id: "trajectories-fall-in-their-classes-and-the-accounting-adds-up",
+    command: "write five sessions (whole, a gap in the transcript, a call with no result, a call with part of a result, no call), read each back, class it, and add the month up",
+    seed: SEED,
+    async run() {
+      const r = trajectoryProve();
+      return r.ok ? pass(r.detail) : fail(r.detail);
+    },
+  },
+  {
+    id: "replay-never-runs-what-it-could-not-undo",
+    command: "serve a recorded push, POST and deletion from the recording, stop at a variation of each, refuse paths outside the sandbox, and watch a real server, remote and folder for any effect",
+    seed: SEED,
+    async run() {
+      const r = await safeReplayProve();
       return r.ok ? pass(r.detail) : fail(r.detail);
     },
   },

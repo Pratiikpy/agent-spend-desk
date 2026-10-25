@@ -3,6 +3,7 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 
 import { declaredFetch, destination } from "../security/net.ts";
+import { CONFIG_FILES, HOOK_TOOLS, hasHook, type HookTool } from "./tools.ts";
 
 /**
  * Is enforcement down? Two facts decide it: whether a Claude Code settings file on this machine installs the Desk's PreToolUse hook (so tool calls wait for the
@@ -19,15 +20,21 @@ export interface GateHealth {
   ms: number | null;
 }
 
-const HOOK_COMMAND = /hook-main(\.ts)?|desk[^"]*gate[^"]*hook/i;
-
 export function hookInstalledIn(home: string, cwd: string): string | null {
-  const candidates = [join(home, ".claude", "settings.json"), join(cwd, ".claude", "settings.json"), join(cwd, ".claude", "settings.local.json")];
-  for (const file of candidates) {
+  // Claude Code's settings first (including the local file), then the other tools' own configs, user and project.
+  const candidates: { file: string; tool: HookTool }[] = [
+    { file: join(home, ".claude", "settings.json"), tool: "claude-code" },
+    { file: join(cwd, ".claude", "settings.json"), tool: "claude-code" },
+    { file: join(cwd, ".claude", "settings.local.json"), tool: "claude-code" },
+    ...HOOK_TOOLS.filter((t) => t !== "claude-code").flatMap((t) => [
+      { file: join(home, CONFIG_FILES[t].user), tool: t },
+      { file: join(cwd, CONFIG_FILES[t].project), tool: t },
+    ]),
+  ];
+  for (const { file, tool } of candidates) {
     if (!existsSync(file)) continue;
     try {
-      const j = JSON.parse(readFileSync(file, "utf8")) as { hooks?: { PreToolUse?: { hooks?: { command?: string }[] }[] } };
-      for (const entry of j.hooks?.PreToolUse ?? []) for (const h of entry.hooks ?? []) if (typeof h.command === "string" && HOOK_COMMAND.test(h.command)) return file;
+      if (hasHook(tool, JSON.parse(readFileSync(file, "utf8")))) return file;
     } catch {
       /* a settings file that is not JSON installs nothing we can read */
     }

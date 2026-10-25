@@ -14,6 +14,11 @@ import { loadSnapshot } from "./pricing/pricebook.ts";
 import { parsePolicyYaml } from "./policy/parse.ts";
 import { proposeCommand } from "./propose/command.ts";
 import { runCard } from "./card/run.ts";
+import { compareDemo, ledgerFigures, renderComparison } from "./demo-figures.ts";
+import { routeCommand } from "./route/command.ts";
+import { openLedger } from "./ledger/db.ts";
+import { loadAutopsyCalls } from "./autopsy/load.ts";
+import { wasteCommand } from "./waste/command.ts";
 import { silosCommand } from "./silo/command.ts";
 import { readBundleDir } from "./verify/read-dir.ts";
 import { formatReport } from "./verify/report.ts";
@@ -24,12 +29,20 @@ import { buildSample, DEFAULT_SAMPLE } from "./sample/gen.ts";
  * The demo, offline, in the order of the video script (docs/submission/demo-video-script.md). Every beat runs the
  * real command on the constructed sample with recorded model replies and recorded Zetaris answers, so it needs no
  * key, no network and no container, and finishes in well under four minutes. Nothing here is a canned output.
+ *
+ * The scenes (DF-014 to DF-018, DF-114): an opening that asks the question every user has, scene 0 the month's headline, scene 1 the biggest waste block, scene 2 the canary, scene 3
+ * a cheaper route, scene 4 the argument, the check, the approval, the offline verifier and the gate, and a closing that tells the judge how to run it on their own logs. With
+ * `mutate` or `compare` the same figures are computed on a changed sample so that every number that depends on the change can be seen to move (DF-019).
  */
 export interface DemoOptions {
   sampleDir: string;
   prices: string;
   cassetteDir: string;
   out: (text: string) => void;
+  /** Run the scenes' figures on a changed sample (this seed, no planted tool change, a canary in which the model never changed) and print the two side by side. */
+  mutate?: number;
+  compare?: boolean;
+  runsPath?: string;
 }
 
 const SEP = "-".repeat(78);
@@ -39,18 +52,45 @@ export async function demo(o: DemoOptions): Promise<void> {
   const beat = (n: string, title: string, caption: string): void => say(`\n${SEP}\n${n}  ${title}\n${caption}\n${SEP}`);
   const started = Date.now();
   if (!requireSample(o.sampleDir)) buildSample({ ...DEFAULT_SAMPLE, outDir: o.sampleDir });
+  if (o.mutate !== undefined || o.compare) {
+    say(renderComparison(await compareDemo({ sampleDir: o.sampleDir, prices: o.prices, runsPath: o.runsPath ?? SAMPLE_RUNS, seed: o.mutate ?? 20261101 })));
+    say(`compared in ${((Date.now() - started) / 1000).toFixed(0)} s, offline.`);
+    return;
+  }
 
-  beat("1/8", "Where did my limit go?", "A constructed scenario. Every figure below is computed from it by the same code that reads your logs.");
+  beat("Opening", "Where did my limit go?", "You pay for a coding agent, work for two hours, and \"limit reached\" appears. A constructed scenario: every figure below is computed from it by the same code that reads your logs.");
   const card = await runCard({ mode: "sample", claudeDir: "", dbPath: "", pricesPath: o.prices, outDir: join(o.sampleDir, "card"), sampleDir: o.sampleDir, days: 14, hours: 5, repos: [], color: false, width: 100 });
   say(card.text);
 
-  beat("2/8", "The bill, through Zetaris", "Invoices (files), CI (Postgres) and roster (REST) joined by one statement. Recorded from a live run on the local Zetaris instance.");
+  beat("Scene 0", "The question", "The month's headline, with the class of every dollar printed beside it. These are estimates from a price list, not an invoice.");
+  for (const f of (await ledgerFigures(o.sampleDir, o.prices)).filter((x) => x.scene === "0")) say(`${f.label}: ${f.value}`);
+
+  beat("Scene 1", "The biggest waste block", "The rules that read the log directly, each with its parameters. The block at the top is the one to open.");
+  {
+    const ledger = openLedger(join(o.sampleDir, "ledger.db"));
+    try {
+      const snapshot = loadSnapshot(o.prices);
+      const times = loadAutopsyCalls(ledger, snapshot, "0000", "9999").map((c) => c.tsMs);
+      const from = new Date(Math.min(...times)).toISOString();
+      const to = new Date(Math.max(...times) + 1).toISOString();
+      say(wasteCommand(ledger, snapshot, from, to).text);
+      for (const f of (await ledgerFigures(o.sampleDir, o.prices)).filter((x) => x.id === "waste.biggest")) say(`
+${f.label}: ${f.value}. Open that session to see the rule and the calls it flagged.`);
+    } finally {
+      ledger.close();
+    }
+  }
+
+  beat("Scene 1b", "The bill, through Zetaris", "Invoices (files), CI (Postgres) and roster (REST) joined by one statement. Recorded from a live run on the local Zetaris instance.");
   say(await silosCommand({ dbPath: join(o.sampleDir, "ledger.db"), cassetteDir: o.cassetteDir, sampleMode: true, record: false, disabled: false, env: {} }));
 
-  beat("3/8", "The canary", "Real runs of a task pack, one a day. Constructed: the model behind the primary arm was switched on purpose on day 15, so there is a regression to find.");
-  say(canaryCommand({ runsPath: SAMPLE_RUNS, sample: true }).text);
+  beat("Scene 2", "The canary", "Real runs of a task pack, one a day. Constructed: the model behind the primary arm was switched on purpose on day 15, so there is a regression to find.");
+  say(canaryCommand({ runsPath: o.runsPath ?? SAMPLE_RUNS, sample: true }).text);
 
-  beat("4/8", "Propose, check, attack, then replay on a month the draft never saw", "The policy is drafted from September and replayed on October. If it blocks landed work, that is the headline.");
+  beat("Scene 3", "A cheaper route", "The same task pack on two models: what the cheaper one gives up, with an interval, and the kinds of task it holds up on.");
+  say(routeCommand({ runsPath: o.runsPath ?? SAMPLE_RUNS, tolerance: 0.1 }));
+
+  beat("Scene 4", "The argument: propose, check, attack, then replay on a month the draft never saw", "The policy is drafted from September and replayed on October. If it blocks landed work, that is the headline.");
   const root = mkdtempSync(join(tmpdir(), "desk-demo-"));
   // The demo works in a temporary folder whose path holds the user's home; the screen shows a name instead.
   const scrub = (text: string): string => text.split(root).join("<demo-dir>").split(root.replaceAll("\\", "/")).join("<demo-dir>");
@@ -59,13 +99,13 @@ export async function demo(o: DemoOptions): Promise<void> {
     const proposal = await proposeCommand({ dbPath: join(o.sampleDir, "ledger.db"), pricesPath: o.prices, policyPath: "policies/daily-cap.yaml", minUsd: "2.00", cassetteDir: o.cassetteDir, record: false, sampleMode: true, personFromBranch: true, outDir: join(root, "proposals"), dossier, env: {} });
     say(scrub(proposal));
 
-    beat("5/8", "Ask, with the engines on and off", "The same question, answered from the History engine, then with it switched off.");
+    beat("Scene 4b", "Ask, with the engines on and off", "The same question, answered from the History engine, then with it switched off.");
     const ask = (ablate?: string) => askCommand({ dbPath: join(o.sampleDir, "ledger.db"), question: "What changed before 2026-10-15?", ablate, noModel: false, record: false, sampleMode: true, cassetteDir: o.cassetteDir, memoryDir: join(root, "memory"), env: {} });
     say(await ask());
     say("\n--ablate world_model:");
     say(await ask("world_model"));
 
-    beat("6/8", "Approve by echoing the digest, then verify offline", "The owner approves; a signed dossier is written; the verifier runs on plain Node with no network.");
+    beat("Scene 4c", "Approve by echoing the digest, then verify offline", "The owner approves; a signed dossier is written; the verifier runs on plain Node with no network.");
     const m = /desk approve (\S+) (\S+)/.exec(proposal);
     if (m) {
       const done = approve(m[1]!, m[2]!, dossier);
@@ -86,7 +126,7 @@ export async function demo(o: DemoOptions): Promise<void> {
     rmSync(root, { recursive: true, force: true });
   }
 
-  beat("7/8", "The gate blocks a call", "The same hook adapter Claude Code runs, against a real local gate with a policy that permits nothing. The run against the real Claude Code is recorded in docs/verification/gate-enforcement.md.");
+  beat("Scene 4d", "The gate blocks a call", "The same hook adapter Claude Code runs, against a real local gate with a policy that permits nothing. The run against the real Claude Code is recorded in docs/verification/gate-enforcement.md.");
   const db = new DatabaseSync(":memory:");
   const gate = new Gate({ db, prices: loadSnapshot(o.prices), policy: fixedPolicy(parsePolicyYaml("version: 1\nrules:\n  - { id: only-nothing, kind: permit, when: { model: { in: [never-used] } } }\n")), person: "demo" });
   const token = ["demo", "gate", "bearer", "0123456789"].join("-");
@@ -98,7 +138,7 @@ export async function demo(o: DemoOptions): Promise<void> {
     await server.close();
   }
 
-  beat("8/8", "Run it on your own logs", "desk card   reads your agent logs, read-only, and writes your own limit autopsy. Nothing leaves this machine.");
+  beat("Closing", "Run it on your own logs", "Run `desk` on your own logs right now: it reads them read-only and writes your own result card in about three minutes. Nothing leaves this machine. To see every number above move, run `desk demo --compare`.");
   say(`demo finished in ${((Date.now() - started) / 1000).toFixed(0)} s, offline.`);
 }
 

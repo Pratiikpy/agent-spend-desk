@@ -8,7 +8,7 @@
  *
  * What this covers: the connections the Desk's own code makes. A tool the Desk watches, or one it launches for a live test, makes its own.
  */
-export type DestinationKind = "model" | "embedding" | "zetaris" | "gate" | "webhook" | "gateway_upstream" | "lab_upstream";
+export type DestinationKind = "model" | "embedding" | "zetaris" | "gate" | "webhook" | "gateway_upstream" | "lab_upstream" | "index";
 
 export interface Destination {
   kind: DestinationKind;
@@ -93,6 +93,8 @@ export function manifestFromEnv(env: Record<string, string | undefined>, extra: 
   const zetaris = env["ZETARIS_REST_URL"];
   if (zetaris) push(destination("zetaris", zetaris, "read-only SQL statements over the invoice, CI and roster silos", "ZETARIS_REST_URL"));
   push(destination("gate", env["DESK_GATE_URL"] ?? "http://127.0.0.1:8765", "the local spend gate, on this machine", env["DESK_GATE_URL"] ? "DESK_GATE_URL" : "the default"));
+  // The regression index is off unless it is both switched on and given an address.
+  if (env["DESK_INDEX"] === "on" && env["DESK_INDEX_URL"]) push(destination("index", env["DESK_INDEX_URL"], "the regression index: per-suite aggregates the owner previewed and accepted, with no task text", "DESK_INDEX_URL"));
   for (const d of extra) push(d);
   return { profile: profileOf(env), destinations: out };
 }

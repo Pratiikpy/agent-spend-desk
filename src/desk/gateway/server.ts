@@ -4,6 +4,7 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import type { AddressInfo } from "node:net";
 import type { ReadableStreamDefaultReader, ReadableStreamReadResult } from "node:stream/web";
 
+import type { GatewayCapture } from "../capture/gateway.ts";
 import { priceCall } from "../cost/price-call.ts";
 import { worstCaseReservation } from "../gate/estimate.ts";
 import type { Gate } from "../gate/gate.ts";
@@ -17,7 +18,7 @@ import { type PriceSnapshot } from "../pricing/pricebook.ts";
  * tools with no hook of their own.
  *
  * What it does and does not see. It sees what passes through it: nothing else the agent does, and nothing sent to the
- * endpoint by another route. It meters two routes, `POST /v1/chat/completions` and `POST /v1/messages`. Reads (listing
+ * endpoint by another route. It meters three routes, `POST /v1/chat/completions`, `POST /v1/messages` and `POST /v1/responses`. Reads (listing
  * models) and token counting (`POST /v1/messages/count_tokens`, which costs nothing) pass through unmetered and are counted as
  * such. Any other write is refused as a route that cannot be metered, because letting it through would let money leave
  * unseen. The caller's own key (an Authorization or x-api-key header) is passed on and never stored or logged. It listens on
@@ -59,6 +60,8 @@ export interface GatewayStats {
   settledAtWorstCase: number;
   voided: number;
   routed: number;
+  /** Captures the sink could not take. The call it belonged to was answered as it would have been. */
+  captureFailed: number;
 }
 
 export interface GatewayOptions {
@@ -82,6 +85,8 @@ export interface GatewayOptions {
    * task type to the caller's x-desk-task-type header. If it throws, the call is refused (failed closed).
    */
   taskTypeOf?: (info: { callIndex: number; model: string; bodyBytes: number; messages: number }) => string | undefined;
+  /** Called with each call that was allowed and answered, so a trajectory can be kept from it. The sink sees the request as it was sent and the reply when it came back whole. */
+  capture?: (c: GatewayCapture) => void;
 }
 
 export interface Gateway {
@@ -94,10 +99,11 @@ export interface Gateway {
   close(): Promise<void>;
 }
 
-type Family = "openai" | "anthropic";
+type Family = "openai" | "anthropic" | "responses";
 
-const METERED: Readonly<Record<string, Family>> = { "/chat/completions": "openai", "/messages": "anthropic" };
-const FREE_POST = new Set(["/messages/count_tokens"]);
+const METERED: Readonly<Record<string, Family>> = { "/chat/completions": "openai", "/messages": "anthropic", "/responses": "responses" };
+/** Calls that cost nothing: counting tokens, and cancelling a response that was started in the background. */
+const isFreePost = (rest: string): boolean => rest === "/messages/count_tokens" || rest === "/responses/input_tokens" || /^\/responses\/[A-Za-z0-9_-]{1,128}\/cancel$/.test(rest);
 const HOP = new Set(["connection", "keep-alive", "proxy-authenticate", "proxy-authorization", "te", "trailer", "transfer-encoding", "upgrade", "host", "content-length", "accept-encoding"]);
 const READS = new Set(["GET", "HEAD", "OPTIONS"]);
 
@@ -151,6 +157,24 @@ function readOpenAi(o: Record<string, unknown>): Usage | null {
   return { input: prompt - cached, cacheRead: cached, cacheWrite5m: 0, cacheWrite1h: 0, output: completion };
 }
 
+/**
+ * OpenAI Responses API: the usage is on the response (or on the response a stream's last event carries). Its input count includes the cached part, which is priced as a cache
+ * read; its output count includes reasoning tokens, which are billed as output.
+ */
+function readResponses(o: Record<string, unknown>): Usage | null {
+  const r = o["response"] !== null && typeof o["response"] === "object" ? (o["response"] as Record<string, unknown>) : o;
+  const u = r["usage"];
+  if (u === null || typeof u !== "object") return null;
+  const x = u as Record<string, unknown>;
+  const input = x["input_tokens"];
+  const output = x["output_tokens"];
+  if (!whole(input) || !whole(output)) return null;
+  const d = x["input_tokens_details"];
+  const cachedRaw = d !== null && typeof d === "object" ? (d as Record<string, unknown>)["cached_tokens"] : undefined;
+  const cached = whole(cachedRaw) ? Math.min(cachedRaw, input) : 0;
+  return { input: input - cached, cacheRead: cached, cacheWrite5m: 0, cacheWrite1h: 0, output };
+}
+
 /** Anthropic: the fields a usage object carries, as far as it carries them (a stream spreads them over several events). */
 function readAnthropic(u: unknown): Partial<Usage> {
   if (u === null || typeof u !== "object") return {};
@@ -195,7 +219,7 @@ export async function startGateway(opts: GatewayOptions): Promise<Gateway> {
   const upstream = opts.upstream.replace(/\/$/, "");
   const maxBody = opts.maxBodyBytes ?? 8 * 1024 * 1024;
   const firstByteMs = opts.firstByteMs ?? 120_000;
-  const stats: GatewayStats = { seen: 0, controlled: 0, allowed: 0, denied: 0, failedClosed: 0, unmetered: 0, unmeteredRefused: 0, settledAtWorstCase: 0, voided: 0, routed: 0 };
+  const stats: GatewayStats = { seen: 0, controlled: 0, allowed: 0, denied: 0, failedClosed: 0, unmetered: 0, unmeteredRefused: 0, settledAtWorstCase: 0, voided: 0, routed: 0, captureFailed: 0 };
   const pending = new Set<Promise<void>>();
   const callsBySession = new Map<string, number>();
   let port = 0;
@@ -253,6 +277,16 @@ export async function startGateway(opts: GatewayOptions): Promise<Gateway> {
     return p.kind === "priced" ? p.totalMicros : null;
   }
 
+  /** Hand a finished call to whoever asked to keep captures. A failure to keep one never changes what the caller gets. */
+  function capture(session: string, family: Family, model: string, request: unknown, response: unknown): void {
+    if (opts.capture === undefined) return;
+    try {
+      opts.capture({ ts: new Date().toISOString(), family, session, model, request, response });
+    } catch {
+      stats.captureFailed += 1;
+    }
+  }
+
   function settle(d: GateDecision, model: string, usage: Usage | null, entry: GatewayEntry): void {
     if (d.reservationId === null) return;
     let micros = usage === null ? null : priced(model, usage, entry);
@@ -305,10 +339,10 @@ export async function startGateway(opts: GatewayOptions): Promise<Gateway> {
 
     const metered = method === "POST" ? METERED[rest] : undefined;
     if (metered === undefined) {
-      const freePost = method === "POST" && FREE_POST.has(rest);
+      const freePost = method === "POST" && isFreePost(rest);
       if (!READS.has(method) && !freePost) {
         stats.unmeteredRefused += 1;
-        return refuse(403, "unmetered_route", `${method} ${path} cannot be metered by this gateway, so it is refused: only POST /v1/chat/completions and POST /v1/messages are metered, reads and token counting pass through`);
+        return refuse(403, "unmetered_route", `${method} ${path} cannot be metered by this gateway, so it is refused: only POST /v1/chat/completions, POST /v1/messages and POST /v1/responses are metered, reads and token counting pass through`);
       }
       stats.unmetered += 1;
       const body = freePost ? await readBody(req) : null;
@@ -333,6 +367,11 @@ export async function startGateway(opts: GatewayOptions): Promise<Gateway> {
     }
     const model = body["model"];
     if (typeof model !== "string" || model === "") return refuse(400, "bad_request", "the request names no model");
+    // A background response is billed after this call has returned, so its cost cannot be settled here.
+    if (metered === "responses" && body["background"] === true) {
+      stats.unmeteredRefused += 1;
+      return refuse(403, "unmetered_route", "a background response reports its usage after the call returns, so this gateway cannot meter it: send it without background");
+    }
     entry.model = model;
     entry.stream = body["stream"] === true;
 
@@ -340,7 +379,7 @@ export async function startGateway(opts: GatewayOptions): Promise<Gateway> {
       const v = req.headers[name];
       return typeof v === "string" && v !== "" ? v.slice(0, 200) : undefined;
     };
-    const maxTokens = metered === "anthropic" ? body["max_tokens"] : typeof body["max_completion_tokens"] === "number" ? body["max_completion_tokens"] : body["max_tokens"];
+    const maxTokens = metered === "anthropic" ? body["max_tokens"] : metered === "responses" ? body["max_output_tokens"] : typeof body["max_completion_tokens"] === "number" ? body["max_completion_tokens"] : body["max_tokens"];
     const n = metered === "openai" && typeof body["n"] === "number" && Number.isSafeInteger(body["n"]) && body["n"] >= 1 ? body["n"] : 1;
     // A request can ask for fast mode or for US-only inference, and either costs more. The reservation covers what it asked for.
     const speed = typeof body["speed"] === "string" ? body["speed"] : null;
@@ -352,11 +391,13 @@ export async function startGateway(opts: GatewayOptions): Promise<Gateway> {
     const modifierEstimate = speed !== null || geo !== null ? worstCaseReservation(opts.prices, { model, inputTokens: inputGuess, maxTokens: maxGuess, n, explicitMicros: null, speed, inferenceGeo: geo }) : null;
     stats.controlled += 1;
     let decision: GateDecision;
+    let sessionName = "gateway";
     try {
       const session = opts.identity?.session ?? header("x-desk-session") ?? "gateway";
+      sessionName = session;
       const callIndex = callsBySession.get(session) ?? 0;
       callsBySession.set(session, callIndex + 1);
-      const messages = Array.isArray(body["messages"]) ? body["messages"].length : 0;
+      const messages = Array.isArray(body["messages"]) ? body["messages"].length : Array.isArray(body["input"]) ? body["input"].length : 0;
       const phase = opts.taskTypeOf?.({ callIndex, model, bodyBytes: raw.length, messages });
       decision = opts.gate.authorize({
         session_id: session,
@@ -450,13 +491,20 @@ export async function startGateway(opts: GatewayOptions): Promise<Gateway> {
       let usage: Usage | null = null;
       try {
         const v = JSON.parse(text) as unknown;
-        if (v !== null && typeof v === "object" && !Array.isArray(v)) usage = metered === "openai" ? readOpenAi(v as Record<string, unknown>) : completeAnthropic(readAnthropic((v as Record<string, unknown>)["usage"]));
+        if (v !== null && typeof v === "object" && !Array.isArray(v)) usage = metered === "openai" ? readOpenAi(v as Record<string, unknown>) : metered === "responses" ? readResponses(v as Record<string, unknown>) : completeAnthropic(readAnthropic((v as Record<string, unknown>)["usage"]));
       } catch {
         /* not JSON: relayed as it is, and settled at the worst case */
       }
       settle(decision, routedModel, usage, entry);
       res.writeHead(up.status, { ...relayHeaders(up), ...routedHeader });
       res.end(text);
+      let reply: unknown = null;
+      try {
+        reply = JSON.parse(text);
+      } catch {
+        /* a reply that is not JSON is relayed and not captured */
+      }
+      capture(sessionName, metered, routedModel, body, reply);
       return finish(up.status);
     }
 
@@ -495,7 +543,10 @@ export async function startGateway(opts: GatewayOptions): Promise<Gateway> {
               if (v === null || typeof v !== "object" || Array.isArray(v)) continue;
               const o = v as Record<string, unknown>;
               if (metered === "openai") openAiUsage = readOpenAi(o) ?? openAiUsage;
-              else if (o["type"] === "message_start") anthropic = { ...anthropic, ...readAnthropic((o["message"] as Record<string, unknown> | undefined)?.["usage"]) };
+              else if (metered === "responses") {
+                // The usage is on the response that ends the stream: completed, incomplete or failed.
+                if (typeof o["type"] === "string" && /^response\.(completed|incomplete|failed)$/.test(o["type"])) openAiUsage = readResponses(o) ?? openAiUsage;
+              } else if (o["type"] === "message_start") anthropic = { ...anthropic, ...readAnthropic((o["message"] as Record<string, unknown> | undefined)?.["usage"]) };
               else if (o["type"] === "message_delta") {
                 const u = readAnthropic(o["usage"]);
                 anthropic = { ...anthropic, ...u };
@@ -508,8 +559,9 @@ export async function startGateway(opts: GatewayOptions): Promise<Gateway> {
         }
       }
     }
-    const usage = metered === "openai" ? openAiUsage : finalSeen ? completeAnthropic(anthropic) : null;
+    const usage = metered === "openai" || metered === "responses" ? openAiUsage : finalSeen ? completeAnthropic(anthropic) : null;
     settle(decision, routedModel, usage, entry);
+    if (broke === null) capture(sessionName, metered, routedModel, body, null);
     if (broke !== null) entry.error = `stream ended early: ${broke}`.slice(0, 200);
     if (!res.writableEnded) res.end();
     finish(up.status);

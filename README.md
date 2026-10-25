@@ -25,9 +25,9 @@ Usage trackers such as ccusage and CodexBar read agent logs and show cost; as fa
 
 | | |
 |---|---|
-| **Code** | About 41,400 lines of TypeScript in 265 files, 2,200 lines of browser JavaScript in 19 files, and 19,200 lines of tests in 115 files. Runtime dependencies: two |
-| **Checked** | 1,451 tests (one skipped on Linux without a PDF reader), and `desk prove` with 35 checks, all PASS, on fresh clones of Windows 11 (Node 24.20) and Ubuntu 22.04 (Node 22.23) |
-| **The product** | 54 commands (`desk help` lists them), a 13-screen local UI, nine agent roles, a gate that Claude Code calls before each tool use and a gateway door for tools that can point at an endpoint, signed dossiers with an offline verifier |
+| **Code** | About 66,600 lines of TypeScript in 436 files, 2,500 lines of browser JavaScript in 19 files, and 36,100 lines of tests in 206 files. Runtime dependencies: two |
+| **Checked** | 2,655 tests (one skipped where a PDF reader is missing), and `desk prove` with 60 checks, all PASS; fresh-clone runs are recorded in the line under "Try it" |
+| **The product** | 80 commands (`desk help` lists them), a 14-screen local UI, nine agent roles, a gate that stops tool calls through the hooks of Claude Code and Codex CLI (run live), with adapters for Cursor and Gemini CLI, and a gateway door for tools that can point at an endpoint (chat, messages and responses routes), signed dossiers with an offline verifier |
 | **Specified** | 129 numbered features and a requirements document under `docs/design/desk/`; 200-odd pages of design, sponsor and verification notes |
 | **Measured** | Pre-registered 60-question benchmarks in three rounds, whose 2,748 recorded model replies `desk prove` replays, a 52-task canary over 30 days with a control arm, a wind tunnel, a regret ledger, a learning loop, and what each of them got wrong |
 | **Sponsors** | Zetaris joins three silos with one statement; three Meterless engines run in our process (conformance 8/8, 13/13, 8/8); Nemotron serves every language role |
@@ -52,7 +52,7 @@ Needs Node 22.19 or later (run on 22.23 and 24.20; 22.19 itself is NOT VERIFIED)
 git clone https://github.com/Pratiikpy/agent-spend-desk.git && cd agent-spend-desk
 npm install
 npm run desk -- --sample      # the limit autopsy card, on a constructed sample, offline (about 20 seconds)
-npm run desk -- demo          # the whole demo in eight beats, offline (under a minute)
+npm run desk -- demo          # the whole demo in scenes, offline (under a minute); add --compare to see every figure move on a changed sample
 npm run desk -- ui --sample   # fourteen screens on a local, read-only server
 npm run desk -- prove         # every check, each PASS, FAIL or NOT RUN
 npm run desk -- help          # every command, grouped by what you are trying to do
@@ -103,6 +103,14 @@ The first three are why the autopsy exists, the fourth is why the canary runs ev
 | Does its stated confidence mean what it says? | Link confidence against planted truth, the wind tunnel's range and probability against what happened | `desk calibrate` |
 | Was the Desk's own judgement right? | What it expected of each option when it proposed, scored on the month that followed, with regret | `desk regret` |
 | Does it learn from its mistakes? | Wrong answers become lessons; held-out error is measured per round and a worse round is reverted | `desk lessons learn` |
+| Could a cheaper model do my own tasks? | Tasks captured from your history with the tests that decide them, run on two models in a sandbox, graded by tests the model never saw; a comparison is withheld unless the baseline reproduces its recorded passes | `desk capture`, `desk swap` |
+| Which of my sessions could be replayed? | Each session's tool calls and results as a trajectory, classed full, tools only or insufficient, from your logs or captured at the gateway | `desk trajectories`, `desk gate gateway --capture` |
+| Can I take in someone else's rules? | A pack that widens a policy or changes a route is refused; the rest is replayed on your month and starts in shadow | `desk pack` |
+| Can anyone step around my policy? | The attacker corpus, a request of your own, and how many generated policy pairs the restrict check was held to | `desk attack` |
+| Can I save a workspace before an agent touches it? | A git snapshot that never touches your index, restored byte for byte | `desk snapshot` |
+| What does a prompt in another language cost? | The surcharge in tokens over English, and a team view with roles and signed reports | `desk language`, `desk team` |
+| Does each confidence mean what it says? | Ten-bin calibration and an abstain threshold for links, forecasts, a judge panel and the Auditor; a default is used, and said so, under 50 pairs | `desk calibrate surfaces` |
+| Can a stranger check the month's dossier with standard tools? | A Sigstore bundle of it, verified offline (cosign agrees) | `desk bundle` |
 
 ## The evidence
 
@@ -110,14 +118,15 @@ The first three are why the autopsy exists, the fourth is why the canary runs ev
 - **A head-to-head, pre-registered.** Same Nemotron model, 60 questions nobody had read (set D, preregistered before any run): the Desk v3 **55 exact against a tool agent's 45 and one call's 12**, and 85% against 70% and 18% when each question is asked three more times. All seven written predictions held. The five misses are the five shapes the Desk has no step for. On sets A and B, which the Desk was built against, v3 answers 60 of 60 each, reported as post hoc; the earlier rounds, including a first run that lost, are in the repository. Ten in sixty is a margin this size of set cannot make certain (`docs/verification/benchmark/RESULTS-v3.md`).
 - **Held-out replay.** A policy drafted from September meets October: it would have blocked **5 of 333** landed sessions. That, not the savings, is the headline.
 - **A verifier a stranger can run.** `desk-verify` recomputes a signed dossier's figures on plain Node with the network off; one changed byte names the row. A signature proves the record was not altered after signing and that its figures follow from its rows; it does not prove that the agent logs were truthful.
-- **Its own confidence, measured and published.** The wind tunnel's "90%" range held the real month in **73%** of 48 constructed samples (77% with no change planted), and, on the Desk before v3, learning from mistakes moved 2 of 60 questions with an interval that touches zero, so no improvement is claimed; on v3 the same experiment finds no mistake on 120 training questions, so there is nothing to learn from.
+- **Its own confidence, measured and published.** The wind tunnel's "90%" range held the real month in **73%** of 64 constructed samples (72% with no change planted), and, on the Desk before v3, learning from mistakes moved 2 of 60 questions with an interval that touches zero, so no improvement is claimed; on v3 the same experiment finds no mistake on 120 training questions, so there is nothing to learn from.
 - **Against the tool's own cost.** On one machine, 420 Claude Code processes with a recorded cost: 248 (59%) agree with the estimate to within 2%, the median difference is 0.0%, and without sub-agents the estimate is 8% below the tool's figure. Three sub-agent-heavy processes hold 97% of the dollar difference, so the total is $15,206 estimated against $9,353 recorded. Nothing was compared with an invoice (`docs/verification/reconciliation-2026-10-24.md`).
 - **A price book with a second source.** 89 of 90 prices agree with Portkey's open price file. The one that does not, Sonnet 5.5 cache reads ($0.10 against $0.20 per million tokens), is worth $1,742 on this machine's 17.4 billion cache-read tokens; which is in force is NOT VERIFIED, and the Bill shows both.
 - **A plan limit in tokens, and a forecast that was replaced.** On one machine's Codex logs a Plus plan's 5-hour window is 258K tokens per percent (95% interval 244K to 275K, 76 windows), and the fit declines where fewer than 8 windows moved the percent by 10 points. The first forecast of whether a window would last held its 80% range in 2 of 26 cases and was replaced; the replacement, which looks at past windows of the same plan at the same stage, scored a Brier of 0.186 against 0.327 for the base rate when run forward in time over 237 readings, and was no better than the base rate when it stopped learning (0.414 against 0.433). One person, one plan (`docs/verification/codex-reader-and-limit-fit-2026-10-24.md`, `docs/verification/runway-2026-10-24.md`).
 - **A gate for tools with no hook.** Behind the gateway door, on a real OpenAI-compatible endpoint, an allowed call was settled to the micro-dollar and an over-cap call was refused in 13 ms without the endpoint being called; with the gate down the door answers 503. The Anthropic route is tested against a fake endpoint only (`docs/verification/gateway-2026-10-24.md`).
-- **What it can stop, tested.** `desk enforcement test --live` ran the real Claude Code (2.1.308) three times: with no gate (the call was blocked, so it fails closed), behind a policy that refuses (blocked, one refusal recorded) and behind one that permits (it ran), so Claude Code reads enforced at that version. Codex, OpenCode, Cline and Gemini read advisory, Cursor and Copilot notify only, each with its reason; only Claude Code was run live (`docs/verification/enforcement-2026-10-25.md`).
+- **What it can stop, tested.** `desk enforcement test --live` ran the real Claude Code (2.1.308) and the real Codex CLI (0.154.0), each three times: with no gate (blocked, so it fails closed), behind a policy that refuses (blocked) and behind one that permits (it ran). Both read enforced at those versions. Running Codex showed that a hook exiting 2, which its documentation says blocks, did not; a deny on stdout did, and the adapter answers that way. Cursor and Gemini CLI have adapters that pass their contract tests but were not run live (not installed, no sign-in): advisory. OpenCode, Cline read advisory and Copilot notify only (`docs/verification/hook-adapters-2026-10-25.md`, `docs/verification/enforcement-2026-10-25.md`).
+- **A swap that declined to answer.** The larger of two Nemotron models passed 57% of its own scored runs on ten Lab tasks, under the 90% a comparison needs, so the verdict was withheld and the run says it cannot tell (`docs/verification/swap-2026-10-25.md`).
 - **A gate that calls a fall only when the data support it.** On packs of known truth (400 pairs, 52 tasks) it called a fall in 1 of 400 when nothing changed and in 96% of cases for a 20-point fall; for a 3-point change it usually says inconclusive, because one pack cannot rule that size out (`docs/verification/ci-gate-2026-10-25.md`).
-- **`desk prove`:** 35 PASS, 0 FAIL, 0 NOT RUN on a fresh clone. NOT RUN names a check the spec asks for that is not built or not recorded; it is never counted as a pass.
+- **`desk prove`:** 60 PASS, 0 FAIL, 0 NOT RUN. NOT RUN names a check the spec asks for that is not built or not recorded; it is never counted as a pass.
 
 Every figure, its file, and the failures: [docs/evidence.md](docs/evidence.md) and `docs/verification/`.
 
@@ -164,13 +173,12 @@ From a desk to a gate for every agent. The ledger reads three tools and the gate
 
 - **More tools.** A tool whose usage is not in a readable local file cannot be read (Copilot CLI's store holds no token counts, checked), and the Anthropic route of the gateway door has not met the real API.
 - **A measured trial of a policy on real tasks.** The Lab (graded tasks with hidden tests, an accounting proxy, a written protocol, and statistics for deciding whether an experiment is worth running) is built. Its feasibility spike has not finished, so no effect of any policy has been measured (`docs/lab/00-spike-protocol.md`).
-- **Teams.** Roles, per-team caps and more than one approver.
 - **A better range.** A one-month range that holds as often as it says.
 - **Open formats.** The ledger and the dossier as a published standard that other desks can write.
 
 ## What is not built, and what is not verified
 
-- Not built: team mode (roles, per-team caps, more than one approver) and a CI check that gates a change to a policy file (`desk ci` gates canary quality and cost); they are listed under "next" in the deck. Seat return, route replay, calibration, repeated-run reliability, the regret ledger and learning from mistakes are built, and their limits are in `docs/verification/`.
+- Every numbered feature in `docs/design/desk/07-feature-status.md` is built except DF-121, a log of real Cursor use, which only its user can write and which stays empty rather than be made up. Each feature's limits are in `docs/verification/`. Things that are built but have not met the real thing: the Responses route of the gateway (a fake upstream; NVIDIA serves no such route), the Cursor and Gemini CLI hooks, a judge panel (it needs your own labels), the opt-in index (no receiving end exists), and a swap whose baseline reproduces its recorded passes.
 - The benchmark is one model, one constructed ledger and one question author, who also built the Desk's tools. Set B is no longer held out for the Desk after the fix described above. The model is not deterministic: a replay shows what was recorded, not what it would say again. The Desk is still wrong on about a tenth of questions, mostly multi-step shares and sums.
 - The wind tunnel's range and probability are less reliable than their labels (see the Evidence screen). Learning from mistakes retrieves earlier plans by wording, so it cannot help a question of a new shape.
 - The gate stops Claude Code with the hook installed (`docs/verification/gate-enforcement.md`) and any tool that is pointed at the gateway door (`docs/verification/gateway-2026-10-24.md`). A tool that does neither, a hook removed, or a clock set forward is not stopped; the bypass table says which each one is.

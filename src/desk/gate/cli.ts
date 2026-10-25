@@ -13,7 +13,13 @@ import { parseVirtualPrices, withVirtualPrices } from "../pricing/virtual.ts";
 import { MemoryTrace } from "../agents/trace.ts";
 import { Gate } from "./gate.ts";
 import { GateError } from "./types.ts";
+import { saveCapture } from "../capture/gateway.ts";
+import { openCapture } from "../capture/store.ts";
 import { startGateway } from "../gateway/server.ts";
+import { installHook } from "./install.ts";
+import { HOOK_TOOLS, isHookTool } from "./tools.ts";
+import { homedir } from "node:os";
+import { fileURLToPath } from "node:url";
 import { profileOf } from "../security/net.ts";
 import { startGateServer } from "./http.ts";
 import { serveMcp } from "./mcp.ts";
@@ -26,15 +32,19 @@ const DEFAULT_GATEWAY_PORT = 8766;
 const DEFAULT_SHADOW = "7d";
 const DEFAULT_HANDOFF_DIR = "data/desk/handoffs";
 
-const USAGE = `Use: gate serve|gateway|mcp|open|close|status|integrity|checkpoints|resume [options]
+const USAGE = `Use: gate serve|gateway|mcp|hook|open|close|status|integrity|checkpoints|resume [options]
   serve      --policy FILE [--db FILE] [--prices FILE] [--port N] [--shadow-for 7d|0] [--person NAME] [--transcript-root DIR]... [--max-agents 4] [--max-questions 10] [--no-attention]
              a new agent is refused when its person already has --max-agents working or has been asked --max-questions in the last hour (--no-attention turns that off)
              needs DESK_GATE_TOKEN (at least 16 characters); DESK_GATE_OWNER_TOKEN enables approve, switch, pause on the owner routes
-  gateway    --upstream URL --policy FILE [--db FILE] [--prices FILE] [--port N] [--shadow-for 7d|0] [--person NAME] [--reserve MODEL=USD]...
+  gateway    --upstream URL --policy FILE [--db FILE] [--prices FILE] [--port N] [--shadow-for 7d|0] [--person NAME] [--reserve MODEL=USD]... [--capture FILE [--keep-text]]
              an OpenAI-compatible and Anthropic-compatible door: point an agent's base URL at it; each chat completion or message is reserved before it is sent and settled after.
              --price MODEL=IN,OUT sets a price (dollars per million tokens) for a model with none, so caps count its tokens; --reserve gives
              such a model a flat reservation per call instead. The caller's own key is passed on; nothing else is stored.
+             --capture FILE keeps each session's tool calls and their results in the capture store at FILE as a trajectory, redacted, for desk trajectories and desk swap
+             (--keep-text keeps the redacted text of inputs and results, not only their hashes).
   mcp        --policy FILE [--db FILE] [--prices FILE] [--person NAME]   MCP over stdio (advisory tools)
+  hook       --tool claude-code|codex|cursor|gemini-cli [--scope user|project] [--config FILE] [--install]
+             says whether the tool's own config holds the Desk's blocking hook, and with --install adds it beside what is there. A hook is not enforced until desk enforcement test passes.
   open       --for 30m          owner only: open the emergency switch (signed with DESK_GATE_OWNER_TOKEN)
   close                          close the emergency switch
   status     [--db FILE]         switch, paused people, budgets, integrity
@@ -99,6 +109,12 @@ const GATE_OPTIONS = {
   "no-attention": { type: "boolean", default: false },
   "max-agents": { type: "string", default: String(DEFAULT_ATTENTION.maxConcurrent) },
   "max-questions": { type: "string", default: String(DEFAULT_ATTENTION.maxInterruptionsPerHour) },
+  tool: { type: "string" },
+  scope: { type: "string", default: "user" },
+  config: { type: "string" },
+  install: { type: "boolean", default: false },
+  capture: { type: "string" },
+  "keep-text": { type: "boolean", default: false },
 } as const;
 
 const parseGateArgs = (rest: readonly string[]) => parseOrUsage({ args: [...rest], options: GATE_OPTIONS, allowPositionals: false });
@@ -160,6 +176,20 @@ export async function runGateCli(argv: readonly string[], env: Record<string, st
       await running.close();
       return 0;
     }
+    case "hook": {
+      if (values.tool === undefined || !isHookTool(values.tool)) {
+        console.error(`--tool is one of ${HOOK_TOOLS.join(", ")}`);
+        return 2;
+      }
+      if (values.scope !== "user" && values.scope !== "project") {
+        console.error("--scope is user or project");
+        return 2;
+      }
+      const r = installHook({ tool: values.tool, scope: values.scope, home: homedir(), cwd: process.cwd(), ...(values.config ? { config: values.config } : {}), hookMain: fileURLToPath(new URL("./hook-main.ts", import.meta.url)), write: values.install });
+      console.log(r.message);
+      console.log(`The hook runs: ${r.command}`);
+      return r.state === "unreadable" ? 1 : 0;
+    }
     case "gateway": {
       if (values.upstream === undefined) {
         console.error("--upstream URL is required, for example https://api.openai.com/v1");
@@ -167,7 +197,15 @@ export async function runGateCli(argv: readonly string[], env: Record<string, st
       }
       const gate = makeGate(true);
       gate.currentPolicy(); // refuse to start on a policy that cannot be read
-      const running = await startGateway({ upstream: values.upstream, gate, prices: priceBook(), port: Number(values.port === String(DEFAULT_PORT) ? DEFAULT_GATEWAY_PORT : values.port), profile: profileOf(process.env) });
+      const sink = values.capture !== undefined ? openCapture(values.capture) : null;
+      const running = await startGateway({
+        upstream: values.upstream,
+        gate,
+        prices: priceBook(),
+        port: Number(values.port === String(DEFAULT_PORT) ? DEFAULT_GATEWAY_PORT : values.port),
+        profile: profileOf(process.env),
+        ...(sink !== null ? { capture: (c) => void saveCapture(sink, c, { keep: values["keep-text"] }) } : {}),
+      });
       console.error(`desk gateway listening on ${running.url} (loopback only), forwarding to ${values.upstream}; db ${dbPath}; policy ${values.policy}`);
       console.error(`Point an agent at it, for example: OPENAI_BASE_URL=${running.url}`);
       await new Promise<void>((resolve) => {
@@ -177,6 +215,7 @@ export async function runGateCli(argv: readonly string[], env: Record<string, st
       });
       const st = running.stats();
       await running.close();
+      sink?.close();
       console.error(`gateway stopped: ${st.seen} requests, ${st.controlled} metered (${st.allowed} allowed, ${st.denied} refused, ${st.failedClosed} failed closed), ${st.unmetered} reads passed through, ${st.unmeteredRefused} unmeterable writes refused`);
       return 0;
     }

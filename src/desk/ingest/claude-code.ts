@@ -322,9 +322,9 @@ function hashInput(input: unknown): string {
  * exceeded, a count of lines or characters left out. The bare word is not enough (a result may print a field called truncated, or a test of that name).
  * Only the start and the end of a result are read.
  */
-const TRUNCATION = /<persisted-output>|\boutput (?:was |is )?too (?:large|long)\b|\bexceeds? (?:the )?maximum allowed\b|\b(?:output|results?|content|response|text|lines?) (?:was |were |is |has been |have been )?truncated\b|\btruncated (?:to|at|after|from|\()|\[\s*truncated\s*\]|\.\.\.\s*truncated|\[\d[\d,]* (?:more )?(?:lines?|chars?|characters?|bytes?|tokens?) (?:truncated|omitted|hidden|elided)\]|\.\.\. ?\[?\d[\d,]* (?:more )?(?:lines?|chars?|characters?|bytes?|tokens?)/i;
+export const TRUNCATION = /<persisted-output>|\boutput (?:was |is )?too (?:large|long)\b|\bexceeds? (?:the )?maximum allowed\b|\b(?:output|results?|content|response|text|lines?) (?:was |were |is |has been |have been )?truncated\b|\btruncated (?:to|at|after|from|\()|\[\s*truncated\s*\]|\.\.\.\s*truncated|\[\d[\d,]* (?:more )?(?:lines?|chars?|characters?|bytes?|tokens?) (?:truncated|omitted|hidden|elided)\]|\.\.\. ?\[?\d[\d,]* (?:more )?(?:lines?|chars?|characters?|bytes?|tokens?)/i;
 
-function textOf(content: unknown): string {
+export function textOf(content: unknown): string {
   if (typeof content === "string") return content;
   if (Array.isArray(content)) return content.map((b) => (isObject(b) && typeof b["text"] === "string" ? b["text"] : "")).join("\n");
   return "";

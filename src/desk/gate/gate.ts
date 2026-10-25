@@ -1095,7 +1095,9 @@ export class Gate {
       if (open !== undefined && !this.bypassOpen().open && isHandoffWrite(open.handoff_path, toolName, input["tool_input"])) {
         return { decision: "allow", reason: `writing the handoff for checkpoint ${open.id}`, failedClosed: false };
       }
-      const model = lastModel ?? (this.cfg.db.prepare("SELECT last_model FROM gate_transcript WHERE session_id = ?").get(sessionId) as { last_model?: string | null } | undefined)?.last_model ?? "claude-unknown";
+      // A tool that names its model in the event (Codex, Cursor) is believed over a stored guess; Claude Code names it only in its transcript.
+      const named = typeof input["model"] === "string" && input["model"] !== "" ? (input["model"] as string).slice(0, 120) : null;
+      const model = lastModel ?? named ?? (this.cfg.db.prepare("SELECT last_model FROM gate_transcript WHERE session_id = ?").get(sessionId) as { last_model?: string | null } | undefined)?.last_model ?? "claude-unknown";
       const d = this.checkOnly(
         { session_id: sessionId, person, project, agent: "agent:main", model, task_type: taskType, waste_rule: "none", action: "tool_call", tool: toolName, recoverable_micros: 0, idempotency_key: null, estimate_micros: this.cfg.hookProbeMicros ?? 1, input_tokens: null, max_tokens: null, n: 1, ttl_ms: null, call_ref: null, approval_id: null },
       );

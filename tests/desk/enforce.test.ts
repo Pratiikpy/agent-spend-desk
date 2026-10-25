@@ -76,17 +76,33 @@ describe("the enforcement ladder", () => {
   });
 
   it("says notify only for a tool with no hook, no gateway path and no MCP, with the reason", () => {
-    const cursor = by(ladder([]), "cursor");
-    expect(cursor.level).toBe("notify_only");
-    expect(cursor.reason).toMatch(/^notify only: a hosted IDE agent/);
-    expect(cursor.reason).toContain("Caps on it produce notices and month-end findings only.");
-    expect(cursor.surfaces).toEqual([]);
+    const copilot = by(ladder([]), "copilot_cli");
+    expect(copilot.level).toBe("notify_only");
+    expect(copilot.reason).toMatch(/^notify only: no pre-call hook is known/);
+    expect(copilot.reason).toContain("Caps on it produce notices and month-end findings only.");
+    expect(copilot.surfaces).toEqual([]);
   });
 
-  it("does not claim a gateway for a tool whose traffic the gateway cannot meter", () => {
+  it("does not take another tool's contract result or another door's test for a tool's own", () => {
     const codex = by(ladder([res({ surface: "gateway_openai", mode: "contract" })]), "codex");
-    expect(codex.surfaces.map((s) => s.surface)).toEqual(["mcp"]);
-    expect(codex.reason).toContain("Responses API");
+    expect(codex.surfaces.map((s) => s.surface)).toEqual(["hook", "gateway_responses", "mcp"]);
+    expect(codex.surfaces.find((s) => s.surface === "gateway_responses")!.evidence).toContain("declared, not tested");
+    const withResponses = by(ladder([res({ surface: "gateway_responses", mode: "contract" })]), "codex");
+    expect(withResponses.surfaces.find((s) => s.surface === "gateway_responses")!.evidence).toContain("the responses door refuses over-cap calls");
+    // A hook contract test of one tool says nothing about another's.
+    const cursorOnly = ladder([res({ surface: "hook", mode: "contract", tool: "cursor" })]);
+    expect(by(cursorOnly, "cursor").surfaces[0]!.evidence).toContain("passed a contract test");
+    expect(by(cursorOnly, "codex").surfaces[0]!.evidence).toContain("declared");
+    expect(by(cursorOnly, "claude_code").surfaces[0]!.evidence).toContain("declared");
+  });
+
+  it("makes Cursor, Codex CLI and Gemini CLI enforced only after a live run, like Claude Code", () => {
+    for (const [tool, version] of [["cursor", "3.1.0"], ["codex", "0.154.0"], ["gemini_cli", "0.42.0"]] as const) {
+      expect(by(ladder([res({ surface: "hook", mode: "contract", tool })], { [tool]: version }), tool).level, tool).toBe("advisory");
+      const live = res({ surface: "hook", mode: "live", tool, toolVersion: version });
+      expect(by(ladder([live], { [tool]: version }), tool).level, tool).toBe("enforced");
+      expect(by(ladder([live], { [tool]: "9.9.9" }), tool).level, tool).toBe("advisory");
+    }
   });
 
   it("names every tool once, each with a reason", () => {

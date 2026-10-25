@@ -13,14 +13,14 @@ import { dirname } from "node:path";
  * "Enforced" is never assumed. It needs a recorded test result, and a tool that has changed version since is advisory again until it is re-tested.
  */
 export type Level = "enforced" | "advisory" | "notify_only";
-export type Surface = "hook" | "gateway_openai" | "gateway_anthropic" | "mcp";
+export type Surface = "hook" | "gateway_openai" | "gateway_anthropic" | "gateway_responses" | "mcp";
 
 export interface ToolDecl {
   tool: string;
   label: string;
   /** The surface that stops it, when the tool has one, and how it is reached. */
   hook?: { how: string };
-  gateway?: { door: "openai" | "anthropic"; how: string };
+  gateway?: { door: "openai" | "anthropic" | "responses"; how: string };
   mcp: boolean;
   /** Why there is no surface, when there is none; or what stands in the way of a surface the tool nearly has. */
   limit?: string;
@@ -40,8 +40,11 @@ export const TOOLS: readonly ToolDecl[] = [
   {
     tool: "codex",
     label: "Codex CLI",
+    hook: { how: "a PreToolUse hook (`node src/desk/gate/hook-main.ts --tool codex`) in ~/.codex/hooks.json that asks the gate before every tool call" },
+    gateway: { door: "responses", how: "a model provider whose base URL is the gateway door, which meters the Responses route" },
     mcp: true,
-    limit: "it speaks the Responses API, which the gateway door does not meter, and no pre-call hook the Desk can use is known (not verified)",
+    versionCommand: "codex --version",
+    limit: "the hook stops a tool call from a session the gate has paused or a cap it has reached; Codex's own model spend reaches the gate only through the gateway, which was run against a fake upstream",
   },
   {
     tool: "opencode",
@@ -57,9 +60,23 @@ export const TOOLS: readonly ToolDecl[] = [
     mcp: true,
     limit: "its traffic can be pointed at the gateway, but Cline itself has not been run through it",
   },
-  { tool: "cursor", label: "Cursor", mcp: false, limit: "a hosted IDE agent: no pre-call hook, and its model traffic goes through its own servers, not a base URL the Desk can take" },
+  {
+    tool: "cursor",
+    label: "Cursor",
+    hook: { how: "a preToolUse hook (`node src/desk/gate/hook-main.ts --tool cursor`, marked failClosed) in ~/.cursor/hooks.json" },
+    mcp: false,
+    versionCommand: "cursor --version",
+    limit: "a hosted IDE agent: its hook can stop a tool call, but its model traffic goes through its own servers, not a base URL the Desk can take, so its spend is not seen",
+  },
   { tool: "copilot_cli", label: "GitHub Copilot CLI", mcp: false, limit: "no pre-call hook is known and its model traffic cannot be pointed at a gateway (not verified)" },
-  { tool: "gemini_cli", label: "Gemini CLI", mcp: true, limit: "it speaks Google's API, which neither gateway door meters" },
+  {
+    tool: "gemini_cli",
+    label: "Gemini CLI",
+    hook: { how: "a BeforeTool hook (`node src/desk/gate/hook-main.ts --tool gemini-cli`) in ~/.gemini/settings.json" },
+    mcp: true,
+    versionCommand: "gemini --version",
+    limit: "it speaks Google's API, which no gateway door meters, so its spend is not seen",
+  },
 ];
 
 export interface CheckResult {
@@ -135,7 +152,7 @@ export function ladder(results: readonly SurfaceResult[], installed: Readonly<Re
     const surfaces: SurfaceRow[] = [];
     if (t.hook) {
       const live = newest(results, "hook", "live", t.tool);
-      const contract = newest(results, "hook", "contract", null);
+      const contract = newest(results, "hook", "contract", t.tool === "claude_code" ? null : t.tool);
       const now = installed[t.tool] ?? null;
       if (live?.passed && (now === null || live.toolVersion === null || live.toolVersion === now)) {
         surfaces.push({ surface: "hook", level: "enforced", evidence: `run live against ${t.label} ${live.toolVersion ?? ""} on ${live.testedAt.slice(0, 10)}: a denied call did not run, an unreachable gate blocked, a permitted call ran`.replace("  ", " ") });
@@ -148,7 +165,7 @@ export function ladder(results: readonly SurfaceResult[], installed: Readonly<Re
       }
     }
     if (t.gateway) {
-      const door = t.gateway.door === "openai" ? "gateway_openai" : "gateway_anthropic";
+      const door: Surface = t.gateway.door === "openai" ? "gateway_openai" : t.gateway.door === "responses" ? "gateway_responses" : "gateway_anthropic";
       const doorTest = newest(results, door, "contract", null);
       const live = newest(results, door, "live", t.tool);
       if (live?.passed) surfaces.push({ surface: door, level: "enforced", evidence: `${t.label} was run through the ${t.gateway.door} door on ${live.testedAt.slice(0, 10)} and a refused call did not reach the model` });
