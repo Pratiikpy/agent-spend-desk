@@ -1,0 +1,32 @@
+{
+  "key": "3878a4be99604203dd5f0c77ecb89a1a",
+  "recordedAt": "2026-10-25T02:34:45.807Z",
+  "role": "ask_planner",
+  "response": {
+    "content": "",
+    "toolCalls": [
+      {
+        "id": "call-c994eda6-f2fa-4b23-9bef-a7ab09925cab",
+        "name": "cannot_answer",
+        "arguments": {
+          "reason": "The ledger covers 2026-09-01 to 2026-10-31 only; January 2027 is outside its coverage."
+        }
+      }
+    ],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_60s5djh8",
+      "decisionId": "req_60s5djh8",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 1444
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 2775,
+      "outputTokens": 63,
+      "reasoningTokens": 0
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "key": "6c9537ae3fc565e5977c4e6c2e021a52",
+  "recordedAt": "2026-10-25T02:32:50.720Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Session `sess-00334` in `data-pipeline` cost $44.45; its work is committed but not merged.\", \"cites\": [\"top.1\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_bzmi9u92",
+      "decisionId": "req_bzmi9u92",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 2291
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 277,
+      "outputTokens": 54,
+      "reasoningTokens": 0
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "key": "4160dee581d31a48e81348dfc706e8be",
+  "recordedAt": "2026-10-25T02:16:57.780Z",
+  "role": "ask_planner",
+  "response": {
+    "content": "",
+    "toolCalls": [
+      {
+        "id": "call-a3a80085-fa9b-4ceb-8b1b-942929d24fe2",
+        "name": "cannot_answer",
+        "arguments": {
+          "reason": "The ledger holds no pricing or cost data for any model, including models never used here, so savings cannot be computed."
+        }
+      }
+    ],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_7bofcgbx",
+      "decisionId": "req_7bofcgbx",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 2521
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 2781,
+      "outputTokens": 48,
+      "reasoningTokens": 0
+    }
+  }
+}

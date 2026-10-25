@@ -1,0 +1,24 @@
+{
+  "key": "7f858bc4beb4e40ebc4b32542f8d4745",
+  "recordedAt": "2026-10-25T03:14:35.015Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Estimated list-price spend on model `claude-opus-5` between 2026-09-21 and 2026-10-18 was $2,406.79.\", \"cites\": [\"opus_spend.1\"]}, {\"text\": \"The percentage asked about was 25%.\", \"cites\": [\"savings.1\"]}, {\"text\": \"That percentage of the spend comes to $601.70, an estimate from logged tokens.\", \"cites\": [\"savings.2\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_kerjbxtz",
+      "decisionId": "req_kerjbxtz",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 1164
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 598,
+      "outputTokens": 136,
+      "reasoningTokens": 0
+    }
+  }
+}

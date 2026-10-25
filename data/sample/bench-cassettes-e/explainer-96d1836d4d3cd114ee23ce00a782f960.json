@@ -1,0 +1,24 @@
+{
+  "key": "96d1836d4d3cd114ee23ce00a782f960",
+  "recordedAt": "2026-10-25T04:15:32.644Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Estimated list-price spend between 2026-10-14 and 2026-10-20 was $545.82.\", \"cites\": [\"spend1.1\"]}, {\"text\": \"Estimated list-price spend between 2026-10-21 and 2026-10-27 was $469.39.\", \"cites\": [\"spend2.1\"]}, {\"text\": \"The first period cost $76.43 more than the second.\", \"cites\": [\"compare.1\"]}, {\"text\": \"The second period was 86.0% of the first.\", \"cites\": [\"compare.2\"]}, {\"text\": \"Session `sess-00799` in `payments-api` cost $26.09.\", \"cites\": [\"top1.1\"]}, {\"text\": \"Session `sess-00786` in `mobile-client` cost $23.23.\", \"cites\": [\"top1.2\"]}, {\"text\": \"Session `sess-00778` in `data-pipeline` cost $22.80.\", \"cites\": [\"top1.3\"]}, {\"text\": \"Session `sess-00682` in `infra` cost $18.24.\", \"cites\": [\"top1.4\"]}, {\"text\": \"Session `sess-00789` in `mobile-client` cost $16.21.\", \"cites\": [\"top1.5\"]}, {\"text\": \"Session `sess-00913` in `web-app` cost $23.36.\", \"cites\": [\"top2.1\"]}, {\"text\": \"Session `sess-00841` in `data-pipeline` cost $22.67.\", \"cites\": [\"top2.2\"]}, {\"text\": \"Session `sess-00901` in `infra` cost $19.45.\", \"cites\": [\"top2.3\"]}, {\"text\": \"Session `sess-00842` in `web-app` cost $17.43.\", \"cites\": [\"top2.4\"]}, {\"text\": \"Session `sess-00848` in `infra` cost $17.05.\", \"cites\": [\"top2.5\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_71kjoo7m",
+      "decisionId": "req_71kjoo7m",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 4870
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 1288,
+      "outputTokens": 565,
+      "reasoningTokens": 0
+    }
+  }
+}

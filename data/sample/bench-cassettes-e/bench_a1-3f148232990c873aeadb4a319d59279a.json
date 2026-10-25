@@ -1,0 +1,24 @@
+{
+  "key": "3f148232990c873aeadb4a319d59279a",
+  "recordedAt": "2026-10-25T03:32:51.580Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "The ledger does not contain information about the number of engineers on the team.",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_5trj0y97",
+      "decisionId": "req_5trj0y97",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 1991
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 1113,
+      "outputTokens": 17,
+      "reasoningTokens": 0
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "key": "534b9f8d0bf905a24b7a244bf404998e",
+  "recordedAt": "2026-10-25T02:02:18.355Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Session `sess-00334` in `data-pipeline` cost $44.45; its work is committed but not merged.\", \"cites\": [\"s1.1\"]}, {\"text\": \"Session `sess-00510` in `mobile-client` cost $43.53; its work is merged and kept.\", \"cites\": [\"s1.2\"]}, {\"text\": \"Session `sess-00391` in `web-app` cost $41.79; its work is merged and kept.\", \"cites\": [\"s1.3\"]}, {\"text\": \"Session `sess-00408` in `mobile-client` cost $37.66; its work is merged and kept.\", \"cites\": [\"s1.4\"]}, {\"text\": \"Session `sess-00374` in `web-app` cost $35.26; its work is merged and kept.\", \"cites\": [\"s1.5\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_g6mh1lvn",
+      "decisionId": "req_g6mh1lvn",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 3379
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 509,
+      "outputTokens": 239,
+      "reasoningTokens": 0
+    }
+  }
+}

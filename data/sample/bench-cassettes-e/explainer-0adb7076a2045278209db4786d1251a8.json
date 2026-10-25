@@ -1,0 +1,24 @@
+{
+  "key": "0adb7076a2045278209db4786d1251a8",
+  "recordedAt": "2026-10-25T02:34:43.260Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Session `sess-00510` in `mobile-client` cost $55.91; its work is merged and kept.\", \"cites\": [\"top.1\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_f5pgrvzg",
+      "decisionId": "req_f5pgrvzg",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 613
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 275,
+      "outputTokens": 52,
+      "reasoningTokens": 0
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "key": "708d082b722a9d59df0f2c63f9c58933",
+  "recordedAt": "2026-10-25T03:31:42.240Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Session `sess-00195` in `infra` cost $73.51; its work is not tied to any commit.\", \"cites\": [\"s1.1\"]}, {\"text\": \"Session `sess-00031` in `web-app` cost $61.68; its work is not tied to any commit.\", \"cites\": [\"s1.2\"]}, {\"text\": \"Session `sess-00067` in `mobile-client` cost $60.92; its work is merged and kept.\", \"cites\": [\"s1.3\"]}, {\"text\": \"Session `sess-00510` in `mobile-client` cost $55.91; its work is merged and kept.\", \"cites\": [\"s1.4\"]}, {\"text\": \"Session `sess-00982` in `data-pipeline` cost $51.84; its work is not tied to any commit.\", \"cites\": [\"s1.5\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_aapdwjuv",
+      "decisionId": "req_aapdwjuv",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 1374
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 514,
+      "outputTokens": 244,
+      "reasoningTokens": 0
+    }
+  }
+}

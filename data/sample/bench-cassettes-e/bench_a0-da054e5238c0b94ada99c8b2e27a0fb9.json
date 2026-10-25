@@ -1,0 +1,24 @@
+{
+  "key": "da054e5238c0b94ada99c8b2e27a0fb9",
+  "recordedAt": "2026-10-25T03:44:20.747Z",
+  "role": "bench_a0",
+  "response": {
+    "content": "The ledger cannot answer why spend changed; it only records estimated list-price spend per model call, not causes.\n\nPeriod 2026-10-02 to 2026-10-09: $1,017.28  \nPeriod 2026-10-10 to 2026-10-17: $1,017.28  \nDollar difference: $0.00 (spend did not double; it was identical).",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_4gra4o73",
+      "decisionId": "req_4gra4o73",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 2856
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 7666,
+      "outputTokens": 116,
+      "reasoningTokens": 0
+    }
+  }
+}

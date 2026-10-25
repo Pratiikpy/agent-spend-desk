@@ -1,0 +1,24 @@
+{
+  "key": "2554e209113d96a9f7213ee42f5d83e4",
+  "recordedAt": "2026-10-25T03:44:26.234Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "Spend did not double; it fell from $984.88 (2026-10-02 to 2026-10-09) to $586.82 (2026-10-10 to 2026-10-17), a decrease of $398.06. The ledger shows a model mix shift toward claude-opus-5 (from 56.5% to 74.9% of calls) and away from claude-sonnet-5-5 (from 41.5% to 23.2%), but spend still decreased overall. No other cause is recorded in the ledger.",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_xskop1oz",
+      "decisionId": "req_xskop1oz",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 2451
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 2468,
+      "outputTokens": 160,
+      "reasoningTokens": 0
+    }
+  }
+}

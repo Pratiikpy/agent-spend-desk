@@ -1,0 +1,24 @@
+{
+  "key": "d12bfb5fc12c1b904e50cfc0b7d0b95a",
+  "recordedAt": "2026-10-25T04:15:53.026Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "Spend did not triple. It fell from $545.82 (2026-10-14 to 2026-10-20) to $469.39 (2026-10-21 to 2026-10-27), a decrease of $76.43. The ledger cannot explain a tripling because it did not occur.",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_3diyc8vs",
+      "decisionId": "req_3diyc8vs",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 3012
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 2584,
+      "outputTokens": 97,
+      "reasoningTokens": 0
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "key": "e8d91bc2ef2146b0cd2146d5d6b7e629",
+  "recordedAt": "2026-10-25T03:47:21.995Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\": [{\"text\": \"Estimated list-price spend between 2026-10-08 and 2026-10-15 was $807.93, an estimate from logged tokens and not a bill.\", \"cites\": [\"spend1.1\"]}, {\"text\": \"That covers 8,731 model calls.\", \"cites\": [\"spend1.2\"]}, {\"text\": \"Estimated list-price spend between 2026-10-16 and 2026-10-23 was $624.69, an estimate from logged tokens and not a bill.\", \"cites\": [\"spend2.1\"]}, {\"text\": \"That covers 10,401 model calls.\", \"cites\": [\"spend2.2\"]}, {\"text\": \"The first period cost $183.24 more than the second.\", \"cites\": [\"compare.1\"]}, {\"text\": \"The second period was 77.3% of the first.\", \"cites\": [\"compare.2\"]}, {\"text\": \"Estimated list-price spend between 2026-10-08 and 2026-10-15 was $807.93, an estimate from logged tokens and not a bill.\", \"cites\": [\"digest1.1\"]}, {\"text\": \"The whole range was read in 8 periods.\", \"cites\": [\"digest1.2\"]}, {\"text\": \"Each period covered 1 days.\", \"cites\": [\"digest1.3\"]}, {\"text\": \"The costliest period started on 2026-10-13 and cost $166.22.\", \"cites\": [\"digest1.4\"]}, {\"text\": \"Model `claude-opus-5` cost $575.30 in the range.\", \"cites\": [\"digest1.5\"]}, {\"text\": \"Model `claude-sonnet-5-5` cost $232.04 in the range.\", \"cites\": [\"digest1.6\"]}, {\"text\": \"Model `claude-haiku-5-5` cost $0.60 in the range.\", \"cites\": [\"digest1.7\"]}, {\"text\": \"Spending in the last third of the range was 65.2% of the first third.\", \"cites\": [\"digest1.8\"]}, {\"text\": \"Estimated list-price spend between 2026-10-16 and 2026-10-23 was $624.69, an estimate from logged tokens and not a bill.\", \"cites\": [\"digest2.1\"]}, {\"text\": \"The whole range was read in 8 periods.\", \"cites\": [\"digest2.2\"]}, {\"text\": \"Each period covered 1 days.\", \"cites\": [\"digest2.3\"]}, {\"text\": \"The costliest period started on 2026-10-20 and cost $141.00.\", \"cites\": [\"digest2.4\"]}, {\"text\": \"Model `claude-sonnet-5-5` cost $398.90 in the range.\", \"cites\": [\"digest2.5\"]}, {\"text\": \"Model `claude-opus-5` cost $224.02 in the range.\", \"cites\": [\"digest2.6\"]}, {\"text\": \"Model `claude-haiku-5-5` cost $1.77 in the range.\", \"cites\": [\"digest2.7\"]}, {\"text\": \"Spending in the last third of the range was 230.8% of the first third.\", \"cites\": [\"digest2.8\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_swin192n",
+      "decisionId": "req_swin192n",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 12889
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 1518,
+      "outputTokens": 863,
+      "reasoningTokens": 0
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "key": "1fa08989e22747e32e190d3f1c455688",
+  "recordedAt": "2026-10-25T04:08:37.778Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "The ledger does not report session counts, only model calls and spend. Between 2026-09-11 and 2026-09-27 there were 18,154 model calls, but I cannot tell how many sessions started.",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_mkdq6mk5",
+      "decisionId": "req_mkdq6mk5",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 731
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 1275,
+      "outputTokens": 61,
+      "reasoningTokens": 0
+    }
+  }
+}

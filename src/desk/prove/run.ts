@@ -754,6 +754,7 @@ const CHECKS: Check[] = [
   benchCheck("benchmark-reproduces-from-recordings", "A"),
   benchCheck("benchmark-set-b-reproduces-from-recordings", "B"),
   benchCheck("benchmark-set-d-reproduces-from-recordings", "D"),
+  benchCheck("ablation-set-e-reproduces-from-recordings", "E"),
   {
     id: "nightshift-receipts-in-recordings",
     command: "every recorded model reply that says Meterless Nightshift served it carries Nightshift's compute receipt",

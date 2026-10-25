@@ -2,7 +2,7 @@
 
 Generated from `feature-status.json` by `npm run desk -- status` and checked by `tests/desk/feature-status.test.ts`. The specification is `02-feature-list.md`, which was written as design; this page says how much of it exists.
 
-**92 built, 23 partial, 14 absent** of 129.
+**93 built, 22 partial, 14 absent** of 129.
 
 How to read a status. *Built*: the core of the feature as specified exists and a test, a `desk prove` check or a verification record exercises it. *Partial*: a real part exists and the missing part is named. *Absent*: no code was found. A status is a judgement made by reading and searching, which is why every row cites the files it rests on. A built feature can still be shallow; the "missing" column says so where known.
 
@@ -92,7 +92,7 @@ How to read a status. *Built*: the core of the feature as specified exists and a
 | DF-082 Published replay calibration | built | `src/desk/calibrate/windtunnel.ts`, `docs/verification/calibration` | - |
 | DF-083 Sources and doctor: what the Desk cannot know | built | `src/desk/ui/client/screens/sources.js`, `tests/desk/ui/server.test.ts` | - |
 | DF-084 Failure drills and every error state | built | `tests/desk/drills.test.ts`, `src/desk/gate/health.ts`, `src/desk/ledger/chain.ts`, `src/desk/replay/reproduction.ts`, `src/desk/pricing/owner.ts`, `docs/verification/failure-drills-2026-10-25.md` | A real full volume was not filled; a hung endpoint is covered by the timeouts in each feature's own tests |
-| DF-085 Published role-necessity and engine ablations | partial | `src/desk/prove/run.ts`, `src/desk/engines/registry.ts` | engine ablations only; no role-necessity ablation of the Auditor, critic and others |
+| DF-085 Published role-necessity and engine ablations | built | `src/desk/bench/arms.ts`, `src/desk/bench/ablation.ts`, `src/desk/bench/paired.ts`, `src/desk/ask/ask.ts`, `src/desk/prove/run.ts`, `tests/desk/bench/ablation.test.ts`, `tests/desk/bench/paired.test.ts`, `tests/desk/ask/roles.test.ts`, `docs/verification/ablation/RESULTS-ablation.md` | One model, one constructed ledger, 60 questions and one run each: a role not shown necessary is not shown useless; the run times of arms that share requests with the full Desk are cassette-read times |
 | DF-086 Clean-room verification from the README | built | `docs/verification/clean-room/README.md`, `tests/desk/clean-room-logs.test.ts` | Node 22.19 and macOS not run; the clone was of the local repository, not from GitHub |
 | DF-087 Themes, accessibility and charts with tables | built | `src/desk/ui/client/styles.css`, `src/desk/ui/client/lib/ui.js`, `tests/desk/ui/accessibility.test.ts`, `docs/verification/figures-and-accessibility-2026-10-25.md` | No screen reader run; non-text contrast, 200% text zoom, forced colours and touch-target size not measured |
 | DF-088 Supervision attention-load governor and review-overhead meter | built | `src/desk/gate/attention.ts`, `src/desk/gate/gate.ts`, `src/desk/gate/cli.ts`, `src/desk/gate/readout.ts`, `src/desk/ui/queries.ts`, `src/desk/ui/client/screens/bill.js`, `tests/desk/gate/attention.test.ts`, `tests/desk/gate/attention-cli.test.ts`, `tests/desk/ui/review-time-ui.test.ts`, `docs/verification/attention-governor-2026-10-25.md` | Concurrent agents are sessions with a gate event in ten minutes; review time is the wait to the approval, not time spent reading; no attention_snapshots table: the load is read from the gate's events |

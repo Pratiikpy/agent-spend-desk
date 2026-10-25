@@ -1,0 +1,24 @@
+{
+  "key": "a5fae0d5a9c9823fcea7c46af48c9ac1",
+  "recordedAt": "2026-10-25T03:32:49.421Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "The ledger cannot answer that question. It covers 2026-09-01 to 2026-10-31 only, so there is no spend data for January 2027.",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_vcwt44sj",
+      "decisionId": "req_vcwt44sj",
+      "routedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 2288
+    },
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 1260,
+      "outputTokens": 50,
+      "reasoningTokens": 0
+    }
+  }
+}
