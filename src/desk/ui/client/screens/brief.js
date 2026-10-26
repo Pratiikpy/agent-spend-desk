@@ -36,6 +36,22 @@ export async function render(ctx) {
     "div",
     null,
     head("Morning brief", dayLabel(d.day), `${d.noCallOn ? `No call was logged on ${dayLabel(d.noCallOn)}, so this is the last day that has one. ` : ""}Yesterday's spend, what it bought, and the one change worth making. Days are ${d.timeZone === "UTC" ? "UTC" : `in ${d.timeZone}`}.`),
+    ctx.meta && ctx.meta.mode === "sample"
+      ? h(
+          "section",
+          { class: "orient", "aria-label": "What you are looking at" },
+          h("div", null, h("div", { class: "meta kicker" }, "What you are looking at"), h("p", null, "desk. is a local desk for whoever pays for AI coding agents. It reads the agents' own logs on this machine, explains where the money went, checks every day whether the agent got worse, tests a spend policy on a month it never saw, and signs what it concludes so that a stranger can verify it offline. Nothing leaves this machine, and this screen is read-only.")),
+          h(
+            "ol",
+            { class: "orient-steps" },
+            h("li", null, h("a", { href: ctx.link("autopsy") }, "Autopsy"), h("span", null, "Where did the limit go?")),
+            h("li", null, h("a", { href: ctx.link("canary") }, "Canary"), h("span", null, "Did the agent get worse?")),
+            h("li", null, h("a", { href: ctx.link("policy") }, "Policy"), h("span", null, "What would a cap have blocked?")),
+            h("li", null, h("a", { href: ctx.link("ask") }, "Ask"), h("span", null, "Any question, answered by checked code")),
+            h("li", null, h("a", { href: ctx.link("dossiers") }, "Dossiers"), h("span", null, "Records you can verify offline")),
+          ),
+        )
+      : null,
     h(
       "p",
       { class: "controls", "aria-label": "Step through days" },
@@ -142,7 +158,7 @@ export async function render(ctx) {
           d.landing.linked ? share(landedShare, "the day's spend", { Definition: "sessions merged or kept", Rows: rows({ state: "landed" }) }) : "unknown",
           d.landing.linked ? "of the day's spend reached a merge" : "no repository is linked yet",
         ),
-        stat("Idle, loops and cache misses", share(waste, "the day's spend", { Rows: rows({}, "See the day's sessions; each timeline marks the calls by cause") }), "causes a rule can see without judgement", waste >= 0.25),
+        stat("Idle, loops and cache misses", share(waste, "the day's spend", { Rows: rows({}, "See the day's sessions; each timeline marks the calls by cause") }), "causes a rule can identify from the log alone", waste >= 0.25),
       ),
     ),
     section(

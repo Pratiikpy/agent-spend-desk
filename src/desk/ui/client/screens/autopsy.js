@@ -31,7 +31,7 @@ export async function render(ctx) {
         { class: "stats" },
         stat("Estimated cost", num(usd(c.totals.estimatedMicros), { Class: "estimated", Not: "an invoice or a bill", Calls: String(c.totals.pricedCalls) }), `${c.totals.pricedCalls.toLocaleString("en-US")} priced calls`),
         stat("Burn per hour", usd(c.burnMicrosPerHour), "over the window"),
-        stat("Idle, loops and cache misses", share(c.wasteShare, "the window's cost"), "causes a rule can see without judgement", c.wasteShare >= 0.25),
+        stat("Idle, loops and cache misses", share(c.wasteShare, "the window's cost"), "causes a rule can identify from the log alone", c.wasteShare >= 0.25),
       ),
     ),
     section("Causes", "estimated, every cost sits in exactly one", hbars(c.causes.map((x) => ({ name: CAUSE_LABEL[x.cause] || x.label, share: x.share, value: `${pct(x.share)}  ${usd(x.micros)}` })))),

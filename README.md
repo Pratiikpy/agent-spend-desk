@@ -72,6 +72,8 @@ Five steps, each of which leaves something a reader can open. The model writes l
 
 **Stack.** TypeScript on Node 22 (run with `tsx`), SQLite, two runtime dependencies (`yaml` and `@resvg/resvg-js`, which draws chart images), no build step and no database server. Everything runs on the bundled sample offline, with recorded model replies; the three Zetaris silos and a live model are optional (`docs/reference.md`).
 
+Terms used above and below (canary, wind tunnel, dossier, restrict-only check, the three Meterless engines) are defined under [How it is built](#how-it-is-built).
+
 ## For judges: what was asked, and where it is
 
 | The organizers asked for | Where it is |
@@ -106,7 +108,7 @@ Where each scoring criterion is shown:
 
 | | |
 |---|---|
-| **Code** | About 66,600 lines of TypeScript in 436 files, 2,500 lines of browser JavaScript in 19 files, and 36,100 lines of tests in 206 files. Runtime dependencies: two |
+| **Code** | About 66,600 lines of TypeScript in 436 files, 2,700 lines of browser JavaScript in 20 files, and 36,100 lines of tests in 206 files. Runtime dependencies: two |
 | **Checked** | 2,655 tests and `desk prove` with 60 checks, all PASS, on fresh clones of Windows 11 (Node 24.20) and Ubuntu 22.04 (Node 22.23) |
 | **The product** | 80 commands (`desk help` lists them), a 14-screen local UI, nine agent roles, a gate that stops tool calls through the hooks of Claude Code and Codex CLI (run live), with adapters for Cursor and Gemini CLI, and a gateway door for tools that can point at an endpoint (chat, messages and responses routes), signed dossiers with an offline verifier |
 | **Specified** | 129 numbered features and a requirements document under `docs/design/desk/`; 200-odd pages of design, sponsor and verification notes |

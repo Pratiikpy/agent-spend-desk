@@ -105,11 +105,10 @@ async function boot() {
 
   const nav = h("ul", { class: "nav" });
   const rangeSel = h("select", { id: "range", "aria-label": "Time range" }, ...RANGES.map(([v, t]) => h("option", { value: v }, t)));
-  const themeBtn = h("button", { type: "button", class: "btn", "aria-pressed": String(currentTheme() === "dark") }, currentTheme() === "dark" ? "Dark" : "Light");
+  const themeBtn = h("button", { type: "button", class: "btn", "aria-pressed": String(currentTheme() === "dark") }, "Dark mode");
   themeBtn.addEventListener("click", () => {
     const next = currentTheme() === "dark" ? "light" : "dark";
     setTheme(next);
-    themeBtn.textContent = next === "dark" ? "Dark" : "Light";
     themeBtn.setAttribute("aria-pressed", String(next === "dark"));
   });
   const rangeLabel = h("label", { for: "range" }, "Range");

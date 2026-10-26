@@ -165,14 +165,22 @@ export async function render(ctx) {
           table(
             "What each kind of work has earned",
             [
-              { label: "Kind of work", render: (a) => a.workflow },
+              {
+                label: "Kind of work (branch prefix)",
+                render: (a) =>
+                  h(
+                    "div",
+                    null,
+                    a.workflow,
+                    h("span", { class: "cellnote" }, a.action === "demote" ? `Now: demote, ${a.reason}` : a.action === "propose_promotion" ? `Now: proposed for guarded auto with desk autonomy approve ${a.workflow} ${a.code}` : `Now: ${a.reason}`),
+                  ),
+              },
               { label: "Tier", render: (a) => (a.tier === "guarded_auto" || a.tier === "unassisted_auto" ? pill(a.tier.replace("_", " "), "live") : a.tier === "blocked" ? pill("blocked", "risk") : pill("supervised", "ink")) },
               { label: "Finished runs", num: true, render: (a) => int(a.finished) },
               { label: "Landed and stayed", num: true, render: (a) => (a.finished === 0 ? "none" : `${int(a.landed)} (${pct(a.rate)})`) },
               { label: "Lower bound", num: true, render: (a) => (a.lower === null ? "none" : pct(a.lower)) },
               { label: "Not settled", num: true, render: (a) => int(a.pending) },
               { label: "Not tied to a commit", num: true, render: (a) => int(a.unlinked) },
-              { label: "Now", render: (a) => (a.action === "demote" ? `demote: ${a.reason}` : a.action === "propose_promotion" ? `proposed for guarded auto: desk autonomy approve ${a.workflow} ${a.code}` : a.reason) },
             ],
             d.autonomy,
             { maxh: true },

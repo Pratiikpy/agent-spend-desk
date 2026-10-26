@@ -3,6 +3,7 @@ import { join } from "node:path";
 
 import { configFromEnv } from "../../sponsors/zetaris/silo-port.ts";
 import { filesFor, setARows } from "../bench/command.ts";
+import type { ArmId } from "../bench/arms.ts";
 import { ARMS, passK, readResults, tally, type BenchRow } from "../bench/run.ts";
 import { COVERAGE_FILE, CONTROL_FILE } from "../calibrate/command.ts";
 import { attributionReliability } from "../calibrate/attribution.ts";
@@ -36,9 +37,13 @@ function benchBlock(): object {
   };
   const a = filesFor("A");
   const b = filesFor("B");
+  const dd = filesFor("D");
   const rowsA = existsSync(a.results) ? setARows().rows : [];
   const rowsB = existsSync(b.results) ? readResults(b.results) : [];
+  const rowsD = existsSync(dd.results) ? readResults(dd.results) : [];
+  const withPass3 = (rows: BenchRow[], arm: ArmId): number | null => { const p = passK(rows.filter((r) => (r.trial ?? 0) > 0), arm, 3); return p ? p.value : null; };
   return {
+    setD: rowsD.length === 0 ? null : ARMS.map((arm) => ({ arm, ...cell(rowsD, arm), pass3: withPass3(rowsD, arm) })),
     setA: rowsA.length === 0 ? null : ARMS.map((arm) => ({ arm, ...cell(rowsA, arm) })),
     setB: rowsB.length === 0 ? null : ARMS.map((arm) => ({ arm, ...cell(rowsB, arm), pass3: ((): number | null => { const p = passK(rowsB.filter((r) => (r.trial ?? 0) > 0), arm, 3); return p ? p.value : null; })() })),
   };

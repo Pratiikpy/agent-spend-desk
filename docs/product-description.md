@@ -76,7 +76,7 @@ The model is Nemotron (`nvidia/nemotron-3.5-super-vl-120b-a12b`) behind one Open
 | Benchmark | Pre-registered 60-question head-to-head of three arms on one model; pass^k over repeated runs | `src/desk/bench/` |
 | Lessons, regret, calibration, seats, route | Learning from wrong answers; scoring the Desk's own past choices; confidence against planted truth; seats beyond people who landed work; the same recorded tasks replayed on two routes | `src/desk/lessons/`, `regret/`, `calibrate/`, `seats/`, `route/` |
 | Proof | `desk prove` runs 26 named checks, each PASS, FAIL or NOT RUN | `src/desk/prove/` |
-| UI | Thirteen screens on a local, read-only server | `src/desk/ui/` |
+| UI | Fourteen screens on a local, read-only server | `src/desk/ui/` |
 
 ### 3.3 The agents
 
@@ -167,7 +167,7 @@ Three of Meterless's open reference engines run in this process under Apache-2.0
 
 ### 4.2 Screens (13)
 
-Brief · Week (the weekly review) · Autopsy · Bill (with shared overhead) · Outcomes · Sessions (with delegation and waste blocks) · Policy (with the wind tunnel and what the Desk can enforce) · Canary · Ask · Org data (Zetaris) · Sources (what each source can and cannot say) · Dossiers · Evidence (what was measured, including what failed). The first twelve were photographed in light and dark at 1440 and 390 px and read, and the record is `docs/verification/ui-sweep.md`; the sections added since (delegation, shared overhead, enforcement, waste blocks) were read in light and dark and desktop and phone width as they were built, and a full pass over all thirteen is still owed (not recorded here).
+Brief · Week (the weekly review) · Autopsy · Bill (with shared overhead) · Outcomes · Sessions (with delegation and waste blocks) · Policy (with the wind tunnel and what the Desk can enforce) · Canary · Ask · Org data (Zetaris) · Team (roles, signed reports) · Doctor (what each source can and cannot say) · Dossiers · Evidence (what was measured, including what failed). The first twelve were photographed in light and dark at 1440 and 390 px and read, and the record is `docs/verification/ui-sweep.md`; the sections added since (delegation, shared overhead, enforcement, waste blocks) were read in light and dark and desktop and phone width as they were built, and a full automated and visual pass over all fourteen was recorded on 2026-10-26 in the same file.
 
 ### 4.3 The feature specification
 
@@ -187,7 +187,7 @@ Open Agent Hackathon 2026 (GenAI Works): 144 hours, 22 to 27 October 2026, one p
 | Technical | 20 | Implementation, reliability, architecture | 1,451 tests; `desk prove` with 35 named checks; budgets in code; fallbacks; a pre-registered benchmark whose losing first run is published |
 | Innovation | 15 | Originality | Restrict-only policy check fuzzed against an oracle; an Explainer that never reads the question; a signed dossier a stranger verifies offline; the Desk's own judgement recorded and scored |
 | Demo | 15 | Shows the solution, its functionality and value | 3:56 captioned motion video; `npm run desk -- demo`. **The video is uploaded: https://youtu.be/dsRGX73lZAQ** |
-| Product and UX | 10 | Intuitive, accessible, easy for the intended user | Thirteen screens, light and dark, phone width |
+| Product and UX | 10 | Intuitive, accessible, easy for the intended user | Fourteen screens, light and dark, phone width |
 | Sponsor tech | 10 | Effective use of sponsor technology | Section 5.4 |
 
 Tie-break: Impact, then submission time.
@@ -264,7 +264,7 @@ For each track: the organisers' lines, then what the product does about each, th
 | "...combining availability rules, priority policy, and memory of past decisions, and producing a prioritised booking list with the reasoning for each decision." [A] | The analogue: spend rules, a priority on landed work, memory of past decisions, and a policy with the reasoning for each rule | `output_examples/traces/propose-sample.jsonl` | |
 | Example 3: Intake, Rules Checker, Memory Keeper, Priority Critic, Scheduler; "Priority Critic challenges decisions that look unfair, unsafe, or inconsistent with past decisions" [A] | Intake = Risk Router + Planner. Rules Checker = restrict-only check and policy evaluation. Memory Keeper = H-MEM plus lessons and regret. Priority Critic = Attacker, plan critic, Auditor, held-out replay. Scheduler = Drafter to dossier | One real trace: the first draft would pause 81 of 311 landed sessions, the check caught it, the Drafter revised, the second draft paused none | Learning from mistakes moved 2 of 60 held-out questions with an interval touching zero: no improvement is claimed |
 | "A domain expert on the team" [A] | None: solo | | Practitioner validation plan exists (`docs/design/04-practitioner-validation-plan.md`) but no interview was done. NOT VERIFIED |
-| "Combining data, knowledge, memory, and a usable interface" [A] | Thirteen screens | | |
+| "Combining data, knowledge, memory, and a usable interface" [A] | Fourteen screens | | |
 | Prize: $1,500 / $1,200 / $900 | | | |
 
 ### 6.4 The Approach Guide's general lines

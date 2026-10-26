@@ -15,7 +15,11 @@ function apply(el, attrs) {
 function append(el, children) {
   for (const c of children.flat(Infinity)) {
     if (c === undefined || c === null || c === false) continue;
-    el.append(c instanceof Node ? c : document.createTextNode(String(c)));
+    if (c instanceof Node) el.append(c);
+    else if (typeof c === "string" && c.includes("`") && el.tagName !== "CODE" && el.tagName !== "PRE") {
+      // A word between backticks in prose is a command or a name: show it as code, not with the backticks.
+      c.split(/`([^`]+)`/).forEach((part, i) => { if (part !== "") el.append(i % 2 === 1 ? Object.assign(document.createElement("code"), { textContent: part }) : document.createTextNode(part)); });
+    } else el.append(document.createTextNode(String(c)));
   }
 }
 

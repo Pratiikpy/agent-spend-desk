@@ -13,14 +13,20 @@ function bench(b) {
   if (b.state !== "ok") return missing(b);
   const row = (arm) => ({ A0: "One call", A1: "Tool agent", A2: "The Desk" })[arm] || arm;
   const blocks = [];
+  if (b.setD) {
+    blocks.push(
+      table("Set D, 60 questions nobody had read, preregistered before any was run: the round that counts", [{ label: "Arm", render: (r) => row(r.arm) }, { label: "Exact, greedy", num: true, render: (r) => `${r.exact} of ${r.n}` }, { label: "pass^3, repeats", num: true, render: (r) => (r.pass3 === null ? "n/a" : pc(r.pass3)) }], b.setD),
+      h("p", { class: "note" }, "Seven predictions were written down first and all seven held. The Desk's misses are question shapes it has no step for, and a gap of ten in sixty is a margin this size of set cannot make certain. The two sets below were read before the Desk was fixed against them, so they are shown for the record and are not evidence of the same weight."),
+    );
+  }
   if (b.setA) {
     blocks.push(
-      table("Set A, 60 questions, one run each (the Desk is the current version; the first version is in the results folder)", [{ label: "Arm", render: (r) => row(r.arm) }, { label: "Exact", num: true, render: (r) => `${r.exact} of ${r.n}` }], b.setA),
+      table("Set A, 60 questions the Desk was built against (post hoc; the first version is in the results folder)", [{ label: "Arm", render: (r) => row(r.arm) }, { label: "Exact", num: true, render: (r) => `${r.exact} of ${r.n}` }], b.setA),
     );
   }
   if (b.setB) {
     blocks.push(
-      table("Set B, 60 new questions, 7 from templates the Desk was not built around", [{ label: "Arm", render: (r) => row(r.arm) }, { label: "Exact, greedy", num: true, render: (r) => `${r.exact} of ${r.n}` }, { label: "pass^3, repeats", num: true, render: (r) => (r.pass3 === null ? "n/a" : pc(r.pass3)) }], b.setB),
+      table("Set B, 60 questions read after the first run, then fixed against (post hoc)", [{ label: "Arm", render: (r) => row(r.arm) }, { label: "Exact, greedy", num: true, render: (r) => `${r.exact} of ${r.n}` }, { label: "pass^3, repeats", num: true, render: (r) => (r.pass3 === null ? "n/a" : pc(r.pass3)) }], b.setB),
     );
   }
   return blocks.length > 0 ? h("div", null, ...blocks) : h("p", { class: "note" }, "No results recorded yet.");

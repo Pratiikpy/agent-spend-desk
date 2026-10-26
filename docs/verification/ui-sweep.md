@@ -47,3 +47,26 @@ Not covered: the Bill in dark at desktop width and in light at phone width, the 
 ## The Week screen and the navigation, 2026-10-25
 
 The thirteenth screen (Week, second in the list) was photographed in light at 1440x900 (the whole page) and in dark at 390x844 (the first screen), and the console was read. Two defects were found and fixed: eight Content-Security-Policy errors from an inline style on the week picker (now a stylesheet class) and a navigation that no longer fit in the header row with thirteen screens (the last, Doctor, was cut off behind a hidden scroll bar; the navigation now has its own row under the logo and wraps on a phone). After the fixes the console showed no error. Not covered: the Week screen in dark at desktop width and in light on a phone, and the other screens at the new header height.
+
+## Full audit of all fourteen screens, 2026-10-26
+
+A script visited each of the fourteen screens in four views (1440 px and 390 px, light and dark; 56 captures) with console, page-error, failed-request and HTTP-error listeners attached from the start, and checked on every page: horizontal overflow, the words `undefined`, `NaN`, `null`, `[object` and raw error codes, image alt text, names on buttons and links, labels on inputs, one h1 and no skipped heading level, `lang`, landmarks, tap-target size, and text contrast (4.5:1, 3:1 for large text). Result: no console, page or request error; no overflow at either width; no stray text; every page has one h1, a main landmark and a nav; no text below its contrast ratio. The light desktop and phone captures of every screen were then read as a designer would.
+
+Found and fixed:
+
+- Backticks showed in sentences ("`desk gate serve` starts it", on the Brief, Bill, Policy, Doctor and others). Words between backticks in prose are now drawn as code.
+- On the Policy screen the Earned autonomy table was cut off on a desktop: a long "Now" column made each row about 220 px tall and pushed the last columns out of view. The sentence now sits under the name of the kind of work.
+- The Evidence screen led with Sets A and B, on which the Desk scores 60 of 60 after it was fixed against them, and did not show Set D, the preregistered round the README and the video lead with (55 against 45 against 12). Set D is now first, with its seven written predictions and the margin it cannot make certain; Sets A and B are labelled post hoc.
+- The first screen of the sample gave no account of what desk. is. The Brief now opens, in the sample only, with a short "What you are looking at" block and links to the five screens worth opening first.
+- The theme switch said "Light" or "Dark" with no sign of whether that was the current theme or the action. It is now a pressed-state toggle labelled "Dark mode".
+- "Causes a rule can see without judgement" (Brief, Autopsy) read as unclear. It now says "causes a rule can identify from the log alone".
+- The Week table's column "Type" held engineer names (the sample's branch prefixes) under the heading "kind of task". It is now "Branch prefix", and the section says it is grouped by branch prefix.
+- The deck and the product description said twelve and thirteen screens; both say fourteen, and the deck PDF was drawn again.
+
+Found and left as it is, on purpose:
+
+- Inline figure links are small tap targets on a phone (the Sessions screen has about fifty); they are links inside a sentence or a table, and the row link around them is larger.
+- The Outcomes screen shows `desk questions answer ... yes|no` as the way to answer, because the screens are read-only.
+- Sample branch prefixes are engineers' names, so the autonomy kinds read `eng01`, `eng02`; a real repository's prefixes are `feat`, `fix` and so on.
+
+Not covered: a screen reader was not run (the checks above are structural); keyboard focus order was not walked on every screen; the Ask screen was captured empty and with one question, not with an engine switched off; the policy wind tunnel run and a session detail were not captured in this pass.

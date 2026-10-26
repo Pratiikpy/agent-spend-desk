@@ -39,13 +39,13 @@ export async function render(ctx) {
     ),
     section(
       "By workflow",
-      "kind of task",
+      "estimated, by branch prefix",
       r.workflows.length === 0
         ? h("p", { class: "note" }, "No tasks in this week.")
         : table(
             "Workflows",
             [
-              { label: "Type", render: (w) => w.type },
+              { label: "Branch prefix", render: (w) => w.type },
               { label: "Tasks", num: true, render: (w) => int(w.tasks) },
               { label: "Spend", num: true, render: (w) => usd(w.spendMicros) },
               { label: "Landed", num: true, render: (w) => usd(w.landedMicros) },
