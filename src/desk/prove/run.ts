@@ -10,6 +10,7 @@ import { alignProve } from "./align-check.ts";
 import { snapshotProve } from "./snapshot-check.ts";
 import { packIndexProve } from "./pack-index-check.ts";
 import { attackProve } from "./attack-check.ts";
+import { receiptsProve } from "./receipts-check.ts";
 import { judgeProve } from "./judge-check.ts";
 import { surfaceProve } from "./surface-check.ts";
 import { swapRecordProve } from "./swap-record-check.ts";
@@ -769,6 +770,15 @@ const CHECKS: Check[] = [
     seed: SEED,
     async run() {
       const r = judgeProve();
+      return r.ok ? pass(r.detail) : fail(r.detail);
+    },
+  },
+  {
+    id: "nightshift-receipts-verify-and-a-changed-one-is-refused",
+    command: "check the Ed25519 signature on every Nightshift receipt in the committed log of live calls; change one number, swap one signature and read it against another key",
+    seed: SEED,
+    async run() {
+      const r = receiptsProve();
       return r.ok ? pass(r.detail) : fail(r.detail);
     },
   },

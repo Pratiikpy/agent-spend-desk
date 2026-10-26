@@ -1,3 +1,4 @@
+import { verifyEnvelope } from "./receipt-signature.ts";
 import { ownCallSink } from "./own-calls.ts";
 import { createHash, randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -68,14 +69,20 @@ export interface NightshiftReceipt {
   provider?: string;
   kind?: string;
   latencyMs?: number;
+  /** The signed envelope Nightshift 1.2.x writes beside a receipt, kept whole so that anyone can check the signature later. Absent on older recordings. */
+  envelope?: unknown;
+  /** The result of checking that envelope when the reply arrived; absent when there was no envelope. */
+  signature?: { valid: boolean; keyId?: string; reason?: string };
 }
 
 export interface ModelResponse {
   content: string;
   toolCalls: ToolCall[];
   servedBy: "nightshift" | "nvidia" | "cassette" | "other";
-  /** Present only when the reply carried a Nightshift compute receipt. */
+  /** Present only when the reply carried a Nightshift compute receipt whose signature, if it had one, is valid. */
   receipt?: NightshiftReceipt;
+  /** Set when the reply carried a receipt that was not accepted, with the reason. Such a reply is not claimed as Nightshift's. */
+  receiptProblem?: string;
   servedModel: string;
   source: "live" | "cassette";
   usage: { inputTokens: number; outputTokens: number; reasoningTokens: number } | null;
@@ -302,9 +309,20 @@ export class OpenAiPort implements ModelPort {
     const usage = o.usage
       ? { inputTokens: o.usage.prompt_tokens ?? 0, outputTokens: o.usage.completion_tokens ?? 0, reasoningTokens: o.usage.completion_tokens_details?.reasoning_tokens ?? 0 }
       : null;
-    const receipt = isNvidiaHost(this.cfg.baseUrl) ? undefined : readNightshiftReceipt(o.meterless);
+    let receipt = isNvidiaHost(this.cfg.baseUrl) ? undefined : readNightshiftReceipt(o.meterless);
+    let receiptProblem: string | undefined;
+    const envelope = receipt && o.meterless !== null && typeof o.meterless === "object" ? (o.meterless as Record<string, unknown>)["receipt_envelope"] : undefined;
+    if (receipt && envelope !== undefined) {
+      // A receipt that carries a signature is claimed only if the signature holds and names this receipt.
+      const check = verifyEnvelope(envelope, { expectReceiptId: receipt.id });
+      if (check.valid) receipt = { ...receipt, envelope, signature: { valid: true, ...(check.keyId ? { keyId: check.keyId } : {}) } };
+      else {
+        receiptProblem = `the receipt's signature was not accepted: ${check.reason ?? "unknown"}`;
+        receipt = undefined;
+      }
+    }
     const servedBy: ModelResponse["servedBy"] = receipt ? "nightshift" : isNvidiaHost(this.cfg.baseUrl) ? "nvidia" : "other";
-    return { content, toolCalls, servedBy, ...(receipt ? { receipt } : {}), servedModel: typeof o.model === "string" ? o.model : this.cfg.model, source: "live", usage };
+    return { content, toolCalls, servedBy, ...(receipt ? { receipt } : {}), ...(receiptProblem ? { receiptProblem } : {}), servedModel: typeof o.model === "string" ? o.model : this.cfg.model, source: "live", usage };
   }
 }
 
@@ -404,6 +422,8 @@ export async function callModel(port: ModelPort, request: ModelRequest, ctx: Cal
         served_model: r.servedModel,
         served_from: r.source,
         ...(r.receipt ? { nightshift_receipt: r.receipt.id, ...(r.receipt.decisionId ? { nightshift_decision: r.receipt.decisionId } : {}) } : {}),
+        ...(r.receipt?.signature ? { nightshift_signed_by: r.receipt.signature.keyId ?? "unknown" } : {}),
+        ...(r.receiptProblem ? { nightshift_receipt_problem: r.receiptProblem } : {}),
         ms: Date.now() - started,
         usage: r.usage,
         tool_calls: r.toolCalls.map((t) => t.name),

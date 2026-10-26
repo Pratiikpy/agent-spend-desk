@@ -73,7 +73,7 @@ svg.arch { width: 100%; height: auto; display: block; }
     <div class="mark"><svg width="64" height="64" viewBox="0 0 32 32"><rect x="2" y="11" width="15" height="6" fill="#0a0a0a"/><circle cx="24" cy="20" r="5" fill="#0a0a0a"/></svg>desk.</div>
     <h1>Every dollar your agents spend,<br>tied to work that landed.</h1>
     <p class="lead" style="margin-top:40px">A local desk for the person who pays for AI coding agents. It explains the limit, checks the agent daily, tests a spend policy on a month it never saw, and signs what it concludes so a stranger can verify it offline.</p>
-    <p class="small mono" style="margin-top:24px">Open Agent Hackathon 2026 &nbsp;/&nbsp; Track 3, Reasoning Architecture<br>Zetaris &nbsp;·&nbsp; Meterless &nbsp;·&nbsp; NVIDIA Nemotron &nbsp;·&nbsp; Cursor</p>
+    <p class="small mono" style="margin-top:24px">Open Agent Hackathon 2026 &nbsp;/&nbsp; Track 3, Reasoning Architecture<br>Zetaris &nbsp;·&nbsp; Meterless &nbsp;·&nbsp; NVIDIA Nemotron</p>
   </div>
 </section>
 
@@ -382,14 +382,14 @@ svg.arch { width: 100%; height: auto; display: block; }
 </section>
 
 <section class="slide">
-  <div class="meta"><b>10</b>NVIDIA Nemotron and Cursor</div>
+  <div class="meta"><b>10</b>NVIDIA Nemotron, through Meterless Nightshift</div>
   <div>
     <h2>Every language role runs on Nemotron. Every failure is on the trace.</h2>
     <div class="grid2">
       <div class="card"><h3>Where Nemotron acts</h3><p>The policy Drafter and Attacker, the Ask planner (a <span class="mono">plan_answer</span> tool call with a JSON-schema argument), the Explainer, and the canary's runs, through one ModelPort for any OpenAI-compatible endpoint.</p></div>
       <div class="card"><h3>What was measured</h3><p>Latency from 0.4 s to 56 s for the same request; HTTP 500 and 429 under load. Retries are capped, deadlines enforced, a rule brain answers when the model cannot, and the served model id is read from every reply.</p></div>
       <div class="card"><h3>Offline, byte for byte</h3><p>Recorded replies from live calls replay the same drafts and answers with no key and no network. A cassette miss is an error, never a guess.</p></div>
-      <div class="card"><h3>Cursor</h3><p>The required IDE. The session log is <span class="mono">docs/sponsors/cursor-usage-log.md</span>; this deck claims only what it records.</p></div>
+      <div class="card"><h3>A signed receipt for every reply</h3><p>Nightshift signs a receipt for each reply it serves (Ed25519) and names the model that answered. desk. checks it: <span class="mono">desk receipts</span> verified 11 live calls across the Planner, Explainer, Drafter and Attacker, on two Nemotron models. Older recordings carry unsigned receipts and are counted as such.</p></div>
     </div>
   </div>
   <div class="foot"><span>desk.</span><span>src/desk/agents/model.ts</span></div>
@@ -402,11 +402,11 @@ svg.arch { width: 100%; height: auto; display: block; }
     <table>
       <tr><th>Sponsor</th><th>Where it sits</th><th>Switched off</th><th>What is unique about how we use it</th></tr>
       <tr><td><b>Zetaris</b></td><td>Data layer. One statement over a file silo, a SQL silo and a REST silo</td><td>Billed spend falls from $6,123.23 to $0; CI facts and spend per landed PR disappear</td><td>A join that overstated billed spend three times was found by running it and fixed by aggregating each silo first. The API container was killed for real and the output changed</td></tr>
-      <tr><td><b>Meterless</b></td><td>Memory and history. World Model, H-MEM, Markovian, run in our process</td><td>"What changed before 15 October?" becomes unknowable; the owner's definition of landed stops applying</td><td>Each engine changes an answer and a test proves it. Their conformance runners pass 8/8, 13/13 and 8/8 against our copies. Testing found that H-MEM never read an owner's definition; fixed</td></tr>
+      <tr><td><b>Meterless</b></td><td>Memory and history: World Model, H-MEM, Markovian, run in our process. Nightshift is the route to Nemotron, its signed receipts checked</td><td>"What changed before 15 October?" becomes unknowable; the owner's definition of landed stops applying</td><td>Each engine changes an answer and a test proves it. Their conformance runners pass 8/8, 13/13 and 8/8 against our copies. Testing found that H-MEM never read an owner's definition; fixed</td></tr>
       <tr><td><b>NVIDIA Nemotron</b></td><td>Every language role: Drafter, Attacker, Planner, Explainer, the canary, all three benchmark arms</td><td>A rule brain answers and the trace says so</td><td>The same model sits behind all three arms, so the benchmark measures architecture, not model. Tool calling with a typed argument verified live</td></tr>
-      <tr><td><b>Cursor</b></td><td>The required development environment</td><td>Not a runtime component</td><td>Its session log is <span class="mono">docs/sponsors/cursor-usage-log.md</span>. No session is logged in it yet, so this deck claims none</td></tr>
+      <tr><td><b>Cursor</b></td><td>Optional since 22 October 2026</td><td>Not a runtime component</td><td>Not used: desk. was written with Claude Code. The session log <span class="mono">docs/sponsors/cursor-usage-log.md</span> is empty and this deck claims none</td></tr>
     </table>
-    <p class="small" style="margin-top:14px">Meterless has no API or key: the organisers confirmed on 2026-10-17 that the engines are reference architectures implemented in our own code. Nemotron is reached through NVIDIA's free API; only a URL, a key and a model id change for any OpenAI-compatible endpoint.</p>
+    <p class="small" style="margin-top:14px">Meterless has no hosted API: the engines are reference architectures implemented in our own code. Nightshift, running on this machine, is an OpenAI-compatible endpoint with NVIDIA's models behind it; only a URL, a key and a model id change between it and NVIDIA's own API.</p>
   </div>
   <div class="foot"><span>desk.</span><span>docs/submission/sponsor-technology-explanation.md</span></div>
 </section>
@@ -426,7 +426,7 @@ svg.arch { width: 100%; height: auto; display: block; }
       <tr><td>Interface</td><td>Fourteen screens on a local read-only server; light and dark; stacked cards on a phone</td><td>The UI is the product</td></tr>
       <tr><td>Verification</td><td>vitest, a pre-registered benchmark, <span class="mono">desk prove</span></td><td>Each claim runs; NOT RUN is never a pass</td></tr>
     </table>
-    <p class="small" style="margin-top:14px">No GPU, no training, no package installed at run time, no download at run time. Cursor is the required IDE and its session log records only what was done in it (nothing yet); most of this was written with Claude Code as the assistant.</p>
+    <p class="small" style="margin-top:14px">No GPU, no training, no package installed at run time, no download at run time. Cursor became optional on 22 October and was not used; this was written with Claude Code as the assistant.</p>
   </div>
   <div class="foot"><span>desk.</span><span>package.json · README.md</span></div>
 </section>

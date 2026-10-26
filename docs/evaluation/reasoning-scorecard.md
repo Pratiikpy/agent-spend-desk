@@ -298,7 +298,7 @@ What this does not show:
 
 Reproduce: `read docs/sponsors/cursor-usage-log.md`.
 
-Inputs: `docs/sponsors/cursor-usage-log.md` sha256:73da795a6506
+Inputs: `docs/sponsors/cursor-usage-log.md` sha256:fcb2eaabb7d4
 
 What this does not show:
 

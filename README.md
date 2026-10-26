@@ -8,7 +8,7 @@
 [![Node 22.19+](https://img.shields.io/badge/node-22.19%2B-0a0a0a?style=flat-square)](#try-it)
 [![Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-0a0a0a?style=flat-square)](LICENSE)
 
-[**Watch the demo (3:56)**](https://youtu.be/dsRGX73lZAQ) · [Slide deck](docs/submission/desk-deck.pdf) · [Try it](#try-it) · [For judges](#for-judges-what-was-asked-and-where-it-is) · [Evidence](docs/evidence.md) · [Sponsor technology](docs/submission/sponsor-technology-explanation.md)
+[**Watch the demo (3:56)**](https://youtu.be/dsRGX73lZAQ) · [Slide deck](docs/submission/desk-deck.pdf) · [Open the screens in a browser](https://pratiikpy.github.io/agent-spend-desk/demo/) · [Try it](#try-it) · [For judges](#for-judges-what-was-asked-and-where-it-is) · [Evidence](docs/evidence.md) · [Sponsor technology](docs/submission/sponsor-technology-explanation.md)
 
 desk. is a local desk for the person who pays for AI coding agents. It explains why a limit was hit, checks every day whether the agent got worse, tests a spend policy on a month it never saw, and signs what it concludes so that a stranger can verify it offline. No account, no upload: it reads your agent logs on your machine.
 
@@ -31,6 +31,8 @@ Usage trackers such as ccusage and CodexBar read agent logs and show cost; as fa
 
 ## Try it
 
+**Nothing to install:** the 14 screens, read-only, on the constructed sample, are at https://pratiikpy.github.io/agent-spend-desk/demo/ (answers recorded from the real server by `npm run desk -- ui --sample --export docs/demo`; a choice that was not recorded says so).
+
 Needs Node 22.19 or later (run on 22.23 and 24.20; 22.19 itself is NOT VERIFIED). Nothing else for the sample.
 
 ```
@@ -50,13 +52,14 @@ Verified from fresh clones at commit `4485f52` (every commit after it changes do
 
 ## Check it yourself
 
-Five things that take a few minutes each and need no key, so that no figure has to be taken on trust:
+Six things that take a few minutes each and need no key, so that no figure has to be taken on trust:
 
 1. **Move the figures.** `npm run desk -- demo --compare` runs the demonstration on a changed sample and shows every figure move; nothing in it is typed in.
 2. **Switch an engine off.** `npm run desk -- ask "What changed before 2026-10-15?" --sample`, then the same with `--ablate world_model`: the answer becomes "unknowable", which is the evidence that the engine does something.
 3. **Verify a conclusion as a stranger.** `npm run desk -- propose --sample --dossier` drafts and replays a policy and prints an approval line; run that line, and the output ends with the exact `desk-verify` command for the signed dossier it wrote. It recomputes the figures on plain Node with the network off. Change one byte in a row file in that folder and run it again: it names the row.
 4. **See what it can stop.** `npm run desk -- enforcement` lists each agent tool as enforced, advisory or notify only, with the version and the date of the test behind each; `npm run desk -- prove` runs every check and says PASS, FAIL or NOT RUN.
-5. **Try to step around a policy.** `npm run desk -- attack policies/stop-loops.yaml` runs the attacker corpus against a policy file and says how many generated policy pairs the restrict check was held to (2,000 here, and that is the number tried, not a proof).
+5. **Check which model answered.** `npm run desk -- receipts docs/verification/nightshift-receipts` verifies the Ed25519 signature on each of eleven live Nemotron calls (Planner, Explainer, Drafter, Attacker, on two Nemotron models) and prints which model answered which role; add `--pin e92caae86b5f702e` to require the key that signed them.
+6. **Try to step around a policy.** `npm run desk -- attack policies/stop-loops.yaml` runs the attacker corpus against a policy file and says how many generated policy pairs the restrict check was held to (2,000 here, and that is the number tried, not a proof).
 
 ## How it works
 
@@ -68,7 +71,7 @@ Five steps, each of which leaves something a reader can open. The model writes l
 4. **Decide.** A Drafter (Nemotron) proposes a spend policy from one month; code checks that it only narrows the policy in force; an Attacker (Nemotron) looks for requests that step around it; then it is replayed on a month it was not drafted from. The headline is the landed work it would have blocked, not the savings. The owner approves by echoing the request's digest.
 5. **Prove and enforce.** Every conclusion is a signed dossier carrying the rows its figures come from, and `desk-verify` recomputes it on plain Node with the network off. A gate asks permission before an agent's tool call: through the hooks of Claude Code and Codex CLI (both run live), and through a gateway door for tools that can use another base URL. It fails closed, and `desk enforcement` says per tool what it can really stop.
 
-**Where each sponsor sits.** Zetaris is the data layer (step 1). Meterless's three engines (World Model, H-MEM, Markovian) are memory and history for Ask (step 2); there is no Meterless API, so they run in our own process and pass their own conformance suites. NVIDIA Nemotron serves every language role (Planner, Explainer, Drafter, Attacker, canary and the three benchmark arms). Cursor is the required IDE; its usage log is empty, so nothing is claimed beyond that (`docs/sponsors/cursor-usage-log.md`). The table under [Sponsor technology](#sponsor-technology) says what changes when each is switched off.
+**Where each sponsor sits.** Zetaris is the data layer (step 1). Meterless's three engines (World Model, H-MEM, Markovian) are memory and history for Ask (step 2); there is no Meterless API, so they run in our own process and pass their own conformance suites. NVIDIA Nemotron serves every language role (Planner, Explainer, Drafter, Attacker, canary and the three benchmark arms). Meterless Nightshift is the route to Nemotron, and every reply it serves carries an Ed25519-signed receipt that desk. checks (`desk receipts`; eleven live calls are in `docs/verification/nightshift-receipts/`). Cursor became optional on 22 October and was not used: desk. was written with Claude Code (`docs/sponsors/ai-use-provenance-log.md`). The table under [Sponsor technology](#sponsor-technology) says what changes when each is switched off.
 
 **Stack.** TypeScript on Node 22 (run with `tsx`), SQLite, two runtime dependencies (`yaml` and `@resvg/resvg-js`, which draws chart images), no build step and no database server. Everything runs on the bundled sample offline, with recorded model replies; the three Zetaris silos and a live model are optional (`docs/reference.md`).
 
@@ -78,15 +81,17 @@ Terms used above and below (canary, wind tunnel, dossier, restrict-only check, t
 
 | The organizers asked for | Where it is |
 |---|---|
-| A demo video of 1 to 4 minutes, main workflow end to end, naming Zetaris, Meterless and Cursor | [3:56 captioned video](https://youtu.be/dsRGX73lZAQ) (every figure read from a real run or a result file; script in `docs/submission/demo-video-script.md`) |
+| A demo video of 1 to 4 minutes, main workflow end to end, naming Zetaris and Meterless and where each sits | [3:56 captioned video](https://youtu.be/dsRGX73lZAQ) (every figure read from a real run or a result file; script in `docs/submission/demo-video-script.md`) |
 | A slide deck: problem and users, solution, agent workflow and architecture, stack, sponsor use, product visuals, future | [`docs/submission/desk-deck.pdf`](docs/submission/desk-deck.pdf) (25 slides; source `docs/submission/deck/deck.html`) |
 | A GitHub repository with a README someone outside the team can run | This file. [Try it](#try-it) runs with no key and no setup beyond `npm install`; fresh-clone runs on Windows and Ubuntu are in `docs/verification/clean-room/` |
 | Setup, usage and dependencies | [Try it](#try-it); stack above; `docs/reference.md` (stack and dependencies, run time, live mode) |
-| Sponsor technology explanation: how Zetaris, Meterless, NVIDIA and Cursor are used, and what was unique | [Sponsor technology](#sponsor-technology) and `docs/submission/sponsor-technology-explanation.md`; each claim has a call site, a trace line and a switch-off test |
+| Sponsor technology explanation: how Zetaris, Meterless and NVIDIA are used (and that Cursor was not), and what was unique | [Sponsor technology](#sponsor-technology) and `docs/submission/sponsor-technology-explanation.md`; each claim has a call site, a trace line and a switch-off test |
 | One primary track | Track 3, Reasoning Architecture. The same product does the work of Tracks 1 and 2 ([One product, three tracks](#one-product-three-tracks)) |
 | A defined user, decision, data slice and output | The blockquote at the top: an engineering lead, next month's caps and routes, agent logs plus three Zetaris-joined sources, a signed and replay-tested policy |
 | A real agent system, not a pipeline: roles, tools, critique, revision, branching, fallback, a trace | `docs/the-agents.md` (the roster, all nine collaboration behaviours each tied to a file or trace event, human approval and escalation); a JSONL trace with the reason for each decision is written on every run |
 | A bounded, predictable run (organizer target 5 to 10 minutes) | Budgets for wall clock, model calls, tool calls and turns are enforced in code; the demonstration takes under a minute offline; `docs/reference.md#how-long-a-run-takes` |
+| A description of each sponsor's use in `metadata.json` | [`metadata.json`](metadata.json): what each sponsor does, where it lives, the evidence and what changes when it is off (the organizers published no format, so it follows what the sponsor folders ask for; `tests/desk/metadata.test.ts` checks that every file it names exists) |
+| Nemotron: which agent runs on which model, with a receipt log (the organizers' advice for the Nemotron award) | The sponsor table below, and [`docs/verification/nightshift-receipts/`](docs/verification/nightshift-receipts/README.md): Nightshift's signed receipts for live calls of each role, checked by `desk receipts` and by `desk prove` |
 | Sample inputs, sample outputs, a trace, a data README | `input_examples/`, `output_examples/` (with `traces/`), `data/README.md`; [The sample](#the-sample) is generated from a seed |
 | No secret needed, nothing hardcoded, and a fallback when an API is down | `.env.example` is empty on purpose; outputs come from the run, recorded replies replay offline, and a request with no recording is an error, never a guess |
 | Answers to the organizers' red flags | `docs/evidence.md#against-the-organizers-red-flags` |
@@ -223,9 +228,9 @@ Each claim has a call site, a trace line and a test that switches the component 
 | | Where | What changes when it is off |
 |---|---|---|
 | **Zetaris** | `src/sponsors/zetaris/`: one statement joins an S3-style invoice file, a Postgres CI database and a REST roster | The bill falls from billed (invoice amounts, 100% of the ledger) to estimated only; landing loses CI facts (584 landed sessions on green checks, 60 on red); the spend-per-landed-PR table disappears. A real container kill was run |
-| **Meterless** | `src/engines/` (World Model, H-MEM, Markovian), conformance 8/8, 13/13, 8/8 from Meterless's own runners | `desk ask --ablate world_model` turns "what changed before 15 October" into "unknowable"; an owner's definition in H-MEM changes what counts as landed; Markovian bounds a long range |
-| **NVIDIA Nemotron** | `src/desk/agents/model.ts`, NVIDIA's OpenAI-compatible API, tool calling verified; roles: Drafter, Attacker, Planner, Explainer, the canary, all three benchmark arms | Recorded replies replay the same answers offline; without them the rule brain answers and the trace says so |
-| **Cursor** | The required IDE; editor rules in `.cursor/rules/` | `docs/sponsors/cursor-usage-log.md` records what was done in it, and claims nothing beyond that |
+| **Meterless** | `src/engines/` (World Model, H-MEM, Markovian), conformance 8/8, 13/13, 8/8 from Meterless's own runners; Nightshift as the route to Nemotron (`src/desk/agents/model.ts`), with each reply's signed receipt checked (`src/desk/agents/receipt-signature.ts`, `desk receipts`) | `desk ask --ablate world_model` turns "what changed before 15 October" into "unknowable"; an owner's definition in H-MEM changes what counts as landed; Markovian bounds a long range |
+| **NVIDIA Nemotron** | `src/desk/agents/model.ts`, through Nightshift or NVIDIA's own OpenAI-compatible API, tool calling verified; roles: Drafter, Attacker, Planner, Explainer, the canary, all three benchmark arms; which model answered which role, with signed receipts, is in `docs/verification/nightshift-receipts/` | Recorded replies replay the same answers offline; without them the rule brain answers and the trace says so |
+| **Cursor** | Not used. It became optional on 22 October 2026; the editor rules in `.cursor/rules/` are the only trace | `docs/sponsors/cursor-usage-log.md` and `docs/sponsors/ai-use-provenance-log.md` say how the product was written |
 
 ## The sample
 
@@ -242,7 +247,7 @@ From a desk to a gate for every agent. The ledger reads three tools and the gate
 
 ## What is not built, and what is not verified
 
-- Every numbered feature in `docs/design/desk/07-feature-status.md` is built except DF-121, a log of real Cursor use, which only its user can write and which stays empty rather than be made up. Each feature's limits are in `docs/verification/`. Things that are built but have not met the real thing: the Responses route of the gateway (a fake upstream; NVIDIA serves no such route), the Cursor and Gemini CLI hooks, a judge panel (it needs your own labels), the opt-in index (no receiving end exists), and a swap whose baseline reproduces its recorded passes.
+- Every numbered feature in `docs/design/desk/07-feature-status.md` is built except DF-121, a log of real Cursor use, which stays empty rather than be made up (Cursor use is no longer asked for). Each feature's limits are in `docs/verification/`. Things that are built but have not met the real thing: the Responses route of the gateway (a fake upstream; NVIDIA serves no such route), the Cursor and Gemini CLI hooks, a judge panel (it needs your own labels), the opt-in index (no receiving end exists), and a swap whose baseline reproduces its recorded passes.
 - The benchmark is one model, one constructed ledger and one question author, who also built the Desk's tools. Set B is no longer held out for the Desk after the fix described above. The model is not deterministic: a replay shows what was recorded, not what it would say again. The Desk is still wrong on about a tenth of questions, mostly multi-step shares and sums.
 - The wind tunnel's range and probability are less reliable than their labels (see the Evidence screen). Learning from mistakes retrieves earlier plans by wording, so it cannot help a question of a new shape.
 - The gate stops Claude Code with the hook installed (`docs/verification/gate-enforcement.md`) and any tool that is pointed at the gateway door (`docs/verification/gateway-2026-10-24.md`). A tool that does neither, a hook removed, or a clock set forward is not stopped; the bypass table says which each one is.

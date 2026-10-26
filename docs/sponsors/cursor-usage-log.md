@@ -1,8 +1,8 @@
 # Cursor (with Space XAI): Usage Log
 
-**Status: REQUIRED development environment.** "Teams must use Cursor as their development environment." The submission must explain **how Cursor was used during development**. This log is the evidence. Write an entry **every working session**, from the first one, so the explanation is built from facts rather than recalled later.
+**Status: OPTIONAL since 22 October 2026, and not used.** Until then the rules said "Teams must use Cursor as their development environment"; on 22 October the organizers made it optional (stated by moderators in the event chat on 23 to 25 October; the announcement itself is not in this repository, so the date and wording are NOT VERIFIED beyond that). desk. was written with Claude Code (`docs/sponsors/ai-use-provenance-log.md`). The submission must explain **how Cursor was used during development**. This log is the evidence. Write an entry **every working session**, from the first one, so the explanation is built from facts rather than recalled later.
 
-Claude Code or any other assistant may also be used (generated code is allowed), but Cursor has to be the genuine IDE, and this log must show it.
+Claude Code or any other assistant may be used (generated code is allowed). Cursor is optional now, so this log stays empty unless Cursor is used.
 
 ## Setup facts
 

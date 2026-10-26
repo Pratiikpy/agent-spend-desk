@@ -5,6 +5,9 @@ import { patternDefs } from "./lib/charts.js";
 import { closeProvenance } from "./lib/prov.js";
 import { errorState, loading } from "./lib/ui.js";
 
+// A copy served without a server (`desk ui --export`) says so in a meta tag and reads its answers from one recorded file.
+const STATIC_FILE = (typeof document.querySelector === "function" && document.querySelector('meta[name="desk-static"]')?.getAttribute("content")) || null;
+
 const query = new URLSearchParams(location.search);
 const TOKEN = query.get("t") || "";
 if (query.has("t")) history.replaceState(null, "", location.pathname + location.hash);
@@ -20,6 +23,21 @@ const RANGES = [
 export async function api(path, params = {}) {
   const url = new URL(path, location.origin);
   for (const [k, v] of Object.entries(params)) if (v !== undefined && v !== null && v !== "") url.searchParams.set(k, v);
+  if (STATIC_FILE) {
+    const pairs = [...url.searchParams].sort(([a], [b]) => a.localeCompare(b));
+    const key = `${url.pathname}?${pairs.map(([k, v]) => `${k}=${v}`).join("&")}`;
+    const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(key));
+    const name = [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("").slice(0, 24);
+    let recorded = null;
+    try {
+      const got = await fetch(`${STATIC_FILE}${name}.json`);
+      if (got.ok) recorded = await got.json();
+    } catch {
+      recorded = null;
+    }
+    if (!recorded || recorded.key !== key) throw new Error("This hosted copy holds the answers that the screens' own links lead to, and this one was not recorded. Run it yourself to try anything: npm run desk -- ui --sample");
+    return recorded.body;
+  }
   let res;
   try {
     res = await fetch(url, { headers: { "x-desk-token": TOKEN }, cache: "no-store" });
@@ -91,7 +109,7 @@ function logo() {
 async function boot() {
   const app = document.getElementById("app");
   app.append(patternDefs());
-  if (!TOKEN) {
+  if (!TOKEN && !STATIC_FILE) {
     app.append(h("main", { id: "main" }, h("div", { class: "pad" }, errorState("This page needs the launch address that `desk ui` printed in your terminal. It carries a one-time token."))));
     return;
   }
@@ -124,6 +142,9 @@ async function boot() {
     ),
   );
   const banners = h("div", null);
+  if (STATIC_FILE) {
+    banners.append(h("div", { class: "banner" }, h("div", { class: "banner-in" }, h("span", { class: "kicker" }, "Hosted copy"), h("span", null, "These are the screens of the local product, read-only, filled with answers recorded from the constructed sample. A choice that was not recorded says so. To use it on your own logs: `npm run desk`."))));
+  }
   if (meta.mode === "sample") {
     banners.append(h("div", { class: "banner" }, h("div", { class: "banner-in" }, h("span", { class: "kicker" }, "Sample"), h("span", null, "A constructed scenario with planted waste, not a real team's history. Every figure is computed from it by the same code that reads your logs."))));
   }

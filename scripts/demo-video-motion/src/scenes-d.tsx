@@ -153,6 +153,59 @@ const Gate: React.FC<{ caps: string[] }> = ({ caps }) => {
   );
 };
 
+
+// Nemotron, through Nightshift, signed --------------------------------------------------------------------------------
+const ROLE = { ask_planner: "Planner", explainer: "Explainer", policy_drafter: "Drafter", policy_attacker: "Attacker" } as Record<string, string>;
+const modelName = (m: string) => (/ultra/.test(m) ? "Nemotron 3 Ultra 550B" : /lightning/.test(m) ? "Nemotron 3.5 Lightning 30B" : m.replace(/^nvidia\//, ""));
+
+const Receipts: React.FC<{ caps: string[] }> = ({ caps }) => {
+  const t = useSec();
+  const cs = capStarts(caps);
+  const r = product.receipts;
+  const rows = [...r.roles].sort((a, b) => (ROLE[a.role] ?? a.role).localeCompare(ROLE[b.role] ?? b.role) || a.model.localeCompare(b.model));
+  const verified = Math.min(r.valid, Math.round(lin(t, cs[1] + 0.2, 2.6) * r.valid));
+  return (
+    <Frame kicker="Nemotron, through Meterless Nightshift · a signed receipt for every reply" caps={caps}>
+      <div style={{ display: "flex", gap: 44 }}>
+        <div style={{ flex: "0 0 1020px" }}>
+          <Label>Which model answered which role</Label>
+          <div style={{ marginTop: 14, display: "grid", gap: 8 }}>
+            {rows.map((x, i) => {
+              const at = 0.6 + i * 0.35;
+              const stamp = cs[1] + 0.4 + i * 0.28;
+              return (
+                <Reveal key={`${x.role}-${x.model}`} at={at} dx={-24} dy={0} dur={0.5}>
+                  <div style={{ display: "grid", gridTemplateColumns: "190px 1fr 70px 210px", alignItems: "center", gap: 14, border: `2px solid ${C.line}`, borderRadius: 12, padding: "10px 18px" }}>
+                    <div style={{ fontSize: 32, fontWeight: 600, letterSpacing: "-0.02em" }}>{ROLE[x.role] ?? x.role}</div>
+                    <Mono size={22} color={/ultra/.test(x.model) ? C.ink : C.graphite}>{modelName(x.model)}</Mono>
+                    <Mono size={22} color={C.graphite} style={{ textAlign: "right" }}>{x.n} {x.n === 1 ? "call" : "calls"}</Mono>
+                    <div style={{ justifySelf: "end", opacity: prog(t, stamp, 0.3), transform: `scale(${0.8 + 0.2 * prog(t, stamp, 0.4)})` }}><Pill tone="good" filled size={18}>{"✓ signature valid"}</Pill></div>
+                  </div>
+                </Reveal>
+              );
+            })}
+          </div>
+        </div>
+        <div style={{ flex: 1 }}>
+          <Reveal at={cs[1]}>
+            <Label>Signatures that hold</Label>
+            <div style={{ fontSize: 150, fontWeight: 600, letterSpacing: "-0.07em", lineHeight: 1, color: C.cipher }}>{verified}<span style={{ fontSize: 56, color: C.graphite, letterSpacing: "-0.03em" }}> of {r.total}</span></div>
+            <Mono size={20} color={C.graphite}>Ed25519, signed by key {r.keyId}</Mono>
+          </Reveal>
+          <Reveal at={cs[2] + 0.2}>
+            <Card style={{ marginTop: 22, padding: "16px 22px", borderColor: C.redline, background: C.redSoft }}>
+              <Label color={C.redline} style={{ fontSize: 17 }}>One number changed in one receipt</Label>
+              <div style={{ fontFamily: MONO, fontSize: 26, marginTop: 8 }}>{r.tamper.field} <span style={{ textDecoration: "line-through", color: C.graphite }}>{r.tamper.before}</span> {"→"} {r.tamper.after}</div>
+              <div style={{ marginTop: 8, fontFamily: MONO, fontSize: 24, fontWeight: 500, color: C.redline }}>REFUSED: {r.tamper.reason}</div>
+            </Card>
+            <div style={{ marginTop: 14, fontSize: 22, color: C.graphite, lineHeight: 1.3 }}>The {r.olderUnsigned.toLocaleString("en-US")} receipts recorded before Nightshift signed them are counted as unsigned.</div>
+          </Reveal>
+        </div>
+      </div>
+    </Frame>
+  );
+};
+
 // What is built, and what is not ---------------------------------------------------------------------------------------
 const Numbers: React.FC<{ caps: string[] }> = ({ caps }) => {
   const t = useSec();
@@ -220,7 +273,15 @@ const Numbers: React.FC<{ caps: string[] }> = ({ caps }) => {
   );
 };
 
-export const scenesD: Record<"ui" | "gate" | "numbers", SceneDef> = {
+export const scenesD: Record<"ui" | "gate" | "numbers" | "receipts", SceneDef> = {
+  receipts: {
+    id: "receipts", kicker: "", Comp: Receipts, min: 12,
+    caps: [
+      "Nemotron runs through Meterless Nightshift; every reply carries a signed receipt naming the model.",
+      `desk. checks the signature: ${product.receipts.total} live calls, four roles, two Nemotron models, all valid.`,
+      "Change one number and it is refused; older recordings are counted as unsigned.",
+    ],
+  },
   ui: {
     id: "ui", kicker: "", Comp: UiTour, min: 0.3 + SCREENS.length * SHOT + 0.9,
     caps: [

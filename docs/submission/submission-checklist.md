@@ -16,7 +16,7 @@ Uploaded (https://youtu.be/dsRGX73lZAQ, unlisted): a 3:56 captioned motion-graph
 
 Not done, and only Prateek can do it:
 - Upload the video and put its link in the HackOS form; create the submission (it locks the team); choose Track 3.
-- Cursor: the required IDE. No Cursor session is logged in `docs/sponsors/cursor-usage-log.md`; the explanation claims none. Work in Cursor and log real sessions, or accept a weaker sponsor score.
+- Cursor: optional since 22 October 2026. No Cursor session is logged and the explanation claims none; desk. was written with Claude Code (`docs/sponsors/ai-use-provenance-log.md`). If the HackOS form still asks how Cursor was used, say it was not.
 - Zetaris and Meterless "running on your machine" as an eligibility condition is unconfirmed by the organisers.
 - Instruction files (`CLAUDE.md`, `AGENTS.md`, `.claude/`) are kept local and ignored by git; they are not in the repository or its history.
 - Check the repository link while logged out, and the video link in a private window.

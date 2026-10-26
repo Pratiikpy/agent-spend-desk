@@ -8,7 +8,8 @@ export const usesRange = false;
 const signed = (m) => `${m < 0 ? "-" : "+"}${usd(Math.abs(m))}`;
 
 export async function render(ctx) {
-  const params = ctx.params && ctx.params.week ? { week: ctx.params.week } : {};
+  const asked = ctx.params && ctx.params.get("week");
+  const params = asked ? { week: asked } : {};
   const d = await ctx.api("/api/week", params);
   if (d.state === "empty") return h("div", null, head("Weekly review", "Nothing to review yet"), emptyState(d));
   const r = d.review;

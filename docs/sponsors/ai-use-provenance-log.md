@@ -15,7 +15,7 @@ How to keep it. For every working session record: date and time range (UTC), too
 ## Actions outstanding
 
 - Archive the Claude Code session transcript(s) and the two review conversations to a private location, record their hashes here.
-- Create the Cursor entry in `docs/sponsors/cursor-usage-log.md` once Cursor is installed (it is the required IDE; no session has used it yet).
+- Cursor became optional on 22 October 2026 and was not used; `docs/sponsors/cursor-usage-log.md` stays empty and claims nothing.
 - State in any grant text which period is covered by this log and which earlier period, if any, is not.
 
 ## Entry template

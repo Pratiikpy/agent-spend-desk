@@ -43,7 +43,7 @@ const Title: React.FC<{ caps: string[] }> = ({ caps }) => {
       <Reveal at={0.1}><div style={{ fontSize: 220, lineHeight: 0.9, letterSpacing: "-0.07em", fontWeight: 600 }}>desk<span style={{ color: C.cipher }}>.</span></div></Reveal>
       <Reveal at={0.8}><div style={{ marginTop: 26, fontSize: 52, letterSpacing: "-0.03em", maxWidth: 1060 }}>A local desk for the person who pays for AI coding agents.</div></Reveal>
       <div style={{ position: "absolute", right: 0, top: 40, width: 560, display: "grid", gap: 14 }}>
-        {[["Zetaris", "the data layer"], ["Meterless", "memory and history"], ["NVIDIA Nemotron", "every language role"], ["Cursor", "the required IDE"]].map(([h, s], i) => (
+        {[["Zetaris", "the data layer"], ["Meterless", "memory, history, the route"], ["NVIDIA Nemotron", "every language role"]].map(([h, s], i) => (
           <Reveal key={h} at={2.4 + i * 0.5} dx={30} dy={0}>
             <Card style={{ padding: "14px 24px", display: "flex", justifyContent: "space-between", alignItems: "baseline" }}><span style={{ fontSize: 32, fontWeight: 600, letterSpacing: "-0.02em" }}>{h}</span><Mono size={20} color={C.graphite}>{s}</Mono></Card>
           </Reveal>

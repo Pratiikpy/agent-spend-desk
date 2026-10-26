@@ -1,3 +1,5 @@
+import { generateKeyPairSync, sign } from "node:crypto";
+import { canonicalJson } from "../../src/desk/agents/receipt-signature.ts";
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -250,6 +252,39 @@ describe("OpenAI-compatible port", () => {
     await callModel(port, req, { budget: new Budget(ASK_LIVE), trace });
     const line = trace.events.find((e) => e.event === "desk.model");
     expect(line?.detail).toMatchObject({ served_by: "nightshift", nightshift_receipt: "rcpt_req_tr", nightshift_decision: "req_tr" });
+  });
+
+  it("claims a signed receipt only when its signature holds, keeps the envelope in a recording, and does not claim a forged one", async () => {
+    const { publicKey, privateKey } = generateKeyPairSync("ed25519");
+    const spki = publicKey.export({ format: "der", type: "spki" });
+    const body = { signer: "meterlessd", ts_ms: 1, receipt: { schema: "meterless.compute_receipt.v1", receipt_id: "rcpt_req_sg", requested_model: "m", winning_route: { model: "nvidia/m", provider: "nvidia", kind: "cloud" } } };
+    const envelope = { body, pubkey_b64: Buffer.from(spki.subarray(spki.length - 32)).toString("base64"), sig_b64: sign(null, Buffer.from(canonicalJson(body), "utf8"), privateKey).toString("base64") };
+    const receipt = { schema: "meterless.compute_receipt.v1", receipt_id: "rcpt_req_sg", decision_id: "req_sg", routed_model: "nvidia/m", winning_route: { provider: "nvidia", kind: "cloud" }, usage: { latency_ms: 9 }, receipt_envelope: envelope };
+    const url = "http://127.0.0.1:8088/v1";
+    const good = await mk([reply({ meterless: receipt })], url).port.complete(req, 5000);
+    expect(good.servedBy).toBe("nightshift");
+    expect(good.receipt?.signature).toMatchObject({ valid: true });
+    expect(good.receipt?.envelope).toEqual(envelope);
+    // It survives a recording and comes back whole on replay, so that anyone can check it later.
+    const dir = new TempDir();
+    try {
+      const cassettes = join(dir.path, "c3");
+      mkdirSync(cassettes);
+      await new RecordingPort(mk([reply({ meterless: receipt })], url).port, cassettes, () => "2026-10-26T00:00:00Z").complete(req, 1000);
+      expect((await new CassettePort(cassettes).complete(req)).receipt?.envelope).toEqual(envelope);
+    } finally {
+      dir.dispose();
+    }
+    // One character of the signed receipt changed after signing: the reply is not claimed, and says why.
+    const forged = { ...receipt, receipt_envelope: { ...envelope, body: { ...body, receipt: { ...body.receipt, requested_model: "other" } } } };
+    const bad = await mk([reply({ meterless: forged })], url).port.complete(req, 5000);
+    expect(bad.content).toBe("hi");
+    expect(bad.servedBy).toBe("other");
+    expect(bad.receipt).toBeUndefined();
+    expect(bad.receiptProblem).toMatch(/signature was not accepted/);
+    // An envelope that signs a different receipt than the reply names is not accepted either.
+    const swapped = await mk([reply({ meterless: { ...receipt, receipt_id: "rcpt_req_other" } })], url).port.complete(req, 5000);
+    expect(swapped.servedBy).toBe("other");
   });
 
   it("retries a 500 with jittered pauses and then succeeds", async () => {

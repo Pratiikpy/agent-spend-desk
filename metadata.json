@@ -1,0 +1,75 @@
+{
+  "name": "desk.",
+  "tagline": "Every dollar your agents spend, tied to work that landed.",
+  "description": "A local desk for the person who pays for AI coding agents. It explains why a limit was hit, checks every day whether the agent got worse, tests a spend policy on a month it never saw, stops tool calls that no policy permits, and signs what it concludes so that a stranger can verify it offline.",
+  "event": "Open Agent Hackathon 2026",
+  "track": "Track 3: Reasoning Architecture",
+  "repository": "https://github.com/Pratiikpy/agent-spend-desk",
+  "demo_video": "https://youtu.be/dsRGX73lZAQ",
+  "slide_deck": "docs/submission/desk-deck.pdf",
+  "licence": "Apache-2.0",
+  "about_this_file": "The organizers have not published a format for this file. It follows what the sponsor folders ask for: what each sponsor does in the product, where it lives in the code, and the evidence that it works. Every path below exists in the repository, and tests/desk/metadata.test.ts checks that it does.",
+  "user_and_decision": {
+    "user": "An engineering lead who pays for coding agents",
+    "decision": "Next month's caps and routes",
+    "data": "The agents' own session logs, git history, and three Zetaris-joined sources: invoices (files), CI facts (Postgres) and a seat roster (REST)",
+    "output": "A limit autopsy, a daily regression verdict, and a signed, replay-tested spend policy that a stranger can verify offline"
+  },
+  "sponsors": {
+    "zetaris": {
+      "required": true,
+      "status": "working",
+      "role": "The data layer. One Zetaris statement joins an invoice file, a Postgres CI database and a REST seat roster into the ledger, and shows where the sources disagree (invoices 1.2% under the list-price estimate; 60 of 644 landed sessions merged although the checks were red).",
+      "where": ["src/sponsors/zetaris/", "infra/silos/", "docs/sponsors/zetaris-integration-notes.md"],
+      "evidence": ["docs/verification/failure-drills-2026-10-25.md", "docs/sponsors/zetaris-integration-notes.md", "desk silos"],
+      "when_off": "The bill falls from billed spend to estimated only; landing loses its CI facts; the spend-per-landed-pull-request table disappears. A real container stop was run."
+    },
+    "meterless": {
+      "required": true,
+      "status": "working",
+      "role": "Memory and history (three engines, run in our own process) and the model provider (Nightshift, an OpenAI-compatible endpoint, as the route to Nemotron, with a signed receipt checked per call).",
+      "engines": {
+        "world_model": { "conformance": "8/8", "feature": "Ask: what changed, and when" },
+        "h_mem": { "conformance": "13/13", "feature": "Ask: the owner's own definitions and corrections" },
+        "markovian": { "conformance": "8/8", "feature": "Ask: bounded reads of long ranges" },
+        "scout_intent": { "conformance": "harness v1 gate PASS (32 examples)", "feature": "Ask: reads the request first" }
+      },
+      "where": ["src/engines/", "src/scout-intent/", "src/desk/agents/model.ts", "src/desk/agents/receipt-signature.ts", "src/desk/receipts/command.ts", "vendor/meterless/NOTICE.md"],
+      "evidence": ["docs/verification/nightshift-receipts/README.md", "docs/sponsors/meterless-integration-notes.md", "npm run conformance", "desk receipts"],
+      "when_off": "desk ask --ablate world_model turns \"what changed before 15 October\" into \"unknowable\". A reply is called Nightshift's only when it carries Nightshift's receipt and, where one is signed, the signature holds."
+    },
+    "nvidia": {
+      "required": false,
+      "status": "working",
+      "role": "Every language role runs on a Nemotron model: Planner, Explainer, Drafter, Attacker and the daily canary, and all three arms of the benchmark.",
+      "models": ["nvidia/nemotron-3.5-super-vl-120b-a12b (the benchmark's recorded model)", "nvidia/nemotron-3.5-lightning-30b-a3b (live receipts, 2026-10-26)", "nvidia/nemotron-3-embed-1b (embeddings)"],
+      "where": ["src/desk/agents/model.ts", "docs/sponsors/nvidia-integration-notes.md"],
+      "evidence": ["docs/verification/benchmark/RESULTS-v3.md", "docs/verification/nightshift-receipts/README.md"],
+      "when_off": "Recorded replies replay the same answers offline; without them a rule-based brain answers and the trace says so."
+    },
+    "cursor": {
+      "required": false,
+      "status": "not used",
+      "role": "None. Cursor became optional on 22 October 2026 (the organizers' update, as stated by moderators in the event chat). desk. was written with Claude Code and other AI assistants, recorded in docs/sponsors/ai-use-provenance-log.md. No Cursor session is claimed.",
+      "where": ["docs/sponsors/cursor-usage-log.md", "docs/sponsors/ai-use-provenance-log.md"],
+      "evidence": []
+    }
+  },
+  "pre_existing_components": "docs/submission/pre-existing-components.md",
+  "run_without_keys": {
+    "needs": "Node 22.19 or later, and npm install",
+    "commands": ["npm run desk -- --sample", "npm run desk -- demo", "npm run desk -- ui --sample", "npm run desk -- prove"],
+    "note": "Everything runs offline on a constructed sample, with recorded model and Zetaris replies; a request with no recording is an error, never a guess."
+  },
+  "verification": {
+    "tests": "2,655 tests and 60 desk prove checks, on fresh clones of Windows 11 (Node 24.20) and Ubuntu 22.04 (Node 22.23)",
+    "logs": "docs/verification/clean-room/",
+    "benchmark": "docs/verification/benchmark/RESULTS-v3.md"
+  },
+  "limits": [
+    "The Desk answers 55 of 60 preregistered questions exactly; its misses are question shapes it has no step for, and the margin over a tool agent (10 of 60) is one this sample cannot make certain.",
+    "The wind tunnel's 90% range held the real month 73% of the time.",
+    "The Cursor and Gemini CLI hooks passed contract tests only and were not run live.",
+    "Receipts recorded before Nightshift signed them are counted as unsigned; only receipts recorded since 2026-10-26 can be checked."
+  ]
+}

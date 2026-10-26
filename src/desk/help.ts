@@ -34,6 +34,7 @@ export const COMMANDS: readonly CommandHelp[] = [
   { name: "enforcement", group: "Decide and enforce", summary: "What the Desk can actually stop, tool by tool: enforced, advisory or notify only. `enforcement test [--live]` records the evidence." },
   { name: "overhead", group: "Costs and limits", summary: "Share the idle and unowned spend of a period among the projects that landed work, to the micro-dollar." },
   { name: "delegation", group: "Costs and limits", summary: "Which agents started which: each delegated agent alone and with the agents it started, and the sessions that went too deep." },
+  { name: "receipts", group: "Decide and enforce", summary: "Check the Ed25519 signatures on Nightshift's receipts for the model's replies and say which Nemotron model answered each role." },
   { name: "attack", group: "Decide and enforce", summary: "Try to step around a policy file: the attacker corpus, your own request, and how many generated policy pairs the restrict check was held to." },
   { name: "index", group: "Privacy", summary: "Share per-suite pass rates, if you choose to: off by default, a preview of the exact payload, and only the bytes you accepted." },
   { name: "pack", group: "Decide and enforce", summary: "Take in rules or canary templates someone else wrote: a pack that widens or reroutes is rejected, the rest is replayed and starts in shadow." },

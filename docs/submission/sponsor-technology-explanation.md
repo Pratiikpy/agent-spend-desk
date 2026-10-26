@@ -22,7 +22,7 @@ Every sentence here can be checked in the repository, in a trace line, or by run
 
 ## Cursor
 
-See `docs/sponsors/cursor-usage-log.md`. At the time of writing no Cursor session has been logged, and this explanation claims none.
+Cursor was required until 22 October 2026 and optional after it (the organizers' update, as stated by moderators in the event chat). desk. was built without it: the code and the documents were written with Claude Code, and `docs/sponsors/ai-use-provenance-log.md` records how. `docs/sponsors/cursor-usage-log.md` holds no session, and this explanation claims none.
 
 ## NVIDIA
 

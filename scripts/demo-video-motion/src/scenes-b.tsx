@@ -237,7 +237,7 @@ const Close: React.FC<{ caps: string[] }> = ({ caps }) => (
     <Reveal at={2.2}><div style={{ marginTop: 34, fontSize: 40, letterSpacing: "-0.02em" }}>Under three minutes. Entirely local. Your autopsy, your ranked fixes, and what it could not know.</div></Reveal>
     <Reveal at={3.2}><div style={{ marginTop: 22, fontSize: 32, color: C.graphite }}>No logs? <Mono size={32} color={C.ink}>npm run desk -- --sample</Mono></div></Reveal>
     <Reveal at={4.2}><div style={{ marginTop: 46, display: "flex", gap: 26, alignItems: "center" }}><Mono size={34}>{REPO}</Mono><span style={{ width: 8, height: 8, background: C.cipher, borderRadius: 4 }} /><span style={{ fontSize: 28, color: C.graphite }}>Zetaris · Meterless · NVIDIA Nemotron · Cursor</span></div></Reveal>
-    <Reveal at={5.2}><div style={{ marginTop: 22, fontSize: 26, color: C.graphite }}>{data.product.features.built} of {data.product.features.of} features built · {data.product.prove.windows.pass} checks pass · fresh Windows and Ubuntu clones · Track 3, Reasoning Architecture</div></Reveal>
+    <Reveal at={5.2}><div style={{ marginTop: 18, fontSize: 26, color: C.graphite }}>{data.product.features.built} of {data.product.features.of} features built · {data.product.prove.windows.pass} checks pass · fresh Windows and Ubuntu clones · Track 3, Reasoning Architecture</div></Reveal>
   </Frame>
 );
 

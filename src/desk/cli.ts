@@ -10,6 +10,8 @@ import { packCommand } from "./pack/command.ts";
 import { HOOK_TOOLS } from "./gate/tools.ts";
 import { surfacesCommand } from "./calibrate/surfaces-command.ts";
 import { attack, ATTACK_USAGE } from "./attack/command.ts";
+import { receiptsCommand } from "./receipts/command.ts";
+import { exportStaticUi } from "./ui/export.ts";
 import { indexCommand } from "./regindex/command.ts";
 import { bundleCommand } from "./verify/bundle-command.ts";
 import { accountTrajectories, renderAccounting } from "./trajectory/account.ts";
@@ -171,6 +173,7 @@ const { values, positionals } = parseOrExit({
     mutate: { type: "string" },
     compare: { type: "boolean", default: false },
     harm: { type: "string", multiple: true },
+    pin: { type: "string" },
     try: { type: "string" },
     months: { type: "string" },
     sample: { type: "boolean", default: false },
@@ -850,6 +853,17 @@ written: ${r.files.join(", ")}`);
 } else if (command === "ui") {
   loadDotenv(".env");
   const ui = await startUiServer({ gateHealth: () => gateHealth({ env: process.env }), ledgerPath: ledgerPath, pricesPath: pricesPath, policiesDir: "policies", port: Number(values.port), mode: sampleMode ? "sample" : "own_logs", ...(values.at ? { nowMs: () => new Date(values.at as string).getTime() } : {}), otherPricesPath: values.portkey ?? "data/prices/portkey-anthropic-2026-10-24.json" });
+  if (values.export) {
+    // A copy of the screens that needs no server: the answers the screens can reach, recorded from the constructed sample.
+    try {
+      const r = await exportStaticUi(ui, values.export);
+      console.log(`Wrote ${r.files} files to ${values.export}: ${r.entries} recorded answers, ${(r.bytes / 1_048_576).toFixed(1)} MB.${r.skipped.length ? ` Not recorded: ${r.skipped.slice(0, 5).join("; ")}.` : ""}`);
+    } catch (e) {
+      console.log(e instanceof Error ? e.message : String(e));
+      process.exitCode = 1;
+    }
+    await ui.close();
+  } else {
   console.log(`desk ui is running. Open this address (it carries a one-time token):
   ${ui.url}
 Ctrl+C stops it.`);
@@ -858,6 +872,7 @@ Ctrl+C stops it.`);
     process.once("SIGTERM", resolve);
   });
   await ui.close();
+  }
 } else if (command === "canary") {
   if (positionals[1] === "schedule") {
     console.log(canaryScheduleSnippet(process.cwd(), process.platform));
@@ -1014,6 +1029,11 @@ ${t.pass} PASS, ${t.fail} FAIL, ${t.notRun} NOT RUN. NOT RUN is not a pass: it n
     console.log(r.text);
     if (r.code !== 0) process.exitCode = r.code;
   }
+} else if (command === "receipts") {
+  // Check the signatures on the Meterless Nightshift receipts kept with the model's replies.
+  const r = receiptsCommand({ args: positionals.slice(1), ...(values.pin ? { pin: values.pin } : {}) });
+  console.log(r.text);
+  if (r.code !== 0) process.exitCode = r.code;
 } else if (command === "index") {
   // The opt-in public regression index: off, previewed, accepted by hash, and then only those bytes (DF-064).
   const cdb = existsSync(values["capture-db"] ?? DEFAULT_CAPTURE_DB) ? openCapture(values["capture-db"] ?? DEFAULT_CAPTURE_DB) : null;

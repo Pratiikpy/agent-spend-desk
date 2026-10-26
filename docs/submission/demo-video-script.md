@@ -4,7 +4,7 @@ A captioned motion-graphic video with no voice. Every figure on screen is read o
 
 The look is the Blank brand kit: ink on white, one green accent, rust red only for what failed or was blocked, Outfit and JetBrains Mono. The black redaction bar is the one motif: it covers the word "limit" in the first scene and it is the cut between every pair of scenes. A dot grid drifts at the edges, each scene pushes in slowly, and the number of the beat sits behind it as a pale numeral.
 
-The first caption says the scenario is constructed. Cursor appears only as "the required IDE", with "nothing is claimed beyond its log"; `docs/sponsors/cursor-usage-log.md` is empty until real Cursor sessions are logged.
+The first caption says the scenario is constructed. Cursor appears only as a name with "nothing is claimed beyond its log"; `docs/sponsors/cursor-usage-log.md` is empty, and Cursor became optional on 22 October 2026.
 
 | Scene | Starts | On screen | Burned-in captions |
 |---|---|---|---|

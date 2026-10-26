@@ -2,7 +2,8 @@
 // A figure that cannot be found stops the script: the video never falls back to a number typed in by hand.
 //   node scripts/demo-video-motion/gen-data.mjs
 import { spawnSync } from "node:child_process";
-import { readFileSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
 const repo = resolve(import.meta.dirname, "..", "..");
@@ -126,8 +127,10 @@ const feats = status.features ?? status.rows ?? status;
 const featureList = Array.isArray(feats) ? feats : Object.values(feats);
 const built = featureList.filter((f) => f.status === "built").length;
 const absent = featureList.filter((f) => f.status === "absent").map((f) => f.id);
-const logWin = read("docs/verification/clean-room/2026-10-26-windows-11-node-24.20.log");
-const logLin = read("docs/verification/clean-room/2026-10-26-ubuntu-22.04-node-22.23.log");
+const cleanRoom = readdirSync(join(repo, "docs/verification/clean-room")).filter((f) => f.endsWith(".log")).sort();
+const newest = (needle) => need(cleanRoom.filter((f) => f.includes(needle)).at(-1), `a ${needle} clean-room log`);
+const logWin = read(`docs/verification/clean-room/${newest("windows")}`);
+const logLin = read(`docs/verification/clean-room/${newest("ubuntu")}`);
 const testsOf = (l) => need(/Tests\s+(\d+) passed(?: \| (\d+) skipped)? \((\d+)\)/.exec(l), "clean-room test line");
 const tw = testsOf(logWin), tl = testsOf(logLin);
 const proveOf = (l) => need(/(\d+) PASS, (\d+) FAIL, (\d+) NOT RUN/.exec(l), "prove line");
@@ -141,7 +144,31 @@ if (enforcement.length !== 7) throw new Error("gen-data: enforcement table not f
 const gw = read("docs/verification/gateway-2026-10-24.md");
 const gwSettled = need(/non-stream call \(\d+ in, \d+ out\) settled for (\d+) micro-dollars/.exec(gw), "gateway settled call");
 const gwRefused = need(/refused with 429 `budget_exceeded` in (\d+) ms and never reached the model/.exec(gw), "gateway refusal");
+const receiptsOut = run(["receipts", "docs/verification/nightshift-receipts"]);
+const rc = need(/(\d+) receipts: (\d+) signed \((\d+) signatures valid, (\d+) not\), (\d+) unsigned/.exec(receiptsOut), "receipt counts");
+const rkey = need(/signed by key ([0-9a-f]{16}) \((\d+)\)/.exec(receiptsOut), "receipt key");
+const roleRows = [...receiptsOut.matchAll(/^  ([a-z_]+)\s+(nvidia\/[\w.\-]+)\s+(\d+)$/gm)].map((m) => ({ role: m[1], model: m[2], n: num(m[3]) }));
+if (roleRows.length < 4) throw new Error("gen-data: receipt roles not found");
+const unsignedRun = run(["receipts", "data/sample"]);
+const unsigned = need(/(\d+) receipts: \d+ signed \(\d+ signatures valid, \d+ not\), (\d+) unsigned/.exec(unsignedRun), "unsigned receipt counts");
+let tamper;
+{
+  const tmp = mkdtempSync(join(tmpdir(), "desk-video-receipts-"));
+  try {
+    const log = JSON.parse(read("docs/verification/nightshift-receipts/2026-10-26.json"));
+    const u = log.calls[0].envelope.body.receipt.usage;
+    const before = u.latency_ms;
+    u.latency_ms = before + 1;
+    writeFileSync(join(tmp, "changed.json"), JSON.stringify(log));
+    const out = run(["receipts", tmp]);
+    const why = need(/: (the signature does not match the receipt)/.exec(out), "tampered receipt refusal");
+    tamper = { field: "latency_ms", before, after: before + 1, reason: why[1] };
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+}
 const product = {
+  receipts: { total: num(rc[1]), signed: num(rc[2]), valid: num(rc[3]), invalid: num(rc[4]), keyId: rkey[1], roles: roleRows, olderUnsigned: num(unsigned[2]), tamper },
   features: { built, of: featureList.length, absent },
   tests: { windows: { passed: num(tw[1]), skipped: num(tw[2] ?? 0), of: num(tw[3]) }, ubuntu: { passed: num(tl[1]), skipped: num(tl[2] ?? 0), of: num(tl[3]) } },
   prove: { windows: { pass: num(pw[1]), fail: num(pw[2]), notRun: num(pw[3]) }, ubuntu: { pass: num(pl[1]), fail: num(pl[2]), notRun: num(pl[3]) } },

@@ -1,10 +1,10 @@
 /* desk. interface. Blank brand kit: ink on white, one green accent kept for verified and live states,
    Redline for risk only, Outfit and JetBrains Mono, 1px lines, no shadows, no gradients. */
 
-@font-face { font-family: "Outfit"; src: url("/fonts/Outfit-Regular.ttf") format("truetype"); font-weight: 400; font-display: swap; }
-@font-face { font-family: "Outfit"; src: url("/fonts/Outfit-SemiBold.ttf") format("truetype"); font-weight: 600 800; font-display: swap; }
-@font-face { font-family: "JetBrains Mono"; src: url("/fonts/JetBrainsMono-Regular.ttf") format("truetype"); font-weight: 400; font-display: swap; }
-@font-face { font-family: "JetBrains Mono"; src: url("/fonts/JetBrainsMono-Medium.ttf") format("truetype"); font-weight: 500 700; font-display: swap; }
+@font-face { font-family: "Outfit"; src: url("fonts/Outfit-Regular.ttf") format("truetype"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Outfit"; src: url("fonts/Outfit-SemiBold.ttf") format("truetype"); font-weight: 600 800; font-display: swap; }
+@font-face { font-family: "JetBrains Mono"; src: url("fonts/JetBrainsMono-Regular.ttf") format("truetype"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "JetBrains Mono"; src: url("fonts/JetBrainsMono-Medium.ttf") format("truetype"); font-weight: 500 700; font-display: swap; }
 
 :root {
   --ink: #0a0a0a;

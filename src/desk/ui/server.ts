@@ -71,6 +71,8 @@ export interface UiServer {
   port: number;
   /** Set when the ledger could not be opened as it is; the screens then show an empty state saying why. */
   ledgerProblem: string | null;
+  /** The answer to one request, computed in this process the way the server would, without a connection: what `desk ui --export` records. */
+  answer(path: string, params: Record<string, string>): Promise<{ status: number; body: unknown }>;
   close(): Promise<void>;
 }
 
@@ -105,7 +107,7 @@ function walk(dir: string, prefix: string, out: Map<string, string>): void {
   }
 }
 
-function staticMap(): Map<string, string> {
+export function staticMap(): Map<string, string> {
   const files = new Map<string, string>();
   walk(CLIENT_DIR, "/", files);
   for (const f of FONT_FILES) {
@@ -342,6 +344,14 @@ export async function startUiServer(opts: UiOptions): Promise<UiServer> {
     token,
     port,
     ledgerProblem: problem,
+    answer: async (path, params) => {
+      try {
+        const out = await route(path, new URLSearchParams(params));
+        return out === undefined ? { status: 404, body: null } : { status: 200, body: JSON.parse(JSON.stringify(out)) as unknown };
+      } catch (e) {
+        return { status: e instanceof q.BadParam ? 400 : 500, body: null };
+      }
+    },
     close: () =>
       new Promise<void>((resolve) => {
         server.closeAllConnections();

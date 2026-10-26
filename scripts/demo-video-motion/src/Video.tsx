@@ -12,8 +12,8 @@ const byId = (list: SceneDef[], id: string) => { const s = list.find((x) => x.id
 export const scenes: SceneDef[] = [
   byId(scenesA, "hook"), byId(scenesA, "title"), scenesC.architecture, scenesD.ui,
   byId(scenesA, "autopsy"), byId(scenesA, "zetaris"), byId(scenesA, "canary"), byId(scenesA, "propose"),
-  byId(scenesB, "ask"), byId(scenesB, "bench"), byId(scenesB, "verify"), scenesD.gate,
-  byId(scenesB, "self"), scenesD.numbers, scenesC.vision, byId(scenesB, "close"),
+  byId(scenesB, "ask"), scenesD.receipts, byId(scenesB, "bench"), byId(scenesB, "verify"), scenesD.gate,
+  scenesD.numbers, scenesC.vision, byId(scenesB, "close"),
 ];
 
 // A scene lasts as long as its captions take to read (plus a pause), or its own minimum if the animation needs more.

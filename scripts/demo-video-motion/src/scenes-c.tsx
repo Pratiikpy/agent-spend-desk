@@ -42,7 +42,7 @@ const Architecture: React.FC<{ caps: string[] }> = ({ caps }) => {
   // Which track is in focus follows the caption being read.
   let focus = 0;
   for (let i = 0; i < 3; i++) if (t >= cs[i]) focus = i + 1;
-  const wrapUp = t >= cs[3];
+  const wrapUp = cs.length > 3 && t >= cs[3];
   const dim = (tracks: number[]) => (focus === 0 || wrapUp ? 1 : tracks.includes(focus) ? 1 : 0.32);
   const lit = (tracks: number[]) => focus !== 0 && !wrapUp && tracks.includes(focus);
   return (
@@ -85,13 +85,8 @@ const Architecture: React.FC<{ caps: string[] }> = ({ caps }) => {
           <div style={{ opacity: dim([3]), border: `2px solid ${lit([3]) ? C.cipher : C.line}`, background: lit([3]) ? C.cipherSoft : C.veil, borderRadius: 12, padding: "8px 18px", fontSize: 22 }}><b>Meterless engines</b> · World Model, H-MEM, Markovian: memory and history, run in our process</div>
         </Reveal>
         <Reveal at={2.0} style={{ flex: 1 }}>
-          <div style={{ opacity: dim([3]), border: `2px solid ${lit([3]) ? C.cipher : C.line}`, background: lit([3]) ? C.cipherSoft : C.veil, borderRadius: 12, padding: "8px 18px", fontSize: 22 }}><b>NVIDIA Nemotron</b> · every language role: Planner, Explainer, Drafter, Attacker, canary</div>
+          <div style={{ opacity: dim([3]), border: `2px solid ${lit([3]) ? C.cipher : C.line}`, background: lit([3]) ? C.cipherSoft : C.veil, borderRadius: 12, padding: "8px 18px", fontSize: 22 }}><b>NVIDIA Nemotron</b> · every language role, through Meterless Nightshift: Planner, Explainer, Drafter, Attacker, canary</div>
         </Reveal>
-        {wrapUp && (
-          <Reveal at={cs[3]} style={{ flex: "0 0 330px" }}>
-            <div style={{ border: `2px solid ${C.line}`, background: C.veil, borderRadius: 12, padding: "8px 18px", fontSize: 22 }}><b>Cursor</b> · the required IDE</div>
-          </Reveal>
-        )}
       </div>
     </Frame>
   );
@@ -132,13 +127,12 @@ export const scenesC: Record<"architecture" | "vision", SceneDef> = {
       "Track 1: logs, invoices, CI and a roster joined through Zetaris, with the conflicts shown.",
       "Track 2: every answer is a checked program, every conclusion a signed dossier.",
       "Track 3, our primary: plan, critique, revise, replay on a month it never saw.",
-      "Cursor is the required IDE; nothing is claimed beyond its log.",
-    ],
+        ],
   },
   vision: {
     id: "vision", kicker: "", Comp: Vision,
     caps: [
-      "Where it goes: from a desk to a gate for every agent.",
+      "From a desk to a gate for every agent.",
       "Not built yet: a measured trial on real tasks, a better range, and an open format.",
     ],
   },

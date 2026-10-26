@@ -202,7 +202,7 @@ Reward: a clear problem and named user; agents that do real work; critique and r
 |---|---|
 | Exactly one primary track | Track 3 (the submission itself is not created; that locks the team) |
 | Zetaris and Meterless integrated in every submission | Yes, each with a call site, a trace line and a switch-off test |
-| Cursor is the required development environment | **Not met on the record: `docs/sponsors/cursor-usage-log.md` is empty.** Nothing is claimed |
+| Cursor as the development environment | Optional since 22 October 2026 (moderators' statement in the event chat). **Not used:** `docs/sponsors/cursor-usage-log.md` is empty and nothing is claimed |
 | NVIDIA wherever it contributes | Nemotron serves every language role and all three benchmark arms |
 | Work committed before the window is not eligible | First commit is after 22 Oct 00:00 UTC; design documents and two guard scripts predate it and are declared |
 | No secrets in the repository | Scanner on tree and history |
@@ -221,7 +221,7 @@ Reward: a clear problem and named user; agents that do real work; critique and r
 - **Zetaris** (required). One statement joins an S3-style invoice CSV, a Postgres CI database and a REST roster, all synthetic. It gives the bill its `billed` class, landing its CI facts (584 landed sessions merged on green checks, 60 on red) and the spend-per-landed-PR table. With Zetaris off those disappear; a real container kill was run. **Not used: the MCP server, natural-language-to-SQL, the semantic layer and data steward, masking by role, the audit log, lineage, Iceberg time travel.**
 - **Meterless** (required). Three engines in our process, conformance 8/8, 13/13, 8/8, each changing an answer when off. Since 2026-10-24 Nightshift (Windows edition 1.2.3) is installed and serves the model; replies carry its compute receipt, which the trace and the answer show. **Not used: overnight jobs, judges, its local embedder, H-MEM mining and sleep, World Model merge queue and audit, Scout Intent.**
 - **NVIDIA.** Nemotron through the OpenAI-compatible API, tool calling verified. Latency varies and some calls fail; code retries, falls back and says so.
-- **Cursor.** Required IDE; editor rules exist in `.cursor/rules/`. No session is logged.
+- **Cursor.** Optional since 22 October 2026. Not used; editor rules exist in `.cursor/rules/`. No session is logged.
 - **Bright Data.** Bounty track only; not used.
 
 ---
@@ -396,7 +396,7 @@ Runtime: Node ≥ 22 with `node:sqlite`; two dependencies, `yaml` and `@resvg/re
 
 ### 8.7 How it was written
 
-With AI assistants (Claude Code). The dated record is `docs/sponsors/ai-use-provenance-log.md`. Cursor is the required IDE and has no logged session.
+With AI assistants (Claude Code). The dated record is `docs/sponsors/ai-use-provenance-log.md`. Cursor was the required IDE until 22 October 2026, when it became optional; it was not used and has no logged session.
 
 ---
 
