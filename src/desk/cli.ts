@@ -822,7 +822,7 @@ written: ${r.files.join(", ")}`);
 } else if (command === "ask") {
   loadDotenv(".env");
   console.log(
-    await askCommand({ dbPath: ledgerPath, question: positionals.slice(1).join(" "), ablate: values.ablate, noModel: values["no-model"], record: values.record, sampleMode, cassetteDir: values.cassettes, memoryDir: values["memory-dir"], env: process.env }),
+    await askCommand({ dbPath: ledgerPath, question: positionals.slice(1).join(" "), ablate: values.ablate, noModel: values["no-model"], record: values.record, sampleMode, cassetteDir: values.cassettes, memoryDir: values["memory-dir"], env: process.env, traceDir: sampleMode ? join(values.out, "traces") : "data/desk/traces" }),
   );
 } else if (command === "remember") {
   console.log(await rememberCommand({ memoryDir: values["memory-dir"], text: positionals.slice(1).join(" "), outcome: values.outcome, ...(values.replaces ? { replaces: values.replaces } : {}) }));

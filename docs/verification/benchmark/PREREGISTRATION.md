@@ -204,3 +204,7 @@ Track 3 leans on "the Nemotron model mix, memory and the tool loop". Sets A to E
 7. Every signed receipt of every run verifies, and the model named in each receipt is the model the arm asked for. A reply served by another model is reported with the arm.
 
 **What will be done with the result.** Every finding is published as it falls, the failed predictions beside the held ones. The Desk is not changed on this evidence. If reading set F's misses leads to a change, set F stops being held out for the changed version and the report shows the first figure beside the later one. A mix that does not hold is reported as one that did not.
+
+## Erratum to the stated question limit, found 2026-10-26 while checking this file against the code
+
+Several sections above, from the first, say each arm had "a limit of 8 model calls and 240 seconds a question". The code that ran every arm on every set (`src/desk/bench/arms.ts`, constant `LIMITS`) allows 8 model calls, 10 tool calls, 6 turns, 900 seconds of wall clock for the question and 360 seconds for one model call. The call and turn limits are as written; the 240 seconds is not what the code did. No result changes: the limits are the same for every arm of every set, and a question that ran out of time is counted as not exact either way. The sentence is left as it was written so that the record shows what was said before the runs; this erratum is the correction.

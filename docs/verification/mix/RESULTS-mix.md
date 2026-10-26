@@ -1,6 +1,6 @@
 # Does the architecture carry a small model, and does a mix of Nemotron models hold? Set F, run 2026-10-26
 
-Preregistered in Addendum 8 of `docs/verification/benchmark/PREREGISTRATION.md` (commit `1f09ba4`), before any model was run on set F. Sixty new draws (seed 20261031, hash `sha256:414cc20f…f427`), one greedy run per question, live through Meterless Nightshift 1.2.3, eleven arm-runs. Each run's rows are in `docs/verification/mix/<run>.jsonl`, its recordings in `data/sample/bench-cassettes-f-<run>/`.
+Preregistered in Addendum 8 of `docs/verification/benchmark/PREREGISTRATION.md` (commit `1f09ba4`), before any model was run on set F. Sixty new draws (seed 20261031, hash `sha256:414cc20f…f427`), one greedy run per question, live through Meterless Nightshift 1.2.3, eleven arm-runs, with the limits the code gives every arm (8 model calls, 10 tool calls, 6 turns, 900 seconds a question, 360 seconds a call; the "240 seconds" in Addendum 8 repeats an older misstatement, corrected in the erratum at the end of the preregistration). Each run's rows are in `docs/verification/mix/<run>.jsonl`, its recordings in `data/sample/bench-cassettes-f-<run>/`.
 
 ## Exact answers (of 60), median seconds per question
 

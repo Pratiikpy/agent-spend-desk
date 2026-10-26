@@ -278,7 +278,7 @@ svg.arch { width: 100%; height: auto; display: block; }
    sessions whose work landed; raise the threshold so they are not paused"}}
 {"seq":6,"event":"desk.policy.check","role":"policy_drafter",
   "detail":{"attempt":2,"narrows":true,"landedBlocked":0,"landedTotal":311}}</pre>
-    <p class="small">Every run writes a JSONL trace with the reason for each decision. A cleaned one is in <span class="mono">output_examples/traces/</span>. Ask writes the same kind of lines when the plan critic sends the Planner back (<span class="mono">desk.plan.critique</span>, <span class="mono">revision.applied</span>).</p>
+    <p class="small">Ask and Propose each write a JSONL trace with the reason for each decision. A cleaned one is in <span class="mono">output_examples/traces/</span>. Ask writes the same kind of lines when the plan critic sends the Planner back (<span class="mono">desk.plan.critique</span>, <span class="mono">revision.applied</span>).</p>
   </div>
   <div class="foot"><span>desk.</span><span>output_examples/traces/propose-sample.jsonl</span></div>
 </section>
@@ -484,7 +484,7 @@ svg.arch { width: 100%; height: auto; display: block; }
         <tr><td>Fails when an API is down</td><td>Every language role has a rule brain</td></tr>
         <tr><td>Manual steps not in the README</td><td><span class="mono">npm run desk -- demo</span> is the demo</td></tr>
         <tr><td>No sample inputs and outputs</td><td><span class="mono">input_examples/</span>, <span class="mono">output_examples/</span></td></tr>
-        <tr><td>Cannot show how the agent got there</td><td>A JSONL trace per run</td></tr>
+        <tr><td>Cannot show how the agent got there</td><td>A JSONL trace for each Ask and Propose run</td></tr>
       </table>
     </div>
     <div class="grid3" style="margin-top:20px">

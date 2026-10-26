@@ -1,3 +1,6 @@
+import { mkdirSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+
 import { Budget, ASK_LIVE, ASK_SAMPLE } from "../agents/budget.ts";
 import { MemoryTrace } from "../agents/trace.ts";
 import { embedderFromEnv } from "../embed/env.ts";
@@ -20,6 +23,8 @@ export interface AskCommandOptions {
   cassetteDir: string;
   memoryDir: string;
   env: Record<string, string | undefined>;
+  /** When set, the run's trace is also written there as `ask-<answer id>.trace.jsonl`, one line per decision with its reason. */
+  traceDir?: string;
 }
 
 export function parseAblate(text: string | undefined): { names: Set<AblateName>; bad: string[] } {
@@ -69,6 +74,18 @@ export function renderAnswer(r: AskResult, trace: MemoryTrace): string {
   return out.join("\n");
 }
 
+/** The trace of one answer as JSON lines. A failure to write is reported in the output and never stops the answer. */
+export function writeAskTrace(dir: string, answerId: string, events: readonly unknown[]): string {
+  const path = join(dir, `ask-${answerId}.trace.jsonl`);
+  try {
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(path, events.map((e) => JSON.stringify(e)).join("\n") + "\n");
+    return path;
+  } catch (e) {
+    return `not written (${(e as Error).message})`;
+  }
+}
+
 export async function askCommand(o: AskCommandOptions): Promise<string> {
   const { names, bad } = parseAblate(o.ablate);
   if (bad.length > 0) return `Unknown engine to ablate: ${bad.join(", ")}. The engines are ${ABLATE_NAMES.join(", ")}.`;
@@ -80,7 +97,8 @@ export async function askCommand(o: AskCommandOptions): Promise<string> {
     const trace = new MemoryTrace();
     const emb = embedderFromEnv(o.env, o.cassetteDir, { sampleMode: o.sampleMode, record: o.record, noModel: o.noModel });
     const r = await ask({ db, question: o.question, ablate: names, port: route.port, memory, trace, embedder: emb.embedder, budget: new Budget(o.sampleMode ? ASK_SAMPLE : ASK_LIVE) });
-    return `${renderAnswer(r, trace)}\n  model route: ${route.label}\n  embeddings: ${emb.label}`;
+    const traceLine = o.traceDir ? `\n  trace: ${writeAskTrace(o.traceDir, r.answerId, trace.events)}` : "";
+    return `${renderAnswer(r, trace)}\n  model route: ${route.label}\n  embeddings: ${emb.label}${traceLine}`;
   } finally {
     db.close();
   }

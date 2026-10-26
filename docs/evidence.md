@@ -41,4 +41,4 @@ From `output_examples/traces/propose-sample.jsonl`, the Drafter proposing a poli
 | Cannot run without internet; fails if an API is down | The sample runs offline; every language role has a rule-based fallback |
 | Demo needs manual steps not in the README | `npm run desk -- demo` is the whole demo |
 | No sample inputs and outputs | `input_examples/`, `output_examples/`, `data/sample/` |
-| Cannot show how the agent reached its output | A JSONL trace per run; a cleaned sample is below |
+| Cannot show how the agent reached its output | A JSONL trace file for each `desk ask` and `desk propose` run; a cleaned sample is below |

@@ -218,7 +218,7 @@ Open Agent Hackathon 2026 (GenAI Works): 144 hours, 22 to 27 October 2026, one p
 | Criterion | Pts | The judge's question | Our evidence |
 |---|---:|---|---|
 | Impact | 30 | A meaningful real problem for a clearly defined user, consistent with the challenge statement | The problem sentence; five public quotes; `docs/design/desk/04-evidence-table.md` (146 claims). **Gap: no real user has used it; willingness to pay NOT VERIFIED** |
-| Technical | 20 | Implementation, reliability, architecture | 2,677 tests (200 files); `desk prove` with 61 named checks, green on fresh clones of Windows and Ubuntu; budgets in code; fallbacks and failure drills; preregistered benchmarks (set D, the role-necessity study, the model-mix test) whose failed predictions are published; signed Nemotron receipts |
+| Technical | 20 | Implementation, reliability, architecture | 2,679 tests (201 files); `desk prove` with 61 named checks, green on fresh clones of Windows and Ubuntu; budgets in code; fallbacks and failure drills; preregistered benchmarks (set D, the role-necessity study, the model-mix test) whose failed predictions are published; signed Nemotron receipts |
 | Innovation | 15 | Originality | Restrict-only policy check fuzzed against an oracle; an Explainer that never reads the question; a signed dossier a stranger verifies offline; the Desk's own judgement recorded and scored; each role tested by taking it out; a per-role Nemotron mix with a signed receipt for every call |
 | Demo | 15 | Shows the solution, its functionality and value | 3:57 captioned motion video; `npm run desk -- demo`; the screens at https://desk-demo.vercel.app/. **The video is uploaded: https://youtu.be/3LaYZ0VCgXI** |
 | Product and UX | 10 | Intuitive, accessible, easy for the intended user | Fourteen screens, light and dark, phone width |
@@ -242,7 +242,7 @@ Reward: a clear problem and named user; agents that do real work; critique and r
 | No secrets in the repository | Scanner on tree and history |
 | No manual setup; sample inputs and outputs; runs from a clean clone | `npm run desk -- --sample`; `input_examples/`, `output_examples/`; clean-room runs on Windows (Node 24.20) and Ubuntu (Node 22.23). **Node 22.19 and macOS NOT VERIFIED** |
 | Bounded, predictable runtime (organisers target 5 to 10 minutes) | Offline paths replay recordings; the live path has variable latency (0.4 s to 56 s measured for the same small call) |
-| Save or print agent activity | JSONL trace per run |
+| Save or print agent activity | A JSONL trace file for each `desk ask` and `desk propose` run (and the gate's, when `DESK_GATE_TRACE` is set); the answer also prints how it was checked |
 | Declare pre-existing components | `docs/submission/pre-existing-components.md` |
 | Demo video 1 to 4 minutes, naming Zetaris and Meterless and where each sits | 3:57, uploaded: https://youtu.be/3LaYZ0VCgXI |
 | Slide deck with problem, solution, architecture, stack, sponsor use, visuals, future | `docs/submission/desk-deck.pdf`, 25 slides |
@@ -316,7 +316,7 @@ For each track: the organisers' lines, then what the product does about each, th
 
 ### 7.1 Done and checked
 
-- Everything in sections 3 and 4 runs. 2,675 tests run on the fresh clones (200 files; `npx vitest run`, 2026-10-26; 2,674 pass and one is skipped on Windows, 2,673 pass and two are skipped on Ubuntu), and `desk prove` is 61 PASS, 0 FAIL, 0 NOT RUN on fresh clones of Windows 11 (Node 24.20) and Ubuntu 22.04 (Node 22.23); the commit those clones were made at is named in the README and in `docs/verification/clean-room/`. Two later commits changed documents, the video and the model-mix test; the full suite was run again on the working tree (2,676 pass, 1 skipped) and the clean-room runs were not repeated.
+- Everything in sections 3 and 4 runs. 2,675 tests run on the fresh clones (200 files; `npx vitest run`, 2026-10-26; 2,674 pass and one is skipped on Windows, 2,673 pass and two are skipped on Ubuntu), and `desk prove` is 61 PASS, 0 FAIL, 0 NOT RUN on fresh clones of Windows 11 (Node 24.20) and Ubuntu 22.04 (Node 22.23); the commit those clones were made at is named in the README and in `docs/verification/clean-room/`. Two later commits changed documents, the video and the model-mix test; the full suite was run again on the working tree (2,678 pass, 1 skipped) and the clean-room runs were not repeated.
 - Canary: calls the planted model switch on day 15 (-40.0 points, 99% interval -56.2 to -23.8, control flat); 0 of 100 no-change histories called regressed. Smallest detectable change on the recorded design is about 21 points.
 - Held-out replay: a policy drafted from September meets October and would have blocked 5 of 333 landed sessions.
 - Head-to-head (same Nemotron model, 60 questions nobody had read, preregistered with seven written predictions): one call 12, a tool-using agent 45, the Desk v3 55; pass^3 18%, 70%, 85%; all seven predictions held; the five misses are shapes the Desk has no step for. Sets A and B, which the Desk was built against, are 60 of 60 each on v3 and are post hoc. Ten in sixty is a margin this size of set cannot make certain (`docs/verification/benchmark/RESULTS-v3.md`).

@@ -6,8 +6,8 @@ Every requirement below is taken from the organisers' own documents (the welcome
 
 | Requirement | Where covered | Status |
 |---|---|---|
-| Demo video, 1 to 4 minutes, main workflow end to end | `scripts/demo-video/record.mjs` records it from real runs; `demo-video-script.md` lists every scene | PASS for the recording; YOU to upload and link it |
-| Video names Zetaris and Meterless and shows where each sits | The architecture scene and the Zetaris and Meterless scenes | PASS. Cursor was a third name here until the organizers made it optional on 22 October; the video still lists it, with "nothing is claimed beyond its log" |
+| Demo video, 1 to 4 minutes, main workflow end to end | `scripts/demo-video-motion/` renders it (Remotion) from figures read out of real runs and result files by `gen-data.mjs`; `demo-video-script.md` lists every scene; 3:57 | PASS: uploaded at https://youtu.be/3LaYZ0VCgXI |
+| Video names Zetaris and Meterless and shows where each sits | The architecture scene and the Zetaris and Meterless scenes | PASS. The title scene names the three sponsors it uses (Zetaris, Meterless, NVIDIA), the architecture scene shows where each sits, and the receipts scene shows Nightshift. Cursor became optional on 22 October and is not named: it was not used |
 | Slide deck: problem and users, solution, agent workflow and architecture, technical stack, how Zetaris and Meterless are used, what was unique about sponsor usage, product visuals, future enhancements | `docs/submission/desk-deck.pdf` (source `deck/deck.html`): problem and user, why it matters, what it is, the demo, architecture, one product across three tracks, Track 3 mapping, the agents, the collaboration checklist, a trace, verification, head to head, new measurements, Zetaris, Meterless, NVIDIA and Cursor, where each sponsor sits, technical stack, canary, product, the organisers' red flags, proven and not proven, next | PASS |
 | GitHub repository with README: setup, usage, dependencies | `README.md`: Try it, What it does, Stack and dependencies, Live mode; clean-room run recorded in `docs/verification/` | PASS; YOU to check the link while logged out |
 | Sponsor technology explanation: Zetaris, Meterless, NVIDIA, what was unique (and Cursor, while it was required) | `docs/submission/sponsor-technology-explanation.md` | PASS; the Cursor section states that none was used |
@@ -35,8 +35,8 @@ Every requirement below is taken from the organisers' own documents (the welcome
 | Requirement | Where covered | Status |
 |---|---|---|
 | Zetaris is required and has a real role | One statement over three silos; billed spend, CI facts and spend per landed pull request disappear when it is off; a container was really stopped. `desk prove` checks the difference | PASS |
-| Meterless is required and has a real role | Three engines with their own conformance suites (8/8, 13/13, 8/8); each changes an answer when switched off. There is no Meterless API or key: the organisers confirmed on 2026-10-17 that the engines are implemented in our own code | PASS |
-| NVIDIA wherever it contributes; the product runs on Nemotron | Every language role and all three benchmark arms run on Nemotron through NVIDIA's API. `MODEL_BASE_URL`, `MODEL_API_KEY` and `NEMOTRON_MODEL` are accepted as well as the `NVIDIA_` names | PASS |
+| Meterless is required and has a real role | Three engines with their own conformance suites (8/8, 13/13, 8/8); each changes an answer when switched off; Scout Intent implemented from Meterless's published specification and measured; Nightshift serves Nemotron and signs every reply, which `desk receipts` checks. There is no Meterless API or key: the organisers confirmed on 2026-10-17 that the engines are implemented in our own code | PASS |
+| NVIDIA wherever it contributes; the product runs on Nemotron | Every language role and all three benchmark arms run on Nemotron, through Meterless Nightshift or NVIDIA's API; the Desk was run on three Nemotron models and two role mixes, with a signed receipt naming the model for every call. `MODEL_BASE_URL`, `MODEL_API_KEY` and `NEMOTRON_MODEL` are accepted as well as the `NVIDIA_` names | PASS |
 | Cursor as the development environment | Optional since 22 October 2026 (moderators' statement in the event chat; the announcement is not in this repository). desk. was written with Claude Code, recorded in `docs/sponsors/ai-use-provenance-log.md`; no Cursor session is claimed | Nothing to do unless the HackOS form still asks for a Cursor explanation: then say it was not used |
 | Zetaris and Meterless "running on your machine" for eligibility | Zetaris runs locally in Docker; the Meterless engines run in our process and pass their conformance runners. What the organisers mean by "Meterless running" is not defined | OPEN |
 | Whether other models may run beside Nemotron | The product uses Nemotron only | PASS |
@@ -62,7 +62,7 @@ Every requirement below is taken from the organisers' own documents (the welcome
 | UI polish without depth | Every screen reads recorded data; the Evidence screen shows what was measured, including what failed |
 | A single agent called multi-agent | The roster, the nine behaviours and a trace of one agent's work being sent back by another |
 | Hardcoded demo paths | Outputs change with inputs; the benchmark replays from recordings and the check fails if a recording is missing |
-| Weak implementations | 460 or more tests; `desk prove` with every check named |
+| Weak implementations | 2,679 tests; `desk prove` with 61 named checks, green on fresh clones of Windows and Ubuntu |
 | Unsupported claims of value | Every figure in the README, deck and video comes from a run; limits are stated beside them |
 
 ## Open questions the organisers have not answered
