@@ -5,7 +5,7 @@
   "event": "Open Agent Hackathon 2026",
   "track": "Track 3: Reasoning Architecture",
   "repository": "https://github.com/Pratiikpy/agent-spend-desk",
-  "demo_video": "https://youtu.be/dsRGX73lZAQ",
+  "demo_video": "https://youtu.be/3LaYZ0VCgXI",
   "slide_deck": "docs/submission/desk-deck.pdf",
   "licence": "Apache-2.0",
   "about_this_file": "The organizers have not published a format for this file. It follows what the sponsor folders ask for: what each sponsor does in the product, where it lives in the code, and the evidence that it works. Every path below exists in the repository, and tests/desk/metadata.test.ts checks that it does.",
