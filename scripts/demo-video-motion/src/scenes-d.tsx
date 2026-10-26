@@ -1,7 +1,7 @@
 import React from "react";
 import { Img, staticFile } from "remotion";
 import data from "./data.json";
-import { C, Card, Count, Frame, Label, MONO, Mono, Pill, Pop, Reveal, capStarts, lin, prog, useSec } from "./kit";
+import { C, Card, Count, Frame, Label, MONO, Mono, Pill, Pop, Reveal, capStarts, lin, prog, useSec, usd } from "./kit";
 import type { SceneDef } from "./scenes-a";
 
 const { product, self } = data;
@@ -24,7 +24,7 @@ const SCREENS: { img: string; h: string; s: string }[] = [
   { img: "evidence", h: "Evidence", s: "What it measured about itself" },
   { img: "sources", h: "Doctor", s: "What it can read, and what it cannot" },
 ];
-const SHOT = 1.2;
+const SHOT = 1.0;
 
 const UiTour: React.FC<{ caps: string[] }> = ({ caps }) => {
   const t = useSec();
@@ -206,6 +206,68 @@ const Receipts: React.FC<{ caps: string[] }> = ({ caps }) => {
   );
 };
 
+
+// Which parts earn their place, and the memory of past decisions ---------------------------------------------------------
+const Roles: React.FC<{ caps: string[] }> = ({ caps }) => {
+  const t = useSec();
+  const cs = capStarts(caps);
+  const r = product.roles;
+  const rows = [
+    { h: "Planner", arm: "A7", necessary: true, note: "the rule planner plans instead" },
+    { h: "Plan critic", arm: "A3", necessary: false, note: "the first plan stands" },
+    { h: "Revision loop", arm: "A5", necessary: false, note: "an unsupported sentence is dropped, not revised" },
+    { h: "Auditor", arm: "A4", necessary: false, note: "the first draft is shown unchecked" },
+    { h: "Explainer", arm: "A6", necessary: false, note: "code states each claim" },
+  ];
+  const d = r.decision;
+  return (
+    <Frame kicker="Which parts earn their place · each role taken out in turn, 60 preregistered questions" caps={caps}>
+      <div style={{ display: "flex", gap: 40 }}>
+        <div style={{ flex: "0 0 1060px" }}>
+          <Label>Exact answers without the role, of 60 (the full Desk: {r.exact.A2})</Label>
+          <div style={{ marginTop: 14, display: "grid", gap: 10 }}>
+            {rows.map((x, i) => {
+              const exact = (r.exact as Record<string, number>)[x.arm] ?? 0;
+              const p = prog(t, 0.6 + i * 0.45, 1.0);
+              return (
+                <Reveal key={x.arm} at={0.3 + i * 0.3} dx={-24} dy={0} dur={0.5}>
+                  <div style={{ display: "grid", gridTemplateColumns: "210px 1fr 250px", alignItems: "center", gap: 18 }}>
+                    <div style={{ fontSize: 32, fontWeight: 600, letterSpacing: "-0.02em" }}>{x.h}</div>
+                    <div>
+                      <div style={{ position: "relative", height: 34, background: C.line, borderRadius: 8 }}>
+                        <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${(exact / 60) * 100 * p}%`, background: x.necessary ? C.redline : C.cipher, borderRadius: 8 }} />
+                        <div style={{ position: "absolute", right: 14, top: 0, bottom: 0, display: "flex", alignItems: "center", fontFamily: MONO, fontSize: 20, color: exact === 60 && p > 0.9 ? "#fff" : C.graphite }}>{Math.round(exact * p)} of 60</div>
+                      </div>
+                      <div style={{ fontSize: 18, color: C.graphite, marginTop: 3 }}>{x.note}</div>
+                    </div>
+                    <div style={{ justifySelf: "start", opacity: prog(t, 1.6 + i * 0.45, 0.3) }}><Pill tone={x.necessary ? "bad" : "plain"} filled={x.necessary} size={18}>{x.necessary ? `necessary: ${r.plannerLost} lost` : "not shown necessary"}</Pill></div>
+                  </div>
+                </Reveal>
+              );
+            })}
+          </div>
+        </div>
+        <div style={{ flex: 1, display: "grid", gap: 18, alignContent: "start" }}>
+          <Reveal at={cs[1] + 0.2}>
+            <Card style={{ padding: "18px 24px", borderColor: C.cipher }}>
+              <Label color={C.cipher} style={{ fontSize: 17 }}>Explainer made wrong on purpose</Label>
+              <div style={{ fontSize: 84, fontWeight: 600, letterSpacing: "-0.06em", lineHeight: 1, color: C.cipher }}>+<Count to={r.auditorCleanUnderFault} at={cs[1] + 0.4} dur={1.0} /></div>
+              <div style={{ fontSize: 22, lineHeight: 1.3 }}>more clean answers with the Auditor than without it</div>
+            </Card>
+          </Reveal>
+          <Reveal at={cs[2] + 0.2}>
+            <Card style={{ padding: "18px 24px" }}>
+              <Label style={{ fontSize: 17 }}>It scores its own past decision</Label>
+              <div style={{ fontFamily: MONO, fontSize: 24, marginTop: 8, lineHeight: 1.5 }}>expected {usd(d.low)} to {usd(d.high)}<br />the month saved {usd(d.saved)}<br /><span style={{ color: C.cipher }}>inside the expected range</span> · regret {usd(d.regret)}</div>
+              <div style={{ fontSize: 19, color: C.graphite, marginTop: 6 }}>{d.scored} options scored, {d.inside} inside their range; the saving is an upper bound.</div>
+            </Card>
+          </Reveal>
+        </div>
+      </div>
+    </Frame>
+  );
+};
+
 // What is built, and what is not ---------------------------------------------------------------------------------------
 const Numbers: React.FC<{ caps: string[] }> = ({ caps }) => {
   const t = useSec();
@@ -273,13 +335,20 @@ const Numbers: React.FC<{ caps: string[] }> = ({ caps }) => {
   );
 };
 
-export const scenesD: Record<"ui" | "gate" | "numbers" | "receipts", SceneDef> = {
+export const scenesD: Record<"ui" | "gate" | "numbers" | "receipts" | "roles", SceneDef> = {
+  roles: {
+    id: "roles", kicker: "", Comp: Roles, min: 12,
+    caps: [
+      "Each role removed in turn, 60 preregistered questions: only the Planner is shown necessary.",
+      `Corrupt the Explainer and the Auditor keeps ${product.roles.auditorCleanUnderFault} more answers clean.`,
+      "It also scores its own past decisions.",
+    ],
+  },
   receipts: {
     id: "receipts", kicker: "", Comp: Receipts, min: 12,
     caps: [
-      "Nemotron runs through Meterless Nightshift; every reply carries a signed receipt naming the model.",
-      `desk. checks the signature: ${product.receipts.total} live calls, four roles, two Nemotron models, all valid.`,
-      "Change one number and it is refused; older recordings are counted as unsigned.",
+      "Nemotron runs through Meterless Nightshift; each reply carries a signed receipt naming the model.",
+      `desk. verifies ${product.receipts.total} live calls; change one number and it is refused.`,
     ],
   },
   ui: {
@@ -292,15 +361,15 @@ export const scenesD: Record<"ui" | "gate" | "numbers" | "receipts", SceneDef> =
     id: "gate", kicker: "", Comp: Gate, min: 14,
     caps: [
       "A hook asks the gate before every tool call; no matching permit means no.",
-      `Run live, Claude Code and Codex CLI were each stopped. Cursor and Gemini CLI: contract-tested only, advisory.`,
-      `No hook? The gateway door refused an over-cap call in ${product.gateway.refusedMs} ms; the model was never called.`,
+      `Run live, Claude Code and Codex CLI were each stopped; Cursor and Gemini CLI are contract-tested only.`,
+      `No hook? The gateway refused an over-cap call in ${product.gateway.refusedMs} ms, model never called.`,
     ],
   },
   numbers: {
     id: "numbers", kicker: "", Comp: Numbers, min: 12,
     caps: [
       `${product.features.built} of ${product.features.of} specified features are built; ${product.prove.windows.pass} checks pass on fresh Windows and Ubuntu clones.`,
-      "It also keeps what fell short on screen: a withheld swap, a range under its label, no learning claimed.",
+      "It also shows what fell short: a withheld swap, a range under its label, no learning claimed.",
     ],
   },
 };

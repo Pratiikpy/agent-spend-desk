@@ -167,7 +167,24 @@ let tamper;
     rmSync(tmp, { recursive: true, force: true });
   }
 }
+// Which roles earn their place: the leave-one-role-out table of set E, and the decision the Desk scored afterwards.
+const abl = read("docs/verification/ablation/RESULTS-ablation.md");
+const ablRow = (arm) => need(new RegExp(`^\\| \\*{0,2}${arm}\\*{0,2} \\| \\*{0,2}(\\d+)\\*{0,2} \\|`, "m").exec(abl), `ablation row ${arm}`);
+const exactOf = Object.fromEntries(["A2", "A3", "A4", "A5", "A6", "A7", "A2F", "A4F"].map((a) => [a, num(ablRow(a)[1])]));
+const plannerLost = need(/Without it (\d+) questions are lost and none gained \(p < ([\d.]+)\)/.exec(abl), "planner loss");
+const auditorClean = need(/the arm with the Auditor has (\d+) clean answers/.exec(abl), "auditor clean answers");
+const regretOut = run(["regret", "--sample"]);
+const regretChosen = need(/chosen\s+the proposed policy: expected \$([\d.,]+) to \$([\d.,]+) saved in a month; the month saved \$([\d.,]+), blocked (\d+) landed sessions?, inside the expected range; regret \$([\d.,]+)/.exec(regretOut), "scored decision");
+const regretTotals = need(/Scored options: (\d+); the realised month was inside the expected range for (\d+) of them\. Regret summed over chosen options: \$([\d.,]+)/.exec(regretOut), "regret totals");
+const roles = {
+  exact: exactOf,
+  plannerLost: num(plannerLost[1]),
+  plannerP: plannerLost[2],
+  auditorCleanUnderFault: num(auditorClean[1]),
+  decision: { low: num(regretChosen[1]), high: num(regretChosen[2]), saved: num(regretChosen[3]), blocked: num(regretChosen[4]), regret: num(regretChosen[5]), scored: num(regretTotals[1]), inside: num(regretTotals[2]) },
+};
 const product = {
+  roles,
   receipts: { total: num(rc[1]), signed: num(rc[2]), valid: num(rc[3]), invalid: num(rc[4]), keyId: rkey[1], roles: roleRows, olderUnsigned: num(unsigned[2]), tamper },
   features: { built, of: featureList.length, absent },
   tests: { windows: { passed: num(tw[1]), skipped: num(tw[2] ?? 0), of: num(tw[3]) }, ubuntu: { passed: num(tl[1]), skipped: num(tl[2] ?? 0), of: num(tl[3]) } },

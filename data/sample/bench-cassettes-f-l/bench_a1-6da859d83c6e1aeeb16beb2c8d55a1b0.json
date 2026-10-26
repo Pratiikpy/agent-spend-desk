@@ -1,0 +1,27 @@
+{
+  "key": "6da859d83c6e1aeeb16beb2c8d55a1b0",
+  "recordedAt": "2026-10-26T06:14:53.834Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "",
+    "toolCalls": [
+      {
+        "id": "call-27ae173c-801c-4bc6-a87d-39b58dd35a5c",
+        "name": "spend",
+        "arguments": {
+          "group": "none",
+          "model": "claude-sonnet-5-5",
+          "from": "2026-09-05",
+          "to": "2026-10-11"
+        }
+      }
+    ],
+    "servedBy": "other",
+    "servedModel": "nvidia/nemotron-3.5-lightning-30b-a3b",
+    "usage": {
+      "inputTokens": 1421,
+      "outputTokens": 81,
+      "reasoningTokens": 0
+    }
+  }
+}

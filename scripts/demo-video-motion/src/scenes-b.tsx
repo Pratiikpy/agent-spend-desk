@@ -252,9 +252,9 @@ export const scenesB: SceneDef[] = [
   {
     id: "bench", kicker: "", Comp: Bench,
     caps: [
-      `${bench.n} unread questions, preregistered: one Nemotron model, used three ways.`,
+      `${bench.n} unread questions, preregistered: one Nemotron model, three ways.`,
       `The Desk answered ${bench.a2} exactly. The tool agent, ${bench.a1}. One call, ${bench.a0}. All ${bench.predictions} written predictions held.`,
-      `Its misses are shapes it has no step for; ${bench.a2 - bench.a1} in ${bench.n} is a margin this sample cannot make certain.`,
+      `Its misses are shapes it has no step for; ${bench.a2 - bench.a1} in ${bench.n} is a margin this size cannot settle.`,
     ],
   },
   {

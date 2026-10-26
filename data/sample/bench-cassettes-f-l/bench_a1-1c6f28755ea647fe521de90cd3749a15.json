@@ -1,0 +1,16 @@
+{
+  "key": "1c6f28755ea647fe521de90cd3749a15",
+  "recordedAt": "2026-10-26T06:15:24.931Z",
+  "role": "bench_a1",
+  "response": {
+    "content": "The difference is $3,336.83 − $649.74 = $2,687.09.",
+    "toolCalls": [],
+    "servedBy": "other",
+    "servedModel": "nvidia/nemotron-3.5-lightning-30b-a3b",
+    "usage": {
+      "inputTokens": 1591,
+      "outputTokens": 32,
+      "reasoningTokens": 0
+    }
+  }
+}

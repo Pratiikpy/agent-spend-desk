@@ -1,0 +1,316 @@
+{
+  "key": "b16c0d41b8c2fbd2fa04084e82a48e7a",
+  "recordedAt": "2026-10-26T06:37:49.072Z",
+  "role": "explainer",
+  "response": {
+    "content": "{\"sentences\":[{\"text\":\"Estimated list-price spend between 2026-09-12 and 2026-09-22 was $1,207.35, an estimate from logged tokens and not a bill.\",\"cites\":[\"s1.1\"]},{\"text\":\"That covers 11,540 model calls.\",\"cites\":[\"s1.2\"]},{\"text\":\"Model `claude-opus-5` cost $1,021.42.\",\"cites\":[\"s1.3\"]},{\"text\":\"Model `claude-sonnet-5-5` cost $183.58.\",\"cites\":[\"s1.4\"]},{\"text\":\"Model `claude-haiku-5-5` cost $2.35.\",\"cites\":[\"s1.5\"]},{\"text\":\"Estimated list-price spend between 2026-09-23 and 2026-10-03 was $1,283.95, an estimate from logged tokens and not a bill.\",\"cites\":[\"s2.1\"]},{\"text\":\"That covers 12,178 model calls.\",\"cites\":[\"s2.2\"]},{\"text\":\"Model `claude-opus-5` cost $1,049.96.\",\"cites\":[\"s2.3\"]},{\"text\":\"Model `claude-sonnet-5-5` cost $232.96.\",\"cites\":[\"s2.4\"]},{\"text\":\"Model `claude-haiku-5-5` cost $1.03.\",\"cites\":[\"s2.5\"]},{\"text\":\"No change to models, tool versions or plan settings was recorded between 2026-09-09 and 2026-09-23.\",\"cites\":[\"c1.1\"]},{\"text\":\"Model `claude-sonnet-5-5` was in use throughout the window and stayed as it was.\",\"cites\":[\"c1.2\"]},{\"text\":\"Model `claude-opus-5` was in use throughout the window and stayed as it was.\",\"cites\":[\"c1.3\"]},{\"text\":\"Model `claude-haiku-5-5` was in use throughout the window and stayed as it was.\",\"cites\":[\"c1.4\"]},{\"text\":\"Tool version `vsample-1` was in use throughout the window and stayed as it was.\",\"cites\":[\"c1.5\"]},{\"text\":\"Plan setting `tier standard speed standard` was in use throughout the window and stayed as it was.\",\"cites\":[\"c1.6\"]}]}",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_7ajfvdue",
+      "decisionId": "req_7ajfvdue",
+      "routedModel": "nvidia/nemotron-3-ultra-550b-a55b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 11427,
+      "envelope": {
+        "body": {
+          "llama_cpp_ref": "08659901c43b51de735740f1cf61bb82fbe0c4e4",
+          "manifest_hash": "",
+          "receipt": {
+            "app": "node",
+            "app_policy": {
+              "app": "node",
+              "cross_check": "auto",
+              "has_rule": true,
+              "lanes": null,
+              "mode_coerced": false,
+              "premium_budget": null,
+              "privacy": "cloud-ok",
+              "race_width": 6,
+              "requested_mode": "auto",
+              "routed_mode": "auto"
+            },
+            "autopilot": {
+              "ctx_dropped": [],
+              "ctx_unfilterable": false,
+              "envelope": {
+                "allocatable_mb": 0,
+                "pressure": "unknown",
+                "remaining_mb": 0,
+                "used_mb": 0
+              },
+              "needs": {
+                "coding": true,
+                "tools": false,
+                "vision": false
+              },
+              "prompt_tokens": 766,
+              "scout": {
+                "candidates": [
+                  {
+                    "id": "COMMIT_WRITER",
+                    "score": 12
+                  },
+                  {
+                    "id": "TYPE_STRENGTHENER",
+                    "score": 10
+                  },
+                  {
+                    "id": "WRITER",
+                    "score": 10
+                  }
+                ],
+                "category": "Collab",
+                "confident": false,
+                "mode": "COMMIT_WRITER",
+                "ms": 1.46,
+                "score": 12,
+                "source": "detected",
+                "tier": "A"
+              },
+              "tier_hint": null,
+              "why": [
+                "scout read COMMIT_WRITER (not confident — no tier opinion)",
+                "a coder is preferred",
+                "~766 prompt tokens — lanes whose slot cannot hold them are not asked"
+              ]
+            },
+            "bar": null,
+            "budget_degrade": null,
+            "cache": {
+              "losers_reclaimed": 0,
+              "partials_reclaimed": 0,
+              "status": "miss"
+            },
+            "consensus": {
+              "agree": 1,
+              "coherence": null,
+              "detail": "answered by a top-tier model",
+              "label": "frontier answer",
+              "level": "solo",
+              "raced": 1,
+              "tone": "blue",
+              "verified": null
+            },
+            "consensus_escalation": null,
+            "cost": {
+              "actual_usd": 0,
+              "baseline": {
+                "label": "Nemotron 3 Ultra 550B A55B",
+                "model": "nvidia/nemotron-3-ultra-550b-a55b",
+                "source": "mode-default-frontier"
+              },
+              "naive_usd": 0,
+              "race_overhead_usd": 0,
+              "verifier_usd": 0
+            },
+            "created_at": 1792996669053,
+            "cross_check": {
+              "app": "node",
+              "blocking": false,
+              "checks": [
+                {
+                  "message": "No destructive ops detected.",
+                  "status": "passed",
+                  "type": "destructive_action"
+                },
+                {
+                  "message": "No PII/credential detected in response.",
+                  "status": "passed",
+                  "type": "pii_guard"
+                },
+                {
+                  "message": "Not a tool call.",
+                  "status": "skipped",
+                  "type": "schema_validity"
+                }
+              ],
+              "destructive": false,
+              "raw_risk": "low",
+              "recommended_action": "allow",
+              "reflex_ms": 0.18,
+              "requires_review": false,
+              "risk_level": "low",
+              "status": "passed",
+              "verifier": "deterministic/schema+regex",
+              "verifier_error": null,
+              "verifier_model": null,
+              "verifier_ms": 0,
+              "verifier_ran": false,
+              "verifier_tokens": null,
+              "verifier_verdict": null
+            },
+            "debate": null,
+            "decision_id": "req_7ajfvdue",
+            "deliberation": null,
+            "egress": {
+              "coverage": "pattern_floor",
+              "destination": "nvidia",
+              "never_eligible": [],
+              "sent": {
+                "context_sources": [
+                  "messages"
+                ],
+                "prompt_chars": 2363,
+                "redacted": []
+              },
+              "withheld": []
+            },
+            "eligible": null,
+            "error": "",
+            "fusion": null,
+            "gen_verifier": null,
+            "graded_weight": null,
+            "hmem": null,
+            "host_pressure": {
+              "battery": null,
+              "pressure": {
+                "battery": {
+                  "hard": 0.5,
+                  "label": "nominal",
+                  "score": 0.18,
+                  "sensor": "battery%, charging",
+                  "soft": 0.3
+                },
+                "cpu": {
+                  "hard": 0.9,
+                  "label": "nominal",
+                  "score": 0.34,
+                  "sensor": "30s load avg",
+                  "soft": 0.7
+                },
+                "gpu": {
+                  "hard": 0.92,
+                  "label": "nominal",
+                  "score": 0.38,
+                  "sensor": "GPU + VRAM",
+                  "soft": 0.75
+                },
+                "memory": {
+                  "hard": 0.85,
+                  "label": "warm",
+                  "score": 0.51,
+                  "sensor": "committed/swap",
+                  "soft": 0.7
+                },
+                "network": {
+                  "hard": 0.85,
+                  "label": "nominal",
+                  "score": 0.12,
+                  "sensor": "RTT to providers",
+                  "soft": 0.5
+                },
+                "quota": {
+                  "hard": 0.95,
+                  "label": "nominal",
+                  "score": 0.28,
+                  "sensor": "per-key window",
+                  "soft": 0.8
+                },
+                "thermal": {
+                  "hard": 0.8,
+                  "label": "nominal",
+                  "score": 0.22,
+                  "sensor": "thermal API",
+                  "soft": 0.55
+                }
+              },
+              "thermal": "nominal"
+            },
+            "job": null,
+            "mcp": null,
+            "method": null,
+            "mode": "auto",
+            "optimistic": null,
+            "phases": [
+              {
+                "coherence": null,
+                "model": "nvidia/nemotron-3-ultra-550b-a55b",
+                "ms": 11427,
+                "outputTps": 53.99492430209154,
+                "phase": "final_synthesis",
+                "reflex_decided_in_ms": 0.2,
+                "tier": "C",
+                "tokensIn": 1080,
+                "tokensOut": 617
+              }
+            ],
+            "privacy": {
+              "path": "cloud-ok",
+              "redaction": {
+                "applied": false,
+                "spans": 0
+              }
+            },
+            "prompt_preview": "What the reader asked about: spend from 2026-09-12 to 2026-09-22, by model; spend from 2026-09-23 to 2026-10-03, by model; what changed before 2026-09-23\n\nClaims:\nid=s1.1; kind=num",
+            "quality_race": null,
+            "reasoning_scaffold": null,
+            "receipt_id": "rcpt_req_7ajfvdue",
+            "refine": null,
+            "request_id": "chatcmpl-d164d5bc-02f2-489b-8dd5-f3c44b57ab85",
+            "requested_mode": "meterless/auto",
+            "routing": {
+              "confidence": null,
+              "escalated": null,
+              "escalated_on_divergence": false,
+              "hedge": null,
+              "hedges_skipped": 0,
+              "of": 1,
+              "policy": "learned-router",
+              "predicted": "nvidia/nemotron-3-ultra-550b-a55b",
+              "reason": "single-candidate",
+              "width": 1,
+              "winner": "nvidia/nemotron-3-ultra-550b-a55b"
+            },
+            "savings": {
+              "amount": 0,
+              "baseline_source": "mode-default-frontier",
+              "currency": "USD",
+              "vs": "Nemotron 3 Ultra 550B A55B"
+            },
+            "schema": "meterless.compute_receipt.v1",
+            "score": null,
+            "scorecard": null,
+            "status": "ok",
+            "summary": "ok · Nemotron 3 Ultra 550B A55B · miss · $0.0000 saved",
+            "synthesis": null,
+            "test_time_compute": null,
+            "tool_degraded": null,
+            "unmet": null,
+            "usage": {
+              "input_tokens": 1080,
+              "latency_ms": 11427,
+              "output_tokens": 617,
+              "output_tps": 53.99492430209154,
+              "total_tokens": 1697
+            },
+            "verdict": null,
+            "verification": null,
+            "winning_route": {
+              "kind": "cloud",
+              "label": "Nemotron 3 Ultra 550B A55B",
+              "model": "nvidia/nemotron-3-ultra-550b-a55b",
+              "provider": "nvidia",
+              "tier": "C"
+            }
+          },
+          "signer": "meterlessd",
+          "ts_ms": 1792996669057
+        },
+        "pubkey_b64": "ofrH8+vl65oCrnFhdIv3cum842j5iHgWvb+B363fcb4=",
+        "sig_b64": "4ysjaRxV0q398IIpfTuv4frqDd6/uIB06zei+MP5NfwPvREj+AJrszr+Ce/NCgAj04wPQfpWUVxBH20ooEPMBA=="
+      },
+      "signature": {
+        "valid": true,
+        "keyId": "e92caae86b5f702e"
+      }
+    },
+    "servedModel": "nvidia/nemotron-3-ultra-550b-a55b",
+    "usage": {
+      "inputTokens": 1080,
+      "outputTokens": 617,
+      "reasoningTokens": 0
+    }
+  }
+}

@@ -1,0 +1,302 @@
+{
+  "key": "228deb5227b73174168346c212d5cb23",
+  "recordedAt": "2026-10-26T06:35:56.801Z",
+  "role": "bench_a0",
+  "response": {
+    "content": "The ledger covers 2026-09-01 to 2026-10-31. I need to sum the daily USD amounts from 2026-09-22 through 2026-10-09 inclusive.\n\nLet me add up the daily USD values for those dates:\n\n2026-09-22: 186.76\n2026-09-23: 155.42\n2026-09-24: 199.48\n2026-09-25: 154.93\n2026-09-26: 1.98\n2026-09-28: 107.8\n2026-09-29: 183.45\n2026-09-30: 153.78\n2026-10-01: 152.06\n2026-10-02: 174.13\n2026-10-03: 0.93\n2026-10-05: 125.07\n2026-10-06: 163.74\n2026-10-07: 213.33\n2026-10-08: 152.2\n2026-10-09: 155.48\n\nSum = 186.76 + 155.42 + 199.48 + 154.93 + 1.98 + 107.8 + 183.45 + 153.78 + 152.06 + 174.13 + 0.93 + 125.07 + 163.74 + 213.33 + 152.2 + 155.48 = 228",
+    "toolCalls": [],
+    "servedBy": "nightshift",
+    "receipt": {
+      "id": "rcpt_req_20inhmrb",
+      "decisionId": "req_20inhmrb",
+      "routedModel": "nvidia/nemotron-3-ultra-550b-a55b",
+      "provider": "nvidia",
+      "kind": "cloud",
+      "latencyMs": 13246,
+      "envelope": {
+        "body": {
+          "llama_cpp_ref": "08659901c43b51de735740f1cf61bb82fbe0c4e4",
+          "manifest_hash": "",
+          "receipt": {
+            "app": "node",
+            "app_policy": {
+              "app": "node",
+              "cross_check": "auto",
+              "has_rule": true,
+              "lanes": null,
+              "mode_coerced": false,
+              "premium_budget": null,
+              "privacy": "cloud-ok",
+              "race_width": 6,
+              "requested_mode": "auto",
+              "routed_mode": "auto"
+            },
+            "autopilot": {
+              "ctx_dropped": [],
+              "ctx_unfilterable": false,
+              "envelope": {
+                "allocatable_mb": 0,
+                "pressure": "unknown",
+                "remaining_mb": 0,
+                "used_mb": 0
+              },
+              "needs": {
+                "coding": false,
+                "tools": false,
+                "vision": false
+              },
+              "prompt_tokens": 3353,
+              "scout": {
+                "candidates": [],
+                "category": null,
+                "confident": false,
+                "mode": "ROUTING",
+                "ms": 1.19,
+                "score": 0,
+                "source": "none",
+                "tier": null
+              },
+              "tier_hint": null,
+              "why": [
+                "no scout mode matched — the phase classifier alone plans",
+                "~3353 prompt tokens — lanes whose slot cannot hold them are not asked"
+              ]
+            },
+            "bar": null,
+            "budget_degrade": null,
+            "cache": {
+              "losers_reclaimed": 0,
+              "partials_reclaimed": 0,
+              "status": "miss"
+            },
+            "consensus": {
+              "agree": 1,
+              "coherence": null,
+              "detail": "answered by a top-tier model",
+              "label": "frontier answer",
+              "level": "solo",
+              "raced": 1,
+              "tone": "blue",
+              "verified": null
+            },
+            "consensus_escalation": null,
+            "cost": {
+              "actual_usd": 0,
+              "baseline": {
+                "label": "Nemotron 3 Ultra 550B A55B",
+                "model": "nvidia/nemotron-3-ultra-550b-a55b",
+                "source": "mode-default-frontier"
+              },
+              "naive_usd": 0,
+              "race_overhead_usd": 0,
+              "verifier_usd": 0
+            },
+            "created_at": 1792996556785,
+            "cross_check": {
+              "app": "node",
+              "blocking": false,
+              "checks": [
+                {
+                  "message": "No destructive ops detected.",
+                  "status": "passed",
+                  "type": "destructive_action"
+                },
+                {
+                  "message": "No PII/credential detected in response.",
+                  "status": "passed",
+                  "type": "pii_guard"
+                },
+                {
+                  "message": "Not a tool call.",
+                  "status": "skipped",
+                  "type": "schema_validity"
+                }
+              ],
+              "destructive": false,
+              "raw_risk": "low",
+              "recommended_action": "allow",
+              "reflex_ms": 0.04,
+              "requires_review": false,
+              "risk_level": "low",
+              "status": "passed",
+              "verifier": "deterministic/schema+regex",
+              "verifier_error": null,
+              "verifier_model": null,
+              "verifier_ms": 0,
+              "verifier_ran": false,
+              "verifier_tokens": null,
+              "verifier_verdict": null
+            },
+            "debate": null,
+            "decision_id": "req_20inhmrb",
+            "deliberation": null,
+            "egress": {
+              "coverage": "pattern_floor",
+              "destination": "nvidia",
+              "never_eligible": [],
+              "sent": {
+                "context_sources": [
+                  "messages"
+                ],
+                "prompt_chars": 4000,
+                "redacted": []
+              },
+              "withheld": []
+            },
+            "eligible": null,
+            "error": "",
+            "fusion": null,
+            "gen_verifier": null,
+            "graded_weight": null,
+            "hmem": null,
+            "host_pressure": {
+              "battery": null,
+              "pressure": {
+                "battery": {
+                  "hard": 0.5,
+                  "label": "nominal",
+                  "score": 0.18,
+                  "sensor": "battery%, charging",
+                  "soft": 0.3
+                },
+                "cpu": {
+                  "hard": 0.9,
+                  "label": "nominal",
+                  "score": 0.34,
+                  "sensor": "30s load avg",
+                  "soft": 0.7
+                },
+                "gpu": {
+                  "hard": 0.92,
+                  "label": "nominal",
+                  "score": 0.38,
+                  "sensor": "GPU + VRAM",
+                  "soft": 0.75
+                },
+                "memory": {
+                  "hard": 0.85,
+                  "label": "warm",
+                  "score": 0.51,
+                  "sensor": "committed/swap",
+                  "soft": 0.7
+                },
+                "network": {
+                  "hard": 0.85,
+                  "label": "nominal",
+                  "score": 0.12,
+                  "sensor": "RTT to providers",
+                  "soft": 0.5
+                },
+                "quota": {
+                  "hard": 0.95,
+                  "label": "nominal",
+                  "score": 0.28,
+                  "sensor": "per-key window",
+                  "soft": 0.8
+                },
+                "thermal": {
+                  "hard": 0.8,
+                  "label": "nominal",
+                  "score": 0.22,
+                  "sensor": "thermal API",
+                  "soft": 0.55
+                }
+              },
+              "thermal": "nominal"
+            },
+            "job": null,
+            "mcp": null,
+            "method": null,
+            "mode": "auto",
+            "optimistic": null,
+            "phases": [
+              {
+                "coherence": null,
+                "model": "nvidia/nemotron-3-ultra-550b-a55b",
+                "ms": 13246,
+                "outputTps": 37.74724445115506,
+                "phase": "final_synthesis",
+                "reflex_decided_in_ms": 0.2,
+                "tier": "C",
+                "tokensIn": 7642,
+                "tokensOut": 500
+              }
+            ],
+            "privacy": {
+              "path": "cloud-ok",
+              "redaction": {
+                "applied": false,
+                "spans": 0
+              }
+            },
+            "prompt_preview": ":\"sess-00484\",\"first_day\":\"2026-09-30\",\"last_day\":\"2026-09-30\",\"usd\":23.4},{\"session\":\"sess-00913\",\"first_day\":\"2026-10-27\",\"last_day\":\"2026-10-27\",\"usd\":23.36},{\"session\":\"sess-00",
+            "quality_race": null,
+            "reasoning_scaffold": null,
+            "receipt_id": "rcpt_req_20inhmrb",
+            "refine": null,
+            "request_id": "chatcmpl-bf173462-1427-4694-b157-8d4d2963f6e4",
+            "requested_mode": "meterless/auto",
+            "routing": {
+              "confidence": null,
+              "escalated": null,
+              "escalated_on_divergence": false,
+              "hedge": null,
+              "hedges_skipped": 0,
+              "of": 1,
+              "policy": "learned-router",
+              "predicted": "nvidia/nemotron-3-ultra-550b-a55b",
+              "reason": "single-candidate",
+              "width": 1,
+              "winner": "nvidia/nemotron-3-ultra-550b-a55b"
+            },
+            "savings": {
+              "amount": 0,
+              "baseline_source": "mode-default-frontier",
+              "currency": "USD",
+              "vs": "Nemotron 3 Ultra 550B A55B"
+            },
+            "schema": "meterless.compute_receipt.v1",
+            "score": null,
+            "scorecard": null,
+            "status": "ok",
+            "summary": "ok · Nemotron 3 Ultra 550B A55B · miss · $0.0000 saved",
+            "synthesis": null,
+            "test_time_compute": null,
+            "tool_degraded": null,
+            "unmet": null,
+            "usage": {
+              "input_tokens": 7642,
+              "latency_ms": 13246,
+              "output_tokens": 500,
+              "output_tps": 37.74724445115506,
+              "total_tokens": 8142
+            },
+            "verdict": null,
+            "verification": null,
+            "winning_route": {
+              "kind": "cloud",
+              "label": "Nemotron 3 Ultra 550B A55B",
+              "model": "nvidia/nemotron-3-ultra-550b-a55b",
+              "provider": "nvidia",
+              "tier": "C"
+            }
+          },
+          "signer": "meterlessd",
+          "ts_ms": 1792996556791
+        },
+        "pubkey_b64": "ofrH8+vl65oCrnFhdIv3cum842j5iHgWvb+B363fcb4=",
+        "sig_b64": "vQUmxfeJGRqIh8ehBUJkb0j/elm2IvygZ6rlInSm/rkn/SJD2vGEW38Wi7zWXjPuuGyijhpOPQEgoGxNkPMLCg=="
+      },
+      "signature": {
+        "valid": true,
+        "keyId": "e92caae86b5f702e"
+      }
+    },
+    "servedModel": "nvidia/nemotron-3-ultra-550b-a55b",
+    "usage": {
+      "inputTokens": 7642,
+      "outputTokens": 500,
+      "reasoningTokens": 0
+    }
+  }
+}

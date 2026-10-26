@@ -281,7 +281,7 @@ For each track: the organisers' lines, then what the product does about each, th
 
 ### 7.1 Done and checked
 
-- Everything in sections 3 and 4 runs. 1,451 tests pass (110 files; `npx vitest run`, 2026-10-25), and `desk prove` is 35 PASS, 0 FAIL, 0 NOT RUN on fresh clones of Windows 11 (Node 24.20) and Ubuntu 22.04 (Node 22.23); the commit those clones were made at is named in the README.
+- Everything in sections 3 and 4 runs. 2,675 tests run (200 files; `npx vitest run`, 2026-10-26; 2,674 pass and one is skipped on Windows, 2,673 pass and two are skipped on Ubuntu), and `desk prove` is 61 PASS, 0 FAIL, 0 NOT RUN on fresh clones of Windows 11 (Node 24.20) and Ubuntu 22.04 (Node 22.23); the commit those clones were made at is named in the README.
 - Canary: calls the planted model switch on day 15 (-40.0 points, 99% interval -56.2 to -23.8, control flat); 0 of 100 no-change histories called regressed. Smallest detectable change on the recorded design is about 21 points.
 - Held-out replay: a policy drafted from September meets October and would have blocked 5 of 333 landed sessions.
 - Head-to-head (same Nemotron model, 60 questions nobody had read, preregistered with seven written predictions): one call 12, a tool-using agent 45, the Desk v3 55; pass^3 18%, 70%, 85%; all seven predictions held; the five misses are shapes the Desk has no step for. Sets A and B, which the Desk was built against, are 60 of 60 each on v3 and are post hoc. Ten in sixty is a margin this size of set cannot make certain (`docs/verification/benchmark/RESULTS-v3.md`).

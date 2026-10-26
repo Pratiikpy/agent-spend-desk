@@ -301,7 +301,7 @@ export const scenesA: SceneDef[] = [
   {
     id: "zetaris", kicker: "", Comp: Silos,
     caps: [
-      `The bill is in three silos: invoices in a bucket, CI in Postgres, a roster behind a service.`,
+      `The bill sits in three silos: invoices, CI in Postgres, a roster behind a service.`,
       `One Zetaris statement joins them: invoices land ${zetaris.invoiceBelowPct}% under my estimate.`,
       `And ${zetaris.mergedRed} landed sessions merged although the checks were red.`,
     ],

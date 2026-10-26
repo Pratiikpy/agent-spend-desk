@@ -1,0 +1,24 @@
+{
+  "key": "faa1f9433b81a2068f5094c8e8dd5e7c",
+  "recordedAt": "2026-10-26T06:15:05.859Z",
+  "role": "ask_planner",
+  "response": {
+    "content": "",
+    "toolCalls": [
+      {
+        "id": "call-bf34cc9a-a2ce-42e9-a522-1742a2c9ed20",
+        "name": "plan_answer",
+        "arguments": {
+          "steps": "[{\"id\": \"a\", \"op\": \"spend\", \"from\": \"2026-09-05\", \"to\": \"2026-10-11\", \"group\": \"model\"}, \"id\": \"b\", \"op\": \"spend\", \"from\": \"2026-09-05\", \"to\": \"2026-10-11\", \"group\": \"none\"}, {\"id\": \"c\", \"op\": \"spend\", \"from\": \"2026-09-05\", \"to\": \"2026-10-11\", \"group\": \"model\", \"model\": \"claude-opus-5\"}, {\"id\": \"d\", \"op\": \"spend\", \"from\": \"2026-09-05\", \"to\": \"2026-10-11\", \"group\": \"model\", \"model\": \"claude-sonnet-5-5\"}]"
+        }
+      }
+    ],
+    "servedBy": "other",
+    "servedModel": "nvidia/nemotron-3.5-lightning-30b-a3b",
+    "usage": {
+      "inputTokens": 2808,
+      "outputTokens": 246,
+      "reasoningTokens": 0
+    }
+  }
+}

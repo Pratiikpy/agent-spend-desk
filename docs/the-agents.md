@@ -14,6 +14,14 @@ The track asks for "a novel ability to turn data, knowledge, memory, and reasoni
 | Reasoning | A typed program the Planner writes and code runs; an Auditor that rejects unsupported figures; a Drafter, an Attacker and a held-out replay for policy | `src/desk/ask/`, `src/desk/agents/` |
 | Decisions and actions | A signed dossier, an approval echo, and a gate Claude Code calls before each tool use | `src/desk/dossier/`, `src/desk/gate/` |
 
+## Do the roles earn their place?
+
+Each role was taken out in turn on 60 preregistered questions, and each arm was compared with the full Desk on the same questions by the exact McNemar test (`docs/verification/ablation/RESULTS-ablation.md`, method and predictions in Addendum 7 of `docs/verification/benchmark/PREREGISTRATION.md`). The Planner is necessary on this set: without it 30 questions are lost and none gained. The plan critic, the revision loop, the Auditor (on good runs) and the Explainer are not shown necessary, which is an absence of evidence. The Auditor is necessary under a fault: with the Explainer's first figure corrupted on purpose, the arm that has the Auditor has 26 clean answers the arm without it does not. A role that fails such a test becomes code and the README says so; none was found harmful.
+
+## Which model should each role use?
+
+The Desk was run on three Nemotron models, and on two mixes, on 60 new questions (set F, preregistered in Addendum 8 before any run; `docs/verification/mix/RESULTS-mix.md`). With the Planner on the 550B model and the Explainer on the 30B model it answered 60 of 60; with the Planner on the 30B model and the Explainer on the 550B model, 50, against 54 for the 30B model throughout. The Planner is where the larger model paid off in this run; one run per arm, so this is a pattern in 60 questions and not an established effect. `DESK_ROLE_MODELS` (for example `ask_planner=nvidia/...,explainer=nvidia/...`) sets a model per role, and every reply's signed receipt names the model that answered.
+
 ## The agents
 
 | Agent | Role | Reads | Writes | Works with |

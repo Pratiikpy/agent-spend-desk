@@ -1,0 +1,57 @@
+{
+  "key": "db02384932e151c68cd432b043550e89",
+  "recordedAt": "2026-10-26T08:49:58.203Z",
+  "role": "ask_planner",
+  "response": {
+    "content": "",
+    "toolCalls": [
+      {
+        "id": "call-585150ad-3a2c-4803-9395-6c2e2233112f",
+        "name": "plan_answer",
+        "arguments": {
+          "steps": [
+            {
+              "id": "spend1",
+              "op": "spend",
+              "from": "2026-09-12",
+              "to": "2026-09-22",
+              "group": "none"
+            },
+            {
+              "id": "spend2",
+              "op": "spend",
+              "from": "2026-09-23",
+              "to": "2026-10-03",
+              "group": "none"
+            },
+            {
+              "id": "compare",
+              "op": "compare",
+              "a": "spend1",
+              "b": "spend2"
+            },
+            {
+              "id": "landing1",
+              "op": "landing",
+              "from": "2026-09-12",
+              "to": "2026-09-22"
+            },
+            {
+              "id": "landing2",
+              "op": "landing",
+              "from": "2026-09-23",
+              "to": "2026-10-03"
+            }
+          ]
+        }
+      }
+    ],
+    "servedBy": "other",
+    "servedModel": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+    "usage": {
+      "inputTokens": 2830,
+      "outputTokens": 241,
+      "reasoningTokens": 0
+    }
+  }
+}
