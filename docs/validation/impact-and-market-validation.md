@@ -19,6 +19,31 @@ Every external figure below was read from the cited page on 2026-10-26. Where a 
 
 These four sources make a serious case that the problem is real. They do not show that desk. saves money or improves engineering outcomes.
 
+## 1b. Demand signals measured on 2026-10-26 (interest in the category, not willingness to pay)
+
+All numbers were read on 2026-10-26 from the GitHub API, the npm download API and the Hacker News search API. Reddit could not be read from this machine (the command-line client was refused and the public search returned a block page), so no Reddit count is given.
+
+| Signal | Number | What it shows | What it does not show |
+|---|---|---|---|
+| ccusage (free log reader), GitHub stars | 19,181 (created 2025-05-29) | Developers want to see where agent spend goes | That anyone pays; stars can be inflated |
+| ccusage, npm downloads | 131,771 in the week ending 2026-10-25; 857,016 in the 30 days to 2026-10-25 | Active installs and CI use | Unique users: downloads include automation and repeat installs |
+| CodexBar (menu-bar usage tracker), stars | 22,823 (created 2025-11-16) | Same | Same |
+| Claude-Code-Usage-Monitor, stars | 8,766 (created 2025-06-19) | Same | Same |
+| CodeBurn (free, local, 37 tools, by model, project and task), stars | 11,581 in about six months (created 2026-04-13) | The category is moving fast; a Show HN post drew 112 points and 27 comments | That its users want a policy loop |
+| LiteLLM and Langfuse (gateway and observability), stars | 62,072 and 36,526 | Teams pay attention to LLM cost control and tracing | That coding-agent teams buy a third-party desk |
+| GitHub repositories matching "claude code usage" | 8,348 (search count) | Many people build their own trackers | Quality or adoption of any of them |
+| Claude Code issue on hitting limits unexpectedly (#16157) | 1,499 comments, 726 reactions, still open | Intense, durable pain | That the pain is solved by a tracker |
+| Claude Code issue on limits exhausted fast (#38335) | 879 comments, 546 reactions, still open | Same | Same |
+| Claude Code issue on degradation in complex engineering (#42796) | 583 comments, 3,286 reactions, closed | A large audience suspects silent regressions | That a canary would settle it |
+| Codex issue on rate-limit cost jump (#28879) | 211 comments, 561 reactions, closed | The pain is multi-vendor | |
+| Hacker News stories mentioning "claude code usage limit" since October 2024 | 153 (search count) | A recurring topic, with many Show HN tools | Quality of any story |
+
+What these numbers support: the demand for seeing where agent spend goes and for seeing limits coming is large, real and multi-vendor. What they also show: the category is crowded with free tools that appeared quickly, so interest in a tracker is not evidence that anyone pays for one.
+
+### The nearest free competitor, read from its README
+
+CodeBurn (https://github.com/getagentseal/codeburn, MIT) lists: spend by model, project and task across 37 to 42 tools; `sessions --by-pr`, which groups spend by the pull request links a session recorded; plan and quota tracking, with live five-hour and weekly limits; a Guard feature for budget caps for Claude Code; and a model comparison on the user's own history (one-shot rate, retry rate, cost per edit). As far as its README says, it does not describe a held-out replay of a proposed cap, a control-arm regression check, a restrict-only proof, or a signed record a stranger verifies offline. That is a reading of one README on 2026-10-26, not a test of the product. It is the strongest evidence in this file that what users want is close to what desk. does first (where did the money go, will I hit a limit, stop a runaway), and that desk.'s differences are in the decision loop around it.
+
 ## 2. What vendors already provide (and where they are stronger)
 
 | Vendor | What its own documentation lists | Source |
