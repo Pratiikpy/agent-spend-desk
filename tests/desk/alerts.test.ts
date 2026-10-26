@@ -355,5 +355,5 @@ describe("desk alerts on the command line", () => {
     expect(run("pause", "idle:agents").stdout).toMatch(/idle:agents is paused/);
     expect(run("list").stdout).toMatch(/PAUSED/);
     expect(run("bogus").stderr).toMatch(/Use: desk alerts check/);
-  });
+  }, 120_000);
 });

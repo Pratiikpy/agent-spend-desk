@@ -19,7 +19,7 @@ cd "$WORK/clone" || exit 2
   echo "HEAD $(git rev-parse --short HEAD)"
   npm install 2>&1 | tail -6
   if npx tsc --noEmit; then echo "TSC OK"; else echo "TSC FAILED"; fi
-  npx vitest run 2>&1 | grep -E "Test Files|Tests  |FAIL|AssertionError" | sed 's/\x1b\[[0-9;]*m//g'
+  npx vitest run 2>&1 | grep -E -A12 "Test Files|Tests  |FAIL|AssertionError" | sed 's/\x1b\[[0-9;]*m//g'
   echo "VITEST EXIT ${PIPESTATUS[0]}"
   npx tsx src/desk/cli.ts prove 2>&1 | sed 's/\x1b\[[0-9;]*m//g' | tr -d '\r'
   echo "PROVE EXIT ${PIPESTATUS[0]}"
