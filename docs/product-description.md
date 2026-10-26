@@ -1,8 +1,8 @@
 # desk.: the whole product, in plain words and in technical detail
 
-Written 2026-10-24 from the repository, the organisers' documents (kept locally under `docs/event/` and `docs/intel/`, not published) and the sponsors' own material. Where a statement is not verified it says NOT VERIFIED. Nothing here is a claim of "best" or "production-ready": those need evidence this file does not have.
+Written 2026-10-24 and brought up to date on 2026-10-26 from the repository, the organisers' documents (kept locally under `docs/event/` and `docs/intel/`, not published) and the sponsors' own material. Where a statement is not verified it says NOT VERIFIED. Nothing here is a claim of "best" or "production-ready": those need evidence this file does not have.
 
-Contents: 1 In one minute · 2 A day with it · 3 How it works · 4 Everything it does · 5 What the hackathon asks · 6 Each track, line by line · 7 Where the product stands (7.6 Planned, not built) · 8 Every source used to build it · 9 Paths.
+Contents: 1 In one minute · 2 A day with it · 3 How it works · 4 Everything it does · 5 What the hackathon asks · 6 Each track, line by line · 7 Where the product stands · 8 Every source used to build it · 9 Paths · 10 The pitch kit: the numbers, the questions a judge will ask, and what not to say.
 
 ---
 
@@ -20,6 +20,8 @@ Contents: 1 In one minute · 2 A day with it · 3 How it works · 4 Everything i
 - Can it stop a runaway? (A gate that Claude Code asks before each tool call. If the gate is down or confused, it says no.)
 
 **Why trust it.** It treats every number as a claim. A figure is computed by code, never by the model. Each figure carries the rows it came from, says what it could not know, and says whether it is billed, reported, estimated or unpriced. Where the product fell short of its own label (a "90%" range that held 73% of the time), it says so on screen.
+
+**Where to see it.** The repository is https://github.com/Pratiikpy/agent-spend-desk. The demo video is https://youtu.be/3LaYZ0VCgXI (3:57, captioned, no voice-over). The fourteen screens, read-only and on the constructed sample, are at https://desk-demo.vercel.app/ with nothing to install. The deck is `docs/submission/desk-deck.pdf` (25 slides).
 
 **What it is not.** It is not a billing system: every dollar is a list-price estimate from logged tokens unless an invoice says otherwise. It governs a tool with no hook only if that tool is pointed at the gateway door. It has not been tried by a real team yet.
 
@@ -56,7 +58,7 @@ Zetaris ─ invoices (CSV in an S3-style bucket) · CI (Postgres) · roster (RES
    gate (reserve → hook/MCP/HTTP → settle; fail closed) ◄─ approval echo ─► signed dossier ─► desk-verify (offline)
 ```
 
-The model is Nemotron (`nvidia/nemotron-3.5-super-vl-120b-a12b`) behind one OpenAI-compatible port. Today it is reached through Meterless Nightshift on the author's machine, with NVIDIA's API as Nightshift's provider; setting three variables sends calls straight to NVIDIA instead. Offline runs replay recorded replies.
+The model is Nemotron behind one OpenAI-compatible port. It is reached through Meterless Nightshift on the author's machine, with NVIDIA's API as Nightshift's provider; every reply Nightshift serves carries an Ed25519-signed receipt that names the model, and the Desk claims a reply as Nightshift's only if that signature verifies (`desk receipts`). Setting three variables (`MODEL_BASE_URL`, `MODEL_API_KEY`, `NEMOTRON_MODEL`) sends calls straight to NVIDIA instead. Three Nemotron models were run: `nvidia/nemotron-3.5-lightning-30b-a3b`, `nvidia/nemotron-3.5-super-vl-120b-a12b` (the model of the recorded benchmark sets A to E) and `nvidia/nemotron-3-ultra-550b-a55b`; `DESK_ROLE_MODELS` gives each role its own model (7.1, the model-mix test). An embedding model, `nvidia/nemotron-3-embed-1b`, reads routing and the owner's notes by meaning when `DESK_EMBED=on`; recorded vectors replay offline. Offline runs replay recorded replies.
 
 ### 3.2 The pieces
 
@@ -73,18 +75,23 @@ The model is Nemotron (`nvidia/nemotron-3.5-super-vl-120b-a12b`) behind one Open
 | Canary | 52-task pack, two arms (one a control), paired per-task statistic with cluster-robust error, a 99% interval in two windows, a computed minimum detectable effect, an anytime-valid early-warning flag | `src/desk/canary/` |
 | Gate | Reserve before the call, settle after; hook, MCP and HTTP doors; approval echo; hash-chained ledger; fails closed | `src/desk/gate/` |
 | Dossier and verifier | Ed25519-signed in-toto Statement in a DSSE envelope; a Merkle-linked row log; a verifier on plain Node | `src/desk/dossier/`, `src/desk/verify/` |
-| Benchmark | Pre-registered 60-question head-to-head of three arms on one model; pass^k over repeated runs | `src/desk/bench/` |
+| Benchmark | Pre-registered 60-question head-to-heads of three arms on one model (sets A to F); a leave-one-role-out study; runs on three Nemotron models and two role mixes; pass^k over repeated runs | `src/desk/bench/` |
 | Lessons, regret, calibration, seats, route | Learning from wrong answers; scoring the Desk's own past choices; confidence against planted truth; seats beyond people who landed work; the same recorded tasks replayed on two routes | `src/desk/lessons/`, `regret/`, `calibrate/`, `seats/`, `route/` |
-| Proof | `desk prove` runs 26 named checks, each PASS, FAIL or NOT RUN | `src/desk/prove/` |
-| UI | Fourteen screens on a local, read-only server | `src/desk/ui/` |
+| Proof | `desk prove` runs 61 named checks, each PASS, FAIL or NOT RUN | `src/desk/prove/` |
+| UI | Fourteen screens on a local, read-only server; the same screens as static files with recorded answers (`desk ui --sample --export`), which is the hosted copy | `src/desk/ui/` |
+| Scout Intent and embeddings | Reads each request before anything is planned: a question, or a request to change spend or policy (refused with the reason, never planned); instruction-like text is flagged and taken out. An embedding model is opt-in, with recordings that replay offline | `src/scout-intent/`, `src/desk/scout/`, `src/desk/embed/` |
+| Memory and history | Precedents (each approved policy change and what it did at 7, 14 and 30 days, shown to the next proposal); the owner's notes; what changed before a date from the ledger and from policy, price, model and memory records; a year of spend read a month at a time | `src/desk/precedent/`, `src/desk/changes/`, `src/desk/engines/` |
+| Receipts | Checks the Ed25519 signature on each Nightshift receipt and prints which Nemotron model answered which role; a changed number is refused | `src/desk/receipts/`, `src/desk/agents/receipt-signature.ts` |
+| Ledger trust | A hash chain over what happens to the ledger; an open JSON Lines format (`desk.events/1`) and tested adapters for other tools; a recomputed, signed scorecard | `src/desk/ledger/`, `src/desk/open/`, `src/desk/adapters/`, `src/desk/scorecard/` |
+| Supervision limits | Earned autonomy (a kind of work is promoted after 30 finished runs on a 90% lower bound, demoted at once by a revert), a cap on how many agents one person supervises, a plan router near a limit, a value-of-information rule for questions | `src/desk/autonomy/`, `src/desk/quota/`, `src/desk/questions/`, `src/desk/gate/` |
 
 ### 3.3 The agents
 
 Nine roles, with the collaboration the organisers asked for (they asked for three of nine behaviours; all nine are present, each with a file or a trace event): Risk Router, Planner, plan critic, specialists, Auditor, Explainer, Drafter, Attacker, Canary. One agent's work is visibly sent back by another: the plan critic returns a Planner program that lacks a figure the question asks for; the Auditor returns an Explainer sentence with an unsupported figure; the restrict-only check returns a Drafter policy that would pause landed work. Full table: `docs/the-agents.md`.
 
-### 3.4 The Meterless engines (memory, state, long-range reading)
+### 3.4 The Meterless engines (memory, state, long-range reading, request routing)
 
-Three of Meterless's open reference engines run in this process under Apache-2.0, with their own conformance suites passing (H-MEM 13/13, World Model 8/8, Markovian 8/8). H-MEM keeps the owner's definitions ("landed means merged or kept") and corrections, with supersession; the World Model keeps what changed when (model ids, tool versions, plan settings); Markovian bounds the reading of a long range. Each changes an answer when switched off (`desk ask --ablate world_model`), and `desk prove` checks that. Beyond that slice the engines are barely used (section 7.4).
+Three of Meterless's open reference engines run in this process under Apache-2.0, with their own conformance suites passing (H-MEM 13/13, World Model 8/8, Markovian 8/8). H-MEM keeps the owner's definitions ("landed means merged or kept"), corrections with supersession, and the precedent of each approved policy change; the World Model keeps what changed when (model ids, tool versions, plan settings, policy and price versions) and answers "what changed before this date"; Markovian reads a range of three or more months one month at a time, carrying only a fixed-size state (twelve months: right on 5 of 5 questions with the engine, 2 of 5 without; no token saving is claimed at this size). Each changes an answer when switched off (`desk ask --ablate world_model`), and `desk prove` checks that. Scout Intent is different: Meterless publishes a specification and an evaluation harness and no reference code, so `src/scout-intent/` is the Desk's own implementation written from the specification's behaviour. On 218 test questions written before tuning, Scout with the older rules routed 96.3% to the right kind and 2.9% of 68 requests to change spend or policy reached the planner as questions; the older rules alone got 76.6% and 61.8%. Against Meterless's own paraphrase gate it does not pass (intent top-1 0.764 against a floor of 0.85, with the embedder), and the note says so (`docs/verification/scout-intent-2026-10-25.md`). What is not used of Meterless is in section 5.4.
 
 ### 3.5 Trust rules built into the code
 
@@ -98,7 +105,7 @@ Three of Meterless's open reference engines run in this process under Apache-2.0
 
 ## 4. Everything it does
 
-### 4.1 Commands (54, from `desk help`)
+### 4.1 Commands (81, from `desk help`)
 
 | Command | What it does |
 |---|---|
@@ -111,15 +118,18 @@ Three of Meterless's open reference engines run in this process under Apache-2.0
 | `desk retention` | Which agent logs are about to be deleted before they were read, and a daily ingest command (`retention schedule`). |
 | `desk statusline` | The Claude Code status line that records your plan limits (`statusline install` prints the setting to add). |
 | `desk task` | Label the work you start (`task <label>`, `task end`) so sessions group into tasks; `task list` shows how each task was identified. |
-| `desk invoices` | Import an invoice or usage export (CSV, or PDF read twice) and reconcile billed against estimated against reported, month by month. |
-| `desk questions` | Where the Desk is unsure which session a commit came from, it asks; your yes or no is applied the next time landing is computed. |
-| `desk landing` | Tie sessions to the commits they produced in your repositories, and show what the spend bought. |
+| `desk invoices` | Import an invoice or usage export (CSV or PDF), reconcile it month by month, and audit per-outcome lines against your own definition (`audit`). |
+| `desk questions` | Where the Desk is unsure which session a commit came from, it asks only if the answer is worth the interruption; the rest wait for the weekly review. |
+| `desk landing` | Tie sessions to the commits they produced and show what the spend bought; --prs also reads pull requests through your own gh. |
 | `desk reconcile` | Compare the cost Claude Code recorded for itself with our estimate, process by process. |
 | `desk silos` | Ask the invoice, CI and roster data through Zetaris (`silos seed` builds the sample data). |
 | `desk sources` | Which agent tools the Desk finds on this machine, where it looked, and what each source can and cannot tell it. |
 | `desk otel` | Read OpenTelemetry GenAI spans (OTLP/JSON) as calls, or write the Desk's own record as spans with the desk.* attributes. |
+| `desk events` | The open ledger format (desk.events/1): validate, import and export the Desk's record as JSON Lines that other tools can read and write. |
+| `desk adapters` | Read another tool's files through an adapter that must reproduce its golden output from a real sample first; adapters run in a sandbox. |
 | `desk gateway` | Import a LiteLLM spend log (JSON, JSON Lines or CSV): tokens priced at list price, the gateway's own cost kept beside it. |
 | **Costs and limits** | |
+| `desk forecast` | Where the month is likely to end, with a range, and how such ranges have done on your own history. |
 | `desk gauge` | What the last few hours cost, how fast, where it went and where your plan windows stand; --line for a status line, --watch to keep it fresh. |
 | `desk estimate` | Before a large task: the cost range of similar past tasks and how many there were, or no estimate when fewer than ten are similar. |
 | `desk approvals` | What is waiting for your approval, how fast and how carefully past ones were decided; `show <id>` opens the evidence, `deny <id>` says no. |
@@ -128,9 +138,12 @@ Three of Meterless's open reference engines run in this process under Apache-2.0
 | `desk bill` | The bill for a month or any dates: kinds of figure, what it bought, where it went; --export csv or json gives every line. |
 | `desk overhead` | Share the idle and unowned spend of a period among the projects that landed work, to the micro-dollar. |
 | `desk delegation` | Which agents started which: each delegated agent alone and with the agents it started, and the sessions that went too deep. |
+| `desk team` | A team's spend across people and machines: signed reports, roles, aggregate views by default, and a log of who looked. |
+| `desk language` | How many more tokens a prompt in another script costs than the same length of English, on the same model, with an enough-data rule. |
 | `desk waste` | Waste the extra rules find: the same error from new inputs, cut-short results repeated, file churn, bare calls, orphaned agents. |
 | `desk autopsy` | Split a window of spend into causes: idle, loops, cache misses, and work that was needed. |
 | `desk limits` | What a percent of your plan limit costs in tokens, per plan and window, with an interval, or why there is no estimate. |
+| `desk quota` | When a plan is close to a limit: which of your other plans has room, or when to wait, with a handoff written first. |
 | `desk plans` | Every plan window your tools report: the tool's own figure beside a local count, the outlook, and the limit hits and model changes. |
 | `desk runway` | Will this plan window last until it resets? Judged from how past windows of the same plan ended. |
 | `desk prices` | `prices compare` checks our price book against another; `reprice` prices the ledger again, keeping old costs; `history` shows them. |
@@ -138,36 +151,57 @@ Three of Meterless's open reference engines run in this process under Apache-2.0
 | **Decide and enforce** | |
 | `desk ci` | A pipeline gate: fail a change that worsens the canary suite or raises cost past a bound. Exit 0 pass, 1 fail, 2 error, 3 inconclusive. |
 | `desk enforcement` | What the Desk can actually stop, tool by tool: enforced, advisory or notify only. `enforcement test [--live]` records the evidence. |
+| `desk receipts` | Check the Ed25519 signatures on Nightshift's receipts for the model's replies and say which Nemotron model answered each role. |
+| `desk attack` | Try to step around a policy file: the attacker corpus, your own request, and how many generated policy pairs the restrict check was held to. |
+| `desk pack` | Take in rules or canary templates someone else wrote: a pack that widens or reroutes is rejected, the rest is replayed and starts in shadow. |
 | `desk propose` | Draft a spend policy from your own history and check by proof that it only narrows what is in force. |
 | `desk replay` | Replay a policy over past sessions: what it would have blocked, and what that would have saved. |
 | `desk tunnel` | The same as replay, for several policies side by side. |
 | `desk alerts` | Tell you once when something needs you: a cap nearly spent, a pause, idle spend, a canary regression, a month that will not reconcile. |
 | `desk approve` | Approve a pending policy change; the approval is signed into the dossier. |
+| `desk autonomy` | What each kind of work has earned: promoted after 30 finished tasks on a 90% lower bound, and demoted at once by a revert within 7 days. |
 | `desk gate` | The spend gate: `gate serve`, `gate gateway` (a door for tools with no hook), `gate mcp`, `gate status`, `gate open` and `gate close`. |
 | `desk seats` | For each person, whether a flat seat or tokens at list price is cheaper. |
 | `desk route` | Test a cheaper model on recorded tasks and say whether it holds up. |
 | `desk canary` | The daily regression check: did the agent get worse? `canary run` records today's tasks; `--if-due` is the hourly job, `schedule` prints it. |
-| **Ask and remember** | |
-| `desk ask` | Ask a question about your spend; the answer cites the rows it used and is checked before it is shown. |
-| `desk remember` | Store a note for Ask to use later, such as an exception someone granted. |
-| `desk verify-answer` | Check an answer's claims against the ledger. |
-| `desk lessons` | Learn rules from past mistakes, and show whether they would have helped on held-out questions. |
-| `desk regret` | Score earlier proposals against what happened afterwards. |
-| `desk calibrate` | How well the confidence of a session-to-commit link and the simulator match answers we know. |
 | **Privacy** | |
+| `desk index` | Share per-suite pass rates, if you choose to: off by default, a preview of the exact payload, and only the bytes you accepted. |
 | `desk egress` | What was sent to a model: host, size and a count of masked secrets for every request, never the text. |
 | `desk forget` | Delete sessions by --project, by --before a date, or --all, and say what was removed; without --yes it only shows what would go. |
 | **Evidence** | |
+| `desk bundle` | Wrap a signed dossier as a Sigstore bundle that cosign can check, with an optional RFC 3161 timestamp, and check one offline. |
+| `desk judge` | A panel of judges for what tests cannot decide, in both orders, believed only once it agrees with your own labels. |
+| `desk swap` | Would a cheaper route have done your work as well? Run two routes on your captured tasks and compare them with an interval. |
+| `desk trajectories` | How much of the last month's work could be replayed on another route, and why the rest could not: full, tools only, insufficient. |
+| `desk capture` | Turn work you merged and kept into tasks a route can be tested on: the tests that decide each, your review, a frozen suite. |
+| `desk snapshot` | Keep a workspace's staged, unstaged and untracked files as one commit in the repository, without changing it, and write it out elsewhere. |
+| `desk align` | Score a structured output against a reference by what is in it and not how it is laid out: keys and lists in any order, near matches by degree. |
+| `desk replay-decision` | Re-execute an approved policy decision from its signed dossier, offline, and compare every stage with what was attested. |
+| `desk ledger` | Check the usage ledger's chain: no event changed or removed, no source's calls edited. `ledger verify --deep` also works each cost out again. |
 | `desk prove` | Run every check against the code and print PASS, FAIL or NOT RUN with the reason. |
 | `desk bench` | The recorded benchmark: Ask against plain baselines on questions with known answers. |
 | `desk demo` | The scripted demonstration run, from recordings, with no network. |
 | `desk sample` | `sample build` generates the 14-engineer sample that `--sample` reads; nothing of yours is read. |
 | `desk lab` | Audit tasks, run an agent on them, and report the pass rates and whether the experiment is worth running (`lab audit`, `lab run`, `lab report`). |
+| **Ask and remember** | |
+| `desk ask` | Ask a question about your spend; the answer cites the rows it used and is checked before it is shown. |
+| `desk remember` | Store a note for Ask to use later, such as an exception someone granted. |
+| `desk verify-answer` | Check an answer's claims against the ledger. |
+| `desk lessons` | Learn rules from past mistakes, and show whether they would have helped on held-out questions. |
+| `desk precedents` | Policy changes you approved and what they did afterwards, shown to the next proposal that touches the same rules. |
+| `desk memory` | What the Desk remembers: mine statements from what you say, mark a memory helpful or wrong, and run the sleep cycle with a backup. |
+| `desk embed` | Where meaning comes from for routing and for your notes: status, a recall evaluation, and recording vectors from the endpoint. |
+| `desk scout` | How a request is read before Ask plans anything: a question, or a change to spend or policy. "scout eval" measures it. |
+| `desk scorecard` | The reasoning and sponsor scorecard, recomputed: which roles matter, what each engine and Zetaris change, with NOT VERIFIED where unmeasured. |
+| `desk engines` | The engines on a long ledger: year-long questions with Markovian on and off, the kept carry state, and the engine's own run record. |
+| `desk changes` | What changed before a date, from the ledger and from the policy, price, model and memory records beside it, with the sessions each change touched. |
+| `desk regret` | Score earlier proposals against what happened afterwards. |
+| `desk calibrate` | How well the confidence of a session-to-commit link and the simulator match answers we know. |
 | `npm run desk-verify` | The offline dossier verifier: plain Node, network off, one changed byte names the row |
 
-### 4.2 Screens (13)
+### 4.2 Screens (14)
 
-Brief · Week (the weekly review) · Autopsy · Bill (with shared overhead) · Outcomes · Sessions (with delegation and waste blocks) · Policy (with the wind tunnel and what the Desk can enforce) · Canary · Ask · Org data (Zetaris) · Team (roles, signed reports) · Doctor (what each source can and cannot say) · Dossiers · Evidence (what was measured, including what failed). The first twelve were photographed in light and dark at 1440 and 390 px and read, and the record is `docs/verification/ui-sweep.md`; the sections added since (delegation, shared overhead, enforcement, waste blocks) were read in light and dark and desktop and phone width as they were built, and a full automated and visual pass over all fourteen was recorded on 2026-10-26 in the same file.
+Brief · Week (the weekly review) · Autopsy · Bill (with shared overhead) · Outcomes · Sessions (with delegation and waste blocks) · Policy (with the wind tunnel and what the Desk can enforce) · Canary · Ask · Org data (Zetaris) · Team (roles, signed reports) · Doctor (what each source can and cannot say) · Dossiers · Evidence (what was measured, including what failed; the preregistered Set D leads it). The first twelve were photographed in light and dark at 1440 and 390 px and read, and the record is `docs/verification/ui-sweep.md`; the sections added since (delegation, shared overhead, enforcement, waste blocks) were read in light and dark and desktop and phone width as they were built, and a full automated and visual pass over all fourteen was recorded on 2026-10-26 in the same file.
 
 ### 4.3 The feature specification
 
@@ -184,9 +218,9 @@ Open Agent Hackathon 2026 (GenAI Works): 144 hours, 22 to 27 October 2026, one p
 | Criterion | Pts | The judge's question | Our evidence |
 |---|---:|---|---|
 | Impact | 30 | A meaningful real problem for a clearly defined user, consistent with the challenge statement | The problem sentence; five public quotes; `docs/design/desk/04-evidence-table.md` (146 claims). **Gap: no real user has used it; willingness to pay NOT VERIFIED** |
-| Technical | 20 | Implementation, reliability, architecture | 1,451 tests; `desk prove` with 35 named checks; budgets in code; fallbacks; a pre-registered benchmark whose losing first run is published |
-| Innovation | 15 | Originality | Restrict-only policy check fuzzed against an oracle; an Explainer that never reads the question; a signed dossier a stranger verifies offline; the Desk's own judgement recorded and scored |
-| Demo | 15 | Shows the solution, its functionality and value | 3:56 captioned motion video; `npm run desk -- demo`. **The video is uploaded: https://youtu.be/3LaYZ0VCgXI** |
+| Technical | 20 | Implementation, reliability, architecture | 2,677 tests (200 files); `desk prove` with 61 named checks, green on fresh clones of Windows and Ubuntu; budgets in code; fallbacks and failure drills; preregistered benchmarks (set D, the role-necessity study, the model-mix test) whose failed predictions are published; signed Nemotron receipts |
+| Innovation | 15 | Originality | Restrict-only policy check fuzzed against an oracle; an Explainer that never reads the question; a signed dossier a stranger verifies offline; the Desk's own judgement recorded and scored; each role tested by taking it out; a per-role Nemotron mix with a signed receipt for every call |
+| Demo | 15 | Shows the solution, its functionality and value | 3:57 captioned motion video; `npm run desk -- demo`; the screens at https://desk-demo.vercel.app/. **The video is uploaded: https://youtu.be/3LaYZ0VCgXI** |
 | Product and UX | 10 | Intuitive, accessible, easy for the intended user | Fourteen screens, light and dark, phone width |
 | Sponsor tech | 10 | Effective use of sponsor technology | Section 5.4 |
 
@@ -210,17 +244,18 @@ Reward: a clear problem and named user; agents that do real work; critique and r
 | Bounded, predictable runtime (organisers target 5 to 10 minutes) | Offline paths replay recordings; the live path has variable latency (0.4 s to 56 s measured for the same small call) |
 | Save or print agent activity | JSONL trace per run |
 | Declare pre-existing components | `docs/submission/pre-existing-components.md` |
-| Demo video 1 to 4 minutes, naming Zetaris and Meterless and where each sits | 3:56, uploaded: https://youtu.be/3LaYZ0VCgXI |
+| Demo video 1 to 4 minutes, naming Zetaris and Meterless and where each sits | 3:57, uploaded: https://youtu.be/3LaYZ0VCgXI |
 | Slide deck with problem, solution, architecture, stack, sponsor use, visuals, future | `docs/submission/desk-deck.pdf`, 25 slides |
 | README with setup, usage, dependencies | `README.md` |
 | Sponsor technology explanation | `docs/submission/sponsor-technology-explanation.md` |
-| Product runs on Nemotron, reached through Meterless or NVIDIA's API | Through Nightshift on this machine (verified 2026-10-24), or NVIDIA directly |
+| Product runs on Nemotron, reached through Meterless or NVIDIA's API | Through Nightshift on this machine, each reply with a signed receipt that `desk receipts` verifies (1,044 receipts of the model-mix runs and eleven of the first live run), or NVIDIA directly |
+| A description of each sponsor's use, in a file | [`metadata.json`](../metadata.json); the organisers published no format, so it follows what the sponsor folders ask for |
 
 ### 5.4 Sponsors
 
 - **Zetaris** (required). One statement joins an S3-style invoice CSV, a Postgres CI database and a REST roster, all synthetic. It gives the bill its `billed` class, landing its CI facts (584 landed sessions merged on green checks, 60 on red) and the spend-per-landed-PR table. With Zetaris off those disappear; a real container kill was run. **Not used: the MCP server, natural-language-to-SQL, the semantic layer and data steward, masking by role, the audit log, lineage, Iceberg time travel.**
-- **Meterless** (required). Three engines in our process, conformance 8/8, 13/13, 8/8, each changing an answer when off. Since 2026-10-24 Nightshift (Windows edition 1.2.3) is installed and serves the model; replies carry its compute receipt, which the trace and the answer show. **Not used: overnight jobs, judges, its local embedder, H-MEM mining and sleep, World Model merge queue and audit, Scout Intent.**
-- **NVIDIA.** Nemotron through the OpenAI-compatible API, tool calling verified. Latency varies and some calls fail; code retries, falls back and says so.
+- **Meterless** (required). Three engines in our process, conformance 8/8, 13/13, 8/8, each changing an answer when off; Scout Intent as the Desk's own implementation of the published specification, measured against Meterless's harness (the paraphrase gate does not pass; the note says so). Nightshift (Windows edition 1.2.3) serves the model; each reply carries an Ed25519-signed compute receipt, checked by `desk receipts`, and the trace and the answer show which model answered. **Not used: Nightshift's overnight jobs and judges, the engines' own embedder (the Desk's embedder acts beside H-MEM, whose vendored files are not edited).** `docs/sponsors/meterless-docs-readout.md` and the README's sponsor table say what each engine changes when switched off.
+- **NVIDIA.** Nemotron through the OpenAI-compatible API, tool calling verified, in every language role (Planner, Explainer, Drafter, Attacker, the canary and the three benchmark arms); three chat models and one embedding model were used. Latency varies and some calls fail; code retries, falls back and says so.
 - **Cursor.** Optional since 22 October 2026. Not used; editor rules exist in `.cursor/rules/`. No session is logged.
 - **Bright Data.** Bounty track only; not used.
 
@@ -258,8 +293,8 @@ For each track: the organisers' lines, then what the product does about each, th
 
 | The organisers' line | What we do | Evidence | Gap |
 |---|---|---|---|
-| "Demonstrate a novel ability to turn data, knowledge, memory, and reasoning into reliable decisions and actions." [W] | Data: logs and silos. Knowledge: price book, policy language, owner definitions. Memory: H-MEM and World Model. Reasoning: typed programs, Auditor, Drafter/Attacker/replay. Decisions and actions: signed dossier, approval echo, gate | `docs/the-agents.md` | Memory is the thinnest of the five (7.4) |
-| "Leans on Power and Build: the Nemotron model mix, memory, and the tool loop." [L] | Nemotron in every language role; tool calling with a JSON-schema argument; memory engines; the Planner's tool loop with critic and revision | `src/desk/agents/model.ts` | One Nemotron model for every role; no per-role model mix |
+| "Demonstrate a novel ability to turn data, knowledge, memory, and reasoning into reliable decisions and actions." [W] | Data: logs and silos. Knowledge: price book, policy language, owner definitions. Memory: H-MEM and World Model. Reasoning: typed programs, Auditor, Drafter/Attacker/replay. Decisions and actions: signed dossier, approval echo, gate | `docs/the-agents.md` | Memory is the thinnest of the five (7.4): fourteen owner notes in the memory evaluation and no real user history |
+| "Leans on Power and Build: the Nemotron model mix, memory, and the tool loop." [L] | Nemotron in every language role; tool calling with a JSON-schema argument; memory engines; the Planner's tool loop with critic and revision | `src/desk/agents/model.ts`; `docs/verification/mix/RESULTS-mix.md` | A per-role model setting exists and was tested on one question set (60 questions, one run per arm); which role should get which model is a pattern in that set, not an established rule |
 | "Operational records, rules or policies, and the state or memory of prior decisions. Define the decision and the action first, then the data, knowledge, and memory the agent needs to reach them reliably." [A] | Decision: next month's caps and routes. Action: a signed policy the gate enforces. Records: logs. Rules: the policy language. Memory: owner definitions, past decisions, regret ledger | `desk propose --dossier`, `desk regret` | |
 | "...combining availability rules, priority policy, and memory of past decisions, and producing a prioritised booking list with the reasoning for each decision." [A] | The analogue: spend rules, a priority on landed work, memory of past decisions, and a policy with the reasoning for each rule | `output_examples/traces/propose-sample.jsonl` | |
 | Example 3: Intake, Rules Checker, Memory Keeper, Priority Critic, Scheduler; "Priority Critic challenges decisions that look unfair, unsafe, or inconsistent with past decisions" [A] | Intake = Risk Router + Planner. Rules Checker = restrict-only check and policy evaluation. Memory Keeper = H-MEM plus lessons and regret. Priority Critic = Attacker, plan critic, Auditor, held-out replay. Scheduler = Drafter to dossier | One real trace: the first draft would pause 81 of 311 landed sessions, the check caught it, the Drafter revised, the second draft paused none | Learning from mistakes moved 2 of 60 held-out questions with an interval touching zero: no improvement is claimed |
@@ -277,28 +312,31 @@ For each track: the organisers' lines, then what the product does about each, th
 
 ---
 
-## 7. Where the product stands (2026-10-25)
+## 7. Where the product stands (2026-10-26)
 
 ### 7.1 Done and checked
 
-- Everything in sections 3 and 4 runs. 2,675 tests run (200 files; `npx vitest run`, 2026-10-26; 2,674 pass and one is skipped on Windows, 2,673 pass and two are skipped on Ubuntu), and `desk prove` is 61 PASS, 0 FAIL, 0 NOT RUN on fresh clones of Windows 11 (Node 24.20) and Ubuntu 22.04 (Node 22.23); the commit those clones were made at is named in the README.
+- Everything in sections 3 and 4 runs. 2,675 tests run on the fresh clones (200 files; `npx vitest run`, 2026-10-26; 2,674 pass and one is skipped on Windows, 2,673 pass and two are skipped on Ubuntu), and `desk prove` is 61 PASS, 0 FAIL, 0 NOT RUN on fresh clones of Windows 11 (Node 24.20) and Ubuntu 22.04 (Node 22.23); the commit those clones were made at is named in the README and in `docs/verification/clean-room/`. Two later commits changed documents, the video and the model-mix test; the full suite was run again on the working tree (2,676 pass, 1 skipped) and the clean-room runs were not repeated.
 - Canary: calls the planted model switch on day 15 (-40.0 points, 99% interval -56.2 to -23.8, control flat); 0 of 100 no-change histories called regressed. Smallest detectable change on the recorded design is about 21 points.
 - Held-out replay: a policy drafted from September meets October and would have blocked 5 of 333 landed sessions.
 - Head-to-head (same Nemotron model, 60 questions nobody had read, preregistered with seven written predictions): one call 12, a tool-using agent 45, the Desk v3 55; pass^3 18%, 70%, 85%; all seven predictions held; the five misses are shapes the Desk has no step for. Sets A and B, which the Desk was built against, are 60 of 60 each on v3 and are post hoc. Ten in sixty is a margin this size of set cannot make certain (`docs/verification/benchmark/RESULTS-v3.md`).
+- Which roles earn their place (preregistered, set E, 60 questions, exact McNemar test): without the Planner 30 questions are lost and none gained (p < 0.001); without the plan critic, the revision loop, the Auditor or the Explainer no question differs, which is written as "not shown necessary" and not as "useless". With the Explainer's first figure corrupted on purpose the Auditor leaves 26 more answers clean. Of eight written predictions six held and two held in part (`docs/verification/ablation/RESULTS-ablation.md`).
+- A mix of Nemotron models (preregistered before any run, set F, 60 new questions, one run per arm, through Nightshift, `docs/verification/mix/RESULTS-mix.md`). The Desk answered exactly 54 on Lightning 30B, 60 on Super-vl 120B and 59 on Ultra 550B; the plain tool agent on the same models 26, 47 and 51; one call 7, 13 and 12. Planner on Ultra with Explainer on Lightning: 60. Planner on Lightning with Explainer on Ultra: 50, against 54 for Lightning alone (p = 0.125; not established). Of seven written predictions five held; the reverse mix and the order of speeds did not. All 1,044 receipts of these runs verify against one key and name the model each role used.
+- Router and memory (`docs/verification/scout-intent-2026-10-25.md`, `embeddings-2026-10-25.md`): 96.3% of 218 test questions routed to the right kind against 76.6% for the older rules; a note about the question was found for 15 of 16 test questions with vectors and 15 of 16 by words, with fewer wrong notes recalled (50.0% against 63.6%); the questions were written by the builders.
 - Dossier: untouched PASS, one byte changed FAIL naming the row. The signed month bill verifies on plain Node and fails on one changed byte.
 - Gate: invariants hold after 400 random operations; six of six junk requests refused; caps by session, by the last ten minutes or hour, and per model or project; a stopped session writes a handoff and resumes only with a reason (and a signed extension while the cap still binds).
 - What it can stop is tested per tool and kept as a result: Claude Code reads enforced (the real tool was run three times against the gate), the others advisory or notify only.
 - CI gate: `desk ci` exits 0, 1, 2 or 3 and treats inconclusive as never a pass; on packs of known truth it called a fall in 1 of 400 when nothing changed and in 96% of cases for a 20-point fall (`docs/verification/ci-gate-2026-10-25.md`).
 
-### 7.2 Changed today and in progress
+### 7.2 What was built and measured, in the order it happened (2026-10-24 to 2026-10-26)
 
 - **Desk v3 and its results (built, measured).** Two new typed steps (median daily spend, count of sessions started), one-model spend counted as one total however grouped, the rule planner planning shares, medians and session counts, a comparison naming the higher period first, the asked-for figure first, empty model replies retried, the sampler stating `top_p`, and a private cache scope per gateway call. The recordings of sets A, B and D are committed and `desk prove` replays them, so a fresh clone reproduces the tables with no key.
 - **Waste rules, compaction, delegation and shared overhead (built, one machine).** Extra rules over the tool calls (the same error from new inputs, cut-short results repeated, file churn, bare calls, orphaned agents), a cost for context rebuilt after a compaction that landed nothing, a tree of which agent started which, and the idle and unowned spend shared among the projects that landed work to the micro-dollar (`docs/verification/waste-rules-2026-10-25.md`, `compaction-2026-10-25.md`, `delegation-2026-10-25.md`, `overhead-2026-10-25.md`).
 - **Cap windows, checkpoints and the enforcement ladder (built).** The policy language caps a session, the last ten minutes or hour, and one model or project; a session that hits a cap stops with a handoff; `desk enforcement` says per tool what is enforced, advisory or notify only, from recorded tests.
 - **The CI gate and the monthly close (built).** `desk ci` gates a change on the canary; `desk close` writes a signed month dossier.
-- **Feature status.** 73 of 129 specified features are built, 35 partial and 21 absent (`docs/design/desk/07-feature-status.md`). A dated search of prior art for the Track 3 claim is in `docs/design/desk/08-novelty-search-2026-10-24.md`: LaunchDarkly AI Configs experiments, ARC-DR, the self-evolving harness papers and Cedar policy comparison each cover a part; we did not find one system that closes the whole loop, and the search is shallow.
+- **Feature status.** At the first draft of this file 73 of 129 specified features were built; at this commit 128 are built and one is absent (4.3). A dated search of prior art for the Track 3 claim is in `docs/design/desk/08-novelty-search-2026-10-24.md`: LaunchDarkly AI Configs experiments, ARC-DR, the self-evolving harness papers and Cedar policy comparison each cover a part; we did not find one system that closes the whole loop, and the search is shallow.
 - **Nightshift installed and routing (verified live).** Windows edition 1.2.3, per-user, unsigned by the vendor's own label (hash matched the published one; Defender clean; Windows Firewall blocks inbound). Nightshift holds our exact model out by default after 31 of 94 hosted calls failed for them; the opt-in was set. A live Ask returned with receipt ids in the trace and under the answer. Calls go through it while three `MODEL_` lines are in `.env`.
-- **A Nightshift defect found and worked around.** On 2026-10-24 Nightshift answered repeats of some planner requests from its response cache with an empty message and no tool call (`from_cache: true`, 4 ms), which spoiled the first v3 sampled trials. Every request to a gateway now carries its own `meterless-scope`, which avoids the cache (checked: same request, default scope cached and empty, private scope fresh and a proper tool call). Empty replies are also retried now. The first v3 recordings were discarded and the Desk arm of sets A and B is being recorded again from scratch. The defect is worth reporting to Meterless.
+- **A Nightshift defect found and worked around.** On 2026-10-24 Nightshift answered repeats of some planner requests from its response cache with an empty message and no tool call (`from_cache: true`, 4 ms), which spoiled the first v3 sampled trials. Every request to a gateway now carries its own `meterless-scope`, which avoids the cache (checked: same request, default scope cached and empty, private scope fresh and a proper tool call). Empty replies are also retried now. The first v3 recordings were discarded and the Desk arm of sets A and B was recorded again from scratch. The defect is worth reporting to Meterless.
 - **Security and privacy foundation (built and tested).** Credential-shaped strings are masked in stored log text (folder, branch, tool version, edited path) and in every message sent to a model; commit authors are stored as a hash, never an e-mail address; every model request is logged as host, size, hash and number of masked secrets (`desk egress`); `desk forget --project | --before | --all` removes sessions and everything under them and compacts the database file; the threat model is `docs/security/threat-model.md`. A planted credential is searched for in the card, the card files, the ledger file and every screen the interface serves, and the test fails when masking is switched off. Not covered: encryption at rest, install provenance, a live-model test with a hostile log name.
 - **The tool's own recorded cost, reconciled (built, one machine).** Claude Code writes its own running cost into its logs; the ledger keeps it as a separate `reported` class, `desk reconcile` compares it with the estimate per process, and the Bill screen shows both with the sub-agent warning. On this machine 248 of 420 processes agree within 2% (median difference 0.0%); for the 7 processes that used sub-agents the tool's counter lags and the two figures differ by tens of percent to several times over. Our price table matches Anthropic's pricing page; Claude Code's own Sonnet 5.5 figure uses $0.20 per million for cache reads where the page says $0.10, and a second source, Portkey's open price database, also says $0.20 (89 of 90 prices agree between it and ours; this is the one that does not). Which is in force is NOT VERIFIED: on this machine's 17.4 billion Sonnet 5.5 cache-read tokens it is worth $1,741.87, and the Bill screen shows the estimate as a range for that reason (`desk prices compare`). No invoice was used, so no figure is claimed to be the bill. See `docs/verification/reconciliation-2026-10-24.md`.
 - **A second tool, Codex, and the plan limit in tokens (built, one machine).** `desk ingest --agent codex` reads Codex session logs: calls from the growth of the cumulative total, a forked session's replayed parent history left out (782 replayed calls and 119 million tokens on this machine), merged requests marked. Codex also writes the percent of its plan's 5-hour and weekly windows used and when they reset; `desk limits` fits tokens to percent with an interval and abstains when there is too little data. Each plan and window length is its own limit (the first version pooled the free, team and plus plans and was corrected the same day). On this machine the plus plan's 5-hour limit is about 258K tokens per percent (95% interval 244K to 275K, 76 windows) and its weekly limit about 2.1M (1.7M to 2.4M, 15 windows); the other plans have too little data and the command says so. Predicting a held-out 5-hour window from the others has a median error of 5.0 points (12%). `desk runway` and the Brief screen say whether a window will last until its reset, from how past windows of the same plan and length ended when they stood at the same stage and percent (one reading per past window, the 10 closest; no forecast under 30 past windows). A first version that assumed the last hour's pace would continue held the final percent in its range in 2 of 26 cases and was dropped; this one, checked by forecasting each of 237 readings only from the windows before it, scored a Brier of 0.186 against 0.327 for the base rate, with its interval holding 81% (aimed at 80%), and failed when it stopped learning (see `docs/verification/runway-2026-10-24.md`). One person, one plan. Not a forecast for one window. Claude Code's own limit readings come from its status line: the command and the reader are built and tested against the documented fields (`desk statusline install` prints the setting to add), but nothing has been captured yet, so there is no Claude limit estimate. See `docs/verification/codex-reader-and-limit-fit-2026-10-24.md`.
@@ -322,42 +360,40 @@ For each track: the organisers' lines, then what the product does about each, th
 
 ### 7.3 Not built
 
-One row: DF-121, the log of real Cursor use, which stays empty rather than be made up. What is built but has not met the real thing is listed in 7.4: the Responses route of the gateway (a fake upstream; NVIDIA serves no such route), the Cursor and Gemini CLI hooks (contract-tested; not installed or not signed in here), a judge panel (it needs the owner's own labels), the opt-in regression index (no receiving end), and a swap whose baseline reproduces its recorded passes (the live run was withheld).
+One row: DF-121, the log of real Cursor use, which stays empty rather than be made up; Cursor became optional on 22 October and is not used. What is built but has not met the real thing is listed in 7.4: the Responses route of the gateway (a fake upstream; NVIDIA serves no such route), the Cursor and Gemini CLI hooks (contract-tested; not installed or not signed in here), a judge panel (it needs the owner's own labels), the opt-in regression index (no receiving end), and a swap whose baseline reproduces its recorded passes (the live run was withheld).
 
 ### 7.4 NOT VERIFIED or thin
 
 - How a plan's limit maps to tokens (every dollar is an estimate).
 - Willingness to pay; any real user; any practitioner interview.
 - Node 22.19 and macOS.
-- Cursor use: no session logged.
+- Cursor: optional since 22 October 2026, not used, no session logged.
 - Zetaris beyond SQL; Meterless beyond three engines (section 5.4).
-- Memory: H-MEM uses the engine's stub hash embedder, so recall is lexical; precedent retrieval in learning is by wording.
+- Memory: the owner's notes are also read by meaning through a real embedding model, beside the engine (whose own ranking still uses its hash embedder, because the vendored files are not edited); fourteen notes is a small memory, in English only, and the question sets were written by the builders. Precedent retrieval in learning is by wording.
+- Scout Intent does not pass Meterless's own paraphrase gate (intent top-1 0.764 against 0.85, with the embedder); its routing figures are on question sets written by the builders and are not a claim about real users' phrasing.
+- The model-mix result is one run per arm on 60 questions: the 4-question gap between the reverse mix and Lightning alone (p = 0.125) is not established, speeds were measured live on a shared machine, and 15 of the set's questions repeat texts of earlier sets.
+- Receipts: the older recordings (2,438 in the sample) are unsigned and are counted as unsigned; a valid signature shows a key signed the record, not that the key is Meterless's.
 - The wind tunnel's "90%" range held 73% of 64 constructed months (72% with no change planted); its chance of blocking landed work has an error of 0.24; read it as a screen.
 - The benchmark has one model, one constructed ledger and one question author, who also built the tools.
 - The gate stops Claude Code and Codex CLI with the hook installed (both run live), and any tool pointed at the gateway door (verified on a real OpenAI-compatible endpoint over TLS; the Anthropic and Responses routes only on a fake one). The Cursor and Gemini CLI hooks have not been run live. A tool that does neither, a removed hook, or a clock set forward is not stopped.
 - Claude Code's status line (plan limits) has not been run against a real session. Which Sonnet 5.5 cache-read price is in force ($0.10 or $0.20 per million tokens) is not known.
-- The video is rendered but not uploaded; the HackOS submission is not created.
+- The HackOS submission is not created; that action locks the team and is the owner's.
 
-### 7.5 Planned, not built (see `docs/plan/05-desk-evidence-driven-build-plan.md`)
+### 7.5 Planned, not built or not finished (see `docs/plan/05-desk-evidence-driven-build-plan.md`)
 
-Everything in this list is a plan. None of it is built, and none of it may be described as a feature until it has a test and a recorded run. The plan is organised as ten phases in dependency order, each opening with a check that can say stop:
+The build plan has ten phases. The feature table (4.3) shows what was built from it: 128 of 129 rows. What the plan asks for beyond building is not done, and none of it may be described as done:
 
-- **Phase 1, know what we have:** done: the 129-feature reconciliation, the decision-record schema and its wiring to proposals. Left: the claim registry itself and its check in `desk prove`, which wait for the Phase 0 numbers to be final.
-- **Phase 2, trustworthy source data:** real limit-hit and statusline data and a fitted limit-to-token mapping; a `reported` cost class; fast and flex pricing and model retirement dates; CI facts and worktrees; readers for Gemini CLI, Cline and Cursor; an OTLP receiver; person and machine dimensions and admin-API connectors; deeper Zetaris use behind verification gates.
-- **Phase 3, the Lab:** a harness that runs a real coding agent on frozen, independently graded repository tasks, with randomised assignment, repeated trials and complete cost accounting, replacing generic puzzles as the headline regression test. It opens with a feasibility spike that can stop it.
-- **Phase 4, memory that changes decisions:** real embeddings, a six-kind memory taxonomy, contradiction, staleness and deletion tests, memory-on against memory-off on held-out decision tasks.
-- **Phase 5, the decision laboratory:** competing candidate policies (including "do nothing") tested in the Lab, with counterfactual estimates applied only where assignment was randomised, calibrated intervals, and abstention when evidence is weak.
-- **Phase 6, enforcement we can measure:** a reversible installer, a watcher for tools with no hook, scoped budgets, staged rollout with a control group, and a reported coverage number measured on Lab runs.
-- **Phase 7, the measured learning loop:** outcomes after deployment, scored predictions, rollback of harmful learning.
-- **Phase 8, the product people use:** teams, roles and approvals, notifications, a CI check on pull requests (the cost description exists as `desk pr`), privacy controls, a mobile summary of each table.
-- **Phase 9, independent validation:** a real user trial, practitioner interviews, external reproduction, a security review, a licence audit.
-- **Phase 10, competition evidence:** a frozen release and a demonstration built from real measured runs.
+- **Real use.** No real team, user or practitioner has used the product; willingness to pay is NOT VERIFIED. Phase 9 (a user trial, practitioner interviews, external reproduction, a security review, a licence audit) has not started.
+- **The Lab's feasibility spike** (a real coding agent on frozen, graded tasks with randomised assignment) was stopped before it finished; no effect has been measured and no claim rests on it.
+- **Enforcement coverage** on other tools: the Cursor and Gemini CLI hooks are contract-tested and advisory until run live; the Responses and Anthropic routes of the gateway door were run against a fake upstream only.
+- **A measured trial of the learning loop on real outcomes.** On the sample, the earlier Desk's lessons moved 2 of 60 held-out questions with an interval touching zero, and the current Desk makes no mistakes on set E to learn from, so no improvement is claimed.
+- **Other platforms and versions:** Node 22.19 and macOS.
 
 What the plan will not do: claim a causal effect from historical logs alone, treat a public benchmark as the headline when its own audits question it, or add features without a measurement behind them.
 
 ### 7.6 Only the owner can do
 
-Log real Cursor sessions; upload the video and give the link; create the HackOS submission and choose Track 3; run Node 22.19 and macOS; answer the Day 3 check-ins (tick H-MEM, World Model and Markovian as integrated; do not tick Nightshift Runtime or AI Hotspot unless it is now true to say so).
+Create the HackOS submission and choose Track 3 (this locks the team); open the repository, video and hosted-demo links while logged out; run Node 22.19 and macOS if wanted; answer the check-in forms (tick H-MEM, World Model and Markovian as integrated, and Nightshift only for what is true: it serves the model and signs every reply; do not tick AI Hotspot).
 
 ---
 
@@ -372,7 +408,7 @@ Log real Cursor sessions; upload the video and give the link; create the HackOS 
 
 ### 8.2 Code actually taken
 
-Two things only: Meterless's three reference engines and conformance suites (Apache-2.0, `vendor/meterless/NOTICE.md`, `src/engines/`) and a dated snapshot of LiteLLM's first-party price file (MIT, `data/prices/`).
+Two things only: Meterless's three reference engines and conformance suites (Apache-2.0, `vendor/meterless/NOTICE.md`, `src/engines/`) and a dated snapshot of LiteLLM's first-party price file (MIT, `data/prices/`). Scout Intent is written by us from Meterless's published specification, which ships no code.
 
 ### 8.3 Ideas rebuilt in our own code (no code copied)
 
@@ -412,5 +448,71 @@ With AI assistants (Claude Code). The dated record is `docs/sponsors/ai-use-prov
 | Requirements against the organisers' lines | `docs/submission/requirements-coverage.md` |
 | Sponsor explanation, pre-existing components, checklist, video script, deck | `docs/submission/` |
 | What was run against the real thing | `docs/verification/` (benchmark and its pre-registration, canary, calibration, learning, gate, UI sweep) |
-| Sponsor facts | `docs/sponsors/` |
+| Sponsor facts | `docs/sponsors/`; `metadata.json` |
+| The model-mix and role-necessity results, the receipts | `docs/verification/mix/`, `docs/verification/ablation/`, `docs/verification/nightshift-receipts/` |
+| The recomputed scorecard | `docs/evaluation/reasoning-scorecard.md` |
+| Fresh-clone runs | `docs/verification/clean-room/` |
 | The organisers' originals and readouts (local only) | `docs/event/`, `docs/intel/` |
+
+---
+
+## 10. The pitch kit: the numbers, the questions a judge will ask, and what not to say
+
+For whoever helps write or present the submission. Every figure below is in the repository with its file; where a figure has a limit, the limit is stated beside it.
+
+### 10.1 The sentence, the half-minute, and the one line a judge should remember
+
+- **The sentence (the organisers' form).** We are building an agent that helps an engineering lead who pays for coding agents decide next month's caps and routes by tying every dollar to the work that landed and testing a policy on a month it never saw, using the agents' own session logs, git history, and three Zetaris-joined sources (invoices, CI, a seat roster), producing a limit autopsy, a daily regression verdict, and a signed, replay-tested spend policy a stranger can verify offline.
+- **The half-minute.** AI coding agents are billed in tokens and seats, and the bill never says what the money bought. desk. runs on your own machine, reads the logs the agents already write, and ties each dollar to the work that landed in git. It explains why a limit was hit, checks every day whether the agent got worse against a control arm, drafts a spend policy and tries to break it, and replays it on a month it never saw. Every conclusion is signed and a stranger can check it offline. Every language step runs on NVIDIA Nemotron through Meterless Nightshift, with a signed receipt for each reply, and Zetaris joins the invoices, CI and roster that the bill alone cannot explain.
+- **The line.** Every figure carries the rows it came from, says what it could not know, and was tested on data it never saw. Where it fell short of its own label, the product says so on screen.
+
+### 10.2 Why it fits Track 3 (reasoning architecture), in the organisers' own terms
+
+The track asks for "a novel ability to turn data, knowledge, memory, and reasoning into reliable decisions and actions", and the lesson says it "leans on the Nemotron model mix, memory and the tool loop". Our answer, in the order a judge reads it:
+
+1. **A real multi-agent system, not a pipeline.** Nine roles; one is visibly sent back by another (the plan critic returns a Planner program that lacks a figure; the Auditor returns a sentence with an unsupported figure; the restrict-only check returns a Drafter policy that would pause landed work). `docs/the-agents.md`, `output_examples/traces/`.
+2. **Each role tested by taking it out.** Preregistered, 60 questions, exact McNemar test: the Planner is necessary (30 questions lost, none gained); the plan critic, revision loop, Auditor and Explainer are "not shown necessary" on exactness, and the Auditor earns its place under a fault (26 more clean answers). Reported as it fell, including the roles that did not show.
+3. **A Nemotron model mix, measured.** Three Nemotron models and two Planner/Explainer mixes on 60 new questions; the Desk on a 3B-active model answered 54 where the plain tool agent on the 550B model answered 51 (not tested for significance); a signed receipt names the model behind every call (1,044 verified). Two of seven predictions failed and are published.
+4. **Memory that changes a decision.** Precedents of approved policy changes with what each did afterwards; the owner's definitions and corrections; what changed before a date; a year read a month at a time.
+5. **The tool loop, bounded.** Typed programs over read-only specialists, budgets enforced in code, fallbacks traced, a gate that fails closed.
+6. **A preregistered head-to-head.** Same model, 60 questions nobody had read: one call 12, a tool-using agent 45, the Desk 55; pass^3 18%, 70%, 85%; seven written predictions, all held.
+
+### 10.3 The numbers worth repeating (and the limit that goes with each)
+
+| Claim | Figure | File | The limit to say with it |
+|---|---|---|---|
+| Head-to-head, set D | 55 / 45 / 12 of 60 (Desk / tool agent / one call); pass^3 85% / 70% / 18% | `docs/verification/benchmark/RESULTS-v3.md` | Ten in sixty is a margin this size of set cannot make certain; the five misses are shapes the Desk has no step for; one constructed ledger, one question author who also built the tools |
+| Role necessity, set E | Planner: 30 lost, none gained, p < 0.001; Auditor under fault: +26 clean answers | `docs/verification/ablation/RESULTS-ablation.md` | "Not shown necessary" is an absence of evidence; the fault is synthetic |
+| Model mix, set F | Desk 54 / 60 / 59 on Lightning / Super-vl / Ultra; Planner on Ultra + Explainer on Lightning 60 | `docs/verification/mix/RESULTS-mix.md` | One run per arm; the reverse mix (50) did not hold and is not established; speeds are unclean |
+| Canary | Planted model switch on day 15 called at -40.0 points (99% interval -56.2 to -23.8), control flat; 0 of 100 no-change histories called | `docs/verification/canary-simulation.md` | Smallest detectable change about 21 points on the recorded design |
+| Held-out policy replay | A policy drafted from September would have blocked 5 of 333 landed sessions in October | `docs/evidence.md` | Constructed sample, not a real team |
+| Own confidence, measured | Link confidence 99.2% high, 98.6% medium; the wind tunnel's "90%" range held 73% of 64 months | `docs/verification/calibration/` | Shown on screen as a screen, not as a promise |
+| Offline verifier | One changed byte names the row; recomputes on plain Node with the network off | `npm run desk-verify` | A signature proves the record was not altered, not that the agent logs were true |
+| Checked | 2,675 tests and 61 of 61 `desk prove` checks on fresh clones of Windows 11 and Ubuntu 22.04 | `docs/verification/clean-room/` | Node 22.19 and macOS NOT VERIFIED |
+| Features | 128 of 129 specified features built, each naming a test or a note | `docs/design/desk/07-feature-status.md` | The one absent row is a log of Cursor use that only its user can write |
+
+### 10.4 Sponsor sentences that are true
+
+- **Zetaris.** One statement joins an S3-style invoice file, a Postgres CI database and a REST roster. It gives the bill its `billed` class, landing its CI facts (584 landed sessions merged on green checks, 60 on red) and the spend-per-landed-PR table; with it off those disappear, and a real container kill was run. The silos are synthetic.
+- **Meterless.** Three reference engines run in our process (conformance 8/8, 13/13, 8/8), each changing an answer when off; Scout Intent is our implementation of their published specification; Nightshift is the route to Nemotron and signs every reply, which `desk receipts` checks. There is no Meterless API, so the engines run in-process.
+- **NVIDIA Nemotron.** Every language role runs on it; three chat models and one embedding model were used; the README and the deck say which role ran on which model, and the receipts log shows it.
+- **Cursor.** Optional since 22 October; not used; do not claim it.
+
+### 10.5 Questions a judge will ask, and the honest answer
+
+- **"Is this just a dashboard?"** No: a figure is computed by code and cites rows, an Auditor rejects any sentence with a figure no step supports, and the regression call, the replay and the signature are checks a dashboard does not have.
+- **"Has a real team used it?"** No. It was built and measured on a constructed sample and on the author's own logs. Willingness to pay is NOT VERIFIED. Say it first.
+- **"Is the benchmark rigged?"** The questions were written by the builders, and the Desk's first run on set B scored 49, which is published. Set D's predictions were written before the run, and the five misses are shapes the Desk has no step for. Sets A and B were used to build it, so its 60 of 60 there is post hoc.
+- **"Why do the plan critic, revision loop and Explainer not show up in your ablation?"** On exactness of figures they do not change the count on 60 questions; the study says "not shown necessary", not "useless". The plan critic, the Auditor and the revision loop are code, not models. The Explainer is the one model role not shown necessary; the specification says a role that fails such a test becomes code, and 60 questions on one ledger do not show it changes nothing, so it stays and the question is open.
+- **"Why did your mix lose 4 questions?"** One run per arm; part of it may be the Planner's run-to-run variation at temperature 0; the gap is p = 0.125. It is reported as a prediction that did not hold.
+- **"Does the gate really stop an agent?"** Claude Code and Codex CLI were run live against it (blocked, refused by policy, allowed by policy); Cursor and Gemini CLI are contract-tested only; a tool with no hook is governed only if pointed at the gateway door; `desk enforcement` says this per tool.
+- **"Is the Meterless integration real?"** Three engines run in the answer path and each changes an answer when switched off (`desk prove` checks that). What is not used is listed in 5.4.
+- **"Can I run it?"** `npm install` then `npm run desk -- --sample`: no key and no network, about half a minute from a clean clone; the screens are also hosted. Fresh clones of Windows and Ubuntu were run end to end.
+
+### 10.6 What not to say
+
+- "Best", "production-ready", "accurate", "proven", "as good as", or any claim of a saving: the repository's wording lint fails on them, and the evidence is on a constructed sample. Say "list-price estimate", "consistent with, not caused by", "not shown necessary".
+- Do not say Cursor was used, that Bright Data was used, or that a real user, an invoice or a customer was involved.
+- Do not say the Responses or Anthropic routes of the gateway were verified against a real endpoint, or that the Cursor and Gemini hooks were run live.
+- Do not present the 90% wind-tunnel range as reliable (it held 73%), or the learning loop as an improvement (it moved 2 of 60 with an interval touching zero).
+- Do not say the model-mix gap between the reverse mix and Lightning alone is real: it is not established.

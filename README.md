@@ -8,7 +8,7 @@
 [![Node 22.19+](https://img.shields.io/badge/node-22.19%2B-0a0a0a?style=flat-square)](#try-it)
 [![Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-0a0a0a?style=flat-square)](LICENSE)
 
-[**Watch the demo (3:56)**](https://youtu.be/3LaYZ0VCgXI) · [Slide deck](docs/submission/desk-deck.pdf) · [Open the screens in a browser](https://desk-demo.vercel.app/) · [Try it](#try-it) · [For judges](#for-judges-what-was-asked-and-where-it-is) · [Evidence](docs/evidence.md) · [Sponsor technology](docs/submission/sponsor-technology-explanation.md)
+[**Watch the demo (3:57)**](https://youtu.be/3LaYZ0VCgXI) · [Slide deck](docs/submission/desk-deck.pdf) · [Open the screens in a browser](https://desk-demo.vercel.app/) · [Try it](#try-it) · [For judges](#for-judges-what-was-asked-and-where-it-is) · [Evidence](docs/evidence.md) · [Sponsor technology](docs/submission/sponsor-technology-explanation.md)
 
 desk. is a local desk for the person who pays for AI coding agents. It explains why a limit was hit, checks every day whether the agent got worse, tests a spend policy on a month it never saw, and signs what it concludes so that a stranger can verify it offline. No account, no upload: it reads your agent logs on your machine.
 
@@ -81,7 +81,7 @@ Terms used above and below (canary, wind tunnel, dossier, restrict-only check, t
 
 | The organizers asked for | Where it is |
 |---|---|
-| A demo video of 1 to 4 minutes, main workflow end to end, naming Zetaris and Meterless and where each sits | [3:56 captioned video](https://youtu.be/3LaYZ0VCgXI) (every figure read from a real run or a result file; script in `docs/submission/demo-video-script.md`) |
+| A demo video of 1 to 4 minutes, main workflow end to end, naming Zetaris and Meterless and where each sits | [3:57 captioned video](https://youtu.be/3LaYZ0VCgXI) (every figure read from a real run or a result file; script in `docs/submission/demo-video-script.md`) |
 | A slide deck: problem and users, solution, agent workflow and architecture, stack, sponsor use, product visuals, future | [`docs/submission/desk-deck.pdf`](docs/submission/desk-deck.pdf) (25 slides; source `docs/submission/deck/deck.html`) |
 | A GitHub repository with a README someone outside the team can run | This file. [Try it](#try-it) runs with no key and no setup beyond `npm install`; fresh-clone runs on Windows and Ubuntu are in `docs/verification/clean-room/` |
 | Setup, usage and dependencies | [Try it](#try-it); stack above; `docs/reference.md` (stack and dependencies, run time, live mode) |
