@@ -2,11 +2,17 @@
 
 **Every dollar your agents spend, tied to work that landed.**
 
+[![Track 3: Reasoning Architecture](https://img.shields.io/badge/Open_Agent_Hackathon_2026-Track_3_Reasoning_Architecture-0a0a0a?style=flat-square)](#one-product-three-tracks)
+[![Checked](https://img.shields.io/badge/checked-2%2C655_tests_%C2%B7_60%2F60_prove_checks-059669?style=flat-square)](docs/verification/clean-room/)
+[![Runs offline](https://img.shields.io/badge/runs-offline%2C_no_key-0a0a0a?style=flat-square)](#try-it)
+[![Node 22.19+](https://img.shields.io/badge/node-22.19%2B-0a0a0a?style=flat-square)](#try-it)
+[![Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-0a0a0a?style=flat-square)](LICENSE)
+
+[**Watch the demo (3:56)**](https://youtu.be/dsRGX73lZAQ) · [Slide deck](docs/submission/desk-deck.pdf) · [Try it](#try-it) · [For judges](#for-judges-what-was-asked-and-where-it-is) · [Evidence](docs/evidence.md) · [Sponsor technology](docs/submission/sponsor-technology-explanation.md)
+
 desk. is a local desk for the person who pays for AI coding agents. It explains why a limit was hit, checks every day whether the agent got worse, tests a spend policy on a month it never saw, and signs what it concludes so that a stranger can verify it offline. No account, no upload: it reads your agent logs on your machine.
 
 Built for the Open Agent Hackathon 2026, Track 3 (Reasoning Architecture), with Zetaris, Meterless and NVIDIA Nemotron.
-
-**Demo video (3:56):** https://youtu.be/dsRGX73lZAQ
 
 > We are building an agent that helps **an engineering lead who pays for coding agents** decide **next month's caps and routes** by **tying every dollar to the work that landed and testing a policy on a month it never saw**, using **the agents' own session logs, git history, and three Zetaris-joined sources (invoices, CI, a seat roster)**, producing **a limit autopsy, a daily regression verdict, and a signed, replay-tested spend policy a stranger can verify offline**.
 
@@ -51,6 +57,50 @@ Five things that take a few minutes each and need no key, so that no figure has 
 3. **Verify a conclusion as a stranger.** `npm run desk -- propose --sample --dossier` drafts and replays a policy and prints an approval line; run that line, and the output ends with the exact `desk-verify` command for the signed dossier it wrote. It recomputes the figures on plain Node with the network off. Change one byte in a row file in that folder and run it again: it names the row.
 4. **See what it can stop.** `npm run desk -- enforcement` lists each agent tool as enforced, advisory or notify only, with the version and the date of the test behind each; `npm run desk -- prove` runs every check and says PASS, FAIL or NOT RUN.
 5. **Try to step around a policy.** `npm run desk -- attack policies/stop-loops.yaml` runs the attacker corpus against a policy file and says how many generated policy pairs the restrict check was held to (2,000 here, and that is the number tried, not a proof).
+
+## How it works
+
+Five steps, each of which leaves something a reader can open. The model writes language; code does every sum, every check and every signature.
+
+1. **Read.** desk. reads your agent logs read-only (Claude Code by default; Codex, OpenCode and Claude Code's status line too) into a local SQLite ledger. Every dollar is classed `billed`, `reported`, `estimated` or `unpriced`, and says which. Invoices (files in a bucket), CI facts (Postgres) and a seat roster (REST) are joined into the same ledger by one Zetaris statement, and where the sources disagree it shows the conflict.
+2. **Explain.** The autopsy splits a heavy window by cause (sub-agents, cache misses, loops, idle work, work that was needed) and ranks the fixes with intervals. Landing ties sessions to the commits and merges they produced. **Ask** answers a question by writing a typed program that read-only specialists run; an Auditor rejects any sentence whose figure no claim supports, and the Explainer revises at most twice or drops it.
+3. **Watch.** A canary runs a fixed 52-task pack every day on two arms, one of them a control, and calls a regression only against the control, with an interval and what it cannot say. A model switched on purpose on day 15 is found at -40.0 points; the control stays flat.
+4. **Decide.** A Drafter (Nemotron) proposes a spend policy from one month; code checks that it only narrows the policy in force; an Attacker (Nemotron) looks for requests that step around it; then it is replayed on a month it was not drafted from. The headline is the landed work it would have blocked, not the savings. The owner approves by echoing the request's digest.
+5. **Prove and enforce.** Every conclusion is a signed dossier carrying the rows its figures come from, and `desk-verify` recomputes it on plain Node with the network off. A gate asks permission before an agent's tool call: through the hooks of Claude Code and Codex CLI (both run live), and through a gateway door for tools that can use another base URL. It fails closed, and `desk enforcement` says per tool what it can really stop.
+
+**Where each sponsor sits.** Zetaris is the data layer (step 1). Meterless's three engines (World Model, H-MEM, Markovian) are memory and history for Ask (step 2); there is no Meterless API, so they run in our own process and pass their own conformance suites. NVIDIA Nemotron serves every language role (Planner, Explainer, Drafter, Attacker, canary and the three benchmark arms). Cursor is the required IDE; its usage log is empty, so nothing is claimed beyond that (`docs/sponsors/cursor-usage-log.md`). The table under [Sponsor technology](#sponsor-technology) says what changes when each is switched off.
+
+**Stack.** TypeScript on Node 22 (run with `tsx`), SQLite, two runtime dependencies (`yaml` and `@resvg/resvg-js`, which draws chart images), no build step and no database server. Everything runs on the bundled sample offline, with recorded model replies; the three Zetaris silos and a live model are optional (`docs/reference.md`).
+
+## For judges: what was asked, and where it is
+
+| The organizers asked for | Where it is |
+|---|---|
+| A demo video of 1 to 4 minutes, main workflow end to end, naming Zetaris, Meterless and Cursor | [3:56 captioned video](https://youtu.be/dsRGX73lZAQ) (every figure read from a real run or a result file; script in `docs/submission/demo-video-script.md`) |
+| A slide deck: problem and users, solution, agent workflow and architecture, stack, sponsor use, product visuals, future | [`docs/submission/desk-deck.pdf`](docs/submission/desk-deck.pdf) (25 slides; source `docs/submission/deck/deck.html`) |
+| A GitHub repository with a README someone outside the team can run | This file. [Try it](#try-it) runs with no key and no setup beyond `npm install`; fresh-clone runs on Windows and Ubuntu are in `docs/verification/clean-room/` |
+| Setup, usage and dependencies | [Try it](#try-it); stack above; `docs/reference.md` (stack and dependencies, run time, live mode) |
+| Sponsor technology explanation: how Zetaris, Meterless, NVIDIA and Cursor are used, and what was unique | [Sponsor technology](#sponsor-technology) and `docs/submission/sponsor-technology-explanation.md`; each claim has a call site, a trace line and a switch-off test |
+| One primary track | Track 3, Reasoning Architecture. The same product does the work of Tracks 1 and 2 ([One product, three tracks](#one-product-three-tracks)) |
+| A defined user, decision, data slice and output | The blockquote at the top: an engineering lead, next month's caps and routes, agent logs plus three Zetaris-joined sources, a signed and replay-tested policy |
+| A real agent system, not a pipeline: roles, tools, critique, revision, branching, fallback, a trace | `docs/the-agents.md` (the roster, all nine collaboration behaviours each tied to a file or trace event, human approval and escalation); a JSONL trace with the reason for each decision is written on every run |
+| A bounded, predictable run (organizer target 5 to 10 minutes) | Budgets for wall clock, model calls, tool calls and turns are enforced in code; the demonstration takes under a minute offline; `docs/reference.md#how-long-a-run-takes` |
+| Sample inputs, sample outputs, a trace, a data README | `input_examples/`, `output_examples/` (with `traces/`), `data/README.md`; [The sample](#the-sample) is generated from a seed |
+| No secret needed, nothing hardcoded, and a fallback when an API is down | `.env.example` is empty on purpose; outputs come from the run, recorded replies replay offline, and a request with no recording is an error, never a guess |
+| Answers to the organizers' red flags | `docs/evidence.md#against-the-organizers-red-flags` |
+| Pre-existing components declared; honest provenance | [Provenance](#provenance) and `docs/submission/pre-existing-components.md` |
+| Colab links, only if Colab-hosted agents were used | None were used |
+
+Where each scoring criterion is shown:
+
+| Criterion (points) | What to open |
+|---|---|
+| Impact (30): a clearly defined user with a real problem | [The problem](#the-problem) with five public quotes and their sources; `docs/design/desk/04-evidence-table.md` |
+| Technical (20): reliable execution, real agent work, critique and recovery | `npm run desk -- prove` (60 checks); the benchmark with its losing first run published; a policy draft that was caught blocking landed work and revised (`output_examples/traces/`) |
+| Innovation (15) | A restrict-only policy check held to an oracle; a signed dossier a stranger verifies offline; a gate that says per tool what it really stops; the Desk's own judgement recorded and scored |
+| Demo (15) | The video above and `npm run desk -- demo` (under a minute, offline) |
+| Product and UX (10) | The 14-screen UI (`npm run desk -- ui --sample`), reviewed in light and dark, desktop and phone (`docs/verification/ui-sweep.md`) |
+| Sponsor technology (10) | [Sponsor technology](#sponsor-technology); what changes when each is off |
 
 ## At a glance
 

@@ -52,7 +52,7 @@ Every requirement below is taken from the organisers' own documents (the welcome
 | Technical (20): reliable execution, agents that do real work, critique and recovery | `desk prove`; the trace with a draft that blocked landed work and was revised; a plan critic; a pre-registered benchmark whose losing first run is published |
 | Innovation (15) | A restrict-only policy check fuzzed against an oracle; an Explainer that never reads the question; a signed dossier a stranger verifies offline; the Desk's own judgement recorded and scored |
 | Demo (15) | The captioned video of real runs; `npm run desk -- demo` |
-| Product and UX (10) | Twelve screens, light and dark, stacked cards on a phone; `docs/verification/ui-sweep.md` |
+| Product and UX (10) | Fourteen screens, light and dark, stacked cards on a phone; `docs/verification/ui-sweep.md` |
 | Sponsor technology (10) | The sponsor slides and `sponsor-technology-explanation.md`, each claim with a call site and a switch-off test |
 
 ## What the judges discount, and our guard
