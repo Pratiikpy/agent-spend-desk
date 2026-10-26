@@ -50,9 +50,9 @@ Not sent anywhere by desk.: the ledger, the logs, the dossier key. Zetaris runs 
 
 Not covered: copies the user made of a card, a dossier or a trace; the model provider's own retention of requests already sent (read NVIDIA's terms); recorded replies under `data/sample/`, which come from a constructed sample, not from real logs.
 
-## 6. Team mode (not built): the isolation it must start from
+## 6. A shared team server (not built): the isolation it must start from
 
-A server for several people is not built. Before it is, these are the rules it is built on, and each needs a test before the feature is claimed.
+Team mode itself was built on 2026-10-25 as signed per-person reports with roles and a hash-chained access log (`docs/verification/team-mode-2026-10-25.md`); it needs no shared server. What follows is for a hosted server for several people, which is not built. Before it is, these are the rules it is built on, and each needs a test before the feature is claimed.
 
 1. **One ledger file per tenant,** never a shared table with a tenant column. A query cannot cross tenants because it has no handle to another tenant's file.
 2. **One signing key per tenant,** so a dossier proves which tenant signed it; keys are never shared and rotation is a signed event.
