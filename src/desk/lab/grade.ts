@@ -122,6 +122,13 @@ export function gradeWorkspace(task: LabTask, workspace: string, expected: Expec
   } catch (e) {
     return { verdict: "infra", f2pPassed: 0, f2pTotal: expected.fail_to_pass.length, p2pPassed: 0, p2pTotal: expected.pass_to_pass.length, ran: 0, expectedTotal: expected.total, failed: [], reason: `grader error: ${(e as Error).message}`, timedOut: false };
   } finally {
-    if (!opts.keep) rmSync(dir, { recursive: true, force: true });
+    // A process that was stopped at the time limit can still hold a file for a moment on Windows. The folder is scratch: failing to remove it is not a failure to grade.
+    if (!opts.keep) {
+      try {
+        rmSync(dir, { recursive: true, force: true, maxRetries: 8, retryDelay: 150 });
+      } catch {
+        /* left behind in the temporary folder */
+      }
+    }
   }
 }
