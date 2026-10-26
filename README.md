@@ -8,7 +8,7 @@
 [![Node 22.19+](https://img.shields.io/badge/node-22.19%2B-0a0a0a?style=flat-square)](#try-it)
 [![Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-0a0a0a?style=flat-square)](LICENSE)
 
-[**Watch the demo (3:56)**](https://youtu.be/dsRGX73lZAQ) · [Slide deck](docs/submission/desk-deck.pdf) · [Open the screens in a browser](https://pratiikpy.github.io/agent-spend-desk/demo/) · [Try it](#try-it) · [For judges](#for-judges-what-was-asked-and-where-it-is) · [Evidence](docs/evidence.md) · [Sponsor technology](docs/submission/sponsor-technology-explanation.md)
+[**Watch the demo (3:56)**](https://youtu.be/dsRGX73lZAQ) · [Slide deck](docs/submission/desk-deck.pdf) · [Open the screens in a browser](https://desk-demo.vercel.app/) · [Try it](#try-it) · [For judges](#for-judges-what-was-asked-and-where-it-is) · [Evidence](docs/evidence.md) · [Sponsor technology](docs/submission/sponsor-technology-explanation.md)
 
 desk. is a local desk for the person who pays for AI coding agents. It explains why a limit was hit, checks every day whether the agent got worse, tests a spend policy on a month it never saw, and signs what it concludes so that a stranger can verify it offline. No account, no upload: it reads your agent logs on your machine.
 
@@ -31,7 +31,7 @@ Usage trackers such as ccusage and CodexBar read agent logs and show cost; as fa
 
 ## Try it
 
-**Nothing to install:** the 14 screens, read-only, on the constructed sample, are at https://pratiikpy.github.io/agent-spend-desk/demo/ (answers recorded from the real server by `npm run desk -- ui --sample --export docs/demo`; a choice that was not recorded says so).
+**Nothing to install:** the 14 screens, read-only, on the constructed sample, are at https://desk-demo.vercel.app/ (answers recorded from the real server by `npm run desk -- ui --sample --export docs/demo`, and served as static files; a choice that was not recorded says so).
 
 Needs Node 22.19 or later (run on 22.23 and 24.20; 22.19 itself is NOT VERIFIED). Nothing else for the sample.
 
