@@ -192,7 +192,7 @@ const Receipts: React.FC<{ caps: string[] }> = ({ caps }) => {
             <div style={{ fontSize: 150, fontWeight: 600, letterSpacing: "-0.07em", lineHeight: 1, color: C.cipher }}>{verified}<span style={{ fontSize: 56, color: C.graphite, letterSpacing: "-0.03em" }}> of {r.total}</span></div>
             <Mono size={20} color={C.graphite}>Ed25519, signed by key {r.keyId}</Mono>
           </Reveal>
-          <Reveal at={cs[2] + 0.2}>
+          <Reveal at={cs[1] + 2.4}>
             <Card style={{ marginTop: 22, padding: "16px 22px", borderColor: C.redline, background: C.redSoft }}>
               <Label color={C.redline} style={{ fontSize: 17 }}>One number changed in one receipt</Label>
               <div style={{ fontFamily: MONO, fontSize: 26, marginTop: 8 }}>{r.tamper.field} <span style={{ textDecoration: "line-through", color: C.graphite }}>{r.tamper.before}</span> {"→"} {r.tamper.after}</div>
