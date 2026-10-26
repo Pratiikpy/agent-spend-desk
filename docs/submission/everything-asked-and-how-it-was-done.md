@@ -147,17 +147,19 @@ Only Prateek can do: create the HackOS submission (it locks the team) and choose
 
 The form's fields, as pasted from HackOS on 2026-10-26: a description (150 to 2,000 characters, required), a video link (YouTube, Vimeo or Google Drive, up to 4 minutes, required), a GitHub link (required) and a pitch deck (optional, a link or an uploaded file). The track is chosen in the team workspace. Wording of any other field is NOT VERIFIED.
 
-**Project description** (the form asks for 150 to 2,000 characters; this is 1,814). Paste it as it is:
+**Project description** (the form asks for 150 to 2,000 characters; this is 1978 with line breaks counted as one). Paste it as it is:
 
-> AI coding agents show the tokens they use, but not what the money bought, why a limit was hit, or which spending rule would keep useful work. desk. is a local-first reasoning and control plane for developers and engineering leads. Every figure carries the rows it came from, and what cannot be known is marked unknowable.
+> READ FIRST, the full brief with evidence and a requirement map: https://congruous-neighbor-289.notion.site/desk-Brief-for-Users-Judges-Research-PMF-405dfbac05cc81709528ef8d76bdb302
 >
-> It reads Claude Code, Codex and OpenCode logs and ties each dollar to git outcomes: kept, merged, committed, reverted. One Zetaris statement joins three disconnected sources, invoice CSVs in a bucket, CI and pull requests in PostgreSQL, and a REST team roster, which separates billed, reported and estimated cost.
+> Vendors report usage, cost and some activity, not whether the work was checked and landed, and a blunt budget cap can stop the very work that paid off. Teams need decisions, not another dashboard.
 >
-> The reasoning architecture: NVIDIA Nemotron plans a typed query program, explains the claims it returns, drafts spend policies and attacks them for loopholes. Code does every sum, rejects any sentence whose figure no claim supports, and checks that a policy only narrows the one in force. Meterless H-MEM holds the owner's definitions and policy precedents, World Model tracks what changed and when, Markovian reads long histories, and Scout Intent screens each request. Nightshift serves Nemotron and signs every reply.
+> desk. is a local-first reasoning and control plane that ties coding-agent spend to outcomes and tests a policy before anyone approves it. It reads Claude Code, Codex and OpenCode logs and links usage to git outcomes: kept, merged, committed, reverted or unlinked (unknown, not waste). Zetaris joins invoice CSVs, PostgreSQL CI records and a REST roster in one statement. Every dollar is labelled billed, tool-reported, estimated or unpriced.
 >
-> In a recorded trace, a first policy draft that would have paused 81 of 311 landed sessions was caught and revised. The final policy, replayed on a month it never saw, would have blocked 5 of 333 landed sessions. Approved policies pass a fail-closed gate, and conclusions are signed dossiers that a stranger can verify offline.
+> Track 3 is the reasoning-to-action loop. NVIDIA Nemotron plans typed queries, explains from evidence, drafts policies and attacks them. Code computes every figure, rejects unsupported claims and checks that a policy only narrows the one in force. Meterless H-MEM keeps owner definitions and precedents, World Model tracks changes, Markovian reads long histories, Scout Intent screens requests, and Nightshift serves Nemotron with signed receipts.
 >
-> Preregistered, 60 questions on a constructed ledger: 55 exact answers against 45 for a tool-using agent and 12 for one call. Each role was removed in turn, and three Nemotron models were tested. 2,679 tests, 61 named checks. The data is synthetic; real-team savings are not established.
+> In a recorded trace, the first draft would have paused 81 of 311 landed sessions; code caught it and it was revised. On a held-out month the revised policy would still block 5 of 333, so the Desk's own decision record recommends keeping the current policy. A control-arm canary checks for regressions. Approved policies can be enforced by a fail-closed gate on supported tools; signed dossiers verify offline, and one changed byte fails.
+>
+> Preregistered, 60 constructed-ledger questions: 55 exact answers against 45 for a tool-using agent and 12 for one model call. 2,679 tests, 61 named checks. All figures use constructed data; real-team savings are not established.
 >
 > Screens: https://desk-demo.vercel.app/
 
