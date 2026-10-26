@@ -324,6 +324,39 @@ svg.arch { width: 100%; height: auto; display: block; }
 </section>
 
 <section class="slide dense">
+  <div class="meta"><b>00</b>Which parts earn their place, and which model runs them</div>
+  <div>
+    <h2>Take each role out and count. Then change the model behind it.</h2>
+    <div class="grid2">
+      <div>
+        <table>
+          <tr><th>Role taken out (60 questions, set E)</th><th class="r">Exact of 60</th></tr>
+          <tr><td>Nothing (the full Desk)</td><td class="r"><b>60</b></td></tr>
+          <tr><td>Planner (a rule planner instead)</td><td class="r"><b>30</b></td></tr>
+          <tr><td>Plan critic</td><td class="r">60</td></tr>
+          <tr><td>Revision loop</td><td class="r">60</td></tr>
+          <tr><td>Auditor</td><td class="r">60</td></tr>
+          <tr><td>Explainer (code states each claim)</td><td class="r">60</td></tr>
+        </table>
+        <p class="small" style="margin-top:12px">Without the Planner, 30 questions are lost and none gained (exact McNemar test, p &lt; 0.001). The others are <b>not shown necessary</b>, which is an absence of evidence, not a finding that they do nothing. With the Explainer's first figure corrupted on purpose, the Auditor leaves 26 more answers clean. Six of eight written predictions held, two in part.</p>
+      </div>
+      <div>
+        <table>
+          <tr><th>Nemotron model (set F, 60 new questions)</th><th class="r">One call</th><th class="r">Tool agent</th><th class="r">Desk</th></tr>
+          <tr><td>Lightning 30B (3B active)</td><td class="r">7</td><td class="r">26</td><td class="r"><b>54</b></td></tr>
+          <tr><td>Super-vl 120B</td><td class="r">13</td><td class="r">47</td><td class="r"><b>60</b></td></tr>
+          <tr><td>Ultra 550B</td><td class="r">12</td><td class="r">51</td><td class="r"><b>59</b></td></tr>
+          <tr><td>Planner on Ultra, Explainer on Lightning</td><td class="r"></td><td class="r"></td><td class="r"><b>60</b></td></tr>
+          <tr><td>Planner on Lightning, Explainer on Ultra</td><td class="r"></td><td class="r"></td><td class="r"><b>50</b></td></tr>
+        </table>
+        <p class="small" style="margin-top:12px">Preregistered before any run; one run per arm, through Nightshift, a signed receipt for every call (1,044 verified). Five of seven predictions held; the reverse mix (50 against 54 for Lightning alone, p = 0.125, not established) and the order of speeds did not, and both are published.</p>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>desk.</span><span>docs/verification/ablation/ · docs/verification/mix/</span></div>
+</section>
+
+<section class="slide dense">
   <div class="meta"><b>00</b>What it measured about itself</div>
   <div>
     <h2>It scored its own confidence, and published what failed.</h2>
@@ -370,12 +403,12 @@ svg.arch { width: 100%; height: auto; display: block; }
     <div class="grid3">
       <div class="card"><div class="cap">World Model · 8/8</div><h3>History</h3><p>"What changed before 15 October?" Tool version <span class="mono">vsample-2</span> first appeared on the 14th; the model mix moved that week. Engine off: <b>unknowable</b>.</p></div>
       <div class="card"><div class="cap">H-MEM · 13/13</div><h3>The owner's words</h3><p>"Landed means committed, merged or kept" moves landed work from 63% to 67% of spend, and says whose note it followed. Engine off: the default.</p></div>
-      <div class="card"><div class="cap">Markovian · 8/8</div><h3>Long ranges</h3><p>A nine-week ledger read in nine bounded chunks with a carry state. Engine off: a different, unbounded read.</p></div>
+      <div class="card"><div class="cap">Markovian · 8/8</div><h3>Long ranges</h3><p>Three or more months read a month at a time with a fixed-size carry state: twelve months, 5 of 5 questions right with it, 2 of 5 without. No token saving is claimed at this size.</p></div>
     </div>
     <ul style="margin-top:20px">
       <li>Counts come from Meterless's own conformance runners, run against our copies, recorded with the commit.</li>
       <li>Testing the engines found a bug: the pattern that reads the owner's definition never matched, so the engine had no effect. Fixed; the test fails without it.</li>
-      <li>No Meterless API exists; the engines run in our process. Scout Intent is not used, and the Risk Router is ours.</li>
+      <li>No Meterless API exists; the engines run in our process. Scout Intent has a specification and a harness but no reference code, so it is our own implementation: it reads each request before it is planned and refuses a request to change spend or policy that is phrased as a question (96.3% routed to the right kind on 218 test questions, against 76.6% for the older rules). It does not pass Meterless's own paraphrase gate (0.764 against 0.85), and the repository says so.</li>
     </ul>
   </div>
   <div class="foot"><span>desk.</span><span>src/engines/ · src/desk/engines/ · vendor/meterless/</span></div>
@@ -389,7 +422,7 @@ svg.arch { width: 100%; height: auto; display: block; }
       <div class="card"><h3>Where Nemotron acts</h3><p>The policy Drafter and Attacker, the Ask planner (a <span class="mono">plan_answer</span> tool call with a JSON-schema argument), the Explainer, and the canary's runs, through one ModelPort for any OpenAI-compatible endpoint.</p></div>
       <div class="card"><h3>What was measured</h3><p>Latency from 0.4 s to 56 s for the same request; HTTP 500 and 429 under load. Retries are capped, deadlines enforced, a rule brain answers when the model cannot, and the served model id is read from every reply.</p></div>
       <div class="card"><h3>Offline, byte for byte</h3><p>Recorded replies from live calls replay the same drafts and answers with no key and no network. A cassette miss is an error, never a guess.</p></div>
-      <div class="card"><h3>A signed receipt for every reply</h3><p>Nightshift signs a receipt for each reply it serves (Ed25519) and names the model that answered. desk. checks it: <span class="mono">desk receipts</span> verified 11 live calls across the Planner, Explainer, Drafter and Attacker, on two Nemotron models. Older recordings carry unsigned receipts and are counted as such.</p></div>
+      <div class="card"><h3>A signed receipt for every reply</h3><p>Nightshift signs a receipt for each reply it serves (Ed25519) and names the model that answered. desk. checks it: <span class="mono">desk receipts</span> verified 11 live calls across the Planner, Explainer, Drafter and Attacker, on two Nemotron models, and 1,044 more across the model-mix runs, on three. Older recordings carry unsigned receipts and are counted as such.</p></div>
     </div>
   </div>
   <div class="foot"><span>desk.</span><span>src/desk/agents/model.ts</span></div>

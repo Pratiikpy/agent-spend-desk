@@ -82,7 +82,7 @@ Terms used above and below (canary, wind tunnel, dossier, restrict-only check, t
 | The organizers asked for | Where it is |
 |---|---|
 | A demo video of 1 to 4 minutes, main workflow end to end, naming Zetaris and Meterless and where each sits | [3:57 captioned video](https://youtu.be/3LaYZ0VCgXI) (every figure read from a real run or a result file; script in `docs/submission/demo-video-script.md`) |
-| A slide deck: problem and users, solution, agent workflow and architecture, stack, sponsor use, product visuals, future | [`docs/submission/desk-deck.pdf`](docs/submission/desk-deck.pdf) (25 slides; source `docs/submission/deck/deck.html`) |
+| A slide deck: problem and users, solution, agent workflow and architecture, stack, sponsor use, product visuals, future | [`docs/submission/desk-deck.pdf`](docs/submission/desk-deck.pdf) (26 slides; source `docs/submission/deck/deck.html`) |
 | A GitHub repository with a README someone outside the team can run | This file. [Try it](#try-it) runs with no key and no setup beyond `npm install`; fresh-clone runs on Windows and Ubuntu are in `docs/verification/clean-room/` |
 | Setup, usage and dependencies | [Try it](#try-it); stack above; `docs/reference.md` (stack and dependencies, run time, live mode) |
 | Sponsor technology explanation: how Zetaris, Meterless and NVIDIA are used (and that Cursor was not), and what was unique | [Sponsor technology](#sponsor-technology) and `docs/submission/sponsor-technology-explanation.md`; each claim has a call site, a trace line and a switch-off test |

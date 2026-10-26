@@ -21,7 +21,7 @@ Contents: 1 In one minute · 2 A day with it · 3 How it works · 4 Everything i
 
 **Why trust it.** It treats every number as a claim. A figure is computed by code, never by the model. Each figure carries the rows it came from, says what it could not know, and says whether it is billed, reported, estimated or unpriced. Where the product fell short of its own label (a "90%" range that held 73% of the time), it says so on screen.
 
-**Where to see it.** The repository is https://github.com/Pratiikpy/agent-spend-desk. The demo video is https://youtu.be/3LaYZ0VCgXI (3:57, captioned, no voice-over). The fourteen screens, read-only and on the constructed sample, are at https://desk-demo.vercel.app/ with nothing to install. The deck is `docs/submission/desk-deck.pdf` (25 slides).
+**Where to see it.** The repository is https://github.com/Pratiikpy/agent-spend-desk. The demo video is https://youtu.be/3LaYZ0VCgXI (3:57, captioned, no voice-over). The fourteen screens, read-only and on the constructed sample, are at https://desk-demo.vercel.app/ with nothing to install. The deck is `docs/submission/desk-deck.pdf` (26 slides).
 
 **What it is not.** It is not a billing system: every dollar is a list-price estimate from logged tokens unless an invoice says otherwise. It governs a tool with no hook only if that tool is pointed at the gateway door. It has not been tried by a real team yet.
 
@@ -245,7 +245,7 @@ Reward: a clear problem and named user; agents that do real work; critique and r
 | Save or print agent activity | A JSONL trace file for each `desk ask` and `desk propose` run (and the gate's, when `DESK_GATE_TRACE` is set); the answer also prints how it was checked |
 | Declare pre-existing components | `docs/submission/pre-existing-components.md` |
 | Demo video 1 to 4 minutes, naming Zetaris and Meterless and where each sits | 3:57, uploaded: https://youtu.be/3LaYZ0VCgXI |
-| Slide deck with problem, solution, architecture, stack, sponsor use, visuals, future | `docs/submission/desk-deck.pdf`, 25 slides |
+| Slide deck with problem, solution, architecture, stack, sponsor use, visuals, future | `docs/submission/desk-deck.pdf`, 26 slides |
 | README with setup, usage, dependencies | `README.md` |
 | Sponsor technology explanation | `docs/submission/sponsor-technology-explanation.md` |
 | Product runs on Nemotron, reached through Meterless or NVIDIA's API | Through Nightshift on this machine, each reply with a signed receipt that `desk receipts` verifies (1,044 receipts of the model-mix runs and eleven of the first live run), or NVIDIA directly |
