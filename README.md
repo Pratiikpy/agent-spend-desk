@@ -3,7 +3,7 @@
 **Every dollar your agents spend, tied to work that landed.**
 
 [![Track 3: Reasoning Architecture](https://img.shields.io/badge/Open_Agent_Hackathon_2026-Track_3_Reasoning_Architecture-0a0a0a?style=flat-square)](#one-product-three-tracks)
-[![Checked](https://img.shields.io/badge/checked-2%2C655_tests_%C2%B7_60%2F60_prove_checks-059669?style=flat-square)](docs/verification/clean-room/)
+[![Checked](https://img.shields.io/badge/checked-2%2C675_tests_%C2%B7_61%2F61_prove_checks-059669?style=flat-square)](docs/verification/clean-room/)
 [![Runs offline](https://img.shields.io/badge/runs-offline%2C_no_key-0a0a0a?style=flat-square)](#try-it)
 [![Node 22.19+](https://img.shields.io/badge/node-22.19%2B-0a0a0a?style=flat-square)](#try-it)
 [![Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-0a0a0a?style=flat-square)](LICENSE)
@@ -48,7 +48,7 @@ npm test                      # the unit and integration tests
 
 **On your own logs:** `npm run desk` reads `~/.claude/projects` read-only and prints your own limit autopsy in under three minutes: where your last heavy window went, which fix is worth making, and what the Desk could not know. Add `--repo <path>` to tie sessions to commits. Nothing is written outside `data/desk/`.
 
-Verified from fresh clones at commit `4485f52` (every commit after it changes documents only, starting with this line): typecheck clean, 2,655 tests (2,654 passed and one skipped on Windows, 2,653 passed and two skipped on Ubuntu, the skips being tests that need tools or a platform the machine lacks) and `desk prove` at 60 PASS, 0 FAIL, 0 NOT RUN, on Windows 11 with Node 24.20 and Ubuntu 22.04 (WSL) with Node 22.23 (`docs/verification/clean-room/`). Node 22.19 and macOS are NOT VERIFIED. On PowerShell, `$env:SAMPLE_MODE="true"` does the same as `--sample`.
+Verified from fresh clones at commit `df0fb94` (every commit after it changes documents, the video project and these logs only, starting with this line): typecheck clean, 2,675 tests (2,674 passed and one skipped on Windows, 2,673 passed and two skipped on Ubuntu, the skips being tests that need tools or a platform the machine lacks) and `desk prove` at 61 PASS, 0 FAIL, 0 NOT RUN, on Windows 11 with Node 24.20 and Ubuntu 22.04 (WSL) with Node 22.23 (`docs/verification/clean-room/`, made by `scripts/clean-room.sh`). Node 22.19 and macOS are NOT VERIFIED. On PowerShell, `$env:SAMPLE_MODE="true"` does the same as `--sample`.
 
 ## Check it yourself
 
@@ -103,7 +103,7 @@ Where each scoring criterion is shown:
 | Criterion (points) | What to open |
 |---|---|
 | Impact (30): a clearly defined user with a real problem | [The problem](#the-problem) with five public quotes and their sources; `docs/design/desk/04-evidence-table.md` |
-| Technical (20): reliable execution, real agent work, critique and recovery | `npm run desk -- prove` (60 checks); the benchmark with its losing first run published; a policy draft that was caught blocking landed work and revised (`output_examples/traces/`) |
+| Technical (20): reliable execution, real agent work, critique and recovery | `npm run desk -- prove` (61 checks); the benchmark with its losing first run published; a policy draft that was caught blocking landed work and revised (`output_examples/traces/`) |
 | Innovation (15) | A restrict-only policy check held to an oracle; a signed dossier a stranger verifies offline; a gate that says per tool what it really stops; the Desk's own judgement recorded and scored |
 | Demo (15) | The video above and `npm run desk -- demo` (under a minute, offline) |
 | Product and UX (10) | The 14-screen UI (`npm run desk -- ui --sample`), reviewed in light and dark, desktop and phone (`docs/verification/ui-sweep.md`) |
@@ -114,7 +114,7 @@ Where each scoring criterion is shown:
 | | |
 |---|---|
 | **Code** | About 66,600 lines of TypeScript in 436 files, 2,700 lines of browser JavaScript in 20 files, and 36,100 lines of tests in 206 files. Runtime dependencies: two |
-| **Checked** | 2,655 tests and `desk prove` with 60 checks, all PASS, on fresh clones of Windows 11 (Node 24.20) and Ubuntu 22.04 (Node 22.23) |
+| **Checked** | 2,675 tests and `desk prove` with 61 checks, all PASS, on fresh clones of Windows 11 (Node 24.20) and Ubuntu 22.04 (Node 22.23) |
 | **The product** | 80 commands (`desk help` lists them), a 14-screen local UI, nine agent roles, a gate that stops tool calls through the hooks of Claude Code and Codex CLI (run live), with adapters for Cursor and Gemini CLI, and a gateway door for tools that can point at an endpoint (chat, messages and responses routes), signed dossiers with an offline verifier |
 | **Specified** | 129 numbered features and a requirements document under `docs/design/desk/`; 200-odd pages of design, sponsor and verification notes |
 | **Measured** | Pre-registered 60-question benchmarks in three rounds, whose 2,748 recorded model replies `desk prove` replays, a 52-task canary over 30 days with a control arm, a wind tunnel, a regret ledger, a learning loop, and what each of them got wrong |
@@ -195,7 +195,7 @@ The first three are why the autopsy exists, the fourth is why the canary runs ev
 - **What it can stop, tested.** `desk enforcement test --live` ran the real Claude Code (2.1.308) and the real Codex CLI (0.154.0), each three times: with no gate (blocked, so it fails closed), behind a policy that refuses (blocked) and behind one that permits (it ran). Both read enforced at those versions. Running Codex showed that a hook exiting 2, which its documentation says blocks, did not; a deny on stdout did, and the adapter answers that way. Cursor and Gemini CLI have adapters that pass their contract tests but were not run live (not installed, no sign-in): advisory. OpenCode, Cline read advisory and Copilot notify only (`docs/verification/hook-adapters-2026-10-25.md`, `docs/verification/enforcement-2026-10-25.md`).
 - **A swap that declined to answer.** The larger of two Nemotron models passed 57% of its own scored runs on ten Lab tasks, under the 90% a comparison needs, so the verdict was withheld and the run says it cannot tell (`docs/verification/swap-2026-10-25.md`).
 - **A gate that calls a fall only when the data support it.** On packs of known truth (400 pairs, 52 tasks) it called a fall in 1 of 400 when nothing changed and in 96% of cases for a 20-point fall; for a 3-point change it usually says inconclusive, because one pack cannot rule that size out (`docs/verification/ci-gate-2026-10-25.md`).
-- **`desk prove`:** 60 PASS, 0 FAIL, 0 NOT RUN. NOT RUN names a check the spec asks for that is not built or not recorded; it is never counted as a pass.
+- **`desk prove`:** 61 PASS, 0 FAIL, 0 NOT RUN. NOT RUN names a check the spec asks for that is not built or not recorded; it is never counted as a pass.
 
 Every figure, its file, and the failures: [docs/evidence.md](docs/evidence.md) and `docs/verification/`.
 

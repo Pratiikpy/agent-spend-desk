@@ -6,7 +6,7 @@ Creating the first submission **locks the team**. Do not create it until the tea
 
 ## Status on 2026-10-26
 
-Code, tests and checks: every numbered feature but DF-121 is built (128 of 129); `desk prove` is 60 PASS, 0 FAIL, 0 NOT RUN and the suite is 2,655 tests, both from fresh clones on Windows 11 (Node 24.20) and Ubuntu 22.04 (Node 22.23) at `4485f52`, logs in `docs/verification/clean-room/`. The deck PDF was rendered again on 2026-10-26 from `deck.html` (25 slides). The video script, README and product description match the build. What follows is the 2026-10-23 status, still true where it names things only Prateek can do: the video upload, the HackOS submission and team, the Cursor log (DF-121), and the two links checked logged out.
+Code, tests and checks: every numbered feature but DF-121 is built (128 of 129); `desk prove` is 61 PASS, 0 FAIL, 0 NOT RUN and the suite is 2,675 tests, both from fresh clones on Windows 11 (Node 24.20) and Ubuntu 22.04 (Node 22.23) at `df0fb94`, logs in `docs/verification/clean-room/`. The deck PDF was rendered again on 2026-10-26 from `deck.html` (25 slides). The video script, README and product description match the build. What follows is the 2026-10-23 status, still true where it names things only Prateek can do: the video upload, the HackOS submission and team, the Cursor log (DF-121), and the two links checked logged out.
 
 ## Status on 2026-10-23 (what exists, what is not done, what only Prateek can do)
 

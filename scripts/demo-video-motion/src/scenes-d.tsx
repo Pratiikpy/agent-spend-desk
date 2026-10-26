@@ -175,10 +175,10 @@ const Receipts: React.FC<{ caps: string[] }> = ({ caps }) => {
               const stamp = cs[1] + 0.4 + i * 0.28;
               return (
                 <Reveal key={`${x.role}-${x.model}`} at={at} dx={-24} dy={0} dur={0.5}>
-                  <div style={{ display: "grid", gridTemplateColumns: "190px 1fr 70px 210px", alignItems: "center", gap: 14, border: `2px solid ${C.line}`, borderRadius: 12, padding: "10px 18px" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "180px 1fr 110px 250px", alignItems: "center", gap: 14, border: `2px solid ${C.line}`, borderRadius: 12, padding: "10px 18px" }}>
                     <div style={{ fontSize: 32, fontWeight: 600, letterSpacing: "-0.02em" }}>{ROLE[x.role] ?? x.role}</div>
                     <Mono size={22} color={/ultra/.test(x.model) ? C.ink : C.graphite}>{modelName(x.model)}</Mono>
-                    <Mono size={22} color={C.graphite} style={{ textAlign: "right" }}>{x.n} {x.n === 1 ? "call" : "calls"}</Mono>
+                    <Mono size={22} color={C.graphite} style={{ textAlign: "right", whiteSpace: "nowrap" }}>{x.n} {x.n === 1 ? "call" : "calls"}</Mono>
                     <div style={{ justifySelf: "end", opacity: prog(t, stamp, 0.3), transform: `scale(${0.8 + 0.2 * prog(t, stamp, 0.4)})` }}><Pill tone="good" filled size={18}>{"✓ signature valid"}</Pill></div>
                   </div>
                 </Reveal>

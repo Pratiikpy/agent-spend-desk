@@ -62,7 +62,7 @@
     "note": "Everything runs offline on a constructed sample, with recorded model and Zetaris replies; a request with no recording is an error, never a guess."
   },
   "verification": {
-    "tests": "2,655 tests and 60 desk prove checks, on fresh clones of Windows 11 (Node 24.20) and Ubuntu 22.04 (Node 22.23)",
+    "tests": "2,675 tests and 61 desk prove checks, on fresh clones of Windows 11 (Node 24.20) and Ubuntu 22.04 (Node 22.23)",
     "logs": "docs/verification/clean-room/",
     "benchmark": "docs/verification/benchmark/RESULTS-v3.md"
   },

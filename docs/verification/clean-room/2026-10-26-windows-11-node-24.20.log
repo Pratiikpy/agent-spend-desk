@@ -1,37 +1,41 @@
-HEAD 4485f52
-added 45 packages in 3s
+HEAD df0fb94
+
+found 0 vulnerabilities
 npm warn install-scripts 1 package has install scripts not yet covered by allowScripts:
 npm warn install-scripts   esbuild@0.28.2 (postinstall: node install.js)
 npm warn install-scripts
 npm warn install-scripts Run `npm install-scripts ls` to review, or `npm install-scripts approve <pkg>` to allow.
 TSC OK
- Test Files  195 passed (195)
-      Tests  2654 passed | 1 skipped (2655)
+ Test Files  200 passed (200)
+      Tests  2674 passed | 1 skipped (2675)
+   Start at  10:17:09
+   Duration  299.64s (tests 96%, import 3%, transform 1%)
+
 VITEST EXIT 0
 PASS    sample-built-from-seed                   987 sessions over 2 months generated from seed 20261022, read by the real pipeline
-        buildSample + ingestClaudeCode + linkOutcomes  seed 20261022  23.7s
+        buildSample + ingestClaudeCode + linkOutcomes  seed 20261022  25.3s
 PASS    meterless-conformance                    world_model 8/8, markovian 8/8, hmem 13/13
         recordConformance(): the three vendored Meterless runners against src/engines  0.6s
 PASS    autopsy-finds-planted-waste              sessions flagged for loops with none planted: 0; for idle: 0; loop calls found 85% of those detectable; sub-agent calls found 100%
-        build the sample, read it with the same code as real logs, compare with truth.json  seed 20261022  1.0s
+        build the sample, read it with the same code as real logs, compare with truth.json  seed 20261022  0.9s
 PASS    landing-matches-planted-fates            reverted found 44/44; landed work seen as landed 683/699; unlanded work mislabelled landed 6/244
         linkOutcomes over the sample repositories, compared with the planted fate of each session  seed 20261022  0.0s
 PASS    card-is-deterministic-and-redacts        figures sha256:797c813a83e0 twice; shares sum to 1; 1 credential and 2 paths redacted; 4 disclosures
-        buildCard twice on the sample; redact credential-shaped strings built at run time  seed 20261022  1.1s
+        buildCard twice on the sample; redact credential-shaped strings built at run time  seed 20261022  1.0s
 PASS    proposal-is-deterministic-and-narrows    policy sha256:b35c00a029bf both times; narrows over 48 cells; held out 492 sessions: 10 paused, 5 of 333 landed blocked (reported, not hidden)
-        propose() with the rule brain twice on the sample, split by month  seed 20261022  4.9s
+        propose() with the rule brain twice on the sample, split by month  seed 20261022  4.6s
 PASS    restrict-check-differential-fuzz         3000 pairs (2545 narrowing): 0 escapes, 0 misses; a checker that always says "narrows" is caught on 55 of 400 pairs
-        fuzzRestrictCheck({pairs: 3000}) against an independent oracle, then against a planted bug  seed 20261022  1.3s
+        fuzzRestrictCheck({pairs: 3000}) against an independent oracle, then against a planted bug  seed 20261022  1.0s
 PASS    dossier-verifies-and-tamper-fails        untouched: PASS (9 levels pass); one byte changed: FAIL; wrong digest refused
-        issue an approval, echo the digest, build the dossier, verify it, flip one byte, verify again  seed 20261022  16.3s
+        issue an approval, echo the digest, build the dossier, verify it, flip one byte, verify again  seed 20261022  13.6s
 PASS    month-close-verifies-and-tamper-fails    the signed month bill: plain Node says PASS, in-process PASS (7 levels pass); one byte of claims.jsonl changed: FAIL
         close a month on the sample ledger, sign the month dossier, verify it on plain Node, change one byte of its rows, verify again  seed 20261022  0.6s
 PASS    sigstore-bundle-of-the-month-dossier-verifies-and-fails-closed the month dossier's Sigstore bundle: PASS against the signer's key and the manifest; a manifest with a byte added, a signature with a bit flipped and another key each failed closed with ATTESTATION_VERIFICATION_FAILED, exit 1; the bundle holds no transparency log entry and says so
-        close a month on the sample ledger, wrap its signed statement as a Sigstore bundle, check the bundle against the signer's key and the manifest, then change the manifest, the signature and the key  seed 20261022  0.4s
+        close a month on the sample ledger, wrap its signed statement as a Sigstore bundle, check the bundle against the signer's key and the manifest, then change the manifest, the signature and the key  seed 20261022  0.3s
 PASS    auditor-rejects-and-explainer-revises    Auditor rejected the unsupported figure: true; Explainer revised: true; the answer shows no unsupported figure
-        ask() with a scripted Explainer that first states a figure no claim supports  0.4s
+        ask() with a scripted Explainer that first states a figure no claim supports  0.3s
 PASS    meterless-engines-change-answers         world_model, hmem and markovian each change the answer when switched off
-        ask the same question with each engine on and off  0.9s
+        ask the same question with each engine on and off  0.8s
 PASS    actions-refused-injection-flagged        action refused, policy change refused, injected question answered with flags instruction_in_question
         ask() with an action, a policy request and an instruction hidden in a question  0.1s
 PASS    zetaris-role-changes-the-output          with Zetaris: billed 6123.23 USD, 3 teams in the joined statement, 584 landed sessions on green CI; without: billed 0, no joined statement
@@ -45,27 +49,27 @@ PASS    checkpoint-handoff-and-extension         stopped with a checkpoint; the 
 PASS    enforcement-surface-tests-can-fail       7 of 7 surfaces pass against the real gate (45 checks: four tools' hooks and three gateway doors); 7 of 7 fail against a gate that permits everything, so a pass means the gate stopped something
         the hooks of four tools and three gateway doors against the Desk's own gate, then the same tests against a gate that permits everything  0.3s
 PASS    overhead-shares-add-up-exactly           2026-09 committed: 16.14 USD over 5 projects; 2026-09 merged: 16.14 USD over 5 projects; 2026-09 kept: 16.14 USD over 5 projects; 2026-10 committed: 18.21 USD over 5 projects; 2026-10 merged: 18.21 USD over 5 projects; 2026-10 kept: 18.21 USD over 5 projects; every allocation plus the unallocated bin equals the overhead to the micro-dollar, and no project that landed nothing is charged
-        share the idle and unowned spend of each sample month among the projects that landed work, at each of the three bars  seed 20261022  3.0s
+        share the idle and unowned spend of each sample month among the projects that landed work, at each of the three bars  seed 20261022  2.9s
 PASS    ledger-chain-verifies-and-sees-tampering 1 event over 1837 sources and 66,654 calls verify; 66,654 stored costs work out again from their tokens (0 skipped); on a copy, one call's token count edited is seen as a source mismatch (the chain alone is still intact), and one event edited is seen at that event
-        verify the sample ledger's chain, then edit a copy: one call's tokens, one event, an event cut off the end  seed 20261022  1.4s
+        verify the sample ledger's chain, then edit a copy: one call's tokens, one event, an event cut off the end  seed 20261022  2.3s
 PASS    flip-certificates-name-the-fact-a-verdict-rests-on the sample's regressed verdict rests on its control arm (53 of 53 candidates tried); a one-task change is traced to money-change and not called a regression; a search cut short says so; a month 10% off its invoice names the disputed price that would reconcile it
         the smallest single change that turns each verdict into another, on the constructed canary scenario, on a regression that rests on one task, and on a month that does not reconcile  seed 20261022  0.2s
 PASS    bill-audit-matches-an-independent-matching-and-the-pack-verifies 5 days of 2026-10 charged 108 outcomes against 644 qualifying sessions: the audit backs 98 and so does an independent maximum matching; the pack passes the offline verifier, carries no session id or project path, and is refused when a row is changed
-        charge five days of the sample's outcomes two over what its sessions could back, audit the invoice, compare the backed count with a maximum matching worked out another way, build the dispute pack and verify it offline  seed 20261022  0.5s
+        charge five days of the sample's outcomes two over what its sessions could back, audit the invoice, compare the backed count with a maximum matching worked out another way, build the dispute pack and verify it offline  seed 20261022  0.4s
 PASS    open-format-and-adapter-harness-refuse-what-is-broken the sample ledger's 66654 calls were written as desk.events/1 and read back clean with the same token sums; the reference adapter reproduced its 2 golden files twice over in the sandbox; copies with a changed golden, a network import, a detect that claims everything and a swapped sample were each refused for that reason
-        write the sample ledger as desk.events/1 and read it back, load the shipped reference adapter in its sandbox, and try four broken copies of it  seed 20261022  3.0s
+        write the sample ledger as desk.events/1 and read it back, load the shipped reference adapter in its sandbox, and try four broken copies of it  seed 20261022  3.1s
 PASS    markovian-year-long-questions-match-the-rows-and-kept-state-is-checked a 3,744-call twelve-month ledger: 5 of 5 year-long answers match the rows with the engine, 2 without it; the largest carry was 173 of 800 tokens; the kept state is reused on a second reading, an edited one is recounted, and a wrong truth is marked wrong
         generate the seeded twelve-month ledger, ask five year-long questions with the Markovian engine on and off against the truth worked out from the rows, then edit a kept carry state and mark a wrong truth  seed 20261022  0.6s
 PASS    decision-replays-byte-for-byte-and-a-changed-record-is-refused 8 stages of an approved proposal on the sample replay byte for byte from the dossier alone; a changed byte of the signed record, a stage altered and signed again, and a record signed for another dossier are each refused
-        approve a proposal on the sample, replay its decision from the dossier alone, then change the signed record three ways  seed 20261022  23.9s
+        approve a proposal on the sample, replay its decision from the dossier alone, then change the signed record three ways  seed 20261022  21.8s
 PASS    scout-intent-routes-before-ask-plans-and-fails-closed the recorded evaluation is reproduced byte for byte; the Meterless harness gate passes on 32 regression examples both ways; on 218 test questions the router is right 96.3% of the time with the built-in comparison and 96.8% with recorded embedding vectors, against 76.6% for the older rules and 68.8% with Scout off, and lets 5.9% of the requests to change something through as reads against 61.8% and 100.0%; intent top-1 on the paraphrases is 0.625 and 0.764; a failing embedder falls back and says so; a router that throws refuses the question
-        recompute the Scout Intent evaluation (the Meterless harness gate and the Desk route corpus), compare it with the recorded file, then break the router and switch it off  seed 20261022  1.2s
+        recompute the Scout Intent evaluation (the Meterless harness gate and the Desk route corpus), compare it with the recorded file, then break the router and switch it off  seed 20261022  1.1s
 PASS    owner-notes-are-found-by-meaning-and-fall-back-to-words the recall record is reproduced byte for byte; with nvidia/nemotron-3-embed-1b's recorded vectors the notes a question is about are found for 15 of 20 development questions against 13 by words, and 15 of 16 test questions against 15; notes recalled that are not about the question fall from 53.6% to 34.8% (development) and 63.6% to 50.0% (test); a failing embedder and a recording with no vectors each give what words give, reported as a fall back
         recompute how the owner's notes are found with the recorded embedding vectors and by words alone, compare with the recorded file, then fail the embedder and remove the vectors  seed 20261022  0.1s
 PASS    language-surcharge-recovers-the-planted-cells-and-withholds-the-thin-ones 5 planted cells recovered, the worst within 1.9% of its planted ratio; 3 cells with too few prompts withheld without a figure; every prompt labelled with its script; the English line on each model recovered
-        ingest prompts in five scripts with a surcharge planted on two models, measure it, and compare each cell with what was planted  seed 20261022  0.1s
+        ingest prompts in five scripts with a surcharge planted on two models, measure it, and compare each cell with what was planted  seed 20261022  0.2s
 PASS    locale-route-replays-from-the-recording-and-is-judged-by-its-interval the recorded run replays row for row (240 attempts); in English 100% right; ja: inconclusive (8.3 points, 0.0 to 21.4); hi: inconclusive (4.2 points, 0.0 to 11.1); the judge calls a route with every answer wrong worse, one that answers as the written task does equivalent, and withholds when English fails
-        replay the recorded translate-work-translate-back run through the same code, compare it with the committed record, then make the route wrong, make it identical, and make English fail  seed 20261022  0.3s
+        replay the recorded translate-work-translate-back run through the same code, compare it with the committed record, then make the route wrong, make it identical, and make English fail  seed 20261022  0.4s
 PASS    tool-output-alignment-is-order-blind-and-continuous the assignment reached the highest total of every permutation on 120 seeded matrices; a reordered output scored 1, a near match 0.883, a wrong one 0.380, a dropped or an added field 0.5, and prose was compared as words with low confidence
         pair 120 seeded matrices and compare each total with every permutation, then score an output with its keys and lists reordered, a near match, a wrong one, one with a field dropped or added, and prose  seed 20261022  0.0s
 PASS    confidence-surfaces-are-calibrated-and-the-default-says-it-is-one ten bins; zero error for an honest confidence and 0.40 for a 95% confidence that is right 55% of the time; the abstain threshold landed at 0.70 where answers reach 80%; none was invented where nothing does; forty pairs gave the default and said so
@@ -74,24 +78,26 @@ PASS    recorded-live-swap-recomputes-and-withholds-what-it-cannot-support recom
         recompute each route's counts and rates, and the withholding rule, from the stored items of the live run of two Nemotron models on ten Lab tasks  0.0s
 PASS    judge-panel-is-refused-until-it-agrees-with-the-owner alpha reproduced the published 0.743; a panel with the model under test, one family or two judges was refused; admission passed 90% agreement, excluded 60% and 10 labels, flagged 100%, and refused judges with one verdict throughout; length alone won nothing
         reproduce Krippendorff's published example; refuse panels that include the model under test, have one family or two judges; admit, exclude and flag by agreement with the owner's labels; check that length alone wins nothing  seed 20261022  0.0s
+PASS    nightshift-receipts-verify-and-a-changed-one-is-refused all 11 signed receipts (ask_planner, explainer, policy_attacker, policy_drafter) verify against key e92caae86b5f702e; one changed number, one swapped signature and another key were each refused
+        check the Ed25519 signature on every Nightshift receipt in the committed log of live calls; change one number, swap one signature and read it against another key  seed 20261022  0.0s
 PASS    attack-finds-a-planted-loophole-and-the-fuzzer-sees-a-broken-check the planted loophole was found with the evaluator's verdict and the sound policy was not accused; the real check let no widening through in 1500 generated pairs, and the fuzzer found 72 escapes in a check made to approve everything
         run the attacker corpus on a policy whose forbid names one model and on a sound one; run the fuzzer against the real restrict check and against one made to say yes to everything  seed 20261022  0.8s
 PASS    packs-cannot-widen-and-the-index-sends-only-what-was-previewed a widening pack, a rerouting pack and a smuggled field were refused with nothing written; a narrowing pack became a shadow draft and left the policy untouched; the index payload named no task, was refused while off, unaccepted or changed, reached a real server as exactly the previewed bytes, and a redirect was not followed
         import a widening pack, a rerouting pack and one with a smuggled field, then a narrowing one; build the index payload and try to send it while off, unaccepted, changed, to a redirect and to a local server  seed 20261022  0.1s
 PASS    workspace-snapshot-restores-every-byte-and-touches-nothing a snapshot of a workspace with a staged edit, an unstaged edit with Windows line endings, a deletion, untracked scratch and a credential file has three parents, left the real index byte for byte as it was, restored every kept file with the bytes it held, and did not store the credential file
-        snapshot a repository with a staged edit, an unstaged edit with Windows line endings, a deletion, untracked scratch and a credential file; restore it elsewhere and compare every file  seed 20261022  1.1s
+        snapshot a repository with a staged edit, an unstaged edit with Windows line endings, a deletion, untracked scratch and a credential file; restore it elsewhere and compare every file  seed 20261022  1.3s
 PASS    captured-task-oracle-finds-the-deciding-tests-and-agrees-with-the-lab-audit in a planted repository the oracle found the 2 tests that fail before and pass after, the 1 that passes in both, and set the flaky one aside; a change with no deciding test was weak and a run with no results unrunnable; on the Lab's 10 tasks the 143 deciding tests the Desk found are the ones the Lab's audit lists
-        in a repository with a planted change run the owner's tests before and after to find the tests that decide it, set a flaky one aside, refuse a weak or unmeasured task, and hold the result against the Lab audit's own list for ten tasks  seed 20261022  23.6s
+        in a repository with a planted change run the owner's tests before and after to find the tests that decide it, set a flaky one aside, refuse a weak or unmeasured task, and hold the result against the Lab audit's own list for ten tasks  seed 20261022  25.4s
 PASS    trajectories-fall-in-their-classes-and-the-accounting-adds-up five planted sessions landed in their classes (1 full, 1 tools only, 2 insufficient, 1 with nothing to replay), with their reasons; sessions and eligible add up; 6 shell lines that only read were taken for reads and 10 that could change something never were
         write five sessions (whole, a gap in the transcript, a call with no result, a call with part of a result, no call), read each back, class it, and add the month up  seed 20261022  0.0s
 PASS    replay-never-runs-what-it-could-not-undo a recorded push, POST and deletion were answered from the recording and run by nothing; a variation of each stopped the replay; paths outside the sandbox by .., an absolute path and a link were refused for reading and writing; the server got 0 requests, the remote repository and the folder were as they were
-        serve a recorded push, POST and deletion from the recording, stop at a variation of each, refuse paths outside the sandbox, and watch a real server, remote and folder for any effect  seed 20261022  0.1s
+        serve a recorded push, POST and deletion from the recording, stop at a variation of each, refuse paths outside the sandbox, and watch a real server, remote and folder for any effect  seed 20261022  0.2s
 PASS    team-reports-add-up-and-roles-refuse-what-they-do-not-hold 6 people's signed reports add up to the planted total; 1 model folded and 1 day hidden for having fewer than 3 people behind it; 19 role-and-view requests refused and logged; 4 altered, forged, unsigned or text-bearing reports refused; people listed A to Z though the top spender is not first; a changed log line is found
-        build a team of six from signed reports, add them up, fold what too few people stand behind, ask for every view as every role, offer it altered, forged, unsigned and text-bearing reports, and change a line of the access log  seed 20261022  0.1s
+        build a team of six from signed reports, add them up, fold what too few people stand behind, ask for every view as every role, offer it altered, forged, unsigned and text-bearing reports, and change a line of the access log  seed 20261022  0.0s
 PASS    scorecard-recomputes-byte-for-byte       10 sections and 99 measures recompute to the committed scorecard byte for byte; 4 are marked not measured on the page
-        recompute the reasoning and sponsor scorecard from the repository and from runs of the code, and compare it with the committed page and its JSON, and with its signature when it is signed  seed 20261022  201.9s
-PASS    wording-lint-documents-and-generated-text 90 files and 4,609 lines of documents, the command list and the sample bill: 0 findings
-        the wording lint over the README, the evidence, the deck, the video script, the product description and every verification note, and over the command list and a bill the tool writes  seed 20261022  2.2s
+        recompute the reasoning and sponsor scorecard from the repository and from runs of the code, and compare it with the committed page and its JSON, and with its signature when it is signed  seed 20261022  189.6s
+PASS    wording-lint-documents-and-generated-text 91 files and 4,758 lines of documents, the command list and the sample bill: 0 findings
+        the wording lint over the README, the evidence, the deck, the video script, the product description and every verification note, and over the command list and a bill the tool writes  seed 20261022  2.1s
 PASS    gateway-meters-and-fails-closed          allowed 200 settled for 17500 micro-dollars; policy refusal 403; over the cap 429; unmeterable route 403; gate down 503; the stand-in endpoint saw 1 call
         a local stand-in endpoint behind the gateway door: one call allowed and settled, one refused by policy, one over the cap, one on a route that cannot be metered, one with the gate down  0.1s
 PASS    price-sources-agree-but-one              17 models priced by both: 89 of 90 prices agree; claude-sonnet-5-5 cacheReadPerMTokMicros 100000 against 200000
@@ -99,15 +105,15 @@ PASS    price-sources-agree-but-one              17 models priced by both: 89 of
 PASS    canary-calls-the-induced-regression      verdict regressed on day 30, -40.0 points; control flat: true; harness unchanged: true
         canaryCommand over the recorded scenario (real model runs, one pack per day and arm)  0.1s
 PASS    benchmark-reproduces-from-recordings     180 recorded runs replayed from recordings, 0 differ; exact answers A0 13/60, A1 44/60, A2 60/60; this reproduces the table, it does not say the Desk wins
-        replay every recorded run of benchmark set A from the recorded replies and score it again  seed 20261023  24.2s
+        replay every recorded run of benchmark set A from the recorded replies and score it again  seed 20261023  22.6s
 PASS    benchmark-set-b-reproduces-from-recordings 720 recorded runs replayed from recordings, 0 differ; exact answers A0 12/60, A1 41/60, A2 60/60; this reproduces the table, it does not say the Desk wins
-        replay every recorded run of benchmark set B from the recorded replies and score it again  seed 20261024  84.1s
+        replay every recorded run of benchmark set B from the recorded replies and score it again  seed 20261024  79.1s
 PASS    benchmark-set-d-reproduces-from-recordings 720 recorded runs replayed from recordings, 0 differ; exact answers A0 12/60, A1 45/60, A2 55/60; this reproduces the table, it does not say the Desk wins
-        replay every recorded run of benchmark set D from the recorded replies and score it again  seed 20261027  2.7s
+        replay every recorded run of benchmark set D from the recorded replies and score it again  seed 20261027  2.5s
 PASS    ablation-set-e-reproduces-from-recordings 599 recorded runs replayed from recordings, 0 differ; exact answers A0 12/60, A1 48/59, A2 60/60, A3 60/60, A4 60/60, A5 60/60, A6 60/60, A7 30/60, A2F 45/60, A4F 46/60; 1 recorded runs ended in an error and are not replayed; this reproduces the table, it does not say the Desk wins
         replay every recorded run of benchmark set E from the recorded replies and score it again  seed 20261028  2.0s
 PASS    nightshift-receipts-in-recordings        2035 recorded replies were served through Nightshift; 0 lack a receipt id
-        every recorded model reply that says Meterless Nightshift served it carries Nightshift's compute receipt  1.3s
+        every recorded model reply that says Meterless Nightshift served it carries Nightshift's compute receipt  1.4s
 PASS    pass-k-reliability                       A0 pass^1 19% pass^2 17% pass^3 17% over 60 questions; A1 pass^1 69% pass^2 66% pass^3 63% over 60 questions; A2 pass^1 96% pass^2 93% pass^3 92% over 60 questions; recomputed from the recorded rows, which the set B replay check also replays
         pass^k over the recorded repeat trials of benchmark set B (temperature 0.7, one recording per trial)  seed 20261024  0.0s
 PASS    calibration-link-confidence              high 99.2% of 522, medium 98.6% of 212, low none, unlinked 93.7% of 253; levels ordered as named: true; landing state right for 682 of 734 links
@@ -121,13 +127,13 @@ PASS    route-replay-on-recorded-tasks           52 tasks on two routes: the che
 PASS    seat-return                              discovery 5 seats, 0 beyond the people who landed work; growth 5 seats, 0 beyond the people who landed work; payments 4 seats, 0 beyond the people who landed work; with a team's sessions removed every one of its 4 seats is reported
         seats beyond the people who landed work, from the recorded Zetaris roster and the sample ledger  seed 20261022  1.0s
 PASS    learning-curve-from-mistakes             0 mistakes on 120 training questions, 0 with a verified plan; held-out exact by round 60 of 60; the change since round 0 is 0.0 points (95% interval 0.0 to 0.0); 0 of 0 lessons pass as tests; no mistake, so no model call and nothing to learn on this ledger
-        the recorded learning run replayed from its recordings: the same lessons, in the same rounds, with the same held-out counts  seed 20261026  4.9s
+        the recorded learning run replayed from its recordings: the same lessons, in the same rounds, with the same held-out counts  seed 20261026  4.6s
 PASS    decision-regret-ledger                   3 options recorded on 495 September sessions and scored on October (492 sessions): the proposed policy inside its range, the draft before hardening inside its range, the policy already in force inside its range; regret summed over chosen options 0.00 dollars; each option's month equals a fresh replay; a decision with ten later days stays pending
-        a decision made on September, held pending on ten later days, then scored on October and recomputed from the options' own replay  seed 20261022  186.4s
+        a decision made on September, held pending on ten later days, then scored on October and recomputed from the options' own replay  seed 20261022  149.8s
 PASS    canary-statistic-false-alarms            0 of 100 histories ever called regressed with nothing changed (upper 95% bound 3.6%); the full study is in docs/verification/canary-simulation.md
-        falseAlarmStudy({histories: 100}) with no injected change  seed 20261022  0.8s
+        falseAlarmStudy({histories: 100}) with no injected change  seed 20261022  0.6s
 PASS    sample-mode-needs-no-network             the card and an answer were produced with every network call forbidden
-        the card and an answer with the network function replaced by one that throws  seed 20261022  1.2s
+        the card and an answer with the network function replaced by one that throws  seed 20261022  1.1s
 
-60 PASS, 0 FAIL, 0 NOT RUN. NOT RUN is not a pass: it names a check the spec asks for that is not built or not recorded.
+61 PASS, 0 FAIL, 0 NOT RUN. NOT RUN is not a pass: it names a check the spec asks for that is not built or not recorded.
 PROVE EXIT 0
