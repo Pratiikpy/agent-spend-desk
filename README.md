@@ -6,6 +6,8 @@ desk. is a local desk for the person who pays for AI coding agents. It explains 
 
 Built for the Open Agent Hackathon 2026, Track 3 (Reasoning Architecture), with Zetaris, Meterless and NVIDIA Nemotron.
 
+**Demo video (3:56):** https://youtu.be/dsRGX73lZAQ
+
 > We are building an agent that helps **an engineering lead who pays for coding agents** decide **next month's caps and routes** by **tying every dollar to the work that landed and testing a policy on a month it never saw**, using **the agents' own session logs, git history, and three Zetaris-joined sources (invoices, CI, a seat roster)**, producing **a limit autopsy, a daily regression verdict, and a signed, replay-tested spend policy a stranger can verify offline**.
 
 | | | |
