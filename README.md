@@ -25,9 +25,9 @@ Skim path: [The idea](#the-idea), [Try it](#try-it), [Check it yourself](#check-
 
 ## The idea
 
-Most tools that watch AI spend show a number. desk. treats every number as a claim: it must carry the rows it came from, say what it could not know, and survive a test on data it never saw. The same discipline runs through the whole product. A figure is computed by code, never by the model. A policy is replayed on a month it was not drafted from, and the headline is the landed work it would have blocked. A regression is called only against a control arm. A conclusion is signed so that a stranger can verify it offline. Where it fell short of its own label (a "90%" range that held 73% of the time), it says so on screen.
+Most tools that watch AI spend report usage, an estimated cost and some activity (a vendor's own analytics list sessions, commits and pull requests). desk. goes one step further and treats every number as a claim: it must carry the rows it came from, say what it could not know, and survive a test on data it never saw. The same discipline runs through the whole product. A figure is computed by code, never by the model. A policy is replayed on a month it was not drafted from, and the headline is the landed work it would have blocked. A regression is called only against a control arm. A conclusion is signed so that a stranger can verify it offline. Where it fell short of its own label (a "90%" range that held 73% of the time), it says so on screen.
 
-Usage trackers such as ccusage and CodexBar read agent logs and show cost; as far as we read them on 2026-10-20 (`docs/design/desk/05-track-coverage-and-sources.md`), none ties each dollar to landed work, replays a policy on a month it did not see, calls a regression against a control arm, or signs the result. desk. takes their log-reading and pace ideas and adds those.
+Usage trackers such as ccusage and CodexBar read agent logs and show cost, and vendors report usage and development activity in their own consoles and APIs (Anthropic's Claude Code Analytics API lists commits and pull requests by Claude Code with an estimated cost; OpenAI and Cursor publish admin analytics for their own tools). As far as we read them on 2026-10-20 and 2026-10-26 (`docs/design/desk/05-track-coverage-and-sources.md`, `docs/validation/impact-and-market-validation.md`), none ties each dollar across vendors to independently checked outcomes, replays a policy on a month it did not see, calls a regression against a control arm, or signs the result. desk. takes their log-reading and pace ideas and adds those.
 
 ## Try it
 
@@ -134,7 +134,7 @@ One primary track is judged, and we submit under **Track 3**. The same product a
 
 ## The problem
 
-An engineering lead pays for a team's coding agents, on seats and on tokens. The bill is a number and the limit is a message; nothing says what the money bought. The decision is next month's caps and routes, and today it is made without evidence. desk. ties each dollar to the work that landed (a commit, a merge, a revert), shows which cause ate the limit, and tests a policy before it is applied.
+An engineering lead pays for a team's coding agents, on seats and on tokens. The bill is a number and the limit is a message; vendor dashboards show usage and some activity, but nothing ties each dollar to work that was checked and landed. The decision is next month's caps and routes, and today it is made without evidence. desk. ties each dollar to the work that landed (a commit, a merge, a revert), shows which cause ate the limit, and tests a policy before it is applied.
 
 The pain is public. These are quotes from the sources we read on 2026-10-20 (each URL was fetched then and not re-opened since; the full table is `docs/design/desk/04-evidence-table.md`):
 

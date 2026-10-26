@@ -8,7 +8,7 @@ Contents: 1 In one minute · 2 A day with it · 3 How it works · 4 Everything i
 
 ## 1. In one minute (no technical background needed)
 
-**Who it is for.** An engineering lead, or a developer who pays their own bill, using AI coding agents such as Claude Code. They pay on seats and on tokens. The bill is a number, and the limit is a message that says "you have used your allowance". Nothing says what the money bought.
+**Who it is for.** An engineering lead, or a developer who pays their own bill, using AI coding agents such as Claude Code. They pay on seats and on tokens. The bill is a number, and the limit is a message that says "you have used your allowance". Vendor dashboards show usage and some activity, but nothing ties each dollar to work that was checked and landed.
 
 **What it does.** desk. is a program that runs on your own computer, reads the logs your agents already write, and answers the questions the bill does not:
 
