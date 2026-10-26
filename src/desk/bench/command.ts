@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 
 import { openLedger } from "../ledger/db.ts";
 import { choosePort } from "../propose/command.ts";
-import { BENCH_SEED, BENCH_SEED_B, BENCH_SEED_C, BENCH_SEED_D, BENCH_SEED_E, buildQuestions, questionSetHash, type QuestionSet } from "./questions.ts";
+import { BENCH_SEED, BENCH_SEED_B, BENCH_SEED_C, BENCH_SEED_D, BENCH_SEED_E, BENCH_SEED_F, buildQuestions, questionSetHash, type QuestionSet } from "./questions.ts";
 import { ABLATION_ARMS, ALL_ARMS, ARMS, CATEGORIES, formatReport, readResults, runBench, writeQuestionSet, type BenchRow } from "./run.ts";
 import type { ArmId } from "./arms.ts";
 
@@ -28,6 +28,9 @@ export const CASSETTES_B = "data/sample/bench-cassettes-b";
 export const CASSETTES_C = "data/sample/learning-cassettes-c";
 export const CASSETTES_D = "data/sample/bench-cassettes-d";
 export const CASSETTES_E = "data/sample/bench-cassettes-e";
+export const RESULTS_FILE_F = "docs/verification/mix/set-f/results.jsonl";
+export const QUESTIONS_FILE_F = "docs/verification/mix/set-f/questions.json";
+export const CASSETTES_F = "data/sample/bench-cassettes-f";
 
 /**
  * The rows of set A that today's Desk can be held to: the first two arms from the preregistered file, and the Desk from the
@@ -53,6 +56,8 @@ export const filesFor = (set: QuestionSet): { results: string; questions: string
       ? { results: RESULTS_FILE_C, questions: QUESTIONS_FILE_C, seed: BENCH_SEED_C, cassettes: CASSETTES_C }
       : set === "D"
         ? { results: RESULTS_FILE_D, questions: QUESTIONS_FILE_D, seed: BENCH_SEED_D, cassettes: CASSETTES_D }
+        : set === "F"
+          ? { results: RESULTS_FILE_F, questions: QUESTIONS_FILE_F, seed: BENCH_SEED_F, cassettes: CASSETTES_F }
         : set === "E"
           ? { results: RESULTS_FILE_E, questions: QUESTIONS_FILE_E, seed: BENCH_SEED_E, cassettes: CASSETTES_E }
           : { results: RESULTS_FILE, questions: QUESTIONS_FILE, seed: BENCH_SEED, cassettes: CASSETTES_A };
@@ -68,6 +73,8 @@ export interface BenchCommandOptions {
   trials?: string;
   only?: string;
   results?: string;
+  /** Where recordings are read and written, when it is not the set's own folder (a run on a different model mix keeps its own). */
+  cassetteDir?: string;
   concurrency?: string;
   env: Record<string, string | undefined>;
   log: (line: string) => void;
@@ -76,8 +83,8 @@ export interface BenchCommandOptions {
 export async function benchCommand(o: BenchCommandOptions): Promise<string> {
   const db = openLedger(o.dbPath);
   try {
-    const set: QuestionSet = o.set === "B" ? "B" : o.set === "C" ? "C" : o.set === "D" ? "D" : o.set === "E" ? "E" : "A";
-    if (o.set !== undefined && !["A", "B", "C", "D", "E"].includes(o.set)) return `--set is A, B, C, D or E, not ${o.set}.`;
+    const set: QuestionSet = o.set === "B" ? "B" : o.set === "C" ? "C" : o.set === "D" ? "D" : o.set === "E" ? "E" : o.set === "F" ? "F" : "A";
+    if (o.set !== undefined && !["A", "B", "C", "D", "E", "F"].includes(o.set)) return `--set is A, B, C, D, E or F, not ${o.set}.`;
     const files = filesFor(set);
     const questions = buildQuestions(db, files.seed, set);
     const results = o.results ?? files.results;
@@ -98,7 +105,7 @@ export async function benchCommand(o: BenchCommandOptions): Promise<string> {
       if (!["dev", "held_out", "all"].includes(split)) return `--split is dev, held_out or all, not ${split}.`;
       // A rate-limited reply is retried for minutes, so a busy endpoint costs time and never a wrong or missing answer.
       // Arms that take one role out ask the same questions of the same model as the full Desk until the point they differ, so they share the recorded replies.
-      const { port, label } = choosePort({ sampleMode: o.sampleMode, record: o.record, cassetteDir: files.cassettes, env: o.env, backoffMs: [4_000, 8_000, 15_000, 30_000, 60_000, 60_000, 60_000], reuse: arms.some((a) => ABLATION_ARMS.includes(a)) });
+      const { port, label } = choosePort({ sampleMode: o.sampleMode, record: o.record, cassetteDir: o.cassetteDir ?? files.cassettes, env: o.env, backoffMs: [4_000, 8_000, 15_000, 30_000, 60_000, 60_000, 60_000], reuse: arms.some((a) => ABLATION_ARMS.includes(a)) });
       if (!port) return `No model to run the arms on: ${label}. Set the model settings in .env, or run with --sample to replay the recorded replies.`;
       const only = o.only ? o.only.split(",").map((s) => s.trim()) : undefined;
       const trials = (o.trials ?? "0").split(",").map((t) => Number(t.trim()));

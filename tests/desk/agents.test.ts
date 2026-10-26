@@ -8,7 +8,7 @@ import { auditSentences, extractNumbers } from "../../src/desk/agents/audit.ts";
 import { Budget, BudgetError, ASK_LIVE } from "../../src/desk/agents/budget.ts";
 import { ClaimLedger, type Claim } from "../../src/desk/agents/claims.ts";
 import { explain, ruleBrainSentences } from "../../src/desk/agents/explain.ts";
-import { CassettePort, callModel, ModelError, OpenAiPort, RecordingPort, portFromEnv, requestKey, type ModelPort, type ModelRequest, type ModelResponse } from "../../src/desk/agents/model.ts";
+import { CassettePort, callModel, ModelError, OpenAiPort, RecordingPort, RoleModelPort, parseRoleModels, portFromEnv, requestKey, type ModelPort, type ModelRequest, type ModelResponse } from "../../src/desk/agents/model.ts";
 import { MemoryTrace } from "../../src/desk/agents/trace.ts";
 import { loadDotenv } from "../../src/desk/env.ts";
 import { TempDir } from "./helpers.ts";
@@ -420,5 +420,26 @@ describe("dotenv", () => {
     } finally {
       dir.dispose();
     }
+  });
+});
+
+describe("a mix of Nemotron models", () => {
+  const response = (model: string): ModelResponse => ({ content: model, toolCalls: [], servedBy: "other", servedModel: model, source: "live", usage: null });
+  const port = (model: string): ModelPort => ({ complete: async () => response(model) });
+  const request = (role: string): ModelRequest => ({ role, messages: [{ role: "user", content: "x" }] });
+
+  it("reads role=model pairs, and says what is wrong with one that is not", () => {
+    expect(parseRoleModels(undefined)).toEqual({});
+    expect(parseRoleModels("  ")).toEqual({});
+    expect(parseRoleModels("ask_planner=nvidia/a, explainer = nvidia/b")).toEqual({ ask_planner: "nvidia/a", explainer: "nvidia/b" });
+    expect(() => parseRoleModels("ask_planner")).toThrow(/role=model pairs/);
+    expect(() => parseRoleModels("Planner=nvidia/a")).toThrow(/is not one/);
+  });
+
+  it("sends each role to the model chosen for it and every other role to the default", async () => {
+    const mix = new RoleModelPort(port("default"), { ask_planner: port("small"), explainer: port("large") });
+    expect((await mix.complete(request("ask_planner"), 1000)).servedModel).toBe("small");
+    expect((await mix.complete(request("explainer"), 1000)).servedModel).toBe("large");
+    expect((await mix.complete(request("policy_drafter"), 1000)).servedModel).toBe("default");
   });
 });

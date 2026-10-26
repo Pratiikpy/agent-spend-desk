@@ -934,7 +934,7 @@ ${t.pass} PASS, ${t.fail} FAIL, ${t.notRun} NOT RUN. NOT RUN is not a pass: it n
   } else console.log(calibrateCommand({ dbPath: ledgerPath, truthPath: join(values.out, "truth.json") }));
 } else if (command === "bench") {
   loadDotenv(".env");
-  console.log(await benchCommand({ sub: positionals[1] ?? "", dbPath: ledgerPath, sampleMode, record: values.record, arms: values.arm, split: values.split, set: values.set, trials: values.trials, only: values.only, results: values.results, concurrency: values.concurrency, env: process.env, log: (l) => console.error(l) }));
+  console.log(await benchCommand({ sub: positionals[1] ?? "", dbPath: ledgerPath, sampleMode, record: values.record, arms: values.arm, split: values.split, set: values.set, trials: values.trials, only: values.only, results: values.results, ...(process.argv.includes("--cassettes") ? { cassetteDir: values.cassettes } : {}), concurrency: values.concurrency, env: process.env, log: (l) => console.error(l) }));
 } else if (command === "bill") {
   const result = billCommand({
     db,

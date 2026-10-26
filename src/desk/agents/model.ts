@@ -439,6 +439,29 @@ export async function callModel(port: ModelPort, request: ModelRequest, ctx: Cal
 }
 
 /** Build the port from environment settings. SAMPLE_MODE=true replays cassettes from `cassetteDir`; no key or network is needed. */
+/**
+ * A mix of Nemotron models: each role asks the model the owner chose for it, and every other role asks the default. `DESK_ROLE_MODELS` is a list of `role=model` pairs,
+ * for example `ask_planner=nvidia/nemotron-3.5-lightning-30b-a3b,explainer=nvidia/nemotron-3-ultra-550b-a55b`. The recorded replies do not depend on it: a recording is found by
+ * the role and the request, not by the model that answered, and each reply names the model that did.
+ */
+export function parseRoleModels(text: string | undefined): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (text === undefined || text.trim() === "") return out;
+  for (const part of text.split(",")) {
+    const m = /^\s*([a-z][a-z0-9_]*)\s*=\s*(\S+)\s*$/.exec(part);
+    if (!m) throw new ModelError("non_transient", `DESK_ROLE_MODELS is role=model pairs separated by commas, such as ask_planner=nvidia/m; ${JSON.stringify(part.trim())} is not one`);
+    out[m[1] as string] = m[2] as string;
+  }
+  return out;
+}
+
+export class RoleModelPort implements ModelPort {
+  constructor(private readonly fallback: ModelPort, private readonly byRole: Readonly<Record<string, ModelPort>>) {}
+  complete(request: ModelRequest, deadlineMs: number): Promise<ModelResponse> {
+    return (this.byRole[request.role] ?? this.fallback).complete(request, deadlineMs);
+  }
+}
+
 export function portFromEnv(env: Record<string, string | undefined>, cassetteDir: string, opts: { backoffMs?: readonly number[] } = {}): ModelPort {
   if (env["SAMPLE_MODE"] === "true") return new CassettePort(cassetteDir);
   const baseUrl = env["MODEL_BASE_URL"] ?? env["NVIDIA_BASE_URL"];
@@ -449,5 +472,15 @@ export function portFromEnv(env: Record<string, string | undefined>, cassetteDir
   }
   const egressPath = env["DESK_EGRESS_LOG"] ?? "data/desk/egress.jsonl";
   const profile = env["DESK_MODEL_PROFILE"]?.trim().toLowerCase() === "local" ? ("local" as const) : undefined;
-  return new OpenAiPort({ baseUrl, apiKey, model, ...(profile ? { profile } : {}), ...(opts.backoffMs ? { backoffMs: opts.backoffMs } : {}), ...(egressPath === "off" ? {} : { onEgress: jsonlEgress(egressPath) }) });
+  const make = (m: string): OpenAiPort => new OpenAiPort({ baseUrl, apiKey, model: m, ...(profile ? { profile } : {}), ...(opts.backoffMs ? { backoffMs: opts.backoffMs } : {}), ...(egressPath === "off" ? {} : { onEgress: jsonlEgress(egressPath) }) });
+  const mix = parseRoleModels(env["DESK_ROLE_MODELS"]);
+  const base = make(model);
+  if (Object.keys(mix).length === 0) return base;
+  const byModel = new Map<string, OpenAiPort>([[model, base]]);
+  const byRole: Record<string, ModelPort> = {};
+  for (const [role, m] of Object.entries(mix)) {
+    if (!byModel.has(m)) byModel.set(m, make(m));
+    byRole[role] = byModel.get(m) as OpenAiPort;
+  }
+  return new RoleModelPort(base, byRole);
 }

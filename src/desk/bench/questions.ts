@@ -28,8 +28,9 @@ export const BENCH_SEED_D = 20261027;
  * role does on questions the full Desk can answer, so a miss in an ablated arm is the role's and not a missing step.
  */
 export const BENCH_SEED_E = 20261028;
-export type QuestionSet = "A" | "B" | "C" | "D" | "E";
-export const seedOf = (set: QuestionSet): number => (set === "B" ? BENCH_SEED_B : set === "C" ? BENCH_SEED_C : set === "D" ? BENCH_SEED_D : set === "E" ? BENCH_SEED_E : BENCH_SEED);
+export const BENCH_SEED_F = 20261031;
+export type QuestionSet = "A" | "B" | "C" | "D" | "E" | "F";
+export const seedOf = (set: QuestionSet): number => (set === "B" ? BENCH_SEED_B : set === "C" ? BENCH_SEED_C : set === "D" ? BENCH_SEED_D : set === "E" ? BENCH_SEED_E : set === "F" ? BENCH_SEED_F : BENCH_SEED);
 
 export type Category = "lookup" | "multi_hop" | "counterfactual" | "unanswerable" | "adversarial" | "numeric";
 
@@ -400,7 +401,8 @@ export function buildQuestions(db: Ledger, seed: number = BENCH_SEED, set: Quest
     }
   }
 
-  if (set === "E") {
+  if (set === "E" || set === "F") {
+    // Set F is set E's recipe with a new seed: sixty questions no arm has been run on, in shapes the Desk has steps for.
     // The four shapes the third version has steps for, written out as in set D so that a shape means the same on both; set D's own draws are not disturbed.
     const swap = (i: number, q: Omit<Question, "id" | "split">): void => void (out[i] = q);
     {
