@@ -21,7 +21,7 @@ These four sources make a serious case that the problem is real. They do not sho
 
 ## 1b. Demand signals measured on 2026-10-26 (interest in the category, not willingness to pay)
 
-All numbers were read on 2026-10-26 from the GitHub API, the npm download API and the Hacker News search API. Reddit could not be read from this machine (the command-line client was refused and the public search returned a block page), so no Reddit count is given.
+All numbers were read on 2026-10-26 from the GitHub API, the npm download API and the Hacker News search API. Reddit threads are in section 1c.
 
 | Signal | Number | What it shows | What it does not show |
 |---|---|---|---|
@@ -43,6 +43,36 @@ What these numbers support: the demand for seeing where agent spend goes and for
 ### The nearest free competitor, read from its README
 
 CodeBurn (https://github.com/getagentseal/codeburn, MIT) lists: spend by model, project and task across 37 to 42 tools; `sessions --by-pr`, which groups spend by the pull request links a session recorded; plan and quota tracking, with live five-hour and weekly limits; a Guard feature for budget caps for Claude Code; and a model comparison on the user's own history (one-shot rate, retry rate, cost per edit). As far as its README says, it does not describe a held-out replay of a proposed cap, a control-arm regression check, a restrict-only proof, or a signed record a stranger verifies offline. That is a reading of one README on 2026-10-26, not a test of the product. It is the strongest evidence in this file that what users want is close to what desk. does first (where did the money go, will I hit a limit, stop a runaway), and that desk.'s differences are in the decision loop around it.
+
+## 1c. What people say on Reddit, read on 2026-10-26
+
+**Method.** Reddit blocks direct access from this machine, so the threads were read through a public Redlib instance (Redlib is an open-source, read-only Reddit front end; instance list: https://github.com/redlib-org/redlib-instances), with an identifying user agent, twelve search queries about usage limits, cost and tracking for Claude Code, Codex and Cursor, sorted by top over the past year, 25 results each, four seconds apart. That returned 231 unique threads. Of those, 45 were on topic in developer subreddits (r/ClaudeCode, r/ClaudeAI, r/codex, r/OpenAI, r/LocalLLaMA) by a title keyword filter, with a combined 53,800 upvotes and 8,089 comments; 38 of them had 100 or more upvotes and 16 had 1,000 or more. I then picked the twelve below by hand as the most directly about limits, cost and tracking.
+
+| Subreddit | Date | Upvotes | Comments | Title (as shown) |
+|---|---|---:|---:|---|
+| r/ClaudeAI | 2026-04-03 | 13,526 | 641 | [Taught Claude to talk like a caveman to use 75% less tokens.](https://www.reddit.com/r/ClaudeAI/comments/1sble09/taught_claude_to_talk_like_a_caveman_to_use_75/) |
+| r/ClaudeAI | 2026-09-19 | 4,856 | 274 | [Asked Claude to waste my remaining usage before weekly reset. Very satisfied with the result.](https://www.reddit.com/r/ClaudeAI/comments/1wkqszd/asked_claude_to_waste_my_remaining_usage_before/) |
+| r/ClaudeCode | 2026-07-21 | 2,403 | 192 | [Important Update to Claude Usage Limits](https://www.reddit.com/r/ClaudeCode/comments/1v2yoe4/important_update_to_claude_usage_limits/) |
+| r/ClaudeCode | 2026-05-12 | 2,094 | 117 | [Clawdmeter - a small ESP32 usage limit monitor (source code in description)](https://www.reddit.com/r/ClaudeCode/comments/1takxpl/clawdmeter_a_small_esp32_usage_limit_monitor/) |
+| r/ClaudeCode | 2026-08-31 | 1,779 | 223 | [Claude Max "20x" only applies to the 5-hour window. Weekly usage on the $200 plan is 2x the $100 plan](https://www.reddit.com/r/ClaudeCode/comments/1w38v98/claude_max_20x_only_applies_to_the_5hour_window/) |
+| r/codex | 2026-08-16 | 1,703 | 341 | [Y'all need to make more noise on social media. Limits have been halved in the last 3 days](https://www.reddit.com/r/codex/comments/1vpz69p/yall_need_to_make_more_noise_on_social_media/) |
+| r/ClaudeCode | 2026-03-27 | 1,610 | 601 | [It costs you around 2% session usage to say hello to claude!](https://www.reddit.com/r/ClaudeCode/comments/1s54q0d/it_costs_you_around_2_session_usage_to_say_hello/) |
+| r/codex | 2026-08-28 | 1,591 | 181 | [Hitting your limits too quickly? OpenAI has been hiding this one weird trick](https://www.reddit.com/r/codex/comments/1w0nbos/hitting_your_limits_too_quickly_openai_has_been/) |
+| r/codex | 2026-10-05 | 1,107 | 310 | [OpenAI offers 5x less value than Anthropic at same pricepoint (source: semianalysis)](https://www.reddit.com/r/codex/comments/1wyjx8u/openai_offers_5x_less_value_than_anthropic_at/) |
+| r/ClaudeCode | 2026-04-03 | 951 | 537 | [Users hitting usage limits WAY faster than expected it's getting real now](https://www.reddit.com/r/ClaudeCode/comments/1sbggsf/users_hitting_usage_limits_way_faster_than/) |
+| r/ClaudeCode | 2026-03-30 | 950 | 324 | [Investigating usage limits hitting faster than expected](https://www.reddit.com/r/ClaudeCode/comments/1s7zg7h/investigating_usage_limits_hitting_faster_than/) |
+| r/ClaudeCode | 2026-09-14 | 934 | 391 | [The limits have been reduced even further now. It's September 14, and it really happened..](https://www.reddit.com/r/ClaudeCode/comments/1wfwl6k/the_limits_have_been_reduced_even_further_now_its/) |
+
+The twelve together: 33,504 upvotes and 4,132 comments. Scores and dates are as the instance showed them on 2026-10-26.
+
+Two further threads were large but are about companies, not developers' own plans, and were not verified here: a thread titled "Company Blew $500M On Claude AI In One Month Due To No Usage Limit On Licenses For Employees" (r/pcmasterrace, 2026-05-30, 10,728 upvotes, 529 comments) and one titled "Amazon scraps AI leaderboard to stop workers boosting usage scores" (r/technology, 2026-05-29, 10,685 upvotes, 531 comments). The first is a headline repeated by a forum, not a checked fact.
+
+**What the threads want, in the posters' own terms.** To see a limit coming (an ESP32 monitor built just for it drew 2,094 upvotes); to know what consumed the allowance ("2% of session usage to say hello"); to spend fewer tokens (the 75% post); not to waste an unused weekly allowance; and clear rules for what a plan is worth (the 20x versus 2x thread). That is what desk. does first: where a limit went, what a percent costs in tokens, and whether a window will last.
+
+**What they do not show.**
+- Most of these threads are individuals complaining about a plan's limits, not engineering leads deciding team policy. They support the autopsy, the limit estimate and the runway forecast more than the policy loop, the canary or the signed dossier.
+- Nothing here says anyone would pay for a third-party tool. Several of the loudest threads are about the vendor changing limits, which no tool of ours can change.
+- Search was by my queries, top 25 per query, one year, one instance; it is not a census, and the on-topic filter and my hand selection are judgement.
 
 ## 2. What vendors already provide (and where they are stronger)
 
